@@ -401,4 +401,24 @@ CONSOLIDATED_TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
         "Record, consult, or replay lessons and failure memory.",
         "Manage durable lessons, known failures, dead-end learning, and mistake replay.",
     ),
+    "sys_mode": {
+        "short": "Query or switch the active persona (scruffy/neat/critique/delegation).",
+        "description": (
+            "Report or change the active persona. No arg → query; persona=<name> → set. "
+            "Governs tool visibility and execution policy per §13.1."
+        ),
+        "category": "workspace",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "persona": {
+                    "type": "string",
+                    "enum": ["scruffy", "neat", "critique", "delegation"],
+                    "description": (
+                        "Name of the persona to activate. Omit to query the current persona."
+                    ),
+                },
+            },
+        },
+    },
 }

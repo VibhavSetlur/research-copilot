@@ -7,7 +7,7 @@
 # Everything else (per-protocol intent_class/triggers/decomposition/...) now
 # lives in the protocol bodies. scripts/build_protocols.py reads this file
 # plus every protocol YAML to compile _protocols.bundle.
-schema_version: '3.0'
+schema_version: '3.1'
 hierarchy:
   session:
     label: Session management
@@ -307,3 +307,20 @@ shortcut_intents:
     - are my figures up to date
     - version coherence
     tool: tool_audit
+  switch_persona:
+    triggers:
+    - switch persona
+    - set persona
+    - change persona
+    - switch mode
+    - set mode
+    - change mode
+    - use scruffy mode
+    - use neat mode
+    - use critique mode
+    - use delegation mode
+    - what persona am i in
+    - which persona is active
+    - current persona
+    - show available personas
+    tool: sys_mode

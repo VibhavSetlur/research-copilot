@@ -22,13 +22,191 @@ from .aliases import (
     _REMOVED_TOOLS,
 )
 from .autopilot_gate import enforce_autopilot_gate
-from .envelopes import TextContent, _error, _normalize_envelope, _text
+from .envelopes import TextContent, _error, _normalize_envelope, _success, _text
 from .errors import RoError, did_you_mean
 from .plugin_registry import plugin_registry
 from .rate_limiter import _rate_limiter
 
 
 logger = logging.getLogger("research-os.server")
+
+# ── Exec-category set (mirrors tool_surface._EXEC_CATEGORIES) ────────────────
+_EXEC_CATEGORIES: frozenset[str] = frozenset({"execution", "exec"})
+
+
+def _is_exec_tool(tool_name: str) -> bool:
+    """Return True when ``tool_name`` is in the execution/exec category.
+
+    Reads the live TOOL_DEFINITIONS at call time (deferred import avoids
+    circular load).  Fail-safe: returns False on any error so an exec tool
+    with a missing definition is NOT blocked.
+    """
+    try:
+        from .registry import TOOL_DEFINITIONS
+
+        return TOOL_DEFINITIONS.get(tool_name, {}).get("category") in _EXEC_CATEGORIES
+    except Exception:
+        return False
+
+
+def _enforce_persona_policy(
+    resolved: str,
+    root: "Path | None",
+) -> "list | None":
+    """Check the active persona's execution policy for ``resolved``.
+
+    Returns a ``list[TextContent]`` refusal / park envelope when the policy
+    blocks the tool, or ``None`` when the handler should run normally.
+
+    Only acts on exec-category tools; all other tools are always allowed.
+    Fail-open: returns ``None`` (allow) on any error.
+    """
+    if not _is_exec_tool(resolved):
+        return None
+    if root is None:
+        return None
+
+    try:
+        from .personas import PERSONAS, get_active_persona
+
+        active = get_active_persona(root)
+        persona = PERSONAS.get(active, PERSONAS["scruffy"])
+        policy = persona.get("execution_policy", "direct")
+    except Exception:
+        return None  # degrade open
+
+    if policy == "direct":
+        return None  # scruffy — run freely
+
+    if policy == "forbidden":
+        # critique persona: refuse exec tools outright.
+        return _text(_error(
+            what=f"tool '{resolved}' is forbidden in persona 'critique'",
+            why=(
+                "the active persona is 'critique' (peer reviewer), which only "
+                "permits read operations; exec tools are blocked"
+            ),
+            next_action=(
+                "switch persona with sys_mode(persona='scruffy') to run tools, "
+                "or call sys_mode() to see available personas"
+            ),
+        ))
+
+    if policy == "supervised":
+        # delegation persona: park the execution on a HITL gate.
+        # Write gate file via daemon_bridge.state_path (seam-safe).
+        try:
+            import uuid
+            from datetime import datetime, timezone
+
+            from .daemon_bridge import GATES_DIR, state_path
+
+            gate_id = str(uuid.uuid4())
+            created_at = (
+                datetime.now(timezone.utc)
+                .isoformat(timespec="seconds")
+                .replace("+00:00", "Z")
+            )
+            gate_payload = {
+                "id": gate_id,
+                "question": (
+                    f"delegation persona: approve execution of '{resolved}'?"
+                ),
+                "status": "pending",
+                "created_at": created_at,
+                "root": str(root),
+                "tool": resolved,
+                "protocol_id": None,
+                "step_id": None,
+                "decision": None,
+                "resolved_at": None,
+            }
+            gate_dir = state_path(root, GATES_DIR)
+            gate_dir.mkdir(parents=True, exist_ok=True)
+            gate_file = gate_dir / f"{gate_id}.json"
+            gate_file.write_text(
+                json.dumps(gate_payload, indent=2), encoding="utf-8"
+            )
+        except Exception as exc:
+            logger.debug("persona gate-write failed: %s", exc)
+            gate_id = "unknown"
+            gate_file = None
+
+        return _text(_success({
+            "status": "parked",
+            "persona": "delegation",
+            "tool": resolved,
+            "gate_id": gate_id,
+            "message": (
+                f"Tool '{resolved}' is parked on HITL gate '{gate_id}' "
+                "because the active persona is 'delegation' (supervised execution). "
+                "A supervisor must approve the gate before the tool runs."
+            ),
+            "gate_file": str(gate_file) if gate_file else None,
+        }))
+
+    if policy == "verified":
+        # neat persona: allow the tool to run, but tag the run for the audit gate.
+        # We return None here (handler runs) and tag after the handler call.
+        # The tagging is done by _tag_verified_run called from _handle_tool_call.
+        # Flag by returning a sentinel tuple so the dispatcher can distinguish.
+        # Actually: we return None to let handler run; tagging is a post-hook.
+        # We use a thread-local / caller-side flag instead — simplest is to
+        # return a special object the dispatcher checks.
+        # But to keep dispatch.py clean: return None and rely on
+        # _maybe_attach_verified_tag being called after the handler.
+        return None
+
+    # Unknown policy — fail open.
+    return None
+
+
+def _tag_verified_run(
+    resolved: str,
+    root: "Path | None",
+    result: list,
+) -> list:
+    """For the 'neat' persona: append an audit finding tagging this exec run.
+
+    Called after the handler succeeds for exec-category tools when the active
+    persona is 'neat' (verified policy). Non-blocking — any failure returns
+    the original result unchanged.
+    """
+    if root is None:
+        return result
+    try:
+        from .personas import PERSONAS, get_active_persona
+
+        active = get_active_persona(root)
+        persona = PERSONAS.get(active, PERSONAS["scruffy"])
+        if persona.get("execution_policy") != "verified":
+            return result
+    except Exception:
+        return result
+
+    try:
+        from research_os.tools.actions.audit._base import AuditFinding
+
+        finding = AuditFinding.new(
+            audit_name="persona_verified",
+            severity="info",
+            dimension="execution",
+            suggested_fix=(
+                f"Verify that '{resolved}' produced expected outputs "
+                "and all claims are evidence-backed (neat/verified persona)."
+            ),
+        )
+        # Append to workspace/logs/.audit_findings.jsonl
+        logs_dir = root / "workspace" / "logs"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        jsonl_path = logs_dir / ".audit_findings.jsonl"
+        with jsonl_path.open("a", encoding="utf-8") as fh:
+            import json as _json
+            fh.write(_json.dumps(finding.to_dict(), sort_keys=True) + "\n")
+    except Exception as exc:
+        logger.debug("persona verified-tag failed: %s", exc)
+
+    return result
 
 
 def _resolve_tool_name(name: str) -> str:
@@ -170,6 +348,18 @@ def _handle_tool_call(name: str, arguments: dict, root: Path) -> list[TextConten
     except RoError as ro:
         return _text(_error(**ro.to_envelope_kwargs()))
 
+    # ── §13.1 Persona execution-policy enforcement ───────────────────────────
+    # Applied AFTER autopilot gates, BEFORE the handler runs.
+    # Only fires for exec-category tools; all other tools are unaffected.
+    # Fail-open: any error reading the persona behaves exactly like today
+    # (scruffy/direct — the handler runs as normal).
+    try:
+        _persona_policy_result = _enforce_persona_policy(resolved, root)
+        if _persona_policy_result is not None:
+            return _persona_policy_result
+    except Exception:
+        pass  # degrade open — never block a tool due to a persona read error
+
     # Defer import to avoid circular at module load time.
     from .registry import _HANDLERS
 
@@ -202,6 +392,10 @@ def _handle_tool_call(name: str, arguments: dict, root: Path) -> list[TextConten
         )
     try:
         result = _normalize_envelope(handler(resolved, arguments, root), resolved)
+        # §13.1 neat/verified persona: tag exec runs for the audit gate.
+        # Non-blocking — failure returns result unchanged.
+        if _is_exec_tool(resolved):
+            result = _tag_verified_run(resolved, root, result)
         # Mid-prompt drift backstop (4.0.4): if the AI just wrote step content
         # without routing/opening a step, append a non-blocking COURSE-CORRECT
         # hint to the SAME envelope it's reading, so it self-corrects this turn.

@@ -1,7 +1,7 @@
 # Tool Catalog
 
 **Live MCP tools** across three namespaces (`sys_*` / `tool_*` / `mem_*`).
-Exactly 45 tools are active. Legacy names dispatch via `_ALIASES` +
+Exactly 46 tools are active. Legacy names dispatch via `_ALIASES` +
 `_ALIAS_PARAM_INJECTION`; fully removed names return a friendly
 `_REMOVED_TOOLS` error. See `CHANGELOG.md` for the old → new table.
 
@@ -48,6 +48,7 @@ call `tool_route` and the router picks one.
 | `sys_file_write` | Write a workspace file with immutable-input safeguards. |
 | `sys_notify` | Notify the researcher and log the message. |
 | `sys_protocol_get` | Load one protocol as ref, summary, step, lean, dryrun, or full. |
+| `sys_mode` | Query or switch the active persona (scruffy/neat/critique/delegation). |
 | `sys_state_get` | Read workspace state or manage analysis paths. |
 | `sys_workspace_tree` | Return a structured tree of workspace files. |
 

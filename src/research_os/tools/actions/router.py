@@ -1130,10 +1130,39 @@ def sys_boot(root: Path, *, lean: bool = False) -> dict[str, Any]:
             # pipeline.
             "roadmap": _roadmap,
             "advice": _boot_advice(pause, active_plan, state, cfg, _daemon_notes, _roadmap),
+            # §13.1 Active persona — directive text returned as MCP context.
+            # Research-OS never sends this to any model; the client's AI reads it.
+            "active_persona": _boot_active_persona(root),
         }
     except Exception as e:
         logger.exception("sys_boot failed")
         return {"status": "error", "message": str(e)}
+
+
+def _boot_active_persona(root: Path) -> dict:
+    """Return the active persona name + directive for the sys_boot payload.
+
+    Text only — never sent to any model by Research-OS.
+    Fail-open: returns scruffy defaults on any error.
+    """
+    try:
+        from research_os.server.personas import PERSONAS, get_active_persona
+
+        active = get_active_persona(root)
+        persona = PERSONAS.get(active, PERSONAS["scruffy"])
+        return {
+            "name": active,
+            "directive": persona["directive"],
+            "tool_visibility": persona["tool_visibility"],
+            "execution_policy": persona["execution_policy"],
+        }
+    except Exception:
+        return {
+            "name": "scruffy",
+            "directive": "exploratory: creative, unconventional, tolerate ambiguity",
+            "tool_visibility": "all",
+            "execution_policy": "direct",
+        }
 
 
 def _boot_new_context(root: Path) -> dict:

@@ -38,6 +38,10 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+# ── Exec-category names (used by persona read_only filtering) ────────────────
+# These must match the "category" field values used in TOOL_DEFINITIONS.
+_EXEC_CATEGORIES: frozenset[str] = frozenset({"execution", "exec"})
+
 
 # ── CORE bootstrap surface (15 CORE tools) ───────────────────────────
 # The minimum set the AI needs to (a) orient, (b) route, (c) DISCOVER and
@@ -104,6 +108,31 @@ def _resolve_workspace_mode(root: Path) -> str | None:
     return None
 
 
+def _apply_persona_visibility(
+    names: list[str],
+    tool_definitions: dict[str, dict],
+    root: Path,
+) -> list[str]:
+    """Filter ``names`` by the active persona's ``tool_visibility``.
+
+    "all" → no change; "read_only" → remove exec-category tools.
+    Fail-open: returns ``names`` unchanged on any error.
+    """
+    try:
+        from research_os.server.personas import get_active_persona, get_persona
+
+        active = get_active_persona(root)
+        persona = get_persona(active)
+        if persona.get("tool_visibility") == "read_only":
+            return [
+                n for n in names
+                if tool_definitions.get(n, {}).get("category") not in _EXEC_CATEGORIES
+            ]
+    except Exception:
+        pass  # degrade open — never hide tools due to a persona read error
+    return names
+
+
 def select_visible_tools(
     tool_definitions: dict[str, dict],
     root: Path,
@@ -114,11 +143,16 @@ def select_visible_tools(
     the handshake list stays stable. Degrades open: any failure resolving a
     narrowed surface falls back to the full catalog rather than hiding a
     tool the AI might need.
+
+    Persona tool_visibility is applied AFTER surface filtering so the two
+    policies compose: "read_only" removes exec-category tools from whichever
+    surface was chosen; "all" leaves the surface unchanged.
     """
     surface = resolve_surface_mode()
 
     if surface == "full":
-        return list(tool_definitions.keys())
+        names = list(tool_definitions.keys())
+        return _apply_persona_visibility(names, tool_definitions, root)
 
     if surface == "mode":
         try:
@@ -139,14 +173,16 @@ def select_visible_tools(
             allowed |= _CORE_SURFACE
             names = [n for n in tool_definitions if n in allowed]
             if names:
-                return names
+                return _apply_persona_visibility(names, tool_definitions, root)
         except Exception:
             pass
         # Degrade open.
-        return list(tool_definitions.keys())
+        names = list(tool_definitions.keys())
+        return _apply_persona_visibility(names, tool_definitions, root)
 
     # surface == "core" (default).
     names = [n for n in tool_definitions if n in _CORE_SURFACE]
     # Guard: if the catalog somehow lacks every core tool (mis-load),
     # degrade open rather than advertising an empty surface.
-    return names or list(tool_definitions.keys())
+    names = names or list(tool_definitions.keys())
+    return _apply_persona_visibility(names, tool_definitions, root)
