@@ -1,7 +1,7 @@
 id: reagent_lot_tracking
 name: Reagent + Lot Tracking — every chemical, antibody, primer, vector, cell line
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [wet_lab, biology]
   audience: [auditor]
@@ -27,108 +27,116 @@ trigger: |
   "log a vector", "log a cell line", "track a chemical".
 
 prerequisites:
-  - A wet-lab step folder exists (workspace/<NN>_<slug>/).
+- A wet-lab step folder exists (workspace/<NN>_<slug>/).
 
 editorial_voice:
   mode: prescription
   rules:
-    - "Lot numbers are mandatory for antibodies (formulation
-       drifts), commercial enzyme prep (activity drifts), and cell
-       lines (passage drifts). For inert chemicals, supplier +
-       catalog suffices."
-    - "An antibody without an RRID is a publication penalty. RRIDs
-       (Research Resource Identifiers from scicrunch.org) are free
-       and improve reproducibility scores. They go in the reagent
-       entry."
-    - "A 'TODO' field is a fail-the-audit field. The
-       reproducibility audit (wet_lab/audit/wet_lab_reproducibility_audit)
-       scans for un-filled TODOs and blocks pre-submission until they
-       resolve."
+  - "Lot numbers are mandatory for antibodies (formulation drifts), commercial enzyme prep (activity drifts), and cell lines (passage drifts). For inert chemicals, supplier + catalog suffices."
+  - "An antibody without an RRID is a publication penalty. RRIDs (Research Resource Identifiers from scicrunch.org) are free and improve reproducibility scores. They go in the reagent entry."
+  - "A 'TODO' field is a fail-the-audit field. The reproducibility audit (wet_lab/audit/wet_lab_reproducibility_audit) scans for un-filled TODOs and blocks pre-submission until they resolve."
 
 quality_bar:
   required_fields_per_reagent:
-    - supplier
-    - catalog_number
-    - lot_number
-    - coa_url
-    - expiry_date
-    - received_date
-    - storage_conditions
+  - supplier
+  - catalog_number
+  - lot_number
+  - coa_url
+  - expiry_date
+  - received_date
+  - storage_conditions
   required_for_antibody:
-    - clone
-    - host_species
-    - rrid
+  - clone
+  - host_species
+  - rrid
   required_for_cell_line:
-    - passage_number_used
-    - mycoplasma_test_date
-    - authentication_method
+  - passage_number_used
+  - mycoplasma_test_date
+  - authentication_method
 
 steps:
-  - id: enumerate_reagents
-    name: Enumerate every reagent the assay uses
-    description: |
-      Walk the experimental protocol step-by-step. Every reagent
-      that touches the sample gets an entry — including buffers,
-      blocking agents, secondary antibodies, and the solvent the
-      compound was dissolved in.
-      Output: a list in workspace/<step>/reagents_list.md.
+- id: enumerate_reagents
+  name: Enumerate every reagent the assay uses
+  description: |
+    Walk the experimental protocol step-by-step. Every reagent
+    that touches the sample gets an entry — including buffers,
+    blocking agents, secondary antibodies, and the solvent the
+    compound was dissolved in.
+    Output: a list in workspace/<step>/reagents_list.md.
 
-  - id: query_supplier_portals
-    name: Query supplier portals + stub each entry
-    description: |
-      Call tool_wet_lab_reagent_query per reagent. It writes a stub
-      entry (workspace/reagents/<supplier>_<cat>.yaml) with portal
-      link + TODO placeholders.
-      Visit each portal, download the CoA, fill in the placeholders.
-      For RRID lookup: https://scicrunch.org/resources
+- id: query_supplier_portals
+  name: Query supplier portals + stub each entry
+  description: |
+    Call tool_wet_lab_reagent_query per reagent. It writes a stub
+    entry (workspace/reagents/<supplier>_<cat>.yaml) with portal
+    link + TODO placeholders.
+    Visit each portal, download the CoA, fill in the placeholders.
+    For RRID lookup: https://scicrunch.org/resources
 
-  - id: classify_per_reagent_class
-    name: Add class-specific fields
-    description: |
-      For antibodies: clone + host_species + RRID mandatory.
-      For cell lines: passage_number_used + mycoplasma_test_date +
-      authentication_method (STR profiling preferred).
-      For primers / oligos: full sequence (5'→3') + supplier
-      modification (HPLC / PAGE / desalted).
-      For vectors / plasmids: Addgene #, deposited-by, key features.
+- id: classify_per_reagent_class
+  name: Add class-specific fields
+  description: |
+    For antibodies: clone + host_species + RRID mandatory.
+    For cell lines: passage_number_used + mycoplasma_test_date +
+    authentication_method (STR profiling preferred).
+    For primers / oligos: full sequence (5'→3') + supplier
+    modification (HPLC / PAGE / desalted).
+    For vectors / plasmids: Addgene #, deposited-by, key features.
 
-  - id: link_to_step
-    name: Link reagents to the step's reagents.yaml
-    description: |
-      Build workspace/<step>/reagents.yaml as a list of references
-      to the per-reagent YAMLs:
-        reagents:
-          - !include ../reagents/sigma_aldrich_F1804.yaml
-          - !include ../reagents/abcam_ab12345.yaml
-      (the loader resolves these). This keeps the per-reagent
-      detail centralised and re-usable across steps.
+- id: link_to_step
+  name: Link reagents to the step's reagents.yaml
+  description: |
+    Build workspace/<step>/reagents.yaml as a list of references
+    to the per-reagent YAMLs:
+      reagents:
+        - !include ../reagents/sigma_aldrich_F1804.yaml
+        - !include ../reagents/abcam_ab12345.yaml
+    (the loader resolves these). This keeps the per-reagent
+    detail centralised and re-usable across steps.
 
-  - id: handle_new_lot
-    name: When a lot changes mid-project
-    description: |
-      A new lot of an existing reagent is a NEW entry, not an edit.
-      Old entry is retained (the assays that used it stay
-      reproducible). The reagent_lot_changelog.md in
-      workspace/reagents/ tracks the timing of lot transitions.
-      Flag a side-by-side validation run when the reagent is an
-      antibody / enzyme.
+- id: handle_new_lot
+  name: When a lot changes mid-project
+  description: |
+    A new lot of an existing reagent is a NEW entry, not an edit.
+    Old entry is retained (the assays that used it stay
+    reproducible). The reagent_lot_changelog.md in
+    workspace/reagents/ tracks the timing of lot transitions.
+    Flag a side-by-side validation run when the reagent is an
+    antibody / enzyme.
 
-  - id: audit
-    name: Pre-publication audit
-    description: |
-      Run wet_lab/audit/wet_lab_reproducibility_audit. It scans for:
-        - TODO placeholders
-        - missing class-specific fields
-        - assays using reagents whose CoA is missing
-        - antibodies without RRIDs
-      Fix every blocker before submission.
+- id: audit
+  name: Pre-publication audit
+  description: |
+    Run wet_lab/audit/wet_lab_reproducibility_audit. It scans for:
+      - TODO placeholders
+      - missing class-specific fields
+      - assays using reagents whose CoA is missing
+      - antibodies without RRIDs
+    Fix every blocker before submission.
 
 expected_outputs:
-  - workspace/reagents/<supplier>_<cat>.yaml
-  - workspace/reagents/reagent_lot_changelog.md
-  - workspace/<step>/reagents_list.md
-  - workspace/<step>/reagents.yaml
+- workspace/reagents/<supplier>_<cat>.yaml
+- workspace/reagents/reagent_lot_changelog.md
+- workspace/<step>/reagents_list.md
+- workspace/<step>/reagents.yaml
 
 next_protocol: wet_lab/audit/wet_lab_reproducibility_audit
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: memory
+sub_intent: register
+triggers:
+- reagent tracking
+- lot number
+- antibody catalog
+- primer order
+- coa
+- certificate of analysis
+summary: Every reagent has lot + supplier + COA + expiry tracked in workspace/<step>/reagents.yaml.
+shortcut_tool: tool_wet_lab_reagent_query
+token_estimate: 1500
+decomposition:
+- tool: tool_wet_lab_reagent_query
+  purpose: Stub a reagent entry + portal link.
+- protocol: wet_lab/protocol/reagent_lot_tracking
+  purpose: Walk the per-reagent tracking loop.

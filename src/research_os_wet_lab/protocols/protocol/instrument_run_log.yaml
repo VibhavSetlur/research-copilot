@@ -1,7 +1,7 @@
 id: instrument_run_log
 name: Instrument Run Log
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [wet_lab, biology, humanities]
   audience: [auditor]
@@ -36,76 +36,61 @@ trigger: |
   session log", "Western imaged".
 
 prerequisites:
-  - A wet-lab step folder exists (workspace/<NN>_<slug>/).
-  - Reagents used in the run are already tracked via reagent_lot_tracking
-    (the run log references them by ID, doesn't re-declare them).
-  - Raw output file has been saved to a known path (local or networked
-    instrument server) and is not being actively written to.
+- A wet-lab step folder exists (workspace/<NN>_<slug>/).
+- Reagents used in the run are already tracked via reagent_lot_tracking (the run log references them by ID, doesn't re-declare them).
+- Raw output file has been saved to a known path (local or networked instrument server) and is not being actively written to.
 
 editorial_voice:
   mode: prescription
   rules:
-    - "The run log is written within 24 hours of the run, before the
-       operator's memory of 'I tweaked the gain on FL2 because the
-       positives were off-scale' decays into 'standard settings'.
-       After 72 hours, assume the soft context is gone."
-    - "A raw file without a SHA-256 checksum is a file that will be
-       silently corrupted by an instrument-server backup, an SMB
-       copy, or a USB transfer and nobody will know. Checksums are
-       mandatory at registration and re-verified before analysis."
-    - "Instrument calibration / QC state at run time is part of the
-       run, not a separate concern. Last-calibration-date + last-QC-pass
-       go in the log. A run on an out-of-cal instrument is salvageable
-       only if you know it was out of cal."
-    - "Parameter drift between runs in the same experiment is the
-       most common silent failure. The log captures the FULL parameter
-       set every time, even when 'nothing changed' — comparing two
-       full parameter blocks finds drift; comparing 'same as last time'
-       to 'same as last time' finds nothing."
+  - "The run log is written within 24 hours of the run, before the operator's memory of 'I tweaked the gain on FL2 because the positives were off-scale' decays into 'standard settings'. After 72 hours, assume the soft context is gone."
+  - "A raw file without a SHA-256 checksum is a file that will be silently corrupted by an instrument-server backup, an SMB copy, or a USB transfer and nobody will know. Checksums are mandatory at registration and re-verified before analysis."
+  - "Instrument calibration / QC state at run time is part of the run, not a separate concern. Last-calibration-date + last-QC-pass go in the log. A run on an out-of-cal instrument is salvageable only if you know it was out of cal."
+  - "Parameter drift between runs in the same experiment is the most common silent failure. The log captures the FULL parameter set every time, even when 'nothing changed' — comparing two full parameter blocks finds drift; comparing 'same as last time' to 'same as last time' finds nothing."
 
 quality_bar:
   required_fields_per_run:
-    - instrument_id
-    - instrument_make_model
-    - last_calibration_date
-    - last_qc_pass_date
-    - operator_initials
-    - run_start_timestamp
-    - run_end_timestamp
-    - raw_file_path
-    - raw_file_sha256
-    - raw_file_size_bytes
-    - sample_ids
-    - parameter_block
+  - instrument_id
+  - instrument_make_model
+  - last_calibration_date
+  - last_qc_pass_date
+  - operator_initials
+  - run_start_timestamp
+  - run_end_timestamp
+  - raw_file_path
+  - raw_file_sha256
+  - raw_file_size_bytes
+  - sample_ids
+  - parameter_block
   required_for_cytometry:
-    - cytometer_setup_name
-    - pmt_voltages_per_channel
-    - compensation_matrix_ref
-    - threshold_per_channel
+  - cytometer_setup_name
+  - pmt_voltages_per_channel
+  - compensation_matrix_ref
+  - threshold_per_channel
   required_for_qpcr:
-    - plate_map_version
-    - cycle_program
-    - reference_dye
-    - baseline_method
+  - plate_map_version
+  - cycle_program
+  - reference_dye
+  - baseline_method
   required_for_sequencing:
-    - run_id_from_instrument
-    - flowcell_id
-    - kit_lot
-    - read_length
-    - cluster_density_or_pore_occupancy
+  - run_id_from_instrument
+  - flowcell_id
+  - kit_lot
+  - read_length
+  - cluster_density_or_pore_occupancy
   required_for_mass_spec:
-    - method_file_name
-    - method_file_sha256
-    - column_id
-    - mobile_phase_lot
-    - lock_mass_or_calibrant
+  - method_file_name
+  - method_file_sha256
+  - column_id
+  - mobile_phase_lot
+  - lock_mass_or_calibrant
   required_for_microscopy:
-    - objective
-    - immersion_medium
-    - exposure_per_channel
-    - laser_power_per_channel
-    - z_step_um
-    - pixel_size_um
+  - objective
+  - immersion_medium
+  - exposure_per_channel
+  - laser_power_per_channel
+  - z_step_um
+  - pixel_size_um
   threshold_rationale: |
     Each block above maps to the minimum context needed to reproduce
     the run on the same instrument 6 months later, OR to port the run
@@ -114,134 +99,134 @@ quality_bar:
     and not publishable — both blockers, not opinions.
 
 steps:
-  - id: capture_run_context
-    name: Capture the run context while it is still fresh
-    description: |
-      Open the run log immediately after the instrument finishes,
-      not the next morning. Call tool_wet_lab_run_log_init with the
-      instrument family (cytometry / qpcr / sequencing / mass_spec /
-      microscopy / plate_reader) — it stubs the family-appropriate
-      field set + capture timestamp at
-      workspace/<step>/runs/<family>_<label>.yaml.
-      If the operator is not the person logging (common with shared
-      core facilities), capture both: operator_initials + logged_by.
+- id: capture_run_context
+  name: Capture the run context while it is still fresh
+  description: |
+    Open the run log immediately after the instrument finishes,
+    not the next morning. Call tool_wet_lab_run_log_init with the
+    instrument family (cytometry / qpcr / sequencing / mass_spec /
+    microscopy / plate_reader) — it stubs the family-appropriate
+    field set + capture timestamp at
+    workspace/<step>/runs/<family>_<label>.yaml.
+    If the operator is not the person logging (common with shared
+    core facilities), capture both: operator_initials + logged_by.
 
-  - id: pull_instrument_state
-    name: Pull instrument state at run time
-    description: |
-      Three pieces of state are easy to lose:
-        - last_calibration_date — from the instrument's service log,
-          the facility's calibration register, or the instrument PC
-          ("Help → About → Last Calibration" on most vendor software).
-        - last_qc_pass_date — daily QC bead / spike / lock-mass run.
-          If today's QC was skipped, log "skipped" with the reason,
-          not blank. Blank reads as "passed" to the auditor.
-        - cytometer_setup_name / method_file_name / acquisition
-          template — the exact protocol the instrument was running.
-          For mass spec + sequencing, hash the method file (sha256)
-          and store the path; the file itself often lives only on
-          the instrument PC.
-      Use sys_path to resolve where the facility stores these
-      (workspace/instruments/<id>.yaml has the cached path for each
-      instrument the project uses).
+- id: pull_instrument_state
+  name: Pull instrument state at run time
+  description: |
+    Three pieces of state are easy to lose:
+      - last_calibration_date — from the instrument's service log,
+        the facility's calibration register, or the instrument PC
+        ("Help → About → Last Calibration" on most vendor software).
+      - last_qc_pass_date — daily QC bead / spike / lock-mass run.
+        If today's QC was skipped, log "skipped" with the reason,
+        not blank. Blank reads as "passed" to the auditor.
+      - cytometer_setup_name / method_file_name / acquisition
+        template — the exact protocol the instrument was running.
+        For mass spec + sequencing, hash the method file (sha256)
+        and store the path; the file itself often lives only on
+        the instrument PC.
+    Use sys_path to resolve where the facility stores these
+    (workspace/instruments/<id>.yaml has the cached path for each
+    instrument the project uses).
 
-  - id: register_raw_files
-    name: Register raw output files + checksum them
-    description: |
-      For each raw file the run produced, capture:
-        raw_file_path: <absolute path on instrument server or local>
-        raw_file_sha256: <SHA-256 of the file at this moment>
-        raw_file_size_bytes: <stat size>
-        raw_file_format: <fcs | raw | czi | nd2 | fastq.gz | abi | ...>
-      Use tool_wet_lab_checksum_raw (file_path + run_log_path) — it
-      streams the file, computes the SHA-256, and appends the raw_files
-      entry to the run log. Never trust an operator-typed checksum.
-      For multi-file outputs (sequencing run dir, microscopy tile sets,
-      multi-position scans), checksum each file AND the directory
-      manifest. Store the manifest alongside the run log.
-      If the file is still being written (large sequencing runs),
-      register a "pending" entry and call this step again at run end.
+- id: register_raw_files
+  name: Register raw output files + checksum them
+  description: |
+    For each raw file the run produced, capture:
+      raw_file_path: <absolute path on instrument server or local>
+      raw_file_sha256: <SHA-256 of the file at this moment>
+      raw_file_size_bytes: <stat size>
+      raw_file_format: <fcs | raw | czi | nd2 | fastq.gz | abi | ...>
+    Use tool_wet_lab_checksum_raw (file_path + run_log_path) — it
+    streams the file, computes the SHA-256, and appends the raw_files
+    entry to the run log. Never trust an operator-typed checksum.
+    For multi-file outputs (sequencing run dir, microscopy tile sets,
+    multi-position scans), checksum each file AND the directory
+    manifest. Store the manifest alongside the run log.
+    If the file is still being written (large sequencing runs),
+    register a "pending" entry and call this step again at run end.
 
-  - id: capture_parameter_block
-    name: Capture the full parameter block, not a diff
-    description: |
-      The parameter_block is a free-form mapping that holds every
-      knob the instrument exposed for this run. Capture all of it,
-      not just "what changed from last time" — drift detection
-      requires full snapshots. Examples per family:
-        cytometry:    pmt_voltages, threshold, fsc/ssc area-scaling,
-                      compensation_matrix_ref, sample_flow_rate,
-                      events_to_acquire, stopping_gate
-        qpcr:         cycle_program (per-step temp + duration + ramp),
-                      reference_dye, baseline_method, threshold_method,
-                      plate_map_version
-        sequencing:   read_length (R1/R2/index), flowcell_id, kit_lot,
-                      loading_concentration, phix_spike_pct,
-                      cluster_density_or_pore_occupancy
-        mass_spec:    method_file_sha256, scan_range_mz, resolution,
-                      collision_energy, lock_mass, column_id,
-                      mobile_phase_lot, gradient_program
-        microscopy:   objective, NA, immersion, exposure_per_channel,
-                      laser_power_per_channel, pinhole_au, z_step_um,
-                      pixel_size_um, tile_overlap_pct
-      For cytometry compensation matrices and mass-spec method files,
-      store the artifact alongside the log (workspace/<step>/runs/
-      attachments/) and reference by sha256.
+- id: capture_parameter_block
+  name: Capture the full parameter block, not a diff
+  description: |
+    The parameter_block is a free-form mapping that holds every
+    knob the instrument exposed for this run. Capture all of it,
+    not just "what changed from last time" — drift detection
+    requires full snapshots. Examples per family:
+      cytometry:    pmt_voltages, threshold, fsc/ssc area-scaling,
+                    compensation_matrix_ref, sample_flow_rate,
+                    events_to_acquire, stopping_gate
+      qpcr:         cycle_program (per-step temp + duration + ramp),
+                    reference_dye, baseline_method, threshold_method,
+                    plate_map_version
+      sequencing:   read_length (R1/R2/index), flowcell_id, kit_lot,
+                    loading_concentration, phix_spike_pct,
+                    cluster_density_or_pore_occupancy
+      mass_spec:    method_file_sha256, scan_range_mz, resolution,
+                    collision_energy, lock_mass, column_id,
+                    mobile_phase_lot, gradient_program
+      microscopy:   objective, NA, immersion, exposure_per_channel,
+                    laser_power_per_channel, pinhole_au, z_step_um,
+                    pixel_size_um, tile_overlap_pct
+    For cytometry compensation matrices and mass-spec method files,
+    store the artifact alongside the log (workspace/<step>/runs/
+    attachments/) and reference by sha256.
 
-  - id: link_samples_and_plate_map
-    name: Link sample IDs and the plate map version
-    description: |
-      Every run touches samples; every sample has an ID in the
-      project's sample registry (see wet_lab/protocol/sample_registry).
-      List sample_ids as the registry IDs, not as well coordinates —
-      the well coordinate belongs in the plate map, not the run log.
-      If the run used a plate, capture plate_map_version as a reference
-      to workspace/<step>/plate_maps/<version>.yaml (which holds the
-      well → sample_id mapping). Plate maps are versioned because they
-      get edited: a v1 with one mistake produces a v2; both are kept,
-      and the run log points at the one that was actually used.
+- id: link_samples_and_plate_map
+  name: Link sample IDs and the plate map version
+  description: |
+    Every run touches samples; every sample has an ID in the
+    project's sample registry (see wet_lab/protocol/sample_registry).
+    List sample_ids as the registry IDs, not as well coordinates —
+    the well coordinate belongs in the plate map, not the run log.
+    If the run used a plate, capture plate_map_version as a reference
+    to workspace/<step>/plate_maps/<version>.yaml (which holds the
+    well → sample_id mapping). Plate maps are versioned because they
+    get edited: a v1 with one mistake produces a v2; both are kept,
+    and the run log points at the one that was actually used.
 
-  - id: post_run_qc_and_flags
-    name: Post-run QC checks + operator flags
-    description: |
-      Run the family-appropriate QC checks and write the results into a
-      qc_summary block + a pass/warn/fail flag:
-        cytometry  — CV on beads, drop count, time-vs-fluorescence drift
-        qpcr       — NTC contamination, standard curve R^2, melt-curve peaks
-        sequencing — Q30, cluster density / pore occupancy, index balance
-        mass_spec  — TIC stability, lock-mass deviation, peak-shape FWHM
-        microscopy — focus drift, illumination uniformity, channel
-                     bleed-through (DAPI -> FITC)
-      Operator flags (free-text "I noticed the beads were sparse"
-      / "had to re-prime the sheath mid-run" / "third well of column 6
-      bubbled") go into operator_notes — verbatim, not paraphrased.
-      mem_log the run completion with the qc flag so the project
-      timeline shows runs in chronological order.
+- id: post_run_qc_and_flags
+  name: Post-run QC checks + operator flags
+  description: |
+    Run the family-appropriate QC checks and write the results into a
+    qc_summary block + a pass/warn/fail flag:
+      cytometry  — CV on beads, drop count, time-vs-fluorescence drift
+      qpcr       — NTC contamination, standard curve R^2, melt-curve peaks
+      sequencing — Q30, cluster density / pore occupancy, index balance
+      mass_spec  — TIC stability, lock-mass deviation, peak-shape FWHM
+      microscopy — focus drift, illumination uniformity, channel
+                   bleed-through (DAPI -> FITC)
+    Operator flags (free-text "I noticed the beads were sparse"
+    / "had to re-prime the sheath mid-run" / "third well of column 6
+    bubbled") go into operator_notes — verbatim, not paraphrased.
+    mem_log the run completion with the qc flag so the project
+    timeline shows runs in chronological order.
 
-  - id: link_to_analysis
-    name: Link the run to its downstream analysis steps
-    description: |
-      A run log is dead-end-ed until something analyzes it. Update
-      workspace/<step>/runs/index.yaml to list:
-        - run_id: <instrument>_<timestamp>
-          raw_file: <path>
-          consumed_by:
-            - analysis/<NN>_<slug>/   (the analysis step that uses it)
-      When an analysis step starts, it back-references the run_id —
-      this makes the lineage queryable in both directions ("which
-      analyses used run X" and "which runs fed analysis Y"). The
-      reproducibility audit (wet_lab/audit/wet_lab_reproducibility_audit)
-      uses these links to flag orphan raw files and analyses with
-      undeclared inputs.
+- id: link_to_analysis
+  name: Link the run to its downstream analysis steps
+  description: |
+    A run log is dead-end-ed until something analyzes it. Update
+    workspace/<step>/runs/index.yaml to list:
+      - run_id: <instrument>_<timestamp>
+        raw_file: <path>
+        consumed_by:
+          - analysis/<NN>_<slug>/   (the analysis step that uses it)
+    When an analysis step starts, it back-references the run_id —
+    this makes the lineage queryable in both directions ("which
+    analyses used run X" and "which runs fed analysis Y"). The
+    reproducibility audit (wet_lab/audit/wet_lab_reproducibility_audit)
+    uses these links to flag orphan raw files and analyses with
+    undeclared inputs.
 
 expected_outputs:
-  - workspace/<step>/runs/<instrument>_<timestamp>.yaml
-  - workspace/<step>/runs/attachments/<method_or_compensation_file>
-  - workspace/<step>/runs/index.yaml
-  - workspace/<step>/plate_maps/<version>.yaml  (when applicable)
-  - workspace/instruments/<instrument_id>.yaml  (created on first use)
+- workspace/<step>/runs/<instrument>_<timestamp>.yaml
+- workspace/<step>/runs/attachments/<method_or_compensation_file>
+- workspace/<step>/runs/index.yaml
+- workspace/<step>/plate_maps/<version>.yaml  (when applicable)
+- workspace/instruments/<instrument_id>.yaml  (created on first use)
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: |
   If the raw file is missing or the checksum cannot be computed
@@ -255,3 +240,17 @@ on_failure: |
   in operator_notes ("PMT voltages not recorded by operator; default
   setup <name> assumed based on facility log") rather than guessing.
   An honest gap is auditable; a fabricated value is not.
+intent_class: memory
+sub_intent: register
+triggers:
+- instrument run
+- run log
+- qpcr run
+- facs run
+- sequencer run
+- instrument session
+summary: 'Per-run log: instrument ID, calibration date, parameters, raw output path, operator. Flow / qPCR / sequencing / mass spec / microscopy.'
+token_estimate: 1300
+decomposition:
+- protocol: wet_lab/protocol/instrument_run_log
+  purpose: Capture a single instrument-session record.

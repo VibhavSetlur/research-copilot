@@ -1,7 +1,7 @@
 id: fault_tree_analysis
 name: Fault Tree Analysis (top-down failure)
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering, qualitative]
   audience: [auditor]
@@ -48,156 +48,154 @@ trigger: |
   combinations cause X", "probability of top event".
 
 prerequisites:
-  - The top event is defined as a single, observable, undesired
-    state — not a vague worry. "Loss of thrust on takeoff" is a top
-    event; "the plane is unsafe" is not.
-  - A system-level block diagram or functional decomposition exists
-    so the analyst can trace failure propagation across subsystems.
-  - "For quantitative FTA, basic-event probabilities are sourced from
-    field data, vendor MTBF sheets, or a documented human-error
-    model (THERP / SPAR-H). Made-up probabilities produce
-    made-up top-event probabilities."
-  - "If an FMEA on the same system exists, link to it: FTA basic
-    events and FMEA failure modes should be reconcilable."
+- The top event is defined as a single, observable, undesired state — not a vague worry. "Loss of thrust on takeoff" is a top event; "the plane is unsafe" is not.
+- A system-level block diagram or functional decomposition exists so the analyst can trace failure propagation across subsystems.
+- "For quantitative FTA, basic-event probabilities are sourced from field data, vendor MTBF sheets, or a documented human-error model (THERP / SPAR-H). Made-up probabilities produce made-up top-event probabilities."
+- "If an FMEA on the same system exists, link to it: FTA basic events and FMEA failure modes should be reconcilable."
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "One tree per top event. Multi-top trees are an anti-pattern
-       that hides which basic event drives which consequence."
-    - "Every basic event must have a number (probability or rate)
-       OR an explicit 'qualitative-only' tag. Mixing quantified
-       and unquantified leaves under the same gate produces
-       garbage top-event probabilities."
-    - "Minimal cut sets of size 1 are red flags. A single basic
-       event causing the top event means no defense in depth —
-       call it out before quantifying anything else."
-    - "Common-cause failures are the entire reason FTA exists.
-       If your tree has two redundant pumps as independent OR
-       branches and you did not check for shared power / shared
-       controller / shared maintenance crew, the tree is wrong."
-    - "FTA is dead the moment the system architecture changes
-       without a tree review. Wire FTA review into
-       design_iteration's on-revision checklist alongside FMEA."
+  - "One tree per top event. Multi-top trees are an anti-pattern that hides which basic event drives which consequence."
+  - "Every basic event must have a number (probability or rate) OR an explicit 'qualitative-only' tag. Mixing quantified and unquantified leaves under the same gate produces garbage top-event probabilities."
+  - "Minimal cut sets of size 1 are red flags. A single basic event causing the top event means no defense in depth — call it out before quantifying anything else."
+  - "Common-cause failures are the entire reason FTA exists. If your tree has two redundant pumps as independent OR branches and you did not check for shared power / shared controller / shared maintenance crew, the tree is wrong."
+  - "FTA is dead the moment the system architecture changes without a tree review. Wire FTA review into design_iteration's on-revision checklist alongside FMEA."
 
 steps:
-  - id: define_top_event
-    name: Define the top event precisely
-    description: |
-      Write the top event as a single sentence describing an
-      observable, undesired system state with a time / phase
-      qualifier. Bad: "system fails." Good: "infusion pump
-      delivers >150% of programmed dose during a single
-      infusion." The qualifier matters because the same
-      component failure can be tolerable in one phase
-      (ground idle) and catastrophic in another (takeoff
-      rotation).
+- id: define_top_event
+  name: Define the top event precisely
+  description: |
+    Write the top event as a single sentence describing an
+    observable, undesired system state with a time / phase
+    qualifier. Bad: "system fails." Good: "infusion pump
+    delivers >150% of programmed dose during a single
+    infusion." The qualifier matters because the same
+    component failure can be tolerable in one phase
+    (ground idle) and catastrophic in another (takeoff
+    rotation).
 
-      Log the top event in workspace/engineering/fta/<stem>/top_event.md
-      with: the consequence (loss of life / mission / function),
-      the operational phase, and the regulatory hazard class
-      if applicable (DAL-A through DAL-E for aerospace;
-      Class I / II / III for medical). Use mem_log to anchor
-      the decision.
+    Log the top event in workspace/engineering/fta/<stem>/top_event.md
+    with: the consequence (loss of life / mission / function),
+    the operational phase, and the regulatory hazard class
+    if applicable (DAL-A through DAL-E for aerospace;
+    Class I / II / III for medical). Use mem_log to anchor
+    the decision.
 
-  - id: enumerate_immediate_causes
-    name: Enumerate immediate causes under the top gate
-    description: |
-      Ask: "what set of events, taken together, is sufficient to
-      cause the top event?" The answer is the first layer of
-      child nodes. Choose AND vs OR deliberately:
-        - OR: any one child causes the parent (single-point
-          failures live here).
-        - AND: all children must occur simultaneously
-          (this is where defense-in-depth lives).
+- id: enumerate_immediate_causes
+  name: Enumerate immediate causes under the top gate
+  description: |
+    Ask: "what set of events, taken together, is sufficient to
+    cause the top event?" The answer is the first layer of
+    child nodes. Choose AND vs OR deliberately:
+      - OR: any one child causes the parent (single-point
+        failures live here).
+      - AND: all children must occur simultaneously
+        (this is where defense-in-depth lives).
 
-      Resist the temptation to skip layers. A direct
-      "top event → basic component" tree hides the
-      intermediate functional failures that are often
-      where the interesting mitigations live. Two to four
-      child nodes per gate is healthy; ten is a sign you
-      need an intermediate abstraction.
+    Resist the temptation to skip layers. A direct
+    "top event → basic component" tree hides the
+    intermediate functional failures that are often
+    where the interesting mitigations live. Two to four
+    child nodes per gate is healthy; ten is a sign you
+    need an intermediate abstraction.
 
-  - id: recurse_to_basic_events
-    name: Recurse downward to basic events
-    description: |
-      For each non-basic child, repeat enumerate_immediate_causes.
-      Stop recursing when a node is:
-        - a component with a known failure rate (capacitor short,
-          relay weld, sensor stuck-high)
-        - a human action with a quantifiable error probability
-        - an external event with a known frequency (lightning
-          strike, loss of off-site power)
-        - a software defect at the level where your verification
-          coverage statistics apply (don't decompose below the
-          unit test boundary)
+- id: recurse_to_basic_events
+  name: Recurse downward to basic events
+  description: |
+    For each non-basic child, repeat enumerate_immediate_causes.
+    Stop recursing when a node is:
+      - a component with a known failure rate (capacitor short,
+        relay weld, sensor stuck-high)
+      - a human action with a quantifiable error probability
+      - an external event with a known frequency (lightning
+        strike, loss of off-site power)
+      - a software defect at the level where your verification
+        coverage statistics apply (don't decompose below the
+        unit test boundary)
 
-      Use tool_search to pull MTBF data from
-      workspace/engineering/reliability_db/ if it exists, or from
-      vendor datasheets logged via sys_path. Tag every basic
-      event with its data source — a probability without a
-      source is uncheckable.
+    Use tool_search to pull MTBF data from
+    workspace/engineering/reliability_db/ if it exists, or from
+    vendor datasheets logged via sys_path. Tag every basic
+    event with its data source — a probability without a
+    source is uncheckable.
 
-  - id: identify_common_causes
-    name: Identify common-cause failures and dependencies
-    description: |
-      This is the step most teams skip and most accidents
-      exploit. Walk every gate where two or more branches are
-      treated as independent and ask: do they share a power
-      supply? a clock? a network? a maintenance procedure? a
-      software library? a calibration source? a physical
-      location (fire, flood, vibration)?
+- id: identify_common_causes
+  name: Identify common-cause failures and dependencies
+  description: |
+    This is the step most teams skip and most accidents
+    exploit. Walk every gate where two or more branches are
+    treated as independent and ask: do they share a power
+    supply? a clock? a network? a maintenance procedure? a
+    software library? a calibration source? a physical
+    location (fire, flood, vibration)?
 
-      For each shared resource, either (a) split the resource
-      out as its own basic event under a new gate, or (b)
-      explicitly document that the dependence has been analyzed
-      and judged negligible, with rationale. The beta-factor
-      method (β = 0.01 to 0.10 typical) is the standard way to
-      bound common-cause probability when you cannot fully
-      decompose it.
+    For each shared resource, either (a) split the resource
+    out as its own basic event under a new gate, or (b)
+    explicitly document that the dependence has been analyzed
+    and judged negligible, with rationale. The beta-factor
+    method (β = 0.01 to 0.10 typical) is the standard way to
+    bound common-cause probability when you cannot fully
+    decompose it.
 
-  - id: compute_cut_sets_and_probability
-    name: Compute minimal cut sets and top-event probability
-    description: |
-      tool_engineering_fault_tree_render(spec_path='inputs/engineering/fta/<stem>.yaml')
-      will: (1) enumerate minimal cut sets via the MOCUS
-      algorithm or equivalent, (2) compute the top-event
-      probability via inclusion-exclusion for small trees or
-      rare-event approximation (sum of cut-set probabilities)
-      for large ones, and (3) render the tree to
-      workspace/engineering/fta/<stem>/{tree.svg,cut_sets.csv,report.md}.
+- id: compute_cut_sets_and_probability
+  name: Compute minimal cut sets and top-event probability
+  description: |
+    tool_engineering_fault_tree_render(spec_path='inputs/engineering/fta/<stem>.yaml')
+    will: (1) enumerate minimal cut sets via the MOCUS
+    algorithm or equivalent, (2) compute the top-event
+    probability via inclusion-exclusion for small trees or
+    rare-event approximation (sum of cut-set probabilities)
+    for large ones, and (3) render the tree to
+    workspace/engineering/fta/<stem>/{tree.svg,cut_sets.csv,report.md}.
 
-      Sort cut sets by probability descending. The top 5-10
-      drive the risk and deserve named mitigation owners.
-      Cut sets of size 1 are single points of failure and
-      get flagged red regardless of probability.
+    Sort cut sets by probability descending. The top 5-10
+    drive the risk and deserve named mitigation owners.
+    Cut sets of size 1 are single points of failure and
+    get flagged red regardless of probability.
 
-  - id: mitigate_and_re_quantify
-    name: Mitigate dominant cut sets and re-quantify
-    description: |
-      For each dominant cut set (top 10 by contribution OR any
-      size-1 cut set OR any cut set crossing the project's
-      hazard-class probability budget): propose a mitigation
-      that either (a) adds a new AND branch (defense in depth),
-      (b) reduces a basic-event probability via component
-      upgrade or procedural change, or (c) breaks a common-cause
-      link.
+- id: mitigate_and_re_quantify
+  name: Mitigate dominant cut sets and re-quantify
+  description: |
+    For each dominant cut set (top 10 by contribution OR any
+    size-1 cut set OR any cut set crossing the project's
+    hazard-class probability budget): propose a mitigation
+    that either (a) adds a new AND branch (defense in depth),
+    (b) reduces a basic-event probability via component
+    upgrade or procedural change, or (c) breaks a common-cause
+    link.
 
-      Re-render the tree with mitigations applied. The FTA is
-      "closed" when the top-event probability meets the project
-      target (e.g., ≤1e-9/flight-hour for aerospace DAL-A;
-      ≤1e-6/procedure for medical Class III) OR when a
-      documented waiver explains why the residual risk is
-      ALARP and accepted by the safety review board.
+    Re-render the tree with mitigations applied. The FTA is
+    "closed" when the top-event probability meets the project
+    target (e.g., ≤1e-9/flight-hour for aerospace DAL-A;
+    ≤1e-6/procedure for medical Class III) OR when a
+    documented waiver explains why the residual risk is
+    ALARP and accepted by the safety review board.
 
 expected_outputs:
-  - workspace/engineering/fta/<stem>/top_event.md
-  - workspace/engineering/fta/<stem>/tree.svg
-  - workspace/engineering/fta/<stem>/cut_sets.csv
-  - workspace/engineering/fta/<stem>/report.md
-  - workspace/engineering/fta/<stem>/common_cause_analysis.md
-  - workspace/engineering/fta/<stem>/basic_event_sources.md
+- workspace/engineering/fta/<stem>/top_event.md
+- workspace/engineering/fta/<stem>/tree.svg
+- workspace/engineering/fta/<stem>/cut_sets.csv
+- workspace/engineering/fta/<stem>/report.md
+- workspace/engineering/fta/<stem>/common_cause_analysis.md
+- workspace/engineering/fta/<stem>/basic_event_sources.md
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: audit_wrap
+sub_intent: safety
+triggers:
+- fault tree
+- fault tree analysis
+- fta
+- top event
+- basic event
+summary: 'Top-down failure decomposition: top event → AND/OR gates → basic events. Safety-critical systems.'
+shortcut_tool: tool_engineering_fault_tree_render
+token_estimate: 1500
+decomposition:
+- tool: tool_engineering_fault_tree_render
+  purpose: Render the fault tree as Mermaid.
+- protocol: engineering/safety/fault_tree_analysis
+  purpose: Decompose top event into contributing events.

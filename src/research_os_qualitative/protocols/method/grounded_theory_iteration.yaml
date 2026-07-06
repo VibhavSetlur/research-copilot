@@ -1,7 +1,7 @@
 id: grounded_theory_iteration
 name: Grounded Theory Iteration — theoretical sampling + saturation
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [qualitative]
   audience: [auditor, maintainer]
@@ -42,39 +42,19 @@ trigger: |
   theory study", "have we saturated", "are we done collecting".
 
 prerequisites:
-  - workspace/transcripts/ has at least 3 segmented + coded transcripts
-    (open coding already run via coding_scheme_iteration round 1).
-  - workspace/codebooks/codebook_v1.yaml exists with inclusion / exclusion
-    criteria per code.
-  - workspace/memos/ exists (theoretical + sampling memos go here).
-  - Research question framed as a process or trajectory, not a prevalence
-    estimate. Grounded theory answers "how does X unfold", not "how
-    common is X".
+- workspace/transcripts/ has at least 3 segmented + coded transcripts (open coding already run via coding_scheme_iteration round 1).
+- workspace/codebooks/codebook_v1.yaml exists with inclusion / exclusion criteria per code.
+- workspace/memos/ exists (theoretical + sampling memos go here).
+- Research question framed as a process or trajectory, not a prevalence estimate. Grounded theory answers "how does X unfold", not "how common is X".
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Name the branch. Glaserian (emergence-first, codes earn their way
-       in), Straussian (axial coding with the paradigm model — conditions,
-       actions, consequences), or Charmazian (constructivist, researcher
-       reflexivity foregrounded). The three disagree on substantive points;
-       picking one and declaring it lets the reader audit your moves."
-    - "Theoretical sampling is NOT convenience sampling with a memo
-       attached. If you recruited the next participant because they were
-       available, say so and call it convenience sampling. Don't
-       launder the move."
-    - "Constant comparison runs continuously, not as a discrete step.
-       If your workflow has a 'coding phase' followed by a 'comparison
-       phase', you are doing thematic analysis, not grounded theory.
-       That is fine — but don't call it GT."
-    - "Saturation is empirical, not declarative. If you can't show the
-       new-codes-per-case curve flattening, you have not saturated.
-       You have run out of money, time, or patience. Those are
-       legitimate stopping reasons; saturation is not their alias."
-    - "A grounded theory has a CORE category and a story. If at the end
-       of the project you have 14 themes and no integrative narrative,
-       you have produced a coding scheme, not a theory. Selective coding
-       is where the theory crystallizes; do not skip it."
+  - "Name the branch. Glaserian (emergence-first, codes earn their way in), Straussian (axial coding with the paradigm model — conditions, actions, consequences), or Charmazian (constructivist, researcher reflexivity foregrounded). The three disagree on substantive points; picking one and declaring it lets the reader audit your moves."
+  - "Theoretical sampling is NOT convenience sampling with a memo attached. If you recruited the next participant because they were available, say so and call it convenience sampling. Don't launder the move."
+  - "Constant comparison runs continuously, not as a discrete step. If your workflow has a 'coding phase' followed by a 'comparison phase', you are doing thematic analysis, not grounded theory. That is fine — but don't call it GT."
+  - "Saturation is empirical, not declarative. If you can't show the new-codes-per-case curve flattening, you have not saturated. You have run out of money, time, or patience. Those are legitimate stopping reasons; saturation is not their alias."
+  - "A grounded theory has a CORE category and a story. If at the end of the project you have 14 themes and no integrative narrative, you have produced a coding scheme, not a theory. Selective coding is where the theory crystallizes; do not skip it."
 
 quality_bar:
   minimum_cases_before_saturation_claim: 8
@@ -85,121 +65,135 @@ quality_bar:
   core_category_required_for_selective_phase: true
 
 steps:
-  - id: situate_branch_and_question
-    name: Declare the GT branch and frame the research question
-    description: |
-      Open workspace/memos/00_design.md and write down:
-        - which branch (Glaserian / Straussian / Charmazian) and why
-        - the research question, phrased as a process ("how do X
-          experience Y over time") not a prevalence ("how many X have Y")
-        - the unit of analysis (person, incident, episode, interaction)
-        - the substantive area vs. the formal-theory ambition (are you
-          building a mid-range theory of THIS setting, or aiming at
-          a transferable formal theory?)
-      Call mem_log to record the branch decision so later steps and
-      reviewers can audit downstream moves against it.
+- id: situate_branch_and_question
+  name: Declare the GT branch and frame the research question
+  description: |
+    Open workspace/memos/00_design.md and write down:
+      - which branch (Glaserian / Straussian / Charmazian) and why
+      - the research question, phrased as a process ("how do X
+        experience Y over time") not a prevalence ("how many X have Y")
+      - the unit of analysis (person, incident, episode, interaction)
+      - the substantive area vs. the formal-theory ambition (are you
+        building a mid-range theory of THIS setting, or aiming at
+        a transferable formal theory?)
+    Call mem_log to record the branch decision so later steps and
+    reviewers can audit downstream moves against it.
 
-  - id: theoretical_sampling_memo
-    name: Write the sampling memo for the NEXT case BEFORE recruiting
-    description: |
-      For each new case after the first 2-3, write a sampling memo
-      (workspace/memos/sampling_<case_id>.md) that answers:
-        - what does the current theory predict for this case?
-        - what categories or relationships does this case test?
-        - what would FALSIFY or EXTEND the developing theory?
-        - what sampling logic does this case follow — maximum variation,
-          negative case, theoretical extension, deviant case?
-      Memo BEFORE recruitment, not after. A post-hoc sampling memo is
-      a rationalization, not theoretical sampling. If you recruited
-      this case because they replied first to the flyer, name that
-      and treat the round as convenience sampling.
+- id: theoretical_sampling_memo
+  name: Write the sampling memo for the NEXT case BEFORE recruiting
+  description: |
+    For each new case after the first 2-3, write a sampling memo
+    (workspace/memos/sampling_<case_id>.md) that answers:
+      - what does the current theory predict for this case?
+      - what categories or relationships does this case test?
+      - what would FALSIFY or EXTEND the developing theory?
+      - what sampling logic does this case follow — maximum variation,
+        negative case, theoretical extension, deviant case?
+    Memo BEFORE recruitment, not after. A post-hoc sampling memo is
+    a rationalization, not theoretical sampling. If you recruited
+    this case because they replied first to the flyer, name that
+    and treat the round as convenience sampling.
 
-  - id: constant_comparison_pass
-    name: Run constant comparison against existing codes and categories
-    description: |
-      For each new transcript:
-        - line-by-line / incident-by-incident, compare each unit to
-          existing codes (does it fit; does it stretch the definition;
-          does it sit between two codes)
-        - compare incidents WITHIN a code (are these really the same
-          thing, or has the code accumulated heterogeneous instances?)
-        - compare codes ACROSS the codebook (are two codes collapsing;
-          is one a sub-property of the other?)
-      Use tool_qualitative_codebook_diff to see which codes shifted
-      definition this round, and tool_search across workspace/transcripts/
-      to retrieve every prior instance of a code under scrutiny.
-      Log conceptual shifts (not just additions) to
-      workspace/codebooks/changelog.md.
+- id: constant_comparison_pass
+  name: Run constant comparison against existing codes and categories
+  description: |
+    For each new transcript:
+      - line-by-line / incident-by-incident, compare each unit to
+        existing codes (does it fit; does it stretch the definition;
+        does it sit between two codes)
+      - compare incidents WITHIN a code (are these really the same
+        thing, or has the code accumulated heterogeneous instances?)
+      - compare codes ACROSS the codebook (are two codes collapsing;
+        is one a sub-property of the other?)
+    Use tool_qualitative_codebook_diff to see which codes shifted
+    definition this round, and tool_search across workspace/transcripts/
+    to retrieve every prior instance of a code under scrutiny.
+    Log conceptual shifts (not just additions) to
+    workspace/codebooks/changelog.md.
 
-  - id: theoretical_memoing
-    name: Write theoretical memos as categories emerge or shift
-    description: |
-      Theoretical memos are the place where the THEORY (not the codes)
-      gets built. After each case, write at least one memo to
-      workspace/memos/theoretical_<topic>_<date>.md covering:
-        - which category is sharpening, splitting, or dissolving
-        - what conditions, actions, consequences (Straussian paradigm)
-          or what process / trajectory (Charmazian) the category sits in
-        - what the next case should look like to test this
-      Memos compound across the project. A short memo per case that
-      links back to prior memos beats one long memo at the end.
+- id: theoretical_memoing
+  name: Write theoretical memos as categories emerge or shift
+  description: |
+    Theoretical memos are the place where the THEORY (not the codes)
+    gets built. After each case, write at least one memo to
+    workspace/memos/theoretical_<topic>_<date>.md covering:
+      - which category is sharpening, splitting, or dissolving
+      - what conditions, actions, consequences (Straussian paradigm)
+        or what process / trajectory (Charmazian) the category sits in
+      - what the next case should look like to test this
+    Memos compound across the project. A short memo per case that
+    links back to prior memos beats one long memo at the end.
 
-  - id: saturation_curve_update
-    name: Update the saturation curve and INSPECT it before deciding
-    description: |
-      After each new case, append a row to
-      workspace/figures/saturation_log.csv with: case_id, total_codes,
-      new_codes_this_case, codes_with_definition_change. Plot
-      new_codes_this_case over case order to
-      workspace/figures/saturation_curve.png.
-      The curve must show flattening across the last 2-3 cases AND the
-      theoretical-memo log must show recent cases yielding only minor
-      extensions, before you may proceed to the saturation_claim step.
-      A flat curve with active memoing is NOT saturation — the
-      categories are still moving.
+- id: saturation_curve_update
+  name: Update the saturation curve and INSPECT it before deciding
+  description: |
+    After each new case, append a row to
+    workspace/figures/saturation_log.csv with: case_id, total_codes,
+    new_codes_this_case, codes_with_definition_change. Plot
+    new_codes_this_case over case order to
+    workspace/figures/saturation_curve.png.
+    The curve must show flattening across the last 2-3 cases AND the
+    theoretical-memo log must show recent cases yielding only minor
+    extensions, before you may proceed to the saturation_claim step.
+    A flat curve with active memoing is NOT saturation — the
+    categories are still moving.
 
-  - id: selective_coding_and_core_category
-    name: Select the core category and integrate
-    description: |
-      Once the curve has flattened across the window:
-        - identify the CORE category (the one most other categories
-          relate to; the one that tells the integrative story)
-        - rewrite categories in terms of how they connect to the core
-        - draft a 2-4 page integrative memo
-          (workspace/memos/integration.md) telling the theory's story
-          from conditions through process to consequences
-        - check each category against the data one more time — does
-          it earn its place, or is it a leftover from open coding?
-      If no core category emerges, you have a coding scheme, not a
-      theory. Either keep sampling with sharper theoretical questions,
-      or be honest in the writeup that the work is descriptive.
+- id: selective_coding_and_core_category
+  name: Select the core category and integrate
+  description: |
+    Once the curve has flattened across the window:
+      - identify the CORE category (the one most other categories
+        relate to; the one that tells the integrative story)
+      - rewrite categories in terms of how they connect to the core
+      - draft a 2-4 page integrative memo
+        (workspace/memos/integration.md) telling the theory's story
+        from conditions through process to consequences
+      - check each category against the data one more time — does
+        it earn its place, or is it a leftover from open coding?
+    If no core category emerges, you have a coding scheme, not a
+    theory. Either keep sampling with sharper theoretical questions,
+    or be honest in the writeup that the work is descriptive.
 
-  - id: saturation_claim_and_audit
-    name: Make the saturation claim with evidence, or extend sampling
-    description: |
-      Saturation claim goes in workspace/memos/saturation_claim.md and
-      cites:
-        - the saturation curve figure
-        - the last 2-3 sampling memos showing the theory predicted the
-          new case's content
-        - the integration memo showing the core category holds
-      If any of those is missing, do not claim saturation. Either
-      collect another case (and update the curve) OR write a
-      limitations section that says the study stopped for non-
-      saturation reasons (time, funding, access) and what that
-      means for the theory's scope.
+- id: saturation_claim_and_audit
+  name: Make the saturation claim with evidence, or extend sampling
+  description: |
+    Saturation claim goes in workspace/memos/saturation_claim.md and
+    cites:
+      - the saturation curve figure
+      - the last 2-3 sampling memos showing the theory predicted the
+        new case's content
+      - the integration memo showing the core category holds
+    If any of those is missing, do not claim saturation. Either
+    collect another case (and update the curve) OR write a
+    limitations section that says the study stopped for non-
+    saturation reasons (time, funding, access) and what that
+    means for the theory's scope.
 
 expected_outputs:
-  - workspace/memos/00_design.md
-  - workspace/memos/sampling_<case_id>.md           # one per case after the first few
-  - workspace/memos/theoretical_<topic>_<date>.md   # multiple, dated
-  - workspace/memos/integration.md
-  - workspace/memos/saturation_claim.md
-  - workspace/codebooks/codebook_v<N>.yaml
-  - workspace/codebooks/changelog.md
-  - workspace/figures/saturation_log.csv
-  - workspace/figures/saturation_curve.png
+- workspace/memos/00_design.md
+- workspace/memos/sampling_<case_id>.md             # one per case after the first few
+- workspace/memos/theoretical_<topic>_<date>.md     # multiple, dated
+- workspace/memos/integration.md
+- workspace/memos/saturation_claim.md
+- workspace/codebooks/codebook_v<N>.yaml
+- workspace/codebooks/changelog.md
+- workspace/figures/saturation_log.csv
+- workspace/figures/saturation_curve.png
 
 next_protocol: qualitative/coding/coding_scheme_iteration
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: methodology
+sub_intent: method_pick
+triggers:
+- grounded theory
+- constant comparison
+- theoretical sampling
+- theoretical saturation
+- glaser straussian
+- gt methodology
+summary: Theoretical sampling + constant comparison + saturation tracking.
+token_estimate: 1700
+decomposition:
+- protocol: qualitative/method/grounded_theory_iteration
+  purpose: Iterate sampling → compare → memo → saturate.

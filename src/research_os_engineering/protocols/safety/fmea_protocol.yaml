@@ -1,7 +1,7 @@
 id: fmea_protocol
 name: FMEA — Failure Mode and Effects Analysis
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering]
   audience: [auditor, maintainer]
@@ -26,21 +26,15 @@ trigger: |
   "risk priority number".
 
 prerequisites:
-  - A design exists at the component / function level (block
-    diagram, BOM, or functional decomposition).
-  - Scoring rubric is in workspace/engineering/fmea/rubric.md OR a
-    project-default rubric is used (provided below).
+- A design exists at the component / function level (block diagram, BOM, or functional decomposition).
+- Scoring rubric is in workspace/engineering/fmea/rubric.md OR a project-default rubric is used (provided below).
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "A failure mode without a defined effect is not an FMEA row;
-       it is a worry. Effect must be observable + measurable."
-    - "RPN sorting is a triage tool, not a publishing format. The
-       reader of the FMEA cares about mitigations, not numbers."
-    - "FMEA is dead the moment the design changes without an FMEA
-       review. Wire FMEA review into design_iteration's
-       on-revision checklist."
+  - "A failure mode without a defined effect is not an FMEA row; it is a worry. Effect must be observable + measurable."
+  - "RPN sorting is a triage tool, not a publishing format. The reader of the FMEA cares about mitigations, not numbers."
+  - "FMEA is dead the moment the design changes without an FMEA review. Wire FMEA review into design_iteration's on-revision checklist."
 
 quality_bar:
   severity_scale: "1 (negligible) … 10 (catastrophic / loss of life)"
@@ -49,77 +43,93 @@ quality_bar:
   rpn_action_threshold: 100
   rpn_critical_threshold: 200
   required_columns:
-    - id
-    - function
-    - failure_mode
-    - effect
-    - cause
-    - severity
-    - occurrence
-    - detection
-    - rpn
-    - mitigation
+  - id
+  - function
+  - failure_mode
+  - effect
+  - cause
+  - severity
+  - occurrence
+  - detection
+  - rpn
+  - mitigation
   mitigation_must_resolve_rpn_above: 100
 
 steps:
-  - id: decompose_system
-    name: Decompose the system into functions / components
-    description: |
-      List the system's functions OR components (one row per FMEA
-      table entry). Granularity tradeoff: too coarse → failure
-      modes get lumped; too fine → table explodes. Rule of thumb:
-      one row per replaceable assembly OR per discrete function.
+- id: decompose_system
+  name: Decompose the system into functions / components
+  description: |
+    List the system's functions OR components (one row per FMEA
+    table entry). Granularity tradeoff: too coarse → failure
+    modes get lumped; too fine → table explodes. Rule of thumb:
+    one row per replaceable assembly OR per discrete function.
 
-  - id: enumerate_failure_modes
-    name: For each row, enumerate failure modes
-    description: |
-      For each function/component:
-        - "fails to perform function" (always include)
-        - "performs function partially / intermittently"
-        - "performs function but degraded over time"
-        - "external causes" (temperature, vibration, power)
-      Brainstorm with the responsible engineer; involve a
-      maintenance / QA voice.
+- id: enumerate_failure_modes
+  name: For each row, enumerate failure modes
+  description: |
+    For each function/component:
+      - "fails to perform function" (always include)
+      - "performs function partially / intermittently"
+      - "performs function but degraded over time"
+      - "external causes" (temperature, vibration, power)
+    Brainstorm with the responsible engineer; involve a
+    maintenance / QA voice.
 
-  - id: score_severity_occurrence_detection
-    name: Score severity × occurrence × detection
-    description: |
-      Use the project's rubric (or default below). Document the
-      reasoning per row in workspace/engineering/fmea/scoring_notes.md
-      — peer-reviewable scoring beats single-rater scoring.
-      RPN = severity × occurrence × detection (1-1000 range).
+- id: score_severity_occurrence_detection
+  name: Score severity × occurrence × detection
+  description: |
+    Use the project's rubric (or default below). Document the
+    reasoning per row in workspace/engineering/fmea/scoring_notes.md
+    — peer-reviewable scoring beats single-rater scoring.
+    RPN = severity × occurrence × detection (1-1000 range).
 
-  - id: mitigate_high_rpn
-    name: Mitigate rows above the action threshold
-    description: |
-      For RPN ≥ 100: write a mitigation that REDUCES at least one
-      of (occurrence, detection). Severity rarely changes (it's
-      intrinsic to the failure mode).
-      For RPN ≥ 200 (critical): mitigation is mandatory + design
-      review required before progressing.
+- id: mitigate_high_rpn
+  name: Mitigate rows above the action threshold
+  description: |
+    For RPN ≥ 100: write a mitigation that REDUCES at least one
+    of (occurrence, detection). Severity rarely changes (it's
+    intrinsic to the failure mode).
+    For RPN ≥ 200 (critical): mitigation is mandatory + design
+    review required before progressing.
 
-  - id: render_table
-    name: Render the FMEA table
-    description: |
-      tool_engineering_fmea_render(spec_path='inputs/engineering/fmea.yaml')
-      → workspace/engineering/fmea/<stem>.{csv,md,xlsx} sorted by RPN.
-      High-priority rows (RPN ≥ 100) bolded in Markdown.
+- id: render_table
+  name: Render the FMEA table
+  description: |
+    tool_engineering_fmea_render(spec_path='inputs/engineering/fmea.yaml')
+    → workspace/engineering/fmea/<stem>.{csv,md,xlsx} sorted by RPN.
+    High-priority rows (RPN ≥ 100) bolded in Markdown.
 
-  - id: re_score_post_mitigation
-    name: Re-score post-mitigation + close out
-    description: |
-      After implementing each mitigation, re-score occurrence and
-      detection. Document the new RPN. The FMEA is "closed" when
-      every row's mitigated RPN is below the action threshold OR
-      a documented waiver explains why it cannot be reduced (rare
-      and requires senior engineer sign-off).
+- id: re_score_post_mitigation
+  name: Re-score post-mitigation + close out
+  description: |
+    After implementing each mitigation, re-score occurrence and
+    detection. Document the new RPN. The FMEA is "closed" when
+    every row's mitigated RPN is below the action threshold OR
+    a documented waiver explains why it cannot be reduced (rare
+    and requires senior engineer sign-off).
 
 expected_outputs:
-  - workspace/engineering/fmea/<stem>.csv
-  - workspace/engineering/fmea/<stem>.md
-  - workspace/engineering/fmea/scoring_notes.md
-  - workspace/engineering/fmea/rubric.md
+- workspace/engineering/fmea/<stem>.csv
+- workspace/engineering/fmea/<stem>.md
+- workspace/engineering/fmea/scoring_notes.md
+- workspace/engineering/fmea/rubric.md
 
 next_protocol: engineering/safety/fault_tree_analysis
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: audit_wrap
+sub_intent: safety
+triggers:
+- fmea
+- failure mode
+- risk priority number
+- rpn analysis
+- failure mode analysis
+summary: 'Failure Mode & Effects Analysis. Per failure mode: severity × occurrence × detection → RPN → mitigation.'
+shortcut_tool: tool_engineering_fmea_render
+token_estimate: 1600
+decomposition:
+- tool: tool_engineering_fmea_render
+  purpose: Render the FMEA + sort by RPN + flag high-priority.
+- protocol: engineering/safety/fmea_protocol
+  purpose: Walk failure-mode enumeration + scoring + mitigation.

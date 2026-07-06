@@ -1,7 +1,7 @@
 id: theory_paper_structure
 name: Theory-Paper Structure (non-IMRAD)
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [theory_math]
   audience: [researcher]
@@ -60,40 +60,22 @@ trigger: |
   organise this theory paper", "non-IMRAD format".
 
 prerequisites:
-  - At least one main theorem with a verified proof (output of
-    theory_math/proof/proof_verification_workflow).
-  - Definitions stable enough that the preliminaries section will
-    not need to be rewritten mid-draft.
-  - Target venue identified (journal / conference / preprint), since
-    page limits + reference style follow from this.
+- At least one main theorem with a verified proof (output of theory_math/proof/proof_verification_workflow).
+- Definitions stable enough that the preliminaries section will not need to be rewritten mid-draft.
+- Target venue identified (journal / conference / preprint), since page limits + reference style follow from this.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Theorem statements live in the Main Results section. Proofs
-       live in the Proofs section. Mixing the two is the single most
-       common structural defect in junior theory papers."
-    - "Introduction is the shortest major section, not the longest.
-       If your introduction is longer than your proofs, you have
-       written an essay about a theorem, not a theorem paper."
-    - "Cite every prior result the proofs depend on in the
-       Preliminaries section. Inline citations buried inside a proof
-       step break the reader's flow and signal the author has not
-       thought about the dependency graph."
-    - "Examples are not optional unless the result genuinely admits
-       none. Theory papers that skip examples lose readers in the
-       first two pages of proofs; reviewers notice."
-    - "Open Questions must be specific enough that a graduate student
-       could pick one up next semester. 'Generalise to non-abelian
-       groups' is a section, not an open question. 'Does Theorem 3.2
-       hold when G is the free group on 2 generators?' is an open
-       question."
+  - "Theorem statements live in the Main Results section. Proofs live in the Proofs section. Mixing the two is the single most common structural defect in junior theory papers."
+  - "Introduction is the shortest major section, not the longest. If your introduction is longer than your proofs, you have written an essay about a theorem, not a theorem paper."
+  - "Cite every prior result the proofs depend on in the Preliminaries section. Inline citations buried inside a proof step break the reader's flow and signal the author has not thought about the dependency graph."
+  - "Examples are not optional unless the result genuinely admits none. Theory papers that skip examples lose readers in the first two pages of proofs; reviewers notice."
+  - "Open Questions must be specific enough that a graduate student could pick one up next semester. 'Generalise to non-abelian groups' is a section, not an open question. 'Does Theorem 3.2 hold when G is the free group on 2 generators?' is an open question."
 
 quality_bar:
-  introduction_length_pct_of_total: "5-15 (target band; reviewers
-    flag papers outside this range as structurally off)"
-  proofs_length_pct_of_total: "50-80 (typical band; can be lower for
-    survey-style theory papers, higher for technical contributions)"
+  introduction_length_pct_of_total: "5-15 (target band; reviewers flag papers outside this range as structurally off)"
+  proofs_length_pct_of_total: "50-80 (typical band; can be lower for survey-style theory papers, higher for technical contributions)"
   preliminaries_must_cite_floor_pct: 95
   examples_section_required_unless: |
     "the main result is purely existential AND no concrete instance
@@ -106,105 +88,117 @@ quality_bar:
     justified; deviating without noticing is the failure mode.
 
 steps:
-  - id: outline_sections
-    name: Outline the six sections with target lengths
-    description: |
-      Create `workspace/papers/<slug>/outline.md` with the six
-      sections (Introduction, Preliminaries, Main Results, Proofs,
-      Examples, Open Questions) and a target page count for each.
-      Use the quality_bar bands as defaults. If the paper deviates
-      from the bands (e.g. a survey-style paper with no proofs),
-      record WHY in the same file under `## Length-band waivers`.
-      Call `mem_log` to record the outline decision so later sessions
-      can see the structural plan without re-deriving it. The outline
-      is a contract with yourself: future edits that blow past the
-      bands should trigger a re-read of this file, not a quiet rewrite.
+- id: outline_sections
+  name: Outline the six sections with target lengths
+  description: |
+    Create `workspace/papers/<slug>/outline.md` with the six
+    sections (Introduction, Preliminaries, Main Results, Proofs,
+    Examples, Open Questions) and a target page count for each.
+    Use the quality_bar bands as defaults. If the paper deviates
+    from the bands (e.g. a survey-style paper with no proofs),
+    record WHY in the same file under `## Length-band waivers`.
+    Call `mem_log` to record the outline decision so later sessions
+    can see the structural plan without re-deriving it. The outline
+    is a contract with yourself: future edits that blow past the
+    bands should trigger a re-read of this file, not a quiet rewrite.
 
-  - id: draft_preliminaries
-    name: Draft the Preliminaries section first
-    description: |
-      Counter-intuitive but correct: write Preliminaries before
-      Introduction. The introduction summarises what the paper does;
-      you cannot summarise cleanly until the definitions + cited
-      prior results are nailed down. List every external lemma /
-      theorem the proofs will use, with citations. Use `tool_search`
-      against the project's bibliography to confirm citations are
-      complete. If a definition is original to this paper but used
-      throughout, it belongs here, not buried in the proof where it
-      first appears. The preliminaries section is the paper's API
-      surface for its own proofs.
+- id: draft_preliminaries
+  name: Draft the Preliminaries section first
+  description: |
+    Counter-intuitive but correct: write Preliminaries before
+    Introduction. The introduction summarises what the paper does;
+    you cannot summarise cleanly until the definitions + cited
+    prior results are nailed down. List every external lemma /
+    theorem the proofs will use, with citations. Use `tool_search`
+    against the project's bibliography to confirm citations are
+    complete. If a definition is original to this paper but used
+    throughout, it belongs here, not buried in the proof where it
+    first appears. The preliminaries section is the paper's API
+    surface for its own proofs.
 
-  - id: state_main_results
-    name: Write the Main Results section (statements only, no proofs)
-    description: |
-      List the theorems, lemmas, propositions in the order the
-      reader will encounter them. Number them by section
-      (Theorem 3.1, Lemma 3.2, etc.) so proofs can cite them.
-      Each statement is self-contained: a reader who skipped the
-      Preliminaries should still parse the claim (even if they
-      cannot evaluate it). Resist the urge to inline a proof
-      sketch here — sketches go in the introduction, full proofs
-      go in the Proofs section. If a theorem has a long technical
-      hypothesis, name the hypothesis (`Assumption A`) and refer
-      to it by name in the statement. Call `sys_path` to confirm
-      the numbering scheme matches the project's convention.
+- id: state_main_results
+  name: Write the Main Results section (statements only, no proofs)
+  description: |
+    List the theorems, lemmas, propositions in the order the
+    reader will encounter them. Number them by section
+    (Theorem 3.1, Lemma 3.2, etc.) so proofs can cite them.
+    Each statement is self-contained: a reader who skipped the
+    Preliminaries should still parse the claim (even if they
+    cannot evaluate it). Resist the urge to inline a proof
+    sketch here — sketches go in the introduction, full proofs
+    go in the Proofs section. If a theorem has a long technical
+    hypothesis, name the hypothesis (`Assumption A`) and refer
+    to it by name in the statement. Call `sys_path` to confirm
+    the numbering scheme matches the project's convention.
 
-  - id: write_proofs
-    name: Write the Proofs section, one proof per main result
-    description: |
-      For each numbered statement in Main Results, write a
-      `### Proof of Theorem X.Y` subsection. The proof body comes
-      from `workspace/proofs/<slug>.md` (output of
-      theory_math/proof/proof_verification_workflow). If a proof
-      decomposes into sub-lemmas, state the sub-lemmas at the top
-      of the subsection ("We prove Theorem 3.1 in three steps:
-      Lemmas A, B, C") and prove each before assembling. Long
-      proofs (>3 pages) benefit from a 1-paragraph proof sketch
-      at the start before the formal argument. End each proof with
-      a QED marker (or `\square` in LaTeX). The Proofs section is
-      where most of the page count lives; do not apologise for
-      its length.
+- id: write_proofs
+  name: Write the Proofs section, one proof per main result
+  description: |
+    For each numbered statement in Main Results, write a
+    `### Proof of Theorem X.Y` subsection. The proof body comes
+    from `workspace/proofs/<slug>.md` (output of
+    theory_math/proof/proof_verification_workflow). If a proof
+    decomposes into sub-lemmas, state the sub-lemmas at the top
+    of the subsection ("We prove Theorem 3.1 in three steps:
+    Lemmas A, B, C") and prove each before assembling. Long
+    proofs (>3 pages) benefit from a 1-paragraph proof sketch
+    at the start before the formal argument. End each proof with
+    a QED marker (or `\square` in LaTeX). The Proofs section is
+    where most of the page count lives; do not apologise for
+    its length.
 
-  - id: add_examples
-    name: Add the Examples section (or document the waiver)
-    description: |
-      Work through at least two concrete instances of the main
-      results. The first example should be the simplest non-trivial
-      case (often the case that motivated the conjecture). The
-      second should stress the hypothesis: an example that fails
-      when the hypothesis is dropped, or an example near the
-      boundary of what the theorem covers. If no example exists
-      (rare, but happens for purely existential or non-constructive
-      results), invoke the quality_bar waiver: create
-      `workspace/papers/<slug>/waivers.md` and explain. Reviewers
-      will check; an unjustified missing examples section is a
-      common rejection reason.
+- id: add_examples
+  name: Add the Examples section (or document the waiver)
+  description: |
+    Work through at least two concrete instances of the main
+    results. The first example should be the simplest non-trivial
+    case (often the case that motivated the conjecture). The
+    second should stress the hypothesis: an example that fails
+    when the hypothesis is dropped, or an example near the
+    boundary of what the theorem covers. If no example exists
+    (rare, but happens for purely existential or non-constructive
+    results), invoke the quality_bar waiver: create
+    `workspace/papers/<slug>/waivers.md` and explain. Reviewers
+    will check; an unjustified missing examples section is a
+    common rejection reason.
 
-  - id: introduction_and_open_questions
-    name: Write Introduction (last) and Open Questions
-    description: |
-      Now that Preliminaries, Main Results, Proofs, and Examples
-      are stable, write the Introduction. Four paragraphs is a
-      good default: (1) the question and why it matters, (2) the
-      main theorem informally stated, (3) the technique in one
-      sentence, (4) position against prior work + paper roadmap.
-      Stay inside the introduction_length_pct_of_total band.
-      Then write Open Questions: minimum 2, each specific enough
-      to be picked up by another researcher. Avoid "generalise X
-      to Y" hand-waves; prefer concrete formulations. Call
-      `mem_log` to record the open questions so they surface in
-      future project planning sessions.
+- id: introduction_and_open_questions
+  name: Write Introduction (last) and Open Questions
+  description: |
+    Now that Preliminaries, Main Results, Proofs, and Examples
+    are stable, write the Introduction. Four paragraphs is a
+    good default: (1) the question and why it matters, (2) the
+    main theorem informally stated, (3) the technique in one
+    sentence, (4) position against prior work + paper roadmap.
+    Stay inside the introduction_length_pct_of_total band.
+    Then write Open Questions: minimum 2, each specific enough
+    to be picked up by another researcher. Avoid "generalise X
+    to Y" hand-waves; prefer concrete formulations. Call
+    `mem_log` to record the open questions so they surface in
+    future project planning sessions.
 
 expected_outputs:
-  - workspace/papers/<slug>/outline.md
-  - workspace/papers/<slug>/preliminaries.tex
-  - workspace/papers/<slug>/main_results.tex
-  - workspace/papers/<slug>/proofs.tex
-  - workspace/papers/<slug>/examples.tex
-  - workspace/papers/<slug>/introduction.tex
-  - workspace/papers/<slug>/open_questions.tex
-  - workspace/papers/<slug>/waivers.md  # only when a quality_bar band is intentionally violated
+- workspace/papers/<slug>/outline.md
+- workspace/papers/<slug>/preliminaries.tex
+- workspace/papers/<slug>/main_results.tex
+- workspace/papers/<slug>/proofs.tex
+- workspace/papers/<slug>/examples.tex
+- workspace/papers/<slug>/introduction.tex
+- workspace/papers/<slug>/open_questions.tex
+- workspace/papers/<slug>/waivers.md    # only when a quality_bar band is intentionally violated
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: theory_math/proof/proof_verification_workflow
+intent_class: synthesize
+sub_intent: paper
+triggers:
+- theory paper
+- math paper structure
+- preliminaries section
+- open questions section
+summary: 'Theory-paper format (NOT IMRAD): Intro / Preliminaries / Main Results / Proofs / Examples / Open Questions.'
+token_estimate: 1500
+decomposition:
+- protocol: theory_math/output/theory_paper_structure
+  purpose: Build the theory-paper skeleton + section bars.

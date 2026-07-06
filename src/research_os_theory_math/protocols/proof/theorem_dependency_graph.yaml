@@ -1,7 +1,7 @@
 id: theorem_dependency_graph
 name: Theorem Dependency Graph (DAG)
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [theory_math]
   audience: [auditor]
@@ -41,34 +41,16 @@ trigger: |
   lemma Y".
 
 prerequisites:
-  - At least one formalised source directory exists under the project
-    root (Lean or Coq files), OR an informal `lemma_library.md` whose
-    entries name their dependencies explicitly.
-  - The slug of the node under investigation is known (theorem /
-    lemma / axiom name as it appears in source).
+- At least one formalised source directory exists under the project root (Lean or Coq files), OR an informal `lemma_library.md` whose entries name their dependencies explicitly.
+- The slug of the node under investigation is known (theorem / lemma / axiom name as it appears in source).
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "The graph is a conservative lower bound on dependencies, not
-       the ground truth. A lexical extractor misses dependencies
-       routed through `open` / `Require Import` wildcards, through
-       tactic libraries, and through any informal step that cites a
-       result by reference rather than by import. The AI reconciles
-       lexical edges with the proof body; mismatches get logged, not
-       silently dropped."
-    - "Every edge has a provenance: either a parsed `import` /
-       `Require` / `open`, an explicit `lemma_library.md` reference,
-       or a manual annotation in `workspace/docs/dep_graph_manual.md`
-       with the citation that justifies it. An edge with no
-       provenance is a code smell."
-    - "Axioms are first-class nodes. Treat each axiom as a leaf and
-       label it. The impact-of-change query is mostly about axioms;
-       leaving them implicit defeats the purpose of the graph."
-    - "The graph is a working document, not a publication artefact.
-       Stale edges (results renamed, files moved) get pruned on every
-       rebuild; the diff is recorded so the researcher can see what
-       moved between snapshots."
+  - "The graph is a conservative lower bound on dependencies, not the ground truth. A lexical extractor misses dependencies routed through `open` / `Require Import` wildcards, through tactic libraries, and through any informal step that cites a result by reference rather than by import. The AI reconciles lexical edges with the proof body; mismatches get logged, not silently dropped."
+  - "Every edge has a provenance: either a parsed `import` / `Require` / `open`, an explicit `lemma_library.md` reference, or a manual annotation in `workspace/docs/dep_graph_manual.md` with the citation that justifies it. An edge with no provenance is a code smell."
+  - "Axioms are first-class nodes. Treat each axiom as a leaf and label it. The impact-of-change query is mostly about axioms; leaving them implicit defeats the purpose of the graph."
+  - "The graph is a working document, not a publication artefact. Stale edges (results renamed, files moved) get pruned on every rebuild; the diff is recorded so the researcher can see what moved between snapshots."
 
 quality_bar:
   acyclic_check_required: true
@@ -87,107 +69,123 @@ quality_bar:
     `workspace/docs/dep_graph_manual.md` if the project is purely
     formal and prose-citation is genuinely rare.
   impact_set_review_required_when:
-    - "changing or removing an axiom"
-    - "renaming a lemma cited by >3 downstream results"
-    - "moving a result between modules / files"
+  - "changing or removing an axiom"
+  - "renaming a lemma cited by >3 downstream results"
+  - "moving a result between modules / files"
 
 steps:
-  - id: build_graph
-    name: Build the lexical dependency graph
-    description: |
-      Call `tool_theory_math_dep_graph` with `source_dir` pointing at
-      the directory that holds the project's `.lean` / `.v` files.
-      The tool writes `workspace/docs/proof_dependencies.json` (the
-      structured edge list) and `workspace/docs/proof_dependencies.mermaid`
-      (the visual). Read both. If the project mixes Lean and Coq,
-      run the tool once per source tree and merge the JSON outputs
-      under a single `files:` array — downstream steps treat the
-      graph as one DAG regardless of source language.
-      If the project is purely informal (no `.lean` / `.v` files),
-      skip this step and start at `reconcile_informal` using
-      `lemma_library.md` as the seed.
+- id: build_graph
+  name: Build the lexical dependency graph
+  description: |
+    Call `tool_theory_math_dep_graph` with `source_dir` pointing at
+    the directory that holds the project's `.lean` / `.v` files.
+    The tool writes `workspace/docs/proof_dependencies.json` (the
+    structured edge list) and `workspace/docs/proof_dependencies.mermaid`
+    (the visual). Read both. If the project mixes Lean and Coq,
+    run the tool once per source tree and merge the JSON outputs
+    under a single `files:` array — downstream steps treat the
+    graph as one DAG regardless of source language.
+    If the project is purely informal (no `.lean` / `.v` files),
+    skip this step and start at `reconcile_informal` using
+    `lemma_library.md` as the seed.
 
-  - id: identify_root
-    name: Identify the node under investigation
-    description: |
-      Decide which node the impact query is about: the axiom being
-      reconsidered, the lemma being renamed, the theorem whose proof
-      is being rewritten. Record the node's slug (the exact
-      identifier from source) in `workspace/docs/dep_graph_query.md`
-      under `## Root`. If the query is "rebuild the graph and audit"
-      with no specific root, use the file's most-imported result as
-      the implicit root and note that in the same file.
+- id: identify_root
+  name: Identify the node under investigation
+  description: |
+    Decide which node the impact query is about: the axiom being
+    reconsidered, the lemma being renamed, the theorem whose proof
+    is being rewritten. Record the node's slug (the exact
+    identifier from source) in `workspace/docs/dep_graph_query.md`
+    under `## Root`. If the query is "rebuild the graph and audit"
+    with no specific root, use the file's most-imported result as
+    the implicit root and note that in the same file.
 
-  - id: reconcile_informal
-    name: Reconcile lexical edges with informal proofs
-    description: |
-      The lexical extractor misses dependencies that live only in the
-      proof prose: "by Lemma 4.2 of [Smith2019]", "applying the same
-      argument as in Proposition 3", uses of a definition that's
-      `open`ed via a wildcard. Walk each proof in `workspace/proofs/`
-      (and any `## Proof` blocks in the paper draft) and check
-      whether the cited results appear in the graph. Add missing
-      edges to `workspace/docs/dep_graph_manual.md` with one line per
-      edge: `<from> -> <to>  (cite: <where the dependency is named>)`.
-      Re-run `tool_theory_math_dep_graph` if formal files changed
-      during reconciliation; otherwise merge the manual edges into
-      the JSON output for the next step.
+- id: reconcile_informal
+  name: Reconcile lexical edges with informal proofs
+  description: |
+    The lexical extractor misses dependencies that live only in the
+    proof prose: "by Lemma 4.2 of [Smith2019]", "applying the same
+    argument as in Proposition 3", uses of a definition that's
+    `open`ed via a wildcard. Walk each proof in `workspace/proofs/`
+    (and any `## Proof` blocks in the paper draft) and check
+    whether the cited results appear in the graph. Add missing
+    edges to `workspace/docs/dep_graph_manual.md` with one line per
+    edge: `<from> -> <to>  (cite: <where the dependency is named>)`.
+    Re-run `tool_theory_math_dep_graph` if formal files changed
+    during reconciliation; otherwise merge the manual edges into
+    the JSON output for the next step.
 
-  - id: walk_impact_set
-    name: Walk the transitive consumer set
-    description: |
-      From the root node, walk edges *backwards* (every node that has
-      an edge into the root, recursively) to enumerate the consumer
-      set. The JSON output is straightforward to traverse; for large
-      graphs, use the mermaid graph's visual layout to spot
-      cross-cutting consumers a programmatic walk would surface but
-      not contextualise.
-      Categorise each consumer: `direct` (one edge from the root),
-      `transitive` (more than one), `formal-only` (cited by a formal
-      file with no informal counterpart), `paper` (appears in a draft
-      under `papers/`). The categorisation drives the next step's
-      review depth.
+- id: walk_impact_set
+  name: Walk the transitive consumer set
+  description: |
+    From the root node, walk edges *backwards* (every node that has
+    an edge into the root, recursively) to enumerate the consumer
+    set. The JSON output is straightforward to traverse; for large
+    graphs, use the mermaid graph's visual layout to spot
+    cross-cutting consumers a programmatic walk would surface but
+    not contextualise.
+    Categorise each consumer: `direct` (one edge from the root),
+    `transitive` (more than one), `formal-only` (cited by a formal
+    file with no informal counterpart), `paper` (appears in a draft
+    under `papers/`). The categorisation drives the next step's
+    review depth.
 
-  - id: cycle_audit
-    name: Audit for cycles + stale edges
-    description: |
-      Run the acyclic check (the JSON output's edges form a DAG iff
-      no node appears in its own transitive closure). If a cycle is
-      detected, stop and resolve before publishing: walk the cycle in
-      `workspace/docs/dep_graph_cycle_<n>.md`, identify which edge
-      is misattributed (usually a renamed lemma the extractor matched
-      to the wrong file) or which proof has a circular argument, and
-      patch either the source or the manual annotations.
-      Prune stale edges in the same pass: any edge whose `from` or
-      `to` node no longer exists in source gets removed, and the
-      removal is logged in `workspace/docs/dep_graph_diff.md` so the
-      researcher can see what moved since the last snapshot.
+- id: cycle_audit
+  name: Audit for cycles + stale edges
+  description: |
+    Run the acyclic check (the JSON output's edges form a DAG iff
+    no node appears in its own transitive closure). If a cycle is
+    detected, stop and resolve before publishing: walk the cycle in
+    `workspace/docs/dep_graph_cycle_<n>.md`, identify which edge
+    is misattributed (usually a renamed lemma the extractor matched
+    to the wrong file) or which proof has a circular argument, and
+    patch either the source or the manual annotations.
+    Prune stale edges in the same pass: any edge whose `from` or
+    `to` node no longer exists in source gets removed, and the
+    removal is logged in `workspace/docs/dep_graph_diff.md` so the
+    researcher can see what moved since the last snapshot.
 
-  - id: publish_findings
-    name: Publish findings + update consumers
-    description: |
-      Write the impact analysis to `workspace/docs/dep_graph_query.md`
-      under `## Impact set`: list direct + transitive consumers with
-      their categories. For each `paper` consumer, file a note in the
-      relevant draft (or open an issue) so the paper's author knows a
-      foundational result moved.
-      If the root change is destructive (axiom removed, lemma
-      restated with weaker hypothesis), call `mem_log` to record the
-      change in the project's decision log, then route to
-      `theory_math/proof/proof_verification_workflow` for every
-      direct consumer that needs re-checking. The DAG itself is
-      committed: `proof_dependencies.json`, the mermaid file, and any
-      manual annotations live under `workspace/docs/` so the next
-      query starts from a known state.
+- id: publish_findings
+  name: Publish findings + update consumers
+  description: |
+    Write the impact analysis to `workspace/docs/dep_graph_query.md`
+    under `## Impact set`: list direct + transitive consumers with
+    their categories. For each `paper` consumer, file a note in the
+    relevant draft (or open an issue) so the paper's author knows a
+    foundational result moved.
+    If the root change is destructive (axiom removed, lemma
+    restated with weaker hypothesis), call `mem_log` to record the
+    change in the project's decision log, then route to
+    `theory_math/proof/proof_verification_workflow` for every
+    direct consumer that needs re-checking. The DAG itself is
+    committed: `proof_dependencies.json`, the mermaid file, and any
+    manual annotations live under `workspace/docs/` so the next
+    query starts from a known state.
 
 expected_outputs:
-  - workspace/docs/proof_dependencies.json
-  - workspace/docs/proof_dependencies.mermaid
-  - workspace/docs/dep_graph_query.md
-  - workspace/docs/dep_graph_manual.md
-  - workspace/docs/dep_graph_diff.md
-  - "workspace/docs/dep_graph_cycle_<n>.md  # only when a cycle was found"
+- workspace/docs/proof_dependencies.json
+- workspace/docs/proof_dependencies.mermaid
+- workspace/docs/dep_graph_query.md
+- workspace/docs/dep_graph_manual.md
+- workspace/docs/dep_graph_diff.md
+- "workspace/docs/dep_graph_cycle_<n>.md  # only when a cycle was found"
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: theory_math/proof/proof_verification_workflow
+intent_class: audit_wrap
+sub_intent: provenance
+triggers:
+- dependency graph
+- proof dependencies
+- theorem dag
+- what depends on this theorem
+- impact of changing axiom
+summary: Theorem → dependencies DAG; flags impact of changing a foundational result.
+shortcut_tool: tool_theory_math_dep_graph
+token_estimate: 1400
+decomposition:
+- tool: tool_theory_math_dep_graph
+  purpose: Build the DAG by parsing imports + theorem refs.
+- protocol: theory_math/proof/theorem_dependency_graph
+  purpose: Walk the DAG to find downstream impact.

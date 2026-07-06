@@ -1,7 +1,7 @@
 id: plate_map_provenance
 name: Plate-Map Provenance — 96/384/1536-well assays
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [wet_lab, biology, humanities]
   audience: [auditor]
@@ -38,161 +38,155 @@ trigger: |
   "platemap".
 
 prerequisites:
-  - A wet-lab step folder exists (workspace/<NN>_<slug>/).
-  - "Reagents for the assay are logged via wet_lab/protocol/reagent_lot_tracking (controls + standards must already have entries)."
+- A wet-lab step folder exists (workspace/<NN>_<slug>/).
+- "Reagents for the assay are logged via wet_lab/protocol/reagent_lot_tracking (controls + standards must already have entries)."
 
 editorial_voice:
   mode: prescription
   rules:
-    - "One plate = one map = one raw-data file = one analysis run.
-       If the same physical plate is read twice (e.g., kinetic +
-       endpoint), each read gets its own raw-data file and both
-       reference the same map_id. Re-using a map across plates is
-       a data-integrity failure."
-    - "Edge wells (row A, row H, column 1, column 12 on a 96-well;
-       outer ring on 384/1536) evaporate faster than interior
-       wells. Either leave them as buffer-only blanks or correct
-       for edge effect in analysis. Loading samples into edge wells
-       without acknowledging this is a methodological error, not
-       an optimisation."
-    - "Controls are not optional fields you fill in after the fact.
-       Every plate map must declare positive control, negative
-       control, blank, and (where applicable) standard curve wells
-       BEFORE the plate is loaded. The plate map renderer
-       (tool_wet_lab_plate_map_render) visualises the layout so you can
-       confirm these declarations are present."
-    - "Randomise sample positions across the plate to break
-       confounds with row / column / edge effects. A plate where
-       all treatment wells are in columns 1-6 and all control wells
-       are in columns 7-12 cannot distinguish treatment effect from
-       plate-position effect. Randomise with a recorded seed (e.g.
-       numpy.random.default_rng(seed)) and mem_log the seed."
-    - "The map is versioned per run. A re-pipetted plate is a new
-       run with a new map_id, even if the layout is nominally
-       identical — pipetting errors are the dominant source of
-       between-run variance and you need the audit trail."
+  - "One plate = one map = one raw-data file = one analysis run. If the same physical plate is read twice (e.g., kinetic + endpoint), each read gets its own raw-data file and both reference the same map_id. Re-using a map across plates is a data-integrity failure."
+  - "Edge wells (row A, row H, column 1, column 12 on a 96-well; outer ring on 384/1536) evaporate faster than interior wells. Either leave them as buffer-only blanks or correct for edge effect in analysis. Loading samples into edge wells without acknowledging this is a methodological error, not an optimisation."
+  - "Controls are not optional fields you fill in after the fact. Every plate map must declare positive control, negative control, blank, and (where applicable) standard curve wells BEFORE the plate is loaded. The plate map renderer (tool_wet_lab_plate_map_render) visualises the layout so you can confirm these declarations are present."
+  - "Randomise sample positions across the plate to break confounds with row / column / edge effects. A plate where all treatment wells are in columns 1-6 and all control wells are in columns 7-12 cannot distinguish treatment effect from plate-position effect. Randomise with a recorded seed (e.g. numpy.random.default_rng(seed)) and mem_log the seed."
+  - "The map is versioned per run. A re-pipetted plate is a new run with a new map_id, even if the layout is nominally identical — pipetting errors are the dominant source of between-run variance and you need the audit trail."
 
 quality_bar:
   required_fields_per_map:
-    - map_id
-    - plate_format
-    - run_date
-    - operator
-    - assay_step_ref
-    - randomisation_seed
-    - layout
+  - map_id
+  - plate_format
+  - run_date
+  - operator
+  - assay_step_ref
+  - randomisation_seed
+  - layout
   required_well_classes:
-    - positive_control
-    - negative_control
-    - blank
-    - sample
+  - positive_control
+  - negative_control
+  - blank
+  - sample
   required_for_quantitative_assay:
-    - standard_curve_wells
-    - standard_curve_concentrations
-    - standard_curve_units
+  - standard_curve_wells
+  - standard_curve_concentrations
+  - standard_curve_units
   edge_well_policy:
-    - "buffer_only OR explicit edge_effect_correction_method in
-       analysis script"
+  - "buffer_only OR explicit edge_effect_correction_method in analysis script"
 
 steps:
-  - id: declare_assay_geometry
-    name: Declare the plate format + control architecture
-    description: |
-      Before any sample list exists, pick the plate format
-      (96 / 384 / 1536) and decide the control architecture: how
-      many positive controls, how many negative controls, how many
-      blanks, whether a standard curve is needed.
-      Reference the assay's prior runs via tool_search for the
-      assay name — if a control architecture exists for this
-      assay, inherit it rather than reinventing.
-      Output: a short text in workspace/<step>/plate_geometry.md
-      capturing format + control counts + rationale.
+- id: declare_assay_geometry
+  name: Declare the plate format + control architecture
+  description: |
+    Before any sample list exists, pick the plate format
+    (96 / 384 / 1536) and decide the control architecture: how
+    many positive controls, how many negative controls, how many
+    blanks, whether a standard curve is needed.
+    Reference the assay's prior runs via tool_search for the
+    assay name — if a control architecture exists for this
+    assay, inherit it rather than reinventing.
+    Output: a short text in workspace/<step>/plate_geometry.md
+    capturing format + control counts + rationale.
 
-  - id: enumerate_samples
-    name: List the samples + their experimental factors
-    description: |
-      Build the sample list as a CSV in workspace/<step>/samples.csv
-      with columns: sample_id, condition, replicate, source. The
-      condition column captures the experimental factor(s) — e.g.,
-      drug + dose, genotype, time-point. Replicate count is at
-      least 3 per condition for a screen, at least 4 for a
-      quantitative comparison; if you have fewer, document the
-      power-calculation explicitly.
-      Sample IDs must be unique within the plate and reference
-      back to the sample-prep record (the upstream protocol that
-      generated them).
+- id: enumerate_samples
+  name: List the samples + their experimental factors
+  description: |
+    Build the sample list as a CSV in workspace/<step>/samples.csv
+    with columns: sample_id, condition, replicate, source. The
+    condition column captures the experimental factor(s) — e.g.,
+    drug + dose, genotype, time-point. Replicate count is at
+    least 3 per condition for a screen, at least 4 for a
+    quantitative comparison; if you have fewer, document the
+    power-calculation explicitly.
+    Sample IDs must be unique within the plate and reference
+    back to the sample-prep record (the upstream protocol that
+    generated them).
 
-  - id: assign_wells_with_randomisation
-    name: Assign samples to wells with a recorded randomisation seed
-    description: |
-      Randomise the well assignments with a recorded seed (e.g.
-      numpy.random.default_rng(seed)); the seed is mandatory and
-      gets logged via mem_log so the layout is reproducible.
-      Write workspace/<step>/plate_map_<map_id>.yaml with
-      well-by-well assignments, then sanity-check that it does NOT:
-        - load samples into edge wells without an edge policy,
-        - place all replicates of one condition in the same row /
-          column,
-        - omit any required well class.
-      If the layout violates any of these, fix the underlying issue —
-      do not ship a confounded plate.
+- id: assign_wells_with_randomisation
+  name: Assign samples to wells with a recorded randomisation seed
+  description: |
+    Randomise the well assignments with a recorded seed (e.g.
+    numpy.random.default_rng(seed)); the seed is mandatory and
+    gets logged via mem_log so the layout is reproducible.
+    Write workspace/<step>/plate_map_<map_id>.yaml with
+    well-by-well assignments, then sanity-check that it does NOT:
+      - load samples into edge wells without an edge policy,
+      - place all replicates of one condition in the same row /
+        column,
+      - omit any required well class.
+    If the layout violates any of these, fix the underlying issue —
+    do not ship a confounded plate.
 
-  - id: render_for_visual_check
-    name: Render the map + eyeball it before pipetting
-    description: |
-      Run tool_wet_lab_plate_map_render on the plate_map YAML. It
-      emits a PNG with wells coloured by class (sample / positive /
-      negative / blank / standard) and labelled with sample_id.
-      Pin the PNG next to the pipetting station. Two pairs of eyes
-      should sign off (operator + a second researcher) BEFORE the
-      first sample is dispensed. The 30 seconds of human review
-      catches the column-offset errors that no software check will.
+- id: render_for_visual_check
+  name: Render the map + eyeball it before pipetting
+  description: |
+    Run tool_wet_lab_plate_map_render on the plate_map YAML. It
+    emits a PNG with wells coloured by class (sample / positive /
+    negative / blank / standard) and labelled with sample_id.
+    Pin the PNG next to the pipetting station. Two pairs of eyes
+    should sign off (operator + a second researcher) BEFORE the
+    first sample is dispensed. The 30 seconds of human review
+    catches the column-offset errors that no software check will.
 
-  - id: archive_with_raw_data
-    name: Archive the map next to the raw plate-reader output
-    description: |
-      After the run, the raw plate-reader file (Excel / XML /
-      vendor-specific) is saved to
-      workspace/<step>/raw/<map_id>__<read_type>.<ext>. The
-      plate_map_<map_id>.yaml is copied into the same folder. The
-      map_id in the filename is the join key — analysis code looks
-      up the map by map_id, never by filesystem proximity.
-      A README.md in workspace/<step>/raw/ lists every (map, raw,
-      read_type) tuple for the step.
+- id: archive_with_raw_data
+  name: Archive the map next to the raw plate-reader output
+  description: |
+    After the run, the raw plate-reader file (Excel / XML /
+    vendor-specific) is saved to
+    workspace/<step>/raw/<map_id>__<read_type>.<ext>. The
+    plate_map_<map_id>.yaml is copied into the same folder. The
+    map_id in the filename is the join key — analysis code looks
+    up the map by map_id, never by filesystem proximity.
+    A README.md in workspace/<step>/raw/ lists every (map, raw,
+    read_type) tuple for the step.
 
-  - id: link_to_analysis
-    name: Reference the map from the analysis script
-    description: |
-      The analysis script (downstream in
-      analyses/<step>/<assay>.py or .R) loads the plate map by
-      map_id and uses it to:
-        - subtract blank-well signal,
-        - normalise to positive-control wells,
-        - fit standard curves where applicable,
-        - exclude edge wells (or apply the declared correction).
-      Hard-coding well coordinates in the analysis script is a
-      smell — it means the analysis is bound to one specific
-      layout and cannot run against a re-pipetted plate. Always
-      look up wells by class + sample_id via the map.
+- id: link_to_analysis
+  name: Reference the map from the analysis script
+  description: |
+    The analysis script (downstream in
+    analyses/<step>/<assay>.py or .R) loads the plate map by
+    map_id and uses it to:
+      - subtract blank-well signal,
+      - normalise to positive-control wells,
+      - fit standard curves where applicable,
+      - exclude edge wells (or apply the declared correction).
+    Hard-coding well coordinates in the analysis script is a
+    smell — it means the analysis is bound to one specific
+    layout and cannot run against a re-pipetted plate. Always
+    look up wells by class + sample_id via the map.
 
-  - id: log_run_to_instrument_log
-    name: Log the run to the instrument run log
-    description: |
-      Append an entry to the instrument run log (see
-      wet_lab/protocol/instrument_run_log) with: map_id,
-      instrument_id, read_settings, run_date, operator. This is
-      the cross-reference that lets you trace a future anomaly
-      ("why does run 47 look weird") back to instrument
-      calibration history or operator changes.
+- id: log_run_to_instrument_log
+  name: Log the run to the instrument run log
+  description: |
+    Append an entry to the instrument run log (see
+    wet_lab/protocol/instrument_run_log) with: map_id,
+    instrument_id, read_settings, run_date, operator. This is
+    the cross-reference that lets you trace a future anomaly
+    ("why does run 47 look weird") back to instrument
+    calibration history or operator changes.
 
 expected_outputs:
-  - workspace/<step>/plate_geometry.md
-  - workspace/<step>/samples.csv
-  - workspace/<step>/plate_map_<map_id>.yaml
-  - workspace/<step>/plate_map_<map_id>.png
-  - workspace/<step>/raw/<map_id>__<read_type>.<ext>
-  - workspace/<step>/raw/README.md
+- workspace/<step>/plate_geometry.md
+- workspace/<step>/samples.csv
+- workspace/<step>/plate_map_<map_id>.yaml
+- workspace/<step>/plate_map_<map_id>.png
+- workspace/<step>/raw/<map_id>__<read_type>.<ext>
+- workspace/<step>/raw/README.md
 
 next_protocol: wet_lab/protocol/instrument_run_log
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: execute
+sub_intent: new_experiment
+triggers:
+- plate map
+- plate layout
+- 96-well
+- 384-well
+- 1536-well
+- plate design
+summary: 'Plate-based assays: layout file is a versioned artifact; controls + replicates + blanks documented.'
+shortcut_tool: tool_wet_lab_plate_map_render
+token_estimate: 1500
+decomposition:
+- tool: tool_wet_lab_plate_map_render
+  purpose: Render the layout to PNG + ASCII for sanity check.
+- protocol: wet_lab/protocol/plate_map_provenance
+  purpose: Walk control / replicate / blank documentation.

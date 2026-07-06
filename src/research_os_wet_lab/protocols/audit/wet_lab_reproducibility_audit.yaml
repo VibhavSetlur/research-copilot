@@ -1,7 +1,7 @@
 id: wet_lab_reproducibility_audit
 name: Wet-Lab Reproducibility Audit
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [wet_lab, biology]
   audience: [auditor, maintainer]
@@ -47,36 +47,16 @@ trigger: |
   check", "is this paper-ready".
 
 prerequisites:
-  - At least one numbered step folder exists with completed wet-lab
-    work (workspace/<NN>_<slug>/ with reagents.yaml, raw reads,
-    instrument output).
-  - reagent_lot_tracking has been run at least once for each step
-    under audit (this protocol consumes its output, it does not
-    re-do the work).
+- At least one numbered step folder exists with completed wet-lab work (workspace/<NN>_<slug>/ with reagents.yaml, raw reads, instrument output).
+- reagent_lot_tracking has been run at least once for each step under audit (this protocol consumes its output, it does not re-do the work).
 
 editorial_voice:
   mode: prescription
   rules:
-    - "A missing pillar is a BLOCKER, not a warning. The audit
-       distinguishes 'fixed' from 'waived' but never from 'silently
-       skipped'. Every gap leaves the workspace either with a green
-       check, an open ticket, or a signed waiver in
-       mem_log."
-    - "Reproducibility is checked per STEP, not per project. A clean
-       step 03 does not excuse a broken step 05. The methods section
-       cites each step independently; the audit grades each step
-       independently."
-    - "The audit reads what is recorded. It does NOT trust verbal
-       assurance that 'we did calibrate, just forgot to log it'.
-       Unlogged is unreproducible, even when the work was done
-       correctly. The fix is to write down what happened (with the
-       date the entry was made flagged so the reviewer can see it
-       was reconstructed), not to assert it."
-    - "Waivers are expensive on purpose. A waiver entry in
-       mem_log names the pillar, the reason, the risk to
-       the reader, and the corresponding author's sign-off. If the
-       waiver feels easy to write, the audit was probably right to
-       block."
+  - "A missing pillar is a BLOCKER, not a warning. The audit distinguishes 'fixed' from 'waived' but never from 'silently skipped'. Every gap leaves the workspace either with a green check, an open ticket, or a signed waiver in mem_log."
+  - "Reproducibility is checked per STEP, not per project. A clean step 03 does not excuse a broken step 05. The methods section cites each step independently; the audit grades each step independently."
+  - "The audit reads what is recorded. It does NOT trust verbal assurance that 'we did calibrate, just forgot to log it'. Unlogged is unreproducible, even when the work was done correctly. The fix is to write down what happened (with the date the entry was made flagged so the reviewer can see it was reconstructed), not to assert it."
+  - "Waivers are expensive on purpose. A waiver entry in mem_log names the pillar, the reason, the risk to the reader, and the corresponding author's sign-off. If the waiver feels easy to write, the audit was probably right to block."
 
 quality_bar:
   sop_pillar:
@@ -115,157 +95,169 @@ quality_bar:
       runtime knob choices, separate from the SOP.
 
 steps:
-  - id: enumerate_steps_under_audit
-    name: Enumerate every wet-lab step in scope + classify the assay type
-    description: |
-      Walk workspace/ and list every numbered step folder that
-      contains wet-lab artefacts (reagents.yaml, an instrument
-      read-out file, a plate map directory, an SOP reference).
-      Exclude steps marked __DEAD_END and any workspace/scratch/
-      sandbox.
+- id: enumerate_steps_under_audit
+  name: Enumerate every wet-lab step in scope + classify the assay type
+  description: |
+    Walk workspace/ and list every numbered step folder that
+    contains wet-lab artefacts (reagents.yaml, an instrument
+    read-out file, a plate map directory, an SOP reference).
+    Exclude steps marked __DEAD_END and any workspace/scratch/
+    sandbox.
 
-      For each step, classify the assay type (Western, qPCR, flow,
-      sequencing, microscopy, etc.) — the type determines which of
-      the four pillars apply and how strictly. A bench-side
-      colourimetric assay does not need a flow-cytometer
-      calibration log; a sequencer run does. Persist the
-      enumeration to workspace/logs/wet_lab_audit_scope.json so
-      the audit is diffable across runs.
+    For each step, classify the assay type (Western, qPCR, flow,
+    sequencing, microscopy, etc.) — the type determines which of
+    the four pillars apply and how strictly. A bench-side
+    colourimetric assay does not need a flow-cytometer
+    calibration log; a sequencer run does. Persist the
+    enumeration to workspace/logs/wet_lab_audit_scope.json so
+    the audit is diffable across runs.
 
-      Use sys_path to walk + tool_search to locate SOP references
-      across the step folder. If a step's assay type is ambiguous,
-      ask the researcher rather than guess — misclassification
-      cascades through the rest of the audit.
+    Use sys_path to walk + tool_search to locate SOP references
+    across the step folder. If a step's assay type is ambiguous,
+    ask the researcher rather than guess — misclassification
+    cascades through the rest of the audit.
 
-  - id: audit_sop_pillar
-    name: Audit pillar 1 — SOPs versioned with changelog
-    description: |
-      Per step in scope, locate the SOP reference (typically
-      workspace/<step>/sop.yaml or a citation in
-      workspace/<step>/method.md). The SOP must:
-        - point at a specific pinned version (a hash, a git tag, a
-          version field — not 'current'),
-        - resolve to a readable artefact (the SOP file itself, or
-          a URL the audit can fetch),
-        - if the version advanced since the previous step that used
-          it, the corresponding sop_changelog.md entry exists.
+- id: audit_sop_pillar
+  name: Audit pillar 1 — SOPs versioned with changelog
+  description: |
+    Per step in scope, locate the SOP reference (typically
+    workspace/<step>/sop.yaml or a citation in
+    workspace/<step>/method.md). The SOP must:
+      - point at a specific pinned version (a hash, a git tag, a
+        version field — not 'current'),
+      - resolve to a readable artefact (the SOP file itself, or
+        a URL the audit can fetch),
+      - if the version advanced since the previous step that used
+        it, the corresponding sop_changelog.md entry exists.
 
-      The audit does NOT prescribe an SOP authoring system —
-      whichever the lab uses (Benchling, paper notebook scanned
-      to PDF, lab wiki, plain markdown in the repo) is fine, as
-      long as the pin resolves. A pin to 'page 14 of the red
-      binder on the bench' is not a pin; flag it.
+    The audit does NOT prescribe an SOP authoring system —
+    whichever the lab uses (Benchling, paper notebook scanned
+    to PDF, lab wiki, plain markdown in the repo) is fine, as
+    long as the pin resolves. A pin to 'page 14 of the red
+    binder on the bench' is not a pin; flag it.
 
-      Grade per step: PASS / BLOCKER / WAIVED. Persist to
-      workspace/logs/wet_lab_audit_sop.md with the grade + the
-      reasoning chain that produced it.
+    Grade per step: PASS / BLOCKER / WAIVED. Persist to
+    workspace/logs/wet_lab_audit_sop.md with the grade + the
+    reasoning chain that produced it.
 
-  - id: audit_reagent_pillar
-    name: Audit pillar 2 — reagents lot-tracked with CoA URLs
-    description: |
-      Re-use the reagent_lot_tracking audit machinery: walk every
-      step's reagents.yaml, dereference each per-reagent YAML, and
-      check the fields the reagent's class demands (the
-      reagent_lot_tracking quality_bar enumerates them).
+- id: audit_reagent_pillar
+  name: Audit pillar 2 — reagents lot-tracked with CoA URLs
+  description: |
+    Re-use the reagent_lot_tracking audit machinery: walk every
+    step's reagents.yaml, dereference each per-reagent YAML, and
+    check the fields the reagent's class demands (the
+    reagent_lot_tracking quality_bar enumerates them).
 
-      The hard failures this step catches that reagent_lot_tracking
-      sometimes lets through:
-        - a reagents.yaml that exists but is empty,
-        - a reagent entry with TODO placeholders still in it,
-        - an antibody without an RRID (the field penalises this
-          even when the rest of the entry is complete),
-        - a cell line whose mycoplasma test predates the assay by
-          longer than the field tolerates — cite the journal /
-          society standard rather than hardcode a window.
+    The hard failures this step catches that reagent_lot_tracking
+    sometimes lets through:
+      - a reagents.yaml that exists but is empty,
+      - a reagent entry with TODO placeholders still in it,
+      - an antibody without an RRID (the field penalises this
+        even when the rest of the entry is complete),
+      - a cell line whose mycoplasma test predates the assay by
+        longer than the field tolerates — cite the journal /
+        society standard rather than hardcode a window.
 
-      Grade per step + persist to
-      workspace/logs/wet_lab_audit_reagents.md.
+    Grade per step + persist to
+    workspace/logs/wet_lab_audit_reagents.md.
 
-  - id: audit_plate_map_pillar
-    name: Audit pillar 3 — plate maps archived with run output
-    description: |
-      For every step whose assay type uses a plate (96-well, 384-well,
-      flow plate, microscopy plate), the audit demands a plate map
-      artefact archived in the SAME COMMIT as the raw read-out file.
-      The map must:
-        - cover every well that was loaded (blanks + controls + samples),
-        - be machine-readable (CSV / TSV / YAML / a structured
-          plate-map JSON) — a hand-sketched image of a plate is
-          a starting point, not the archived artefact,
-        - cross-reference the reagent entries the wells used (the
-          control antibody's reagent ID, the sample IDs, the buffer
-          blank composition).
+- id: audit_plate_map_pillar
+  name: Audit pillar 3 — plate maps archived with run output
+  description: |
+    For every step whose assay type uses a plate (96-well, 384-well,
+    flow plate, microscopy plate), the audit demands a plate map
+    artefact archived in the SAME COMMIT as the raw read-out file.
+    The map must:
+      - cover every well that was loaded (blanks + controls + samples),
+      - be machine-readable (CSV / TSV / YAML / a structured
+        plate-map JSON) — a hand-sketched image of a plate is
+        a starting point, not the archived artefact,
+      - cross-reference the reagent entries the wells used (the
+        control antibody's reagent ID, the sample IDs, the buffer
+        blank composition).
 
-      The 'archived in the same commit' check is what catches the
-      common failure mode: the read-out lands in the repo, the
-      plate map lives on someone's laptop, and a year later nobody
-      can tell which well was which. Use sys_path + git log on
-      the read-out file to confirm the map shipped with it.
+    The 'archived in the same commit' check is what catches the
+    common failure mode: the read-out lands in the repo, the
+    plate map lives on someone's laptop, and a year later nobody
+    can tell which well was which. Use sys_path + git log on
+    the read-out file to confirm the map shipped with it.
 
-      Grade per step + persist to
-      workspace/logs/wet_lab_audit_plate_maps.md.
+    Grade per step + persist to
+    workspace/logs/wet_lab_audit_plate_maps.md.
 
-  - id: audit_instrument_pillar
-    name: Audit pillar 4 — instrument runs logged with parameters
-    description: |
-      For every step whose assay type uses an instrument (plate
-      reader, qPCR machine, flow cytometer, sequencer, mass spec,
-      microscope), the audit demands an instrument run log
-      committed alongside the read-out file. The log records:
-        - instrument identifier (make + model + lab inventory ID;
-          'the BD on the third floor' is not an identifier),
-        - software version of the instrument's controller,
-        - the full parameter set the operator chose at runtime
-          (voltages, gating, cycle counts, read length, exposure,
-          etc. — assay-specific),
-        - calibration / QC date when the assay type demands it
-          (cite the manufacturer or society standard rather than
-          hardcode a cadence).
+- id: audit_instrument_pillar
+  name: Audit pillar 4 — instrument runs logged with parameters
+  description: |
+    For every step whose assay type uses an instrument (plate
+    reader, qPCR machine, flow cytometer, sequencer, mass spec,
+    microscope), the audit demands an instrument run log
+    committed alongside the read-out file. The log records:
+      - instrument identifier (make + model + lab inventory ID;
+        'the BD on the third floor' is not an identifier),
+      - software version of the instrument's controller,
+      - the full parameter set the operator chose at runtime
+        (voltages, gating, cycle counts, read length, exposure,
+        etc. — assay-specific),
+      - calibration / QC date when the assay type demands it
+        (cite the manufacturer or society standard rather than
+        hardcode a cadence).
 
-      Many modern instruments emit a parameter file as part of
-      their output bundle. The audit accepts that file as the log
-      when it covers the required fields; it does NOT demand the
-      operator transcribe it into a second format.
+    Many modern instruments emit a parameter file as part of
+    their output bundle. The audit accepts that file as the log
+    when it covers the required fields; it does NOT demand the
+    operator transcribe it into a second format.
 
-      Grade per step + persist to
-      workspace/logs/wet_lab_audit_instruments.md.
+    Grade per step + persist to
+    workspace/logs/wet_lab_audit_instruments.md.
 
-  - id: roll_up_and_emit_verdict
-    name: Roll up the four pillar grades + emit the audit verdict
-    description: |
-      Combine the four per-step grades into
-      workspace/logs/wet_lab_reproducibility_audit.md:
+- id: roll_up_and_emit_verdict
+  name: Roll up the four pillar grades + emit the audit verdict
+  description: |
+    Combine the four per-step grades into
+    workspace/logs/wet_lab_reproducibility_audit.md:
 
-        # Wet-Lab Reproducibility Audit — <date>
+      # Wet-Lab Reproducibility Audit — <date>
 
-        | step | assay | SOP | reagents | plate map | instrument | verdict |
-        |------|-------|-----|----------|-----------|------------|---------|
-        | 03_western | Western blot | PASS | BLOCKER | n/a | PASS | BLOCKER |
-        | 05_qpcr    | qPCR         | PASS | PASS    | PASS | WAIVED | PASS (with waiver) |
+      | step | assay | SOP | reagents | plate map | instrument | verdict |
+      |------|-------|-----|----------|-----------|------------|---------|
+      | 03_western | Western blot | PASS | BLOCKER | n/a | PASS | BLOCKER |
+      | 05_qpcr    | qPCR         | PASS | PASS    | PASS | WAIVED | PASS (with waiver) |
 
-        ## BLOCKERS
-        ...one row per blocker with step + pillar + fix path...
+      ## BLOCKERS
+      ...one row per blocker with step + pillar + fix path...
 
-        ## WAIVERS
-        ...one row per waiver with the mem_log entry ID...
+      ## WAIVERS
+      ...one row per waiver with the mem_log entry ID...
 
-      A step passes only when every applicable pillar is PASS or
-      WAIVED. A project passes pre-submission only when every step
-      passes. Use mem_log to record the audit run + the verdict +
-      the open BLOCKER count.
+    A step passes only when every applicable pillar is PASS or
+    WAIVED. A project passes pre-submission only when every step
+    passes. Use mem_log to record the audit run + the verdict +
+    the open BLOCKER count.
 
-      Append the verdict to conclusions.md ## Limitations when
-      WAIVED entries exist — the reader is owed an honest disclosure
-      of what was waived and why.
+    Append the verdict to conclusions.md ## Limitations when
+    WAIVED entries exist — the reader is owed an honest disclosure
+    of what was waived and why.
 
 expected_outputs:
-  - workspace/logs/wet_lab_audit_scope.json
-  - workspace/logs/wet_lab_audit_sop.md
-  - workspace/logs/wet_lab_audit_reagents.md
-  - workspace/logs/wet_lab_audit_plate_maps.md
-  - workspace/logs/wet_lab_audit_instruments.md
-  - workspace/logs/wet_lab_reproducibility_audit.md
+- workspace/logs/wet_lab_audit_scope.json
+- workspace/logs/wet_lab_audit_sop.md
+- workspace/logs/wet_lab_audit_reagents.md
+- workspace/logs/wet_lab_audit_plate_maps.md
+- workspace/logs/wet_lab_audit_instruments.md
+- workspace/logs/wet_lab_reproducibility_audit.md
 
 next_protocol: wet_lab/output/methods_section_wet_lab
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: audit_wrap
+sub_intent: pre_submission
+triggers:
+- wet lab reproducibility
+- can another lab repeat
+- wet lab audit
+- pre-submission wet lab
+summary: 'Before publication: SOPs versioned, reagents lot-tracked, plate maps archived, instrument runs logged.'
+token_estimate: 1600
+decomposition:
+- protocol: wet_lab/audit/wet_lab_reproducibility_audit
+  purpose: Audit the four wet-lab provenance pillars.

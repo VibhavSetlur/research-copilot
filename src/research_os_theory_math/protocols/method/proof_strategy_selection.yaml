@@ -1,7 +1,7 @@
 id: proof_strategy_selection
 name: Proof-Strategy Selection
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [theory_math]
   audience: [researcher]
@@ -39,36 +39,16 @@ trigger: |
   of theory_math/proof/proof_verification_workflow.
 
 prerequisites:
-  - A claim is stated formally (per step 1 of
-    proof_verification_workflow). "X is roughly Y" is not enough —
-    the claim's logical form (universal, existential, conditional,
-    biconditional, equality) is what drives strategy selection.
-  - The objects in the claim have definitions reachable from
-    `inputs/preliminaries.md`. Strategy depends on whether the
-    objects are inductively defined, well-ordered, finite, etc.
+- A claim is stated formally (per step 1 of proof_verification_workflow). "X is roughly Y" is not enough — the claim's logical form (universal, existential, conditional, biconditional, equality) is what drives strategy selection.
+- The objects in the claim have definitions reachable from `inputs/preliminaries.md`. Strategy depends on whether the objects are inductively defined, well-ordered, finite, etc.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "The strategy follows the shape of the claim, not the
-       researcher's comfort. If the claim is a universal over an
-       inductively defined set, induction is the default even if
-       contradiction feels easier — defaulting to your favourite
-       hammer is how proofs get longer than they need to be."
-    - "Name one strategy as the choice and at most one as the
-       fallback. A protocol that returns 'try direct, then
-       contradiction, then induction' is not a selection, it is
-       a search; the proof body cannot start until selection ends."
-    - "Construction and counter-example are first-class strategies,
-       not afterthoughts. An existential claim wants a construction;
-       a universal claim wants a counter-example attempt before a
-       proof attempt — five minutes hunting a small case can save
-       five hours."
-    - "Contradiction is a sharp tool that is over-used. Default to
-       it only when the claim's negation has obviously richer
-       structure than the claim itself (e.g. negating 'no such X
-       exists' gives you an X to work with). Otherwise prefer
-       direct or contrapositive."
+  - "The strategy follows the shape of the claim, not the researcher's comfort. If the claim is a universal over an inductively defined set, induction is the default even if contradiction feels easier — defaulting to your favourite hammer is how proofs get longer than they need to be."
+  - "Name one strategy as the choice and at most one as the fallback. A protocol that returns 'try direct, then contradiction, then induction' is not a selection, it is a search; the proof body cannot start until selection ends."
+  - "Construction and counter-example are first-class strategies, not afterthoughts. An existential claim wants a construction; a universal claim wants a counter-example attempt before a proof attempt — five minutes hunting a small case can save five hours."
+  - "Contradiction is a sharp tool that is over-used. Default to it only when the claim's negation has obviously richer structure than the claim itself (e.g. negating 'no such X exists' gives you an X to work with). Otherwise prefer direct or contrapositive."
 
 quality_bar:
   selection_must_name_exactly_one_strategy: true
@@ -84,145 +64,164 @@ quality_bar:
     pattern-matching dressed up as analysis.
 
 steps:
-  - id: extract_claim_shape
-    name: Extract the logical shape of the claim
-    description: |
-      Read the claim from `workspace/proofs/<slug>.md` (the
-      `## Claim` heading produced by proof_verification_workflow
-      step 1). Classify its top-level logical form: universal
-      (∀), existential (∃), conditional (P → Q), biconditional
-      (P ↔ Q), equality / equivalence, or negation (¬P). Note
-      the domain — is it inductively defined (ℕ, lists, trees,
-      ASTs), well-ordered, finite, or arbitrary? Record the
-      classification in `workspace/proofs/<slug>.md` under
-      `## Claim shape` — two lines. Call mem_log with
-      kind='claim_shape' so later strategy decisions on related
-      claims can reference this analysis.
+- id: extract_claim_shape
+  name: Extract the logical shape of the claim
+  description: |
+    Read the claim from `workspace/proofs/<slug>.md` (the
+    `## Claim` heading produced by proof_verification_workflow
+    step 1). Classify its top-level logical form: universal
+    (∀), existential (∃), conditional (P → Q), biconditional
+    (P ↔ Q), equality / equivalence, or negation (¬P). Note
+    the domain — is it inductively defined (ℕ, lists, trees,
+    ASTs), well-ordered, finite, or arbitrary? Record the
+    classification in `workspace/proofs/<slug>.md` under
+    `## Claim shape` — two lines. Call mem_log with
+    kind='claim_shape' so later strategy decisions on related
+    claims can reference this analysis.
 
-  - id: small_case_probe
-    name: Probe small cases before committing to a strategy
-    description: |
-      Spend up to fifteen minutes testing the claim on the
-      smallest non-trivial instances. For a universal claim,
-      this is a counter-example hunt — if you find one, the
-      proof is done (negatively) and no strategy is needed.
-      For an existential claim, this is a construction attempt
-      — if the smallest case yields a witness pattern, the
-      strategy is construction. For a conditional, plug in
-      boundary cases of P and watch how Q behaves. Record
-      anything informative (witnesses, near-counter-examples,
-      surprising regularities) in
-      `workspace/proofs/<slug>_probe.md`. Do not skip this
-      step — counter-examples found in step 2 save weeks; the
-      same counter-example found in independent_review is
-      embarrassing.
+- id: small_case_probe
+  name: Probe small cases before committing to a strategy
+  description: |
+    Spend up to fifteen minutes testing the claim on the
+    smallest non-trivial instances. For a universal claim,
+    this is a counter-example hunt — if you find one, the
+    proof is done (negatively) and no strategy is needed.
+    For an existential claim, this is a construction attempt
+    — if the smallest case yields a witness pattern, the
+    strategy is construction. For a conditional, plug in
+    boundary cases of P and watch how Q behaves. Record
+    anything informative (witnesses, near-counter-examples,
+    surprising regularities) in
+    `workspace/proofs/<slug>_probe.md`. Do not skip this
+    step — counter-examples found in step 2 save weeks; the
+    same counter-example found in independent_review is
+    embarrassing.
 
-  - id: enumerate_candidate_strategies
-    name: Enumerate candidate strategies with fit rationale
-    description: |
-      For each of the six strategies, write one sentence on
-      whether it fits the claim shape from step 1:
-        - direct proof — works when antecedents give you enough
-          to build the consequent without case analysis
-        - proof by contradiction — works when ¬claim has more
-          structure to manipulate than the claim itself
-        - induction (structural / well-founded / strong) —
-          works when the domain is inductively defined and the
-          claim is universal over it; pick the variant based on
-          whether the inductive hypothesis needs to be strong
-        - contrapositive — works when ¬Q → ¬P is easier than
-          P → Q, common when Q is an existential or disjunction
-        - construction — the default for existential claims;
-          name the witness explicitly
-        - counter-example — the default for refuting universal
-          claims; only listed here for completeness, the probe
-          step above is where it usually surfaces
-      Six sentences. Record them in `workspace/proofs/<slug>.md`
-      under `## Candidate strategies`.
+- id: enumerate_candidate_strategies
+  name: Enumerate candidate strategies with fit rationale
+  description: |
+    For each of the six strategies, write one sentence on
+    whether it fits the claim shape from step 1:
+      - direct proof — works when antecedents give you enough
+        to build the consequent without case analysis
+      - proof by contradiction — works when ¬claim has more
+        structure to manipulate than the claim itself
+      - induction (structural / well-founded / strong) —
+        works when the domain is inductively defined and the
+        claim is universal over it; pick the variant based on
+        whether the inductive hypothesis needs to be strong
+      - contrapositive — works when ¬Q → ¬P is easier than
+        P → Q, common when Q is an existential or disjunction
+      - construction — the default for existential claims;
+        name the witness explicitly
+      - counter-example — the default for refuting universal
+        claims; only listed here for completeness, the probe
+        step above is where it usually surfaces
+    Six sentences. Record them in `workspace/proofs/<slug>.md`
+    under `## Candidate strategies`.
 
-  - id: name_the_choice
-    name: Name the chosen strategy and at most one fallback
-    description: |
-      Pick one. The choice goes into `workspace/proofs/<slug>.md`
-      under `## Strategy` with a justification paragraph of at
-      least three sentences: (1) the claim's logical shape,
-      (2) why this strategy matches that shape, (3) why the
-      runner-up was discarded. Optionally name one fallback
-      strategy to try if the first attempt stalls — but no
-      more than one. A list of three "things to try" is what
-      the next phase produces if this step does its job badly;
-      do not pre-empt it.
+- id: name_the_choice
+  name: Name the chosen strategy and at most one fallback
+  description: |
+    Pick one. The choice goes into `workspace/proofs/<slug>.md`
+    under `## Strategy` with a justification paragraph of at
+    least three sentences: (1) the claim's logical shape,
+    (2) why this strategy matches that shape, (3) why the
+    runner-up was discarded. Optionally name one fallback
+    strategy to try if the first attempt stalls — but no
+    more than one. A list of three "things to try" is what
+    the next phase produces if this step does its job badly;
+    do not pre-empt it.
 
-  - id: outline_default_scaffold
-    name: Sketch the default scaffold for the chosen strategy
-    description: |
-      Each strategy has a canonical opening. Sketch it in
-      `workspace/proofs/<slug>.md` under `## Scaffold` — three
-      to five lines, not a full proof:
-        - direct: "Assume <hypotheses>. We show <conclusion>.
-          By <key lemma / definition>, ..."
-        - contradiction: "Suppose for contradiction that
-          ¬<claim>. Then <some object> exists / has property
-          <X>. We derive a contradiction with <known fact>."
-        - induction: state the predicate P(n), the base case,
-          and the inductive step shape (weak / strong / well-
-          founded — name the well-founded order if not ℕ)
-        - contrapositive: "We show ¬Q → ¬P. Assume ¬Q. Then ..."
-        - construction: name the witness W and what needs to
-          be verified about it
-        - counter-example: state the candidate and the property
-          it violates
-      This scaffold is what the proof body in the next phase
-      will fill in. If you cannot write the scaffold in five
-      lines, the strategy choice is probably wrong — return
-      to step 4.
+- id: outline_default_scaffold
+  name: Sketch the default scaffold for the chosen strategy
+  description: |
+    Each strategy has a canonical opening. Sketch it in
+    `workspace/proofs/<slug>.md` under `## Scaffold` — three
+    to five lines, not a full proof:
+      - direct: "Assume <hypotheses>. We show <conclusion>.
+        By <key lemma / definition>, ..."
+      - contradiction: "Suppose for contradiction that
+        ¬<claim>. Then <some object> exists / has property
+        <X>. We derive a contradiction with <known fact>."
+      - induction: state the predicate P(n), the base case,
+        and the inductive step shape (weak / strong / well-
+        founded — name the well-founded order if not ℕ)
+      - contrapositive: "We show ¬Q → ¬P. Assume ¬Q. Then ..."
+      - construction: name the witness W and what needs to
+        be verified about it
+      - counter-example: state the candidate and the property
+        it violates
+    This scaffold is what the proof body in the next phase
+    will fill in. If you cannot write the scaffold in five
+    lines, the strategy choice is probably wrong — return
+    to step 4.
 
-  - id: flag_canonical_mistakes
-    name: Flag the canonical mistakes for the chosen strategy
-    description: |
-      Each strategy has a small set of failure modes that
-      reviewers catch repeatedly. Record the ones relevant
-      to this proof in `workspace/proofs/<slug>.md` under
-      `## Mistakes to avoid`:
-        - direct: skipping a case in case analysis;
-          implicit use of a stronger hypothesis than stated
-        - contradiction: deriving a contradiction with the
-          assumption itself rather than with an external fact
-          (which is really a direct proof in disguise);
-          using contradiction when contrapositive would do
-        - induction: inductive hypothesis not strong enough
-          (needs strong induction or a generalised predicate);
-          base case wrong or missing; inductive step uses the
-          conclusion to prove itself
-        - contrapositive: confusing contrapositive (¬Q → ¬P)
-          with converse (Q → P) or inverse (¬P → ¬Q)
-        - construction: witness not actually in the domain;
-          verification of witness's property is hand-waved
-        - counter-example: counter-example violates an
-          implicit hypothesis you forgot to check
-      Call tool_search if a similar past proof in the project
-      stumbled on one of these — past mistakes are the best
-      predictors of future ones.
+- id: flag_canonical_mistakes
+  name: Flag the canonical mistakes for the chosen strategy
+  description: |
+    Each strategy has a small set of failure modes that
+    reviewers catch repeatedly. Record the ones relevant
+    to this proof in `workspace/proofs/<slug>.md` under
+    `## Mistakes to avoid`:
+      - direct: skipping a case in case analysis;
+        implicit use of a stronger hypothesis than stated
+      - contradiction: deriving a contradiction with the
+        assumption itself rather than with an external fact
+        (which is really a direct proof in disguise);
+        using contradiction when contrapositive would do
+      - induction: inductive hypothesis not strong enough
+        (needs strong induction or a generalised predicate);
+        base case wrong or missing; inductive step uses the
+        conclusion to prove itself
+      - contrapositive: confusing contrapositive (¬Q → ¬P)
+        with converse (Q → P) or inverse (¬P → ¬Q)
+      - construction: witness not actually in the domain;
+        verification of witness's property is hand-waved
+      - counter-example: counter-example violates an
+        implicit hypothesis you forgot to check
+    Call tool_search if a similar past proof in the project
+    stumbled on one of these — past mistakes are the best
+    predictors of future ones.
 
-  - id: handoff_to_draft
-    name: Hand off to the proof drafting phase
-    description: |
-      The strategy is named, justified, scaffolded, and
-      annotated with its failure modes. Confirm
-      `workspace/proofs/<slug>.md` contains all four sections
-      (`## Claim shape`, `## Candidate strategies`,
-      `## Strategy`, `## Scaffold`, `## Mistakes to avoid`).
-      Call mem_log with kind='strategy_selected' and the
-      chosen strategy name — this builds a project-level
-      record of which strategies tend to work for which claim
-      shapes, which the next round of strategy selection can
-      query via sys_path. Hand off to proof_verification_workflow
-      step 3 (draft_proof).
+- id: handoff_to_draft
+  name: Hand off to the proof drafting phase
+  description: |
+    The strategy is named, justified, scaffolded, and
+    annotated with its failure modes. Confirm
+    `workspace/proofs/<slug>.md` contains all four sections
+    (`## Claim shape`, `## Candidate strategies`,
+    `## Strategy`, `## Scaffold`, `## Mistakes to avoid`).
+    Call mem_log with kind='strategy_selected' and the
+    chosen strategy name — this builds a project-level
+    record of which strategies tend to work for which claim
+    shapes, which the next round of strategy selection can
+    query via sys_path. Hand off to proof_verification_workflow
+    step 3 (draft_proof).
 
 expected_outputs:
-  - workspace/proofs/<slug>.md      # updated with the five new sections
-  - workspace/proofs/<slug>_probe.md  # small-case probe notes
+- workspace/proofs/<slug>.md        # updated with the five new sections
+- workspace/proofs/<slug>_probe.md    # small-case probe notes
 
 next_protocol: theory_math/proof/proof_verification_workflow
 next_protocol_kind: forward_default
 on_failure: theory_math/proof/proof_verification_workflow
+intent_class: methodology
+sub_intent: method_pick
+triggers:
+- proof strategy
+- how should I prove
+- induction or contradiction
+- direct proof
+- pick a proof method
+- maximum degree
+- minimum degree
+- graph coloring
+- planar graph
+- sub-cubic
+- subcubic
+summary: 'Pick proof strategy: direct | contradiction | induction | contrapositive | construction.'
+token_estimate: 1400
+decomposition:
+- protocol: theory_math/method/proof_strategy_selection
+  purpose: Compare strategies; name the chosen approach.

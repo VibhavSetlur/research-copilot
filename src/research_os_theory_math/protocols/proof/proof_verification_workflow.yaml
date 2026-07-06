@@ -1,7 +1,7 @@
 id: proof_verification_workflow
 name: Proof Verification Workflow — claim → strategy → draft → review → check → publish
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [theory_math]
   audience: [auditor]
@@ -26,134 +26,138 @@ trigger: |
   the proof", "I have a claim I need to prove", "proof verification".
 
 prerequisites:
-  - A claim is stated formally enough to be either true or false —
-    no "X is roughly Y" placeholders.
-  - The objects in the claim are defined (or pointers to definitions
-    are in `inputs/preliminaries.md`).
+- A claim is stated formally enough to be either true or false — no "X is roughly Y" placeholders.
+- The objects in the claim are defined (or pointers to definitions are in `inputs/preliminaries.md`).
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "A proof draft is not a result until at least one external
-       reader (human or formal tool) has independently confirmed it.
-       'I checked it twice' is not verification."
-    - "Every non-trivial step cites either a prior result (lemma /
-       theorem) or a definition / axiom. 'It follows that' without a
-       citation is a code smell."
-    - "Formal verification is one tool, not the only standard.
-       Bourbaki-style careful informal proofs are valid; formal
-       verification is mandatory when the result is foundational or
-       computationally significant."
+  - "A proof draft is not a result until at least one external reader (human or formal tool) has independently confirmed it. 'I checked it twice' is not verification."
+  - "Every non-trivial step cites either a prior result (lemma / theorem) or a definition / axiom. 'It follows that' without a citation is a code smell."
+  - "Formal verification is one tool, not the only standard. Bourbaki-style careful informal proofs are valid; formal verification is mandatory when the result is foundational or computationally significant."
 
 quality_bar:
   per_step_citation_floor_pct: 80
   reviewer_count_minimum: 1
   formal_check_required_when:
-    - "claim is foundational (other results will depend on it)"
-    - "claim contradicts a widely-believed conjecture"
-    - "proof uses an unusual axiom (e.g. choice, large cardinals)"
+  - "claim is foundational (other results will depend on it)"
+  - "claim contradicts a widely-believed conjecture"
+  - "proof uses an unusual axiom (e.g. choice, large cardinals)"
 
 steps:
-  - id: declare_step_contract
-    name: Declare the step contract (proof IS a proof step)
-    description: |
-      Write `workspace/<step>/step_summary.yaml` with the proof
-      contract so the empirical / quantitative audits don't BLOCK on
-      missing figures or empirical literature loops:
+- id: declare_step_contract
+  name: Declare the step contract (proof IS a proof step)
+  description: |
+    Write `workspace/<step>/step_summary.yaml` with the proof
+    contract so the empirical / quantitative audits don't BLOCK on
+    missing figures or empirical literature loops:
 
-        step_intent: proof          # the unit of work is a proof
-                                    # body + review. No figures, no
-                                    # tables, no datasets.
-        figure_required: false      # proof bodies are prose +
-                                    # equations. Diagrams (when
-                                    # present) are illustrative, not
-                                    # required.
-        table_required: false
-        literature_required: true   # cited prior lemmas / theorems
-                                    # still go through the literature
-                                    # loop — but with verdict
-                                    # IMPORTED_AS_CITED (see
-                                    # literature/literature_per_step
-                                    # for the verdict enum), NOT
-                                    # AGREES/DISAGREES/EXTENDS which
-                                    # presume empirical claims.
+      step_intent: proof          # the unit of work is a proof
+                                  # body + review. No figures, no
+                                  # tables, no datasets.
+      figure_required: false      # proof bodies are prose +
+                                  # equations. Diagrams (when
+                                  # present) are illustrative, not
+                                  # required.
+      table_required: false
+      literature_required: true   # cited prior lemmas / theorems
+                                  # still go through the literature
+                                  # loop — but with verdict
+                                  # IMPORTED_AS_CITED (see
+                                  # literature/literature_per_step
+                                  # for the verdict enum), NOT
+                                  # AGREES/DISAGREES/EXTENDS which
+                                  # presume empirical claims.
 
-      See templates/step_summary.yaml.template for the full schema
-      and analysis_plan.yaml `classify_step_intent` for why
-      `proof` auto-waives the figure-gate (consistent with `plan`,
-      `ground`, `apparatus`).
+    See templates/step_summary.yaml.template for the full schema
+    and analysis_plan.yaml `classify_step_intent` for why
+    `proof` auto-waives the figure-gate (consistent with `plan`,
+    `ground`, `apparatus`).
 
-  - id: state_claim
-    name: State the claim
-    description: |
-      Write the claim in `workspace/proofs/<slug>.md` under a
-      `## Claim` heading. Use the same notation as the surrounding
-      paper / project. If the claim involves objects defined
-      elsewhere, link them by name (`see Definition 2.3`).
-      The claim must be unambiguous: a reader should be able to
-      tell whether a specific instance satisfies it.
+- id: state_claim
+  name: State the claim
+  description: |
+    Write the claim in `workspace/proofs/<slug>.md` under a
+    `## Claim` heading. Use the same notation as the surrounding
+    paper / project. If the claim involves objects defined
+    elsewhere, link them by name (`see Definition 2.3`).
+    The claim must be unambiguous: a reader should be able to
+    tell whether a specific instance satisfies it.
 
-  - id: pick_strategy
-    name: Pick a proof strategy
-    description: |
-      Call `theory_math/method/proof_strategy_selection`. Compare:
-        - direct proof
-        - proof by contradiction
-        - proof by induction (structural / well-founded / strong)
-        - contrapositive
-        - construction / counterexample
-      Record the choice in `workspace/proofs/<slug>.md` under
-      `## Strategy` with a 1-paragraph justification of why this
-      strategy fits the claim. If multiple strategies look viable,
-      note the alternatives.
+- id: pick_strategy
+  name: Pick a proof strategy
+  description: |
+    Call `theory_math/method/proof_strategy_selection`. Compare:
+      - direct proof
+      - proof by contradiction
+      - proof by induction (structural / well-founded / strong)
+      - contrapositive
+      - construction / counterexample
+    Record the choice in `workspace/proofs/<slug>.md` under
+    `## Strategy` with a 1-paragraph justification of why this
+    strategy fits the claim. If multiple strategies look viable,
+    note the alternatives.
 
-  - id: draft_proof
-    name: Draft the proof
-    description: |
-      Write the proof body under `## Proof`. Number the steps
-      explicitly (1, 2, 3, …) — this is the unit of review.
-      Each non-trivial step ends with a citation: a prior lemma,
-      definition, axiom, or a step number within this proof.
-      If a step is computational, attach the calculation in
-      `workspace/proofs/<slug>_calc.md` (otherwise the body bloats).
+- id: draft_proof
+  name: Draft the proof
+  description: |
+    Write the proof body under `## Proof`. Number the steps
+    explicitly (1, 2, 3, …) — this is the unit of review.
+    Each non-trivial step ends with a citation: a prior lemma,
+    definition, axiom, or a step number within this proof.
+    If a step is computational, attach the calculation in
+    `workspace/proofs/<slug>_calc.md` (otherwise the body bloats).
 
-  - id: independent_review
-    name: Independent review
-    description: |
-      Get at least one external reader. Options in priority order:
-        1. A collaborator unfamiliar with this specific argument.
-        2. A different AI session re-reading the proof cold (using
-           tool_redteam_review with focus='proof').
-        3. Yourself after a 48-hour cool-down period (last resort).
-      The reviewer's job is to find the smallest step they cannot
-      justify. Record their findings in `workspace/proofs/<slug>_review.md`.
+- id: independent_review
+  name: Independent review
+  description: |
+    Get at least one external reader. Options in priority order:
+      1. A collaborator unfamiliar with this specific argument.
+      2. A different AI session re-reading the proof cold (using
+         tool_redteam_review with focus='proof').
+      3. Yourself after a 48-hour cool-down period (last resort).
+    The reviewer's job is to find the smallest step they cannot
+    justify. Record their findings in `workspace/proofs/<slug>_review.md`.
 
-  - id: formal_check
-    name: Formal-check candidacy + (optional) formalisation
-    description: |
-      Check the formal_check_required_when triggers in this
-      protocol's quality_bar. If any apply, formalise in Lean
-      (theory_math/formal/lean_integration) or Coq (coq_integration).
-      Run tool_theory_math_lean_check / tool_theory_math_coq_check.
-      If formal-check is skipped, document WHY in
-      `workspace/proofs/<slug>.md` under `## Formal-check waiver`.
+- id: formal_check
+  name: Formal-check candidacy + (optional) formalisation
+  description: |
+    Check the formal_check_required_when triggers in this
+    protocol's quality_bar. If any apply, formalise in Lean
+    (theory_math/formal/lean_integration) or Coq (coq_integration).
+    Run tool_theory_math_lean_check / tool_theory_math_coq_check.
+    If formal-check is skipped, document WHY in
+    `workspace/proofs/<slug>.md` under `## Formal-check waiver`.
 
-  - id: publish
-    name: Publish the proof
-    description: |
-      Move the proof from `workspace/proofs/<slug>.md` into the
-      paper's `## Proofs` section (per
-      theory_math/output/theory_paper_structure). Update the
-      lemma_library if the result will be reused.
-      Add an entry to the theorem_dependency_graph if this proof
-      cites lemmas — keeps the impact-of-change analysis current.
+- id: publish
+  name: Publish the proof
+  description: |
+    Move the proof from `workspace/proofs/<slug>.md` into the
+    paper's `## Proofs` section (per
+    theory_math/output/theory_paper_structure). Update the
+    lemma_library if the result will be reused.
+    Add an entry to the theorem_dependency_graph if this proof
+    cites lemmas — keeps the impact-of-change analysis current.
 
 expected_outputs:
-  - workspace/proofs/<slug>.md
-  - workspace/proofs/<slug>_review.md
-  - workspace/proofs/<slug>.lean    # only when formal-checked
-  - workspace/proofs/<slug>.v       # only when formal-checked
+- workspace/proofs/<slug>.md
+- workspace/proofs/<slug>_review.md
+- workspace/proofs/<slug>.lean      # only when formal-checked
+- workspace/proofs/<slug>.v         # only when formal-checked
 
 next_protocol: theory_math/output/theory_paper_structure
 next_protocol_kind: forward_default
 on_failure: theory_math/method/proof_strategy_selection
+intent_class: methodology
+sub_intent: method_pick
+triggers:
+- prove this
+- proof workflow
+- draft a proof
+- proof verification
+- iterate on this proof
+summary: 'End-to-end proof workflow: claim → strategy → draft → review → optional formal check → publish.'
+token_estimate: 1700
+decomposition:
+- protocol: theory_math/proof/proof_verification_workflow
+  purpose: Walk the full proof loop.
