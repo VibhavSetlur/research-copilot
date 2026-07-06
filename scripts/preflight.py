@@ -1403,6 +1403,21 @@ def check_coherence():
     return True, "clean across docs + templates"
 
 
+def check_tool_description_caps():
+    """Every tool's 'short' must be <=80 chars and 'description' <=200 chars."""
+    from research_os.server.registry import TOOL_DEFINITIONS
+
+    bad = []
+    for name, d in TOOL_DEFINITIONS.items():
+        s = len(d.get("short", ""))
+        ds = len(d.get("description", ""))
+        if s > 80:
+            bad.append(f"{name}.short={s}>80")
+        if ds > 200:
+            bad.append(f"{name}.description={ds}>200")
+    return (not bad), ("all within caps" if not bad else "; ".join(bad))
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -1520,11 +1535,6 @@ def main() -> int:
     tally.check("Dispatcher aliases resolve", check_dispatcher_aliases)
     tally.check("Alias table complete (handlers + param injection)", check_alias_table_complete)
     tally.check("Redirect-stub targets resolve", check_redirect_targets)
-    tally.check("Bundled packs discovered", check_packs_discovered)
-    tally.check("Pack protocols load", check_pack_protocols_load)
-    tally.check("Pack protocol tool refs + routing targets resolve", check_pack_protocol_refs_and_targets)
-    tally.check("Bundled adapters discovered", check_adapters_discovered)
-    tally.check("Adapter regex patterns compile", check_adapter_regex_compile)
     tally.check("Protocol tool refs all resolve", check_protocols_referenced_tools_resolve)
     tally.check("Every tool is reachable (no orphan tools)", check_every_tool_is_reachable)
     tally.check("Protocols validate against Protocol model (schema 3.0)", check_protocols_validate)
@@ -1541,7 +1551,7 @@ def main() -> int:
     tally.check("TOOLS.md vs TOOL_DEFINITIONS round-trip", check_tools_md_roundtrip)
     tally.check("CITATION.cff cff-version valid", check_citation_cff_valid)
     tally.check("Every tool definition has 'short' field <=120 chars", check_tool_short_field_length)
-    tally.check("Every pack dir in both bundled lists (loader + pyproject)", check_packs_in_both_lists)
+    tally.check("Tool short<=80 / description<=200 caps", check_tool_description_caps)
     tally.check("Reasoning layer independent of daemon (v4 arrow)", check_reasoning_layer_independent_of_daemon)
     tally.check("Daemon endpoints documented ⇆ registered (no drift)", check_daemon_endpoints_documented)
 

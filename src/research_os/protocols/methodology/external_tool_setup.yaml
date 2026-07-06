@@ -44,7 +44,7 @@ trigger: |
     - visualization/interactive_dashboard_design /
       showcase_visualization needs Node / Observable / Three.js
       / D3 stack,
-    - sys_dep_inventory (or sys_boot's inventory block) flags an
+    - sys_env (operation=inventory) (or sys_boot's inventory block) flags an
       optional dep as missing AND the active protocol needs it.
 
 prerequisites:
@@ -159,10 +159,10 @@ steps:
   description: |
     After the researcher runs the setup script, run the
     verification commands via `tool_bash_exec` or
-    `sys_dep_inventory`:
+    `sys_env (operation=inventory)`:
       - Each tool's `--version` returns expected
       - Each library is importable from the relevant env
-      - sys_dep_inventory shows the previously-missing items
+      - sys_env (operation=inventory) shows the previously-missing items
         as present
 
     For each failure, surface:

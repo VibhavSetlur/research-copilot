@@ -76,9 +76,9 @@ steps:
         things)
       - mem_log (each decision implies an alternative;
         the alternative becomes a limitation)
-      - dead-end paths (sys_path status=__DEAD_END) — the
+      - dead-end paths (sys_state_get status=__DEAD_END) — the
         dead ends are limitations made visible
-      - tool_redteam_review (when run; surfaces methodological /
+      - tool_audit (operation=redteam) (when run; surfaces methodological /
         statistical / sympathetic-peer critiques)
       - synthesis/discussion.md > Alternative explanations (the
         alternatives that survived become limitations)
@@ -190,7 +190,7 @@ steps:
 - id: validate
   name: Validate against writing standards
   description: |
-    sys_file_validate_md filepath="synthesis/limitations.md"
+    tool_audit (scope=file, dimension=markdown) filepath="synthesis/limitations.md"
       protocol_name="writing_core"
     Run tool_audit(scope='project', dimension='prose') on the section — surfaces vague
     quantifiers ("some", "many", "a few") which are particularly

@@ -93,12 +93,11 @@ def test_alias_param_injection_targets_are_valid_keys():
     [
         "tool_search",
         "tool_plan",
-        "sys_path",
+        "sys_state_get",
         "tool_ground",
         "tool_verify",
         "tool_lessons",
         "mem_log",
-        "tool_deprecations_summary",
     ],
 )
 def test_new_consolidated_tools_registered(tool_name):
@@ -201,23 +200,6 @@ def test_new_tool_plan_rejects_unknown_operation(project_root):
 # ── deprecation logging ───────────────────────────────────────────
 
 
-def test_deprecation_log_written_for_alias_invocation(project_root):
-    # Use Phase-9-era aliases that are still in _DEPRECATED_ALIASES — the
-    # v1.6.1 aliases (mem_methods_append, sys_path_list, ...) were
-    # hard-removed in phase-14a and now route to _REMOVED_TOOLS instead of
-    # the deprecation-log path.
-    _handle_tool_call(
-        "tool_failure_check", {"target": "https://paywalled.example/x"}, project_root
-    )
-    _handle_tool_call("tool_reliability_report", {}, project_root)
-    log = project_root / ".os_state" / "deprecations.log"
-    assert log.exists()
-    lines = [json.loads(line) for line in log.read_text().splitlines() if line.strip()]
-    sources = {e["source"] for e in lines}
-    assert "tool_failure_check" in sources
-    assert "tool_reliability_report" in sources
-
-
 def test_non_deprecated_alias_does_not_log(project_root):
     # `tool_audit_statistical_power` is a nickname, not a v1.6.1 consolidation.
     _handle_tool_call(
@@ -235,31 +217,6 @@ def test_new_canonical_name_does_not_log(project_root):
     if log.exists():
         entries = [json.loads(line) for line in log.read_text().splitlines() if line.strip()]
         assert all(e["source"] != "mem_log" for e in entries)
-
-
-def test_tool_deprecations_summary_empty_when_no_log(project_root):
-    r = _handle_tool_call("tool_deprecations_summary", {}, project_root)
-    env = _parse_envelope(r)
-    assert env["status"] == "success"
-    assert env["data"]["total"] == 0
-
-
-def test_tool_deprecations_summary_aggregates(project_root):
-    # Phase-9-era aliases (v1.6.1 ones were removed in phase-14a).
-    _handle_tool_call(
-        "tool_failure_check", {"target": "https://x.example/a"}, project_root
-    )
-    _handle_tool_call(
-        "tool_failure_check", {"target": "https://x.example/b"}, project_root
-    )
-    _handle_tool_call("tool_reliability_report", {}, project_root)
-    r = _handle_tool_call("tool_deprecations_summary", {}, project_root)
-    env = _parse_envelope(r)
-    assert env["data"]["total"] == 3
-    assert env["data"]["by_source"]["tool_failure_check"] == 2
-    assert env["data"]["by_source"]["tool_reliability_report"] == 1
-    assert env["data"]["by_target"]["tool_lessons"] == 2
-    assert env["data"]["by_target"]["tool_reliability"] == 1
 
 
 # ── tool_search consolidation ─────────────────────────────────────

@@ -30,7 +30,7 @@ steps:
 - id: create_step
   name: Create Qualitative Step
   description: |
-    sys_path name="qual_<topic>" hypothesis="(qualitative — themes
+    tool_plan (operation=create_step) name="qual_<topic>" hypothesis="(qualitative — themes
     emerge from data)"
 
     Immediately after creating the step, write

@@ -26,7 +26,7 @@ steps:
 - id: mark_dead_end
   name: Mark the Path Dead
   description: |
-    sys_path path_name="<NN_slug>" rationale="<one-paragraph summary>"
+    tool_plan (operation='abandon_step', path_name="<NN_slug>", rationale="<one-paragraph summary>")
     This renames the folder to NN_<slug>__DEAD_END (files preserved), updates
     state.paths[name].status=dead_end, and removes it from the active path list.
 
@@ -42,7 +42,7 @@ steps:
   name: Choose Where to Resume
   description: |
     Options, in order of preference:
-      1. Start a fresh experiment path (sys_path) targeting the same
+      1. Start a fresh experiment step (tool_plan operation='create_step') targeting the same
          research question with a different method.
       2. Loop back to methodology_selection if the methodology itself was wrong.
       3. Loop back to domain/research_design if the framing was wrong.
@@ -68,11 +68,11 @@ triggers:
 summary: Abandon a path cleanly + decide where to go from here.
 token_estimate: 700
 decomposition:
-- tool: sys_path
-  purpose: Mark folder as __DEAD_END with rationale.
+- tool: tool_plan
+  purpose: Mark folder as __DEAD_END with rationale (operation='abandon_step').
 - tool: tool_lessons
   args:
     operation: dead_end
   purpose: Capture the lesson for future steps.
-- tool: tool_plan_next_step
-  purpose: Propose alternative direction.
+- tool: tool_plan
+  purpose: Propose alternative direction (operation='next_step').

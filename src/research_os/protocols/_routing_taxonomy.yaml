@@ -176,7 +176,7 @@ shortcut_intents:
     - assess the quality
     - what are the limitations
     - ship iterate or redo
-    tool: tool_judge_score
+    tool: tool_audit
   progress_check:
     triggers:
     - progress
@@ -186,7 +186,7 @@ shortcut_intents:
     - what's done
     - progress digest
     - digest
-    tool: tool_progress_digest
+    tool: tool_audit (operation=progress_digest)
   context_intake:
     triggers:
     - i just dropped a paper
@@ -201,7 +201,7 @@ shortcut_intents:
     - new paper in literature
     - new paper in context
     - pull in this file
-    tool: tool_context_intake
+    tool: mem_log
   dead_end_lessons:
     triggers:
     - lessons
@@ -220,7 +220,7 @@ shortcut_intents:
     - turn lessons into skills
     - learn from this project
     - build my skill library
-    tool: tool_skills
+    tool: tool_search
     args:
       operation: distill
   promote_skills:
@@ -230,7 +230,7 @@ shortcut_intents:
     - remember this for next project
     - update my profile from lessons
     - learn my preferences
-    tool: tool_skills
+    tool: tool_search
     args:
       operation: promote
   list_protocols:
@@ -238,13 +238,13 @@ shortcut_intents:
     - list protocols
     - what protocols
     - available protocols
-    tool: sys_protocol_list
+    tool: tool_protocols_list
   dep_inventory:
     triggers:
     - missing dependencies
     - what's installed
     - which tools work
-    tool: sys_dep_inventory
+    tool: sys_env
   workspace_repair:
     triggers:
     - broken
@@ -254,7 +254,7 @@ shortcut_intents:
     - fix the workspace
     - repair
     - repair the workspace
-    tool: tool_workspace_repair
+    tool: tool_migrate_audit
   background_task:
     triggers:
     - background
@@ -298,7 +298,7 @@ shortcut_intents:
     - version this iteration
     - design iteration
     - v2 of this step
-    tool: tool_step
+    tool: tool_plan
   version_coherence:
     triggers:
     - version drift

@@ -81,7 +81,7 @@ steps:
     / multi-stage), every downstream estimate must use the survey
     weights and a design-aware variance estimator. The implementing
     library is whichever the project's runtime supports — surface
-    it from `tool_research_tool`. Document the weighting scheme in
+    it from `tool_search`. Document the weighting scheme in
     `outputs/reports/sample_design.md`.
 
 - id: nonresponse

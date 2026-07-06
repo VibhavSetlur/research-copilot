@@ -107,6 +107,16 @@ def _handle_sys_workspace_tree(name, arguments, root):
 
 
 def _handle_sys_state_get(name, arguments, root):
+    arguments = arguments or {}
+    operation = arguments.get("operation", "state_get")
+    if operation not in ("state_get", ""):
+        # Delegate to _handle_sys_path — map sys_state_get's `operation`
+        # directly onto sys_path's `operation` arg (same names: create,
+        # abandon, list, rename, group).
+        mapped = dict(arguments)
+        mapped["operation"] = operation
+        return _handle_sys_path(name, mapped, root)
+
     fmt = (arguments.get("format") or "full").lower()
     state = load_state(root)
     if fmt == "minimal":
@@ -923,24 +933,9 @@ def _handle_sys_workspace_mode(name, arguments, root):
 
 
 HANDLERS = {
-    "sys_workspace_mode": _handle_sys_workspace_mode,
-    "sys_workspace_scaffold": _handle_sys_workspace_scaffold,
     "sys_workspace_tree": _handle_sys_workspace_tree,
     "sys_state_get": _handle_sys_state_get,
     "sys_file_read": _handle_sys_file_read,
     "sys_file_write": _handle_sys_file_write,
     "sys_file_list": _handle_sys_file_list,
-    "sys_file_delete": _handle_sys_file_delete,
-    "sys_file_validate_md": _handle_sys_file_validate_md,
-    "tool_path_finalize": _handle_tool_path_finalize,
-    "tool_synthesis_curate_figures": _handle_tool_synthesis_curate_figures,
-    "sys_export_share_archive": _handle_sys_export_share_archive,
-    "sys_export_ro_crate": _handle_sys_export_ro_crate,
-    "sys_checkpoint_create": _handle_sys_checkpoint_create,
-    "sys_checkpoint_rollback": _handle_sys_checkpoint_rollback,
-    "sys_checkpoint_list": _handle_sys_checkpoint_list,
-    "sys_path": _handle_sys_path,
-    "sys_where": _handle_sys_where,
-    "sys_daemon": _handle_sys_daemon,
-    "sys_consent": _handle_sys_consent,
 }

@@ -121,7 +121,7 @@ steps:
       - prior reviewer comments on the underlying papers
       - committee members' / interviewers' own published work
         (people ask through the lens of their expertise)
-      - tool_research_method query="<topic> common critiques" to
+      - tool_search query="<topic> common critiques" to
         surface field-typical objections
 
     Write workspace/.defense/questions_v<n>.md.

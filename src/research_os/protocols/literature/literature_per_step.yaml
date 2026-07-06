@@ -199,12 +199,12 @@ steps:
     silence.
 
     For each survivor:
-      tool_literature_download url="<pdf_url>" filename="<key>.pdf"
-          step_id="<NN_slug>"
+      tool_search (mode=literature, url="<pdf_url>", filename="<key>.pdf",
+          step_id="<NN_slug>",
           metadata={"title":..., "year":..., "authors":[...],
-                    "doi":..., "url":...}
+                    "doi":..., "url":...})
 
-    `tool_literature_download` auto-skips paywalls (Unpaywall check);
+    `tool_search (mode=literature)` auto-skips paywalls (Unpaywall check);
     paywalled hits go to `workspace/logs/errors.log` but don't
     block. Annotate paywalled-but-relevant entries in
     `claims_to_ground.md` with "PAYWALL — read abstract only".
@@ -312,12 +312,12 @@ steps:
       - DOI: <doi or empty>
       - URL: <url>
 
-    `tool_path_finalize` auto-regenerates citations.md from per-step
+    `tool_plan (operation='finalize_step')` auto-regenerates citations.md from per-step
     literature_index.yaml — manual edits here will be overwritten.
     If a citation needs to live ONLY in narrative (no PDF on disk),
     add it to `inputs/literature_index.yaml` directly.
 
-    Corpus of record. When the step finalizes, `tool_path_finalize`
+    Corpus of record. When the step finalizes, `tool_plan (operation='finalize_step')`
     MIRRORS this step's PDFs into the project-root `literature/`
     folder (under `literature/steps/<NN_slug>/`) alongside the
     mirrored `inputs/literature/` set (under `literature/inputs/`).
@@ -360,7 +360,7 @@ steps:
 - id: gate
   name: Gate — block step finalize if literature loop incomplete
   description: |
-    Before `tool_path_finalize`:
+    Before `tool_plan (operation=finalize_step)`:
       tool_audit(scope='step', dimension='literature') step_id="<NN_slug>"
 
     BLOCKS when:
@@ -371,8 +371,8 @@ steps:
       - `literature_deferred` non-empty without override
 
     Override path:
-      tool_path_finalize override_literature_gate=true
-          override_rationale="<why deferral is acceptable here>"
+      tool_plan (operation='finalize_step', override_literature_gate=true,
+          override_rationale="<why deferral is acceptable here>")
 
     Override logged to `workspace/logs/override_log.md` and
     resurfaced by `audit_synthesis`.

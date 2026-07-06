@@ -73,7 +73,7 @@ steps:
     In ONE batch:
       - sys_file_list directory="inputs/raw_data"
       - sys_file_list directory="inputs/context"
-      - sys_path  (any workspace steps with outputs/tables/)
+      - sys_state_get  (any workspace steps with outputs/tables/)
     For shape (a) — list the existing figures already on disk under
     inputs/ or workspace/*/outputs/figures/.
     For shape (b)/(c) — confirm WHICH file or table each requested
@@ -168,7 +168,7 @@ steps:
       workspace/<NN_slug>/outputs/figures/<NN>_<figure_slug>.svg
           (recommended — enables the SVG label-overlap audit)
     DPI ≥ 300. Palette CVD-safe (the style preset handles it; for
-    other stacks call tool_figure_palette for hex codes).
+    other stacks call pick CVD-safe hex colors inline for hex codes).
 
     Record per-figure outputs in figure_plan.md under each entry's
     `outputs:` field so the next step + the synthesis stage can find

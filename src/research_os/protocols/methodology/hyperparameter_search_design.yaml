@@ -65,7 +65,7 @@ steps:
   name: Identify hyperparameters that matter (literature + sanity)
   description: |
     For each method family in scope:
-      tool_research_method query="<method> hyperparameter
+      tool_search query="<method> hyperparameter
                                   sensitivity for <task type>"
     Read the returned methods + benchmark / sensitivity-analysis
     papers to identify the SMALL SET of hyperparameters that drive

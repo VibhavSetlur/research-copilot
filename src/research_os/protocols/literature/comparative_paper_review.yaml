@@ -101,7 +101,7 @@ steps:
   description: |
     For each paper:
       - sys_file_read on the PDF if text-extractable, OR
-        tool_web_scrape on the URL
+        tool_search (mode=scrape) on the URL
       - extract into workspace/scratch/<paper_slug>_notes.md the
         fields the comparison dimensions need:
           * research question (one sentence)

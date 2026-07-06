@@ -98,7 +98,7 @@ steps:
 - id: create_step
   name: Create the redaction step
   description: |
-    sys_path name="qual_pii_redact"
+    tool_plan (operation=create_step) name="qual_pii_redact"
       hypothesis="(de-identification — no analytic hypothesis)"
 
     Write `workspace/<step>/step_summary.yaml` with the

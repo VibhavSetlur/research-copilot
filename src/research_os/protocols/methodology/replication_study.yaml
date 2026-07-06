@@ -49,7 +49,7 @@ steps:
   name: Extract Original Analysis Specification
   description: |
     Read the source paper (sys_file_read on PDF if extractable, else
-    tool_web_scrape on a public version). Capture into
+    tool_search (mode=scrape) on a public version). Capture into
     outputs/reports/original_spec.md:
       - Sample size, inclusion/exclusion criteria
       - Variable definitions (with exact wording / units)
@@ -59,7 +59,7 @@ steps:
 - id: data_pipeline
   name: Build Replication Data Pipeline
   description: |
-    sys_path name="repl_<short_paper_id>". Re-do the inclusion /
+    tool_plan (operation=create_step) name="repl_<short_paper_id>". Re-do the inclusion /
     exclusion in a script (don't trust manual filtering). If using
     different data than original, document the swap in
     methods.md with mem_log justification="replication with

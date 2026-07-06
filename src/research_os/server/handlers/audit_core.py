@@ -826,7 +826,4 @@ def _handle_tool_judge_score(name, arguments, root):
 
 HANDLERS = {
     "tool_audit": _handle_tool_audit,
-    "tool_audit_findings": _handle_tool_audit_findings,
-    "tool_audit_quality_full": _handle_tool_audit_quality_full,
-    "tool_judge_score": _handle_tool_judge_score,
 }

@@ -108,7 +108,7 @@ steps:
   name: Inventory all candidate figures
   description: |
     In ONE batch:
-      - sys_path                              (all active steps)
+      - sys_state_get                              (all active steps)
       - sys_file_list directory="workspace/<step>/outputs/figures"
         for each step
       - sys_file_list directory="synthesis/figures"
@@ -235,7 +235,7 @@ steps:
   name: Route to the deliverable's figure-curation tool
   description: |
     For paper / poster / dashboard:
-      tool_synthesis_curate_figures (curates per synthesis/figure_brief.md
+      tool_synthesis_scaffold (operation=curate_figures) (curates per synthesis/figure_brief.md
       and copies into synthesis/figures/ with fig01_<slug>.png,
       fig02_<slug>.png, ...).
     For talk:

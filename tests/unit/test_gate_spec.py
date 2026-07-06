@@ -181,12 +181,9 @@ def test_shipped_sidecar_matches_engine_floor():
 
 @pytest.mark.parametrize("tool,args,expect_key", [
     ("tool_package_install", {}, "tool_package_install"),
-    ("sys_checkpoint_rollback", {}, "sys_checkpoint_rollback"),
-    ("sys_path", {"operation": "abandon"}, "sys_path:abandon"),
-    ("sys_path", {"operation": "create"}, None),
-    ("tool_research_tool", {"source": "paid"}, "tool_research_tool:paid"),
-    ("tool_research_tool", {"paid": True}, "tool_research_tool:paid"),
-    ("tool_research_tool", {"source": "free"}, None),
+    ("tool_search", {"source": "paid"}, "search_paid_sources"),
+    ("tool_search", {"paid": True}, "search_paid_sources"),
+    ("tool_search", {"source": "free"}, None),
     ("tool_typst_compile", {}, "tool_typst_compile"),
     ("tool_audit", {"scope": "step", "dimension": "reproducibility"},
      "tool_audit:reproducibility"),

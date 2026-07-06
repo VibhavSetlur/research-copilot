@@ -28,10 +28,10 @@ steps:
   name: Take a State Snapshot
   description: |
     In ONE batch:
-      - sys_checkpoint_create description="handoff <iso>"
+      - tool_git(operation='commit', message="handoff <iso>")
       - sys_state_get format="markdown"
-      - sys_protocol_history limit=20
-      - mem_hypothesis_list
+      - sys_protocol_get(operation='history', limit=20)
+      - mem_hypothesis (operation=list)
       - tool_task(operation='list')
     The checkpoint is the rollback safety net. The state + history feed
     the handoff doc.
@@ -59,7 +59,7 @@ steps:
 - id: write_handoff
   name: Write the Handoff Document
   description: |
-    Call sys_session_handoff (the tool generates a structured markdown
+    Call tool_session_handoff (the tool generates a structured markdown
     under .os_state/handoffs/<iso>.md). Then enrich it with the intent +
     open threads from previous steps via sys_file_write force=true to
     the same path.
@@ -118,10 +118,10 @@ triggers:
 - going to lunch
 - done for today
 summary: Hand off cleanly to another chat / AI / collaborator.
-shortcut_tool: sys_session_handoff
+shortcut_tool: tool_session_handoff
 token_estimate: 900
 decomposition:
-- tool: sys_checkpoint_create
-  purpose: Snapshot workspace as a rollback target.
-- tool: sys_session_handoff
+- tool: tool_git
+  purpose: Snapshot workspace as a rollback target (operation='commit').
+- tool: tool_session_handoff
   purpose: Write the handoff doc with running tasks, hypotheses, dead-end lessons.

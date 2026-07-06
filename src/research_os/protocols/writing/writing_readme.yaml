@@ -13,7 +13,7 @@ see_also:
 description: |
   Maintain the project-level README and per-step READMEs. Per-step
   READMEs are 60-second OVERVIEWS for non-experts — the thorough
-  statistical record lives in conclusions.md. tool_path_finalize
+  statistical record lives in conclusions.md. tool_plan (operation=finalize_step)
   derives the README from conclusions.md, the decision log, and
   context/notes.md; do NOT hand-write the README directly.
 
@@ -95,16 +95,16 @@ steps:
     diving into the methodology. sys_file_write filepath="README.md" force=true.
 
 - id: update_step
-  name: Update Step README (via tool_path_finalize, NOT manually)
+  name: Update Step README (via tool_plan (operation=finalize_step), NOT manually)
   description: |
     After each experiment step's conclusions are written, call
-    tool_path_finalize. This rewrites README.md from conclusions.md,
+    tool_plan (operation=finalize_step). This rewrites README.md from conclusions.md,
     the decision log, context/notes.md plain-language summary, and
     the actual outputs inventory. Manual edits get clobbered.
 
     To override what shows up in the README's "In plain English"
     section, edit context/notes.md under "## Plain-language summary"
-    then re-run tool_path_finalize — the finalizer pulls from there.
+    then re-run tool_plan (operation=finalize_step) — the finalizer pulls from there.
 
 expected_outputs:
 - README.md

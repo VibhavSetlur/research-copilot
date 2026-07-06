@@ -159,7 +159,7 @@ steps:
 - id: implementation_and_reproducibility
   name: Implement + ensure reproducibility
   description: |
-    tool_python_exec (or tool_r_exec) — packages:
+    tool_python_exec (or tool_bash_exec) — packages:
       Python: scipy.stats.bootstrap, arch.bootstrap (for time
               series), sklearn.utils.resample, custom for cluster.
       R     : boot::boot + boot::boot.ci, boot.pval, simpleboot,

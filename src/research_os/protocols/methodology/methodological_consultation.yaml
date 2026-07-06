@@ -72,8 +72,8 @@ steps:
   name: Ground in the literature BEFORE explaining
   description: |
     Even for methods the AI knows well, run a short literature pass:
-      tool_research_method query="<method> tutorial"
-      tool_research_method query="<method> failure modes"
+      tool_search query="<method> tutorial"
+      tool_search query="<method> failure modes"
       tool_search query="<method> when does it fail"
 
     Surfaces the field's current canonical teaching reference and
@@ -83,7 +83,7 @@ steps:
     what the researcher's reviewers will compare against.
 
     Save the 1-2 most useful sources via
-    tool_literature_search_and_save for later citation; route the
+    tool_search (mode=literature) for later citation; route the
     rest to inputs/literature/ at the researcher's discretion.
 
 - id: layer1_intuition
@@ -231,4 +231,4 @@ token_estimate: 1300
 decomposition:
 - protocol: methodology/methodological_consultation
   purpose: Literature pass + layered explanation + reading list + next step.
-- tool: tool_research_method
+- tool: tool_search

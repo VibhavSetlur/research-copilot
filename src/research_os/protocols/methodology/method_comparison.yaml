@@ -73,11 +73,11 @@ steps:
   name: Ground each candidate in the literature (MANDATORY)
   description: |
     For EACH method (including the baseline), run:
-      tool_research_method query="<method> for <task type> with
+      tool_search query="<method> for <task type> with
                                   <data structure>"
     Save the canonical reference + a recent benchmark to the active
     step's literature/ folder via
-    tool_literature_search_and_save.
+    tool_search (mode=literature).
 
     The literature pass surfaces:
       - default hyperparameter conventions for THIS task (so the
@@ -270,12 +270,13 @@ steps:
         ship.
       - REQUIREMENTS-TRACEABILITY MATRIX. When the comparison
         feeds an engineering deliverable (a release decision, a
-        contract milestone, an internal RFC), call
-        `tool_engineering_requirements_matrix` to bind each
-        measured property back to a stated requirement. The
-        matrix is the artefact the next reviewer (or auditor)
-        will read first; pair it with the comparison plan so the
-        decision trail is end-to-end traceable.
+        contract milestone, an internal RFC), create a
+        requirements-traceability table (in the comparison plan
+        markdown) that binds each measured property back to a
+        stated requirement. The matrix is the artefact the next
+        reviewer (or auditor) will read first; pair it with the
+        comparison plan so the decision trail is end-to-end
+        traceable.
 
     Skip this step when the comparison really is an ML accuracy
     shoot-out; record the skip in the comparison plan.

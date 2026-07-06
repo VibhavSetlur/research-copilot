@@ -70,12 +70,12 @@ steps:
   name: Scout the external landscape
   description: |
     Use the existing research tools — do not invent new ones:
-      - tool_research_method task="<the capability>" for the algorithm,
+      - tool_search task="<the capability>" for the algorithm,
         technique, or published method behind the gap.
-      - tool_research_tool task="<capability>" language="<lang|any>" for
+      - tool_search task="<capability>" language="<lang|any>" for
         libraries/frameworks/reference implementations that embody it.
-      - tool_search / tool_web_scrape for papers, repos, blog posts, and
-        benchmarks; tool_literature_search_and_save when correctness will
+      - tool_search (mode=scrape or literature) for papers, repos, blog posts, and
+        benchmarks; tool_search (mode=literature) when correctness will
         depend on matching a published method exactly.
 
     For each promising candidate capture, in a candidates table (in
@@ -160,9 +160,9 @@ token_estimate: 1500
 decomposition:
 - protocol: build/method_scouting
   purpose: Frame the gap, scout candidates, rank by value vs risk, decide what gets spiked vs built in-house.
-- tool: tool_research_method
+- tool: tool_search
   purpose: Surface the algorithm / technique / published method behind the gap.
-- tool: tool_research_tool
+- tool: tool_search
   purpose: Surface candidate libraries / frameworks / reference implementations.
 - tool: mem_log
   purpose: Record the scout outcome, the pick, and the rejection reasons.

@@ -88,7 +88,7 @@ steps:
 - id: validate
   name: Validate
   description: |
-    tool_synthesis_check(file='synthesis/abstract.typ', mode='all')
+    tool_synthesis_scaffold (operation=check)(file='synthesis/abstract.typ', mode='all')
     Address blockers (missing quantitative claim, missing method
     reference, missing conclusion verb) and re-draft.
 
@@ -106,4 +106,4 @@ triggers:
 - tldr
 - structured abstract
 summary: AI authors a standalone abstract from the finished workspace.
-shortcut_tool: tool_synthesize_plan
+shortcut_tool: tool_synthesis_scaffold (operation=plan)

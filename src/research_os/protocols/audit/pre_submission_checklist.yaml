@@ -146,9 +146,9 @@ steps:
           structure
         - no causal language for observational designs
       REFERENCES:
-        - every cited reference resolves (run
-          tool_citations_verify)
-        - no hallucinated citations
+         - every cited reference resolves (run
+          tool_audit (scope='project', dimension='citations'))
+         - no hallucinated citations
         - bibliography style matches the journal
 
 - id: figure_table_checks
@@ -268,8 +268,8 @@ steps:
     Read workspace/logs/override_log.md (call sys_file_read).
     Each entry is one moment the researcher authorised the AI
     to bypass a quality gate (override_discussion_coverage=true on
-    tool_discussion_coverage_audit, or override_gate=true on
-    tool_plan). Per entry,
+    tool_reviewer (operation=coverage_audit), or override_gate=true on
+    tool_plan).     Per entry,
     confirm with the researcher:
 
       - was the bypass still warranted at submission time?
@@ -290,6 +290,7 @@ steps:
     If override_log.md does not exist, that is the GREEN
     case — no gate was ever bypassed. Surface that fact
     explicitly so the researcher knows the audit ran.
+
 
 - id: venue_specific_checks
   name: Venue-specific checks (per journal house style)
@@ -418,4 +419,7 @@ decomposition:
   purpose: Full synthesis audit pass (scope='synthesis', dimension='all').
 - tool: tool_audit
   purpose: Audit every number traces to a workspace output (scope='project', dimension='claims').
-- tool: tool_citations_verify
+- tool: tool_audit
+  args:
+    scope: project
+    dimension: citations

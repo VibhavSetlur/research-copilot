@@ -41,7 +41,4 @@ def _handle_tool_deliverable_chooser(name, arguments, root):
     return _text(_error(res.get("message", "tool_deliverable_chooser failed")))
 
 
-HANDLERS = {
-    "tool_explain": _handle_tool_explain,
-    "tool_deliverable_chooser": _handle_tool_deliverable_chooser,
-}
+HANDLERS: dict[str, object] = {}

@@ -35,7 +35,7 @@ steps:
 - id: read_current_shape
   name: See where the project is and where it could go
   description: |
-    Call sys_workspace_mode(operation='status'). It returns the current mode
+    Call sys_active_project(operation='status'). It returns the current mode
     (config + on-disk state), a drift flag (if a past raw config edit left them
     disagreeing), and the supported transitions from here. If the project's
     shape has clearly outgrown its mode (an exploration with many finalized
@@ -44,7 +44,7 @@ steps:
 - id: plan_the_move
   name: Plan the transition (dry-run first)
   description: |
-    sys_workspace_mode(operation='transition', to=<mode>) PLANS by default:
+    sys_active_project(operation='transition', to=<mode>) PLANS by default:
     it reports the transition kind (promote / augment / reframe), the
     promotion/handoff protocol for the crossing, and exactly which scaffold
     dirs the target mode needs that are missing. A transition is ADDITIVE —
@@ -63,7 +63,7 @@ steps:
 - id: apply_and_handoff
   name: Apply, then cross via the handoff protocol
   description: |
-    sys_workspace_mode(operation='transition', to=<mode>, confirm=true,
+    sys_active_project(operation='transition', to=<mode>, confirm=true,
     rationale='<why>') applies it: creates the missing surface, syncs config +
     state (fixing any drift), and records the move to .os_state/mode_history.jsonl
     (provenance — "started as exploration, became analysis on <date>"). Then
@@ -79,7 +79,7 @@ expected_outputs:
 next_protocol:
 next_protocol_kind: terminal
 decomposition:
-- tool: sys_workspace_mode
+- tool: sys_active_project
   purpose: status to see current mode + supported moves; transition (plan then confirm) to apply additively.
 - protocol: guidance/change_workspace_mode
   purpose: Plan the move, apply it (sync config+state, record history), then cross via the handoff protocol.

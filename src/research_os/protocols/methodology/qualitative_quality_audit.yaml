@@ -138,7 +138,7 @@ steps:
         - computes the agreement statistic chosen in
           methodology/inter_rater_reliability (the AI authors the
           script; surface a maintained implementation from the
-          project's runtime via tool_research_tool rather than
+          project's runtime via tool_search rather than
           defaulting to a remembered package, and record it),
         - reports per-code agreement when the codebook supports it.
 

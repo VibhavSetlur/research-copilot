@@ -16,7 +16,7 @@ description: |
   PI / advisor on a Friday afternoon, posts to the lab Slack before a
   meeting, or fills into a weekly stand-up template. Distinct from
   `synthesis_report` (longer, structured for a stakeholder audience)
-  and from `tool_progress_digest` (mechanical status snapshot the AI
+  and from `tool_audit (operation=progress_digest)` (mechanical status snapshot the AI
   generates for itself).
 
   The constraint: the reader is busy AND knows the project. They want
@@ -109,11 +109,11 @@ steps:
   name: Identify what changed since the last update
   description: |
     Pull in ONE batch:
-      - tool_progress_digest          (mechanical state snapshot)
-      - sys_protocol_history limit=30
-      - sys_path                 (which steps are new / active /
+      - tool_audit (operation=progress_digest)          (mechanical state snapshot)
+      - sys_protocol_get (operation=history) limit=30
+      - sys_state_get                 (which steps are new / active /
                                        abandoned since the last update)
-      - mem_hypothesis_list           (status changes)
+      - mem_hypothesis (operation=list)           (status changes)
       - mem_log              (decisions taken since)
       - the most recent handoff doc under .os_state/handoffs/
         (the last "where we left off" line is often the previous
@@ -145,7 +145,7 @@ steps:
     Source blockers from:
       - workspace/logs/audit_report.md  (any BLOCKER: lines)
       - dead-end paths recorded since the last update
-        (sys_path status=__DEAD_END mtime>last_update)
+        (sys_state_get status=__DEAD_END mtime>last_update)
       - tool_lessons(operation='dead_end')  (the recurring blockers
                                         showing up across attempts)
       - mem_log entries with rationale containing "blocked"
@@ -250,7 +250,7 @@ triggers:
 summary: Short progress update for PI / advisor / lab / collaborator / stand-up.
 token_estimate: 1200
 decomposition:
-- tool: tool_progress_digest
+- tool: tool_audit (operation=progress_digest)
   purpose: Mechanical state snapshot to feed the update.
 - protocol: synthesis/synthesis_progress_update
   purpose: Compose the audience-tailored update.

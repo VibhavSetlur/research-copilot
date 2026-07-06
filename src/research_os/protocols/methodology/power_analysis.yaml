@@ -114,7 +114,7 @@ steps:
 
     Write the assumption + source to
     workspace/<step>/outputs/reports/power_assumptions.md.
-    Run tool_research_method query="effect size <outcome> <population>"
+    Run tool_search query="effect size <outcome> <population>"
     when the source is not obvious; cite what comes back.
 
 - id: name_the_statistical_test
@@ -157,7 +157,7 @@ steps:
         audience expects
 
     Use whichever power library the field reaches for THIS design;
-    surface that via tool_research_tool rather than defaulting to the
+    surface that via tool_search rather than defaulting to the
     one you know best, and tag the library + version in the
     assumptions report.
 

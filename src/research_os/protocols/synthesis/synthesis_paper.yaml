@@ -17,9 +17,9 @@ see_also:
 description: |
   Guide the AI to author `synthesis/paper.typ` directly, section by
   section, as a publishable manuscript. Research-OS does not generate
-  papers — the AI does. Tools support: tool_synthesize_plan inspects
+  papers — the AI does. Tools support: tool_synthesis_scaffold (operation=plan) inspects
   what's in the workspace, tool_synthesis_scaffold seeds a tiny
-  skeleton, tool_synthesis_check audits the draft, tool_typst_compile
+  skeleton, tool_synthesis_scaffold (operation=check) audits the draft, tool_typst_compile
   renders synthesis/paper.pdf.
 
   **Canonical artefacts.** The paper deliverable is `synthesis/paper.typ`
@@ -58,7 +58,7 @@ description: |
   context window healthy AND forces the AI to deliberate. In
   autopilot mode the AI may proceed automatically through sections,
   but each section is still its own focused authoring pass + its own
-  tool_synthesis_check audit.
+  tool_synthesis_scaffold (operation=check) audit.
 
 trigger: |
   Researcher asks for "the paper" / "draft the manuscript" / "write
@@ -111,7 +111,7 @@ design_principles: |
     The reader can audit the path (claim → conclusions.md → script →
     raw data). If a claim has no traceable origin, cut it or qualify it.
   - Citations are verified. Unverifiable citations are dropped, never
-    silently retained. tool_synthesis_check flags hallucinated keys.
+    silently retained. tool_synthesis_scaffold (operation=check) flags hallucinated keys.
   - Figures support the narrative; they don't substitute for it. Each
     figure has a caption that names what to look at AND why it matters.
   - The voice matches the venue. Conferences favour terse claims;
@@ -161,7 +161,7 @@ steps:
 - id: inspect_workspace
   name: Inspect what's ready
   description: |
-    tool_synthesize_plan returns recommended section ordering +
+    tool_synthesis_scaffold (operation=plan) returns recommended section ordering +
     per-section source paths + gaps. Read it before authoring
     anything.
 
@@ -199,11 +199,11 @@ steps:
 - id: per_section_check
   name: Check after every section
   description: |
-    tool_synthesis_check(file='synthesis/paper.typ',
+    tool_synthesis_scaffold (operation=check)(file='synthesis/paper.typ',
     mode='substantiveness') after every section. Address blockers
     before continuing. At least once before compiling — and any time a
     section reports numbers — also run
-    tool_synthesis_check(file='synthesis/paper.typ', mode='grounding')
+    tool_synthesis_scaffold (operation=check)(file='synthesis/paper.typ', mode='grounding')
     (or mode='all') to catch numeric claims that don't trace to any
     workspace output while the section is still fresh, instead of
     discovering them at the ship gate.
@@ -213,7 +213,7 @@ steps:
   description: |
     Inline Typst blocks: #figure(image("figures/figXX.png"),
     caption: [...]) <fig:slug>. Curate with
-    tool_synthesis_curate_figures so paper + dashboard share names.
+    tool_synthesis_scaffold (operation=curate_figures) so paper + dashboard share names.
 
 - id: title_workshop
   name: Workshop the title
@@ -265,14 +265,14 @@ steps:
     compiling the PDF is the start of finalization, never the end of it.
 
 tools: |
-  - tool_synthesize_plan — what's ready in the workspace
+  - tool_synthesis_scaffold (operation=plan) — what's ready in the workspace
   - tool_synthesis_scaffold — seed synthesis/paper.typ (idempotent)
-  - tool_synthesis_check — per-IMRAD-section audit (substantiveness, structure, cliches)
-  - tool_synthesis_curate_figures — copy step focal figures to synthesis/figures/
-  - tool_writing_discussion_from_verdicts — mechanical merge of literature verdicts
-  - tool_discussion_coverage_audit — gate, every DISAGREES/EXTENDS verdict addressed
+  - tool_synthesis_scaffold (operation=check) — per-IMRAD-section audit (substantiveness, structure, cliches)
+  - tool_synthesis_scaffold (operation=curate_figures) — copy step focal figures to synthesis/figures/
+  - tool_reviewer (operation=discussion_from_verdicts) — mechanical merge of literature verdicts
+  - tool_reviewer (operation=coverage_audit) — gate, every DISAGREES/EXTENDS verdict addressed
   - tool_typst_compile — render synthesis/paper.pdf
-  - tool_latex_compile — only when the journal requires .tex submission
+  - tool_typst_compile (or tool_bash_exec with latexmk) — only when the journal requires .tex submission
   - tool_finalize_project — the hard ship gate (operation='check' then 'finalize')
 
 expected_outputs:
@@ -305,13 +305,13 @@ triggers:
 - into a manuscript
 - draft the manuscript
 summary: AI authors IMRAD paper.typ; tool_typst_compile renders PDF.
-shortcut_tool: tool_synthesize_plan
+shortcut_tool: tool_synthesis_scaffold (operation=plan)
 decomposition:
-- tool: tool_synthesize_plan
+- tool: tool_synthesis_scaffold (operation=plan)
 - tool: tool_synthesis_scaffold
   args:
     kind: paper
-- tool: tool_synthesis_check
+- tool: tool_synthesis_scaffold (operation=check)
   args:
     file: synthesis/paper.typ
 - tool: tool_typst_compile

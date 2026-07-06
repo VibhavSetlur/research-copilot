@@ -141,7 +141,7 @@ steps:
         misses? large residuals vs many small ones? mis-calibration
         vs mis-ranking?) — the metric must penalise THAT error.
       - WHAT does the field report as canonical for this task on
-        this data shape? Surface it via tool_research_method and
+        this data shape? Surface it via tool_search and
         cite the convention. Class imbalance, censoring, ranked
         output, and quantile targets each shift the canonical
         choice — name the property of THIS problem that forces the

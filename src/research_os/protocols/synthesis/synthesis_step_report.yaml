@@ -96,7 +96,7 @@ design_principles: |
     also protects projector / print legibility).
 
 quality_standards: |
-  What tool_synthesis_check enforces for a step report. Note what is ABSENT:
+  What tool_synthesis_scaffold (operation=check) enforces for a step report. Note what is ABSENT:
   there is NO required-heading list and NO mandated section set. The gate
   checks that the artefact is honest, grounded, accessible, and shareable —
   it never dictates the AI's layout.
@@ -133,7 +133,7 @@ steps:
       - the step's conclusions.md (Findings + any numbers to surface)
       - the step's figures (and any .caption.md sidecars)
       - the step's output tables / metrics
-      - mem_hypothesis_list for any hypothesis this step touched
+      - mem_hypothesis (operation=list) for any hypothesis this step touched
     Distil the ONE thing this step established (or the one thing that moved
     since the last update) and the single most informative figure. Every
     number you plan to show must be traceable to one of these sources.
@@ -161,7 +161,7 @@ steps:
 - id: audit
   name: Audit (honesty, grounding, accessibility, offline)
   description: |
-    tool_synthesis_check(file='synthesis/updates/step-NN-<slug>.html')
+    tool_synthesis_scaffold (operation=check)(file='synthesis/updates/step-NN-<slug>.html')
     catches an un-authored shell, a left-in author brief, missing alt text,
     external/network resources, placeholders, leftover example paths, and
     path leaks. It does NOT check your layout. Clear every blocker before
@@ -178,9 +178,9 @@ steps:
 
 tools: |
   - tool_synthesis_scaffold(kind='step_report', step='NN') — seed the shell (idempotent)
-  - tool_synthesis_check — honesty / grounding / a11y / offline gate (NOT a heading list)
-  - tool_synthesis_curate_figures — copy the step's figure(s) + caption sidecars
-  - tool_figure_palette — colour-blind-safe palette for any inline charts
+  - tool_synthesis_scaffold (operation=check) — honesty / grounding / a11y / offline gate (NOT a heading list)
+  - tool_synthesis_scaffold (operation=curate_figures) — copy the step's figure(s) + caption sidecars
+  - pick CVD-safe hex colors inline — colour-blind-safe palette for any inline charts
 
 expected_outputs:
 - synthesis/updates/step-NN-<slug>.html     # AI-designed, self-contained, one step

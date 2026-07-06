@@ -27,7 +27,7 @@ trigger: |
 editorial_voice:
   mode: guidance
   rules:
-  - "Write the COLLABORATOR.md in THEIR vocabulary, not Research-OS's. The reader has never heard of `sys_path` or `pipeline.yaml`."
+  - "Write the COLLABORATOR.md in THEIR vocabulary, not Research-OS's. The reader has never heard of `sys_state_get` or `pipeline.yaml`."
   - "Include the questions you expected them to ask FIRST — the reasoning behind the design choices, not just the choices."
   - "List the unspoken assumptions explicitly. The 80% the original author thought was obvious is the 80% the new collaborator will get wrong."
 

@@ -72,7 +72,7 @@ steps:
         favour grammar-of-graphics stacks; physics-drag favours
         network stacks);
       - whether the field has a canonical interactive tool for
-        this data type — surface it via tool_research_tool rather
+        this data type — surface it via tool_search rather
         than reaching for the most familiar one.
 
     Illustrative examples (a vocabulary, not auto-picks):

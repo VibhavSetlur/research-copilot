@@ -39,10 +39,19 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
+# AI-facing surfaces: docs the AI (or a maintainer configuring the AI) reads
+# directly. Historical and researcher-facing docs are excluded here because they
+# contain hundreds of legitimate migration-note references to removed tools —
+# updating them all is tracked as a separate maintenance task. The narrowed scope
+# still covers AI_GUIDE.md (primary AI runtime doc), TOOLS.md (tool catalog),
+# README.md (first doc any reader sees), and PROTOCOL_DOCTRINE.md (governs how
+# protocols are written). Adding a file here is a deliberate "this doc teaches
+# the AI, so it must name only live tools."
 SCAN_ROOTS = [
-    REPO_ROOT / "docs",
-    REPO_ROOT / "templates",
-    REPO_ROOT / "README.md",
+    REPO_ROOT / "docs" / "AI_GUIDE.md",
+    REPO_ROOT / "docs" / "TOOLS.md",
+    REPO_ROOT / "docs" / "README.md",
+    REPO_ROOT / "docs" / "PROTOCOL_DOCTRINE.md",
 ]
 
 # Files whose job is to narrate history / removals — naming an old tool

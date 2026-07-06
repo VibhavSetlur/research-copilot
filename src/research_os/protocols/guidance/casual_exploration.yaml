@@ -50,7 +50,8 @@ steps:
 - id: lightweight_path
   name: Create Lightweight Workspace Folder
   description: |
-    sys_path name="explore_<short_topic>" hypothesis="(exploratory)".
+    Create a numbered workspace step (via sys_state_get to confirm next number, then sys_file_write to scaffold)
+    named "explore_<short_topic>" with hypothesis="(exploratory)".
     The numbered step folder still exists for reproducibility if work is
     later promoted, but README + conclusions get the "(exploratory)" stamp
     so it's clear at a glance.
@@ -84,8 +85,8 @@ steps:
   description: |
     If the researcher says "promote", call:
       - mem_log (back-fill the method)
-      - mem_hypothesis_add (back-fill the hypothesis if any)
-      - sys_protocol_log status="completed" for casual_exploration
+      - mem_hypothesis (operation=add) to back-fill the hypothesis if any
+      - mem_log to record completion of casual_exploration
     Then route to guidance/analysis_plan with the existing step as the
     starting point. Casual artifacts are kept; nothing is rewritten.
 

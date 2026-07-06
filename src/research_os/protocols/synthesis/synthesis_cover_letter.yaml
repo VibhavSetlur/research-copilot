@@ -225,7 +225,7 @@ steps:
       - signature block has corresponding author + ORCID
       - tone is formal but not stiff
 
-    sys_file_validate_md filepath="synthesis/cover_letter.md"
+    tool_audit (scope=file, dimension=markdown) filepath="synthesis/cover_letter.md"
       protocol_name="writing_core"
 
 expected_outputs:

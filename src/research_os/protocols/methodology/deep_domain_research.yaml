@@ -118,7 +118,7 @@ steps:
       tool_search query="<subfield> canonical workflow tutorial"
 
     Persist the most informative sources via
-    `tool_literature_search_and_save` (into the project-global
+    `tool_search (mode=literature)` (into the project-global
     `inputs/literature/` corpus).
 
     Write the survey to `docs/pipeline_survey_<subfield_slug>.md` — it is
@@ -163,7 +163,7 @@ steps:
       - Heavy stages → background via `tool_task(operation='run')` or HPC via
         `tool_slurm_submit`.
       - Tag any stage that needs a step-specific environment so
-        `tool_step(operation='env_lock')` runs for that step alone.
+        `tool_plan(operation='env_lock')` runs for that step alone.
 
     Then call `mem_log` with the pipeline choice + the
     runner-up tool per stage. Runners-up are not waste — they are
@@ -195,7 +195,7 @@ steps:
 - id: propose_alternative_paths
   name: Confidence-gated alternative-path proposal
   description: |
-    Run `tool_alternative_path_propose` for the pipeline's central
+    Run `tool_plan (operation=alternative_path)` for the pipeline's central
     methodological choice (whichever stage is the load-bearing
     decision — the one where a different tool would produce a
     meaningfully different downstream result).
@@ -209,7 +209,7 @@ steps:
            data like ours because <Z>. Want me to run that as
            `<slug>_alt_path_<k>` alongside the primary?"
         On confirmation, call:
-          sys_path name="<slug>_alt" branch_of=<current_path>
+          tool_plan (operation=create_step) name="<slug>_alt" branch_of=<current_path>
         On rejection, log via `mem_log` (context =
         "alternative pipeline considered and declined").
 
@@ -230,7 +230,7 @@ steps:
   description: |
     Final commit:
       - The primary pipeline becomes the active path's
-        `pipeline.yaml` via `tool_step_pipeline(operation='define')`. Each
+        `pipeline.yaml` via `tool_workflow_dag(operation='define')`. Each
         stage from `docs/pipeline_plan.md` becomes a pipeline
         node.
       - If an alternative was branched, that branch carries its
@@ -302,5 +302,5 @@ summary: Identify the SPECIFIC subfield + survey its canonical pipeline (≥3 ci
 decomposition:
 - protocol: methodology/deep_domain_research
   purpose: Identify subfield + survey + propose pipeline + assumption matrix + optional alternative branch.
-- tool: tool_alternative_path_propose
+- tool: tool_plan (operation=alternative_path)
   purpose: Confidence-gated alternative pipeline scan (only branches if literature supports a meaningfully better path).

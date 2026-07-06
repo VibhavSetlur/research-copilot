@@ -112,7 +112,7 @@ steps:
       (a) point the AI at the source on disk (a CSV row, a
           report row, a conclusions.md ## Findings line), or
       (b) drop the claim, or
-      (c) open a new step via `sys_path` and run the
+      (c) open a new step via `sys_state_get` and run the
           analysis that produces the number — then re-audit.
 
     Persist the verdict to
@@ -260,7 +260,7 @@ steps:
 - id: validate
   name: Validate
   description: |
-    sys_file_validate_md filepath="synthesis/results.md"
+    tool_audit (scope=file, dimension=markdown) filepath="synthesis/results.md"
       protocol_name="writing_core"
     Run tool_audit(scope='project', dimension='claims') on synthesis/results.md — every number
     must trace to a workspace artefact (the evidence table from

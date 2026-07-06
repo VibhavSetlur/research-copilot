@@ -27,7 +27,7 @@ description: |
   Research-OS is deliberately language-agnostic. `python_exec`,
   `r_exec`, `julia_exec`, `bash_exec` all exist. The AI's job is to
   match the implementation to current field practice, surfaced from the
-  literature for THIS method in THIS domain via `tool_research_tool` —
+  literature for THIS method in THIS domain via `tool_search` —
   not to copy a language/library default from training memory. The
   canonical implementation of a method drifts across subfields and
   decades; the protocol therefore names the QUESTION ("where does this
@@ -67,7 +67,7 @@ steps:
     library in each. Do NOT enumerate from memory — surface the
     candidates from the literature for THIS method in THIS domain:
 
-      tool_research_tool query="<method> <domain> implementation library"
+      tool_search query="<method> <domain> implementation library"
 
     Capture the candidate set (language + library + a one-line note on
     maturity / maintenance) in the step's scratch/stack_plan.md. The
@@ -82,7 +82,7 @@ steps:
     reviewer expects to see, not the one the AI types fastest. Pull
     that signal directly:
 
-      tool_research_tool query="<method> <domain> <library>"
+      tool_search query="<method> <domain> <library>"
 
     If the literature doesn't break the tie, document that in
     stack_plan.md and prefer the implementation with the better

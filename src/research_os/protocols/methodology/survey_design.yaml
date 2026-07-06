@@ -54,7 +54,7 @@ steps:
 - id: confirm_no_existing_instrument
   name: Confirm no existing validated instrument fits
   description: |
-    tool_research_method query="validated instrument <construct>
+    tool_search query="validated instrument <construct>
                          <population>" — search:
       - PsycTESTS / Mental Measurements Yearbook (psychology)
       - PROMIS (health outcomes)

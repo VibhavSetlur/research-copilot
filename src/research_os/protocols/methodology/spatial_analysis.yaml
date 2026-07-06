@@ -20,7 +20,7 @@ description: |
   aspatial model choice, scale / resolution / MAUP, edge effects,
   spatial validation) WITHOUT prescribing methods, weights matrices,
   or cutoffs — those come from the subfield's literature via
-  tool_research_method.
+  tool_search.
 
   This is the ANALYSIS counterpart to visualization/geospatial_
   visualization (which only renders a map): the system previously had
@@ -62,7 +62,7 @@ steps:
     distance vs k-nearest — this choice is consequential and must be
     justified), anisotropy, and (for point patterns) clustering vs
     complete spatial randomness. Pick the diagnostic the subfield's
-    literature endorses (surface it via tool_research_method); do not
+    literature endorses (surface it via tool_search); do not
     assume a default weights matrix.
 
 - id: model_choice

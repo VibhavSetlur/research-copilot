@@ -120,7 +120,7 @@ steps:
         hand-tuned scene is a real trade; surface it.
 
     Survey the field's current best-practice tool for THIS target
-    via tool_research_tool rather than reaching for whatever is
+    via tool_search rather than reaching for whatever is
     most familiar. Common examples (illustrative, not a menu to
     pick from): matplotlib FuncAnimation / gganimate (declarative
     frame sweeps to mp4/gif), plotly / bokeh / Vega-Lite signals

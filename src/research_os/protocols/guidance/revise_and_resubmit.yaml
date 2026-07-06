@@ -130,7 +130,7 @@ steps:
 
       analysis_plan (and methodology/*):
         For each row, create or reopen the relevant step via
-        `sys_path` (NEW analysis) or reopen the existing
+        a new analysis step (see guidance/analysis_plan) or reopen the existing
         step. Walk the routed protocol end-to-end. The new
         result becomes the EVIDENCE the response cites.
 
@@ -170,7 +170,7 @@ steps:
 
       tool_audit(scope='step', dimension='figure_full') per any figure that changed.
 
-      tool_audit_quality_full (or the per-component audits)
+      tool_audit (scope='project', dimension='all') (or the per-component audits)
         — master audit; the grid's `audit` column gets the
           audit verdict per row.
 
@@ -252,7 +252,7 @@ steps:
   name: Pre-submission gate
   description: |
     Before flagging the R&R package ready:
-      - `tool_audit_quality_full` re-passes,
+      - `tool_audit (scope='project', dimension='all')` re-passes,
       - every grid row has VERDICT + ROUTE + SECTION + AUDIT=PASS
         + RESPONSE filled,
       - response letter mentions every comment,
@@ -314,5 +314,5 @@ decomposition:
   purpose: Re-audit every number in the revised manuscript (scope='project', dimension='claims').
 - tool: tool_audit
   purpose: Re-audit the revised prose for hedging / causal-language / reading level (scope='project', dimension='prose').
-- tool: tool_audit_quality_full
-  purpose: Master re-audit before pre-submission gate.
+- tool: tool_audit
+  purpose: Master re-audit before pre-submission gate (scope='project', dimension='all').

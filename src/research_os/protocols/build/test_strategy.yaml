@@ -82,7 +82,7 @@ steps:
     Do NOT hardcode a percentage as if it were universal. If you commit
     to a numeric gate, justify it from the failure surface and, where
     relevant, cite the practice the field actually uses for this class of
-    tool (surface it via tool_search / tool_research_tool rather than
+    tool (surface it via tool_search / tool_search rather than
     asserting it from memory). State plainly what coverage does and does
     not prove here (line coverage ≠ behavioural coverage; the critical
     paths matter more than the aggregate).

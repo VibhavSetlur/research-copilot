@@ -25,7 +25,7 @@ description: |
     * `format=one_pager` — alias for handout.
 
   Research-OS does not generate posters / handouts. The AI does, with
-  protocol guidance + tool_synthesis_check validation.
+  protocol guidance + tool_synthesis_scaffold (operation=check) validation.
 
   **Print constraints are real for every format.** Contrast survives
   greyscale photocopy. Small gridlines vanish. Serif <11pt is
@@ -144,7 +144,7 @@ steps:
 - id: audit
   name: Audit + across-the-room test
   description: |
-    tool_synthesis_check(file='synthesis/poster.typ') (or
+    tool_synthesis_scaffold (operation=check)(file='synthesis/poster.typ') (or
     handout.typ) catches over-cap citations, short sections, path
     leaks. Combine with the headline test (print at physical scale,
     stand 1.5m back).
@@ -157,9 +157,9 @@ steps:
 
 tools: |
   - tool_synthesis_scaffold(kind='poster') — seed poster.typ
-  - tool_synthesis_check — citation cap + section count + path leaks
-  - tool_synthesis_curate_figures — copy step focal figures
-  - tool_figure_palette — CVD-safe palette for public posters
+  - tool_synthesis_scaffold (operation=check) — citation cap + section count + path leaks
+  - tool_synthesis_scaffold (operation=curate_figures) — copy step focal figures
+  - pick CVD-safe hex colors inline — CVD-safe palette for public posters
   - tool_typst_compile — render poster.pdf / handout.pdf
 
 expected_outputs:

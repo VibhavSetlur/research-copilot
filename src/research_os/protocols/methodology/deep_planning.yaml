@@ -87,7 +87,7 @@ steps:
     a re-plan and which are routine.
 
     Register the load-bearing assumptions as hypotheses where that helps
-    (mem_hypothesis_add) so their status is tracked as evidence accrues.
+    (mem_hypothesis (operation=add)) so their status is tracked as evidence accrues.
 
 - id: identify_branch_points
   name: Identify Decision Points + the Branches They Open
@@ -183,7 +183,7 @@ steps:
       - If the researcher wants the AI to BUILD toward the roadmap mostly on
         its own ("let it loose", "run it autonomously"), route to
         guidance/roadmap_execution — the verified autonomous loop that selects
-        the next milestone, executes it, SCORES the work (tool_judge_score:
+        the next milestone, executes it, SCORES the work (tool_audit (operation=judge):
         ship/iterate/redo), records the result as evidence, re-plans, and
         continues toward the goal until the success criteria are met or a
         floor gate / decision point pages the researcher. The loop is the
@@ -245,7 +245,7 @@ token_estimate: 1600
 decomposition:
 - protocol: methodology/deep_planning
   purpose: Decompose the goal, mark uncertainty, find branch points, sequence the work.
-- tool: mem_hypothesis_add
+- tool: mem_hypothesis (operation=add)
   purpose: Register load-bearing assumptions as tracked hypotheses.
 - tool: sys_file_write
   purpose: Capture the durable, branchable roadmap to inputs/research_plan.md.

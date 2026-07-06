@@ -137,10 +137,10 @@ steps:
 - id: compute_disparity_metrics
   name: Compute the disparity metrics on test + held-out data
   description: |
-    Write the audit script via tool_python_exec (or tool_r_exec).
+    Write the audit script via tool_python_exec (or tool_bash_exec).
     Fairness toolkits exist in both ecosystems; surface the one the
     field's recent fairness literature uses for THIS criterion (e.g.
-    via tool_research_method) rather than defaulting — toolkits
+    via tool_search) rather than defaulting — toolkits
     differ in which metrics and mitigations they implement.
 
     Compute the chosen criterion's metrics per group + per

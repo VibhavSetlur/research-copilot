@@ -122,7 +122,7 @@ steps:
 - id: audit
   name: Audit
   description: |
-    tool_synthesis_check(file='synthesis/essay.typ') runs the
+    tool_synthesis_scaffold (operation=check)(file='synthesis/essay.typ') runs the
     substantiveness checks (auto-detects Typst headings).
 
 - id: compile
@@ -134,9 +134,9 @@ steps:
 tools: |
   - tool_synthesis_scaffold(kind='essay') — seed essay.typ with the
     six interpretive sections
-  - tool_synthesis_check — content depth + cliche detection
+  - tool_synthesis_scaffold (operation=check) — content depth + cliche detection
   - tool_typst_compile — render essay.pdf
-  - tool_writing_discussion_from_verdicts — only when the essay
+  - tool_reviewer (operation=discussion_from_verdicts) — only when the essay
     engages a critical conversation with literature verdicts in the
     workspace
 
@@ -165,9 +165,9 @@ decomposition:
   args:
     kind: essay
   purpose: Write synthesis/essay.typ with the six interpretive sections + AI markers.
-- tool: tool_synthesize_plan
+- tool: tool_synthesis_scaffold (operation=plan)
   purpose: Inspect available sources for the critical conversation + close readings.
-- tool: tool_synthesis_check
+- tool: tool_synthesis_scaffold (operation=check)
   args:
     file: synthesis/essay.typ
   purpose: Audit substantiveness + cliches once the AI fills in the sections.

@@ -71,7 +71,7 @@ steps:
     The probe asked a cheap, falsifiable question; the step needs a
     hypothesis. Promote the question into a hypothesis statement the
     real loop can test, and register it:
-      mem_hypothesis_add statement="<H: the claim the probe hinted at>"
+      mem_hypothesis (operation=add) statement="<H: the claim the probe hinted at>"
 
     Keep the framing honest to what the probe actually observed — don't
     inflate "there's a weak positive correlation" into "X causes Y".
@@ -82,7 +82,7 @@ steps:
   name: Create the numbered step + carry the probe artefacts in
   description: |
     Create the proper step folder:
-      sys_path name="<slug>" hypothesis="<H<id>: <text>>"
+      tool_plan (operation=create_step) name="<slug>" hypothesis="<H<id>: <text>>"
 
     Then carry the probe's work into the step rather than re-deriving it:
       - Move the relevant scratch script(s) into
@@ -119,7 +119,7 @@ steps:
   description: |
     The step now exists with its hypothesis registered and the probe's
     work carried in. Log the promotion so the trail is intact:
-      sys_protocol_log status="completed"   # for this promotion
+      mem_log status="completed"   # for this promotion
       mem_log entry="promoted probe '<question>' → step <NN_slug>"
 
     Then enter guidance/analysis_plan on the new step to run it
@@ -171,9 +171,9 @@ token_estimate: 1300
 decomposition:
 - protocol: exploration/exploration_promote
   purpose: Confirm worth promoting, register the hypothesis, create the step, carry probe artefacts in, back-fill rigor.
-- tool: mem_hypothesis_add
+- tool: mem_hypothesis (operation=add)
   purpose: Register the hypothesis the probe hinted at.
-- tool: sys_path
+- tool: sys_state_get
   purpose: Create the numbered step folder the probe graduates into.
 - tool: mem_log
   purpose: Log the promotion (probe question → step).

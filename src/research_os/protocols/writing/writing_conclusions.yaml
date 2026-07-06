@@ -87,7 +87,7 @@ steps:
 - id: validate
   name: Validate Against Writing Standards
   description: |
-    sys_file_validate_md filepath="workspace/<step>/conclusions.md"
+    tool_audit (scope=file, dimension=markdown) filepath="workspace/<step>/conclusions.md"
       protocol_name="writing_core"
 
     Validation gates (BLOCKER if violated):

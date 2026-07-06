@@ -60,5 +60,9 @@ triggers:
 - hypothesis status
 summary: Add / update / list hypotheses (registry across steps).
 decomposition:
-- tool: mem_hypothesis_add
-- tool: mem_hypothesis_list
+- tool: mem_hypothesis
+  args:
+    operation: add
+- tool: mem_hypothesis
+  args:
+    operation: list

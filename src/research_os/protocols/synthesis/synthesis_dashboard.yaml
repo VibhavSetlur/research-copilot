@@ -49,7 +49,7 @@ description: |
        then the AI authors. Best when the project has many findings
        and the curator's judgement matters (most cases).
     2. **Autopilot (AI-decides).** The AI walks the workspace, picks
-       the headline finding from `mem_hypothesis_list` /
+       the headline finding from `mem_hypothesis (operation=list)` /
        `step_summary.yaml`, and builds the dashboard end-to-end. Best
        for quick share-outs, hand-offs, or when the researcher has
        already declared `autopilot` in researcher_config.yaml.
@@ -144,7 +144,7 @@ required_structure: |
   — provided no external script is loaded.
 
 forbidden_structure: |
-  The following structures will fail `tool_synthesis_check`:
+  The following structures will fail `tool_synthesis_scaffold (operation=check)`:
 
   - **Per-step recap.** Section headings shaped like
     `Step 01 — <description>`, `Step 02 — <description>`, ... for
@@ -194,9 +194,9 @@ steps:
 - id: walk_workspace
   name: Walk the workspace + audit readiness
   description: |
-    tool_synthesize_plan returns what's ready (per-step findings,
+    tool_synthesis_scaffold (operation=plan) returns what's ready (per-step findings,
     curated focal figures, citations). Also call
-    tool_synthesis_curate_figures to ensure synthesis/figures/ is
+    tool_synthesis_scaffold (operation=curate_figures) to ensure synthesis/figures/ is
     populated with every step's figure(s) AND `.caption.md`
     sidecars. If captions are missing, route to
     visualization_workflow before authoring the dashboard.
@@ -214,7 +214,7 @@ steps:
 - id: draft_outline
   name: Draft the dashboard outline (plan-mode) OR pick it autonomously
   description: |
-    Walk `mem_hypothesis_list status=supported`, the most recent
+    Walk `mem_hypothesis (operation=list) status=supported`, the most recent
     `conclusions.md` per active step, and any
     `synthesis/synthesis_spec.yaml#findings`. Distil to:
       - ONE headline finding (the hero claim, as a sentence)
@@ -273,7 +273,7 @@ steps:
 - id: audit
   name: Audit (offline, accessibility, story structure)
   description: |
-    tool_synthesis_check(file='synthesis/dashboard.html') catches
+    tool_synthesis_scaffold (operation=check)(file='synthesis/dashboard.html') catches
     missing alt-text, external scripts, placeholders, path leaks,
     AND the per-step recap antipattern (≥4 consecutive `Step NN`
     headings). Address blockers before sharing.
@@ -296,12 +296,12 @@ steps:
     visualization/interactive_dashboard_design.
 
 tools: |
-  - tool_synthesize_plan — what's ready in the workspace
+  - tool_synthesis_scaffold (operation=plan) — what's ready in the workspace
   - tool_synthesis_scaffold — seed synthesis/dashboard.html (idempotent)
-  - tool_synthesis_check — engineering invariants + story-structure lint
-  - tool_synthesis_curate_figures — copy step figures + captions (mode='focal' or 'all')
+  - tool_synthesis_scaffold (operation=check) — engineering invariants + story-structure lint
+  - tool_synthesis_scaffold (operation=curate_figures) — copy step figures + captions (mode='focal' or 'all')
   - tool_audit(scope='project', dimension='cross_deliverable') — drift vs paper / lay summary
-  - tool_figure_palette — colour-blind-safe palette for any inline charts
+  - pick CVD-safe hex colors inline — colour-blind-safe palette for any inline charts
 
 expected_outputs:
 - synthesis/dashboard.html         # AI-authored, story-driven, self-contained

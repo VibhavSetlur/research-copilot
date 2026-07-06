@@ -14,7 +14,7 @@ see_also:
 - guidance/mid_pipeline_entry      # distinct: resuming RO state vs importing outside work
 description: |
   Re-enter a paused / interrupted / handed-off project — possibly in a
-  different chat or with a different AI model. Two MCP calls: tool_session_resume
+  different chat or with a different AI model. Two MCP calls: tool_session_handoff (operation='resume')
   reconstructs intent + status; tool_route on the researcher's first message
   picks the right protocol.
 trigger: |
@@ -28,7 +28,7 @@ steps:
 - id: read_state
   name: One-Call Resume Brief
   description: |
-    Call tool_session_resume — single MCP call returns:
+    Call tool_session_handoff (operation='resume') — single MCP call returns:
       - project_name + pipeline_stage + current_path
       - pause_reason (fresh_session | mid_step | dead_end |
                       long_running_job | ctx_exhaustion | completed_step)
@@ -40,13 +40,13 @@ steps:
       - recommended_next_protocol
       - resume_message — exact text to read aloud to the researcher
 
-    DO NOT call sys_state_get / sys_protocol_history / mem_hypothesis_list
-    / sys_path separately. They are all bundled.
+    DO NOT call sys_state_get / sys_protocol_get (operation='history') / mem_hypothesis (operation=list)
+    separately. They are all bundled.
 
 - id: poll_background_tasks
   name: Poll Live Background Tasks (only if any)
   description: |
-    If tool_session_resume reported background_tasks.running > 0, call
+    If tool_session_handoff (operation='resume') reported background_tasks.running > 0, call
     tool_task(operation='status') for each task_id:
       - finished → log result, surface a one-line summary
       - still running → report elapsed time + log tail
@@ -63,7 +63,7 @@ steps:
 - id: check_freshness
   name: Stale-state check
   description: |
-    tool_state_freshness_check
+    tool_audit (operation='state_freshness')
     If is_stale=true, surface the `signals` + `prompt_for_ai` to the
     researcher BEFORE present_brief. A workspace that hasn't been
     touched in > 30 days, OR whose citations.md predates new PDFs,
@@ -80,7 +80,7 @@ steps:
 - id: present_brief
   name: Present the Resume Brief
   description: |
-    Read tool_session_resume's `resume_message` field verbatim. Append
+    Read tool_session_handoff (operation='resume') `resume_message` field verbatim. Append
     ONE question:
       "Continue the recommended next protocol (<name>), pivot, or start
        something new?"
@@ -99,7 +99,7 @@ next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
 
 quality_bar: |
-  - tool_session_resume is the ONE state-recovery call; nothing else duplicates
+  - tool_session_handoff (operation='resume') is the ONE state-recovery call; nothing else duplicates
     its payload.
   - Background tasks are polled, not assumed.
   - If a handoff doc exists, it is read before asking the researcher questions.
@@ -116,10 +116,10 @@ triggers:
 - next day
 - i'm back
 summary: Re-enter a paused / interrupted / handed-off project.
-shortcut_tool: tool_session_resume
+shortcut_tool: tool_session_handoff
 token_estimate: 800
 decomposition:
-- tool: tool_session_resume
-  purpose: Reconstruct intent + status in one call.
-- tool: sys_protocol_next
-  purpose: Confirm pipeline-recommended next step.
+- tool: tool_session_handoff
+  purpose: Reconstruct intent + status in one call (operation='resume').
+- tool: sys_protocol_get
+  purpose: Confirm pipeline-recommended next step (operation='next').

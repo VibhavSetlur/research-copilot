@@ -32,7 +32,7 @@ trigger: |
 
 prerequisites:
 - workspace/methods.md exists with at least one substantive entry
-- At least one hypothesis has been registered via mem_hypothesis_add
+- At least one hypothesis has been registered via mem_hypothesis (operation=add)
 - inputs/researcher_config.yaml has the research question + design
 
 # Machine-checkable subset (precondition gate). "Substantive entry" and
@@ -47,7 +47,7 @@ requires:
 
 editorial_voice:
   rules:
-  - "Confirmatory ≠ exploratory. Use mem_hypothesis_add kind='confirmatory' for the pre-registered set; kind='exploratory' for anything added after data inspection."
+  - "Confirmatory ≠ exploratory. Use mem_hypothesis (operation=add) kind='confirmatory' for the pre-registered set; kind='exploratory' for anything added after data inspection."
   - "Every deviation from the SAP must appear in the Discussion under 'Deviations from pre-registration'. Hiding them is worse than having them."
   - "Null findings (refuted / inconclusive) are first-class. See synthesis_null_findings."
 
@@ -107,7 +107,7 @@ steps:
   description: |
     Run the primary + secondary analyses per the SAP. Tag any new
     hypothesis added post-hoc explicitly:
-      mem_hypothesis_add id="H5" kind="exploratory" statement="..."
+      mem_hypothesis (operation=add) id="H5" kind="exploratory" statement="..."
 
     Confirmatory hypotheses count toward the family-wise multiplicity
     correction; exploratory ones are reported as hypothesis-generating
@@ -139,7 +139,7 @@ steps:
       - Every deviation logged by tool_preregister(operation='diff') with a
         one-paragraph rationale.
 
-    tool_audit_quality_full will surface the deviation count as
+    tool_audit (scope=project, dimension=all) will surface the deviation count as
     part of its master report.
 
 expected_outputs:

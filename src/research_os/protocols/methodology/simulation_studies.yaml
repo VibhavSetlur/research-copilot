@@ -32,7 +32,7 @@ editorial_voice:
 steps:
 - id: create_step
   name: Create Simulation Step
-  description: sys_path name="sim_<scenario>"
+  description: tool_plan (operation=create_step) name="sim_<scenario>"
 
 - id: ademp
   name: Specify ADEMP Up Front

@@ -84,10 +84,10 @@ steps:
   name: Estimate the causal effect
   description: |
     The estimator follows the strategy + the data structure. Surface
-    the literature-current default via `tool_research_method` framed
+    the literature-current default via `tool_search` framed
     as "<strategy> estimation for <outcome type> with <sample size /
     structure>". Pick the implementation library via
-    `tool_research_tool`; do not commit a tool from memory.
+    `tool_search`; do not commit a tool from memory.
 
     Report the point estimate + a confidence / credible interval
     computed with the variance estimator the strategy requires

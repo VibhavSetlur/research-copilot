@@ -39,7 +39,7 @@ description: |
        fit.
 
   The protocol is GUIDANCE — the AI writes the imputation + sensitivity
-  scripts via `tool_python_exec` (or `tool_r_exec`) and reads the
+  scripts via `tool_python_exec` (or `tool_bash_exec`) and reads the
   resulting reports; Research OS does not impute on its own.
 
 trigger: |
@@ -120,7 +120,7 @@ steps:
 
     Cite the source for the mechanism claim (a domain paper, a
     prior cohort, or the data generation process documentation).
-    `tool_research_method query="missing data mechanism <domain>"`
+    `tool_search query="missing data mechanism <domain>"`
     when the source is not obvious.
 
 - id: pick_primary_handling

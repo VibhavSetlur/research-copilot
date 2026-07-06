@@ -34,7 +34,7 @@ editorial_voice:
 steps:
 - id: create_step
   name: Create Ablation Step
-  description: sys_path name="ablation_<base_model>"
+  description: tool_plan (operation=create_step) name="ablation_<base_model>"
 
 - id: enumerate_components
   name: Enumerate Components Under Test

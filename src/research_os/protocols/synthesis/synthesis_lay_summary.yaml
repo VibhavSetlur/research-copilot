@@ -136,7 +136,7 @@ steps:
   name: Source the headline finding from the workspace
   description: |
     Pull in ONE batch:
-      - mem_hypothesis_list status=supported
+      - mem_hypothesis (operation=list) status=supported
       - the most recent conclusions.md per active step
       - synthesis/synthesis_spec.yaml#findings  (when present)
       - workspace/citations.md                   (for "more info" links)
@@ -281,6 +281,6 @@ token_estimate: 1400
 decomposition:
 - protocol: synthesis/synthesis_lay_summary
   purpose: Pick lay audience + translate jargon + anchor numbers.
-- tool: tool_synthesis_check
+- tool: tool_synthesis_scaffold (operation=check)
   args:
     file: synthesis/lay_summary.md

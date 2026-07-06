@@ -125,7 +125,7 @@ steps:
     decisions/) · how to reproduce. A diagram that describes an OLDER
     architecture is a bug the same way stale API docs are — reconcile it with
     the shipped surface here. (tool_build has no conclusions.md, so derive the
-    README from spec/ + decisions/ + CHANGELOG, not from tool_path_finalize.)
+    README from spec/ + decisions/ + CHANGELOG, not from tool_plan (operation=finalize_step).)
 
     The bar: a new consumer can install, use, AND understand the shape of the
     tool from the README + its architecture diagram alone, and an existing

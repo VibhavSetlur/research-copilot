@@ -176,11 +176,11 @@ steps:
     library that would be reckless to reinvent, find it before deciding.
 
     Use the existing research tools — do not invent new ones:
-      - tool_research_tool task="<concrete capability>" language="<lang|any>"
+      - tool_search task="<concrete capability>" language="<lang|any>"
         to surface candidate libraries/frameworks for a sub-problem.
-      - tool_research_method / tool_search for the design pattern,
+      - tool_search / tool_search for the design pattern,
         algorithm, or protocol the tool implements.
-      - tool_literature_search_and_save when the tool implements a
+      - tool_search (mode=literature) when the tool implements a
         published method/standard and correctness depends on matching it.
 
     Anti-pattern: "we'll use <framework> because it's popular." Grounded:
@@ -261,7 +261,7 @@ token_estimate: 1800
 decomposition:
 - protocol: build/spec_and_design
   purpose: Name the consumer, write acceptance criteria, pin the interface contract, ground + record load-bearing decisions as ADRs.
-- tool: tool_research_tool
+- tool: tool_search
   purpose: Surface candidate libraries/frameworks for a sub-problem before committing.
 - tool: sys_file_write
   purpose: Write spec/requirements.md, spec/design.md, decisions/NNNN-*.md.

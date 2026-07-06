@@ -1,6 +1,6 @@
 """Progressive-disclosure tool surface for the MCP handshake.
 
-The full Research-OS catalog is ~160 tools. Advertising every one of them
+The full Research-OS catalog is 45 tools. Advertising every one of them
 in the MCP ``list_tools()`` handshake floods the client's context on the
 FIRST turn — every tool's name + short description + input schema is sent
 to the model before it has done anything. That is the single biggest
@@ -10,8 +10,7 @@ the actual work.
 The fix is progressive disclosure. ``list_tools()`` advertises only a small
 CORE bootstrap surface (the boot ritual + the discovery tools + file/state
 plumbing). The AI uses those to ROUTE (``tool_route``), scope its working
-set (``sys_active_tools``), or search the catalog (``tool_tools_list`` /
-``sys_semantic_tool_search`` / ``sys_tool_describe``) — and then CALLS the
+set (``sys_active_tools``), or search the catalog — and then CALLS the
 tool it needs by name. This is safe because the server's ``call_tool``
 dispatcher resolves against ``_HANDLERS`` (the full registry), NOT against
 the advertised ``list_tools()`` set: a tool absent from the handshake list
@@ -40,7 +39,7 @@ import os
 from pathlib import Path
 
 
-# ── CORE bootstrap surface ────────────────────────────────────────────
+# ── CORE bootstrap surface (15 CORE tools) ───────────────────────────
 # The minimum set the AI needs to (a) orient, (b) route, (c) DISCOVER and
 # then CALL anything else by name. Keep this tight — every entry here is a
 # fixed per-session context cost. Anything not listed is still callable;
@@ -48,35 +47,26 @@ from pathlib import Path
 _CORE_SURFACE: frozenset[str] = frozenset({
     # Orientation / boot ritual
     "sys_boot",
-    "sys_where",
-    "sys_daemon",
-    "sys_help",
-    "sys_active_project",
-    # Routing + discovery — how the AI reaches the other ~135 tools
+    # Routing + discovery — how the AI reaches the other 30 tools
     "tool_route",
-    "tool_semantic_route",
-    "sys_semantic_tool_search",
-    "sys_tool_describe",
     "sys_active_tools",
-    "tool_tools_list",
     # Protocol plumbing
     "sys_protocol_get",
-    "sys_protocol_list",
-    "sys_protocol_log",
-    "sys_protocol_next",
-    # State + workspace
+    # State
     "sys_state_get",
-    "sys_workspace_mode",
-    "sys_workspace_tree",
     # File basics
     "sys_file_read",
     "sys_file_write",
     "sys_file_list",
-    # Cross-cutting
-    "sys_notify",
-    "sys_config",
-    "sys_consent",
+    # Core execution + reasoning
+    "tool_search",
+    "tool_python_exec",
+    "tool_bash_exec",
+    "tool_plan",
+    "tool_audit",
+    # Memory + thought
     "mem_log",
+    "tool_thought",
 })
 
 _VALID_SURFACES = ("core", "full", "mode")

@@ -138,7 +138,7 @@ steps:
   description: |
     For artefacts that live in this folder but not yet under
     inputs/:
-      tool_context_intake also_autofill=false
+      mem_log (operation='context_intake', also_autofill=false)
       - loose PDFs / docx / markdown / notebooks → inputs/context
       - loose CSV / parquet → inputs/raw_data
       - existing references / bibtex → inputs/literature_index.yaml
@@ -173,7 +173,7 @@ steps:
         the prior draft).
       - synthesis target needs workspace/citations.md? Seed from
         the prior bibtex / references list; run
-        tool_citations_verify.
+        tool_audit (scope='project', dimension='citations').
       - synthesis target needs at least ONE step's conclusions.md?
         Use synthesis/synthesis_from_inputs to build a SHADOW
         step that anchors the synthesis honestly.
@@ -187,9 +187,8 @@ steps:
 - id: route_to_chosen_protocol
   name: Route to the chosen protocol
   description: |
-    Call sys_protocol_log status="completed" for
-    guidance/mid_pipeline_entry with the chosen entry archetype +
-    next protocol recorded.
+    Call mem_log entry="mid_pipeline_entry completed: archetype=<X> next=<protocol>"
+    with the chosen entry archetype + next protocol recorded.
 
     Then route to the chosen next protocol (the one from
     classify_the_entry_point). The active plan from any preceding
@@ -267,4 +266,4 @@ token_estimate: 1400
 decomposition:
 - protocol: guidance/mid_pipeline_entry
   purpose: Classify entry archetype + route to the right downstream protocol.
-- tool: tool_context_intake
+- tool: mem_log

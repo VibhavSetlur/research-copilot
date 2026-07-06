@@ -37,7 +37,7 @@ steps:
 - id: read_paper
   name: Read the Paper Once, Take Notes
   description: |
-    sys_file_read on the PDF (if text-extractable) OR tool_web_scrape on
+    sys_file_read on the PDF (if text-extractable) OR tool_search (mode=scrape) on
     the URL. Extract into workspace/scratch/<paper>_notes.md:
       - Research question (1 sentence)
       - Claimed contribution (≤3 bullets)
@@ -51,7 +51,7 @@ steps:
 - id: ground_method
   name: Ground the Method Against Literature
   description: |
-    tool_research_method query="<method> + <domain>" limit=5. Skim for
+    tool_search query="<method> + <domain>" limit=5. Skim for
     common critiques the authors should have addressed. Note any standard
     assumption or sensitivity check the paper omitted.
 
@@ -110,7 +110,7 @@ quality_bar: |
   - Every concern cites specific text or data from the paper, not vague
     impression.
   - At least 3 of the 5 concerns are tied to a comparison against literature
-    surfaced by tool_research_method.
+    surfaced by tool_search.
   - Verdict is justified by the top-2 concerns, not vibes.
   - Brief is ≤ 800 words.
 
@@ -136,10 +136,10 @@ triggers:
 - structured feedback
 - walk me through structured feedback
 summary: Fast 20-40 min critical appraisal of a paper.
-shortcut_tool: tool_quick_review
+shortcut_tool: tool_audit
 token_estimate: 700
 decomposition:
-- tool: tool_quick_review
-  purpose: Stage the review skeleton.
+- tool: tool_audit
+  purpose: Stage the review skeleton (operation='quick_review').
 - protocol: guidance/quick_paper_review
   purpose: Walk through the appraisal.

@@ -485,9 +485,14 @@ def _handle_mem_log(name, arguments, root):
 
     kind='methods'    → mem_methods_append
     kind='decision'   → mem_decision_log
-    kind='hypothesis' → mem_hypothesis_update
+    kind='hypothesis' → mem_hypothesis_add (new entry) or mem_hypothesis_update
+                        (when hypothesis_id= is present)
     kind='analysis'   → mem_analysis_log
+    kind='lesson'     → tool_lessons (passthrough; `operation` selects sub-op:
+                        record | consult | failure_record | failure_check |
+                        failure_list | dead_end | mistake_replay)
     """
+    arguments = arguments or {}
     legacy = {
         "mem_methods_append": "methods",
         "mem_decision_log": "decision",
@@ -497,16 +502,27 @@ def _handle_mem_log(name, arguments, root):
     kind = arguments.get("kind") or legacy.get(name)
     if not kind:
         return _text(_error(
-            "mem_log requires kind='methods'|'decision'|'hypothesis'|'analysis'"
+            "mem_log requires kind='methods'|'decision'|'hypothesis'|'analysis'|'lesson'"
         ))
     if kind == "methods":
         return _handle_mem_methods_append(name, arguments, root)
     if kind == "decision":
         return _handle_mem_decision_log(name, arguments, root)
     if kind == "hypothesis":
+        # Updating an existing hypothesis requires its id. Adding a new
+        # hypothesis goes through the mem_hypothesis(operation='add') tool.
+        if not arguments.get("hypothesis_id"):
+            return _text(_error(
+                "mem_log(kind='hypothesis') updates an existing hypothesis and "
+                "requires hypothesis_id=; use mem_hypothesis(operation='add') to "
+                "record a new hypothesis"
+            ))
         return _handle_mem_hypothesis_update(name, arguments, root)
     if kind == "analysis":
         return _handle_mem_analysis_log(name, arguments, root)
+    if kind == "lesson":
+        # Delegate to tool_lessons; map `operation` through as-is.
+        return _handle_tool_lessons(name, arguments, root)
     return _text(_error(f"Unknown mem_log kind '{kind}'"))
 
 
@@ -515,7 +531,6 @@ HANDLERS = {
     "tool_ground": _handle_tool_ground,
     "tool_verify": _handle_tool_verify,
     "tool_lessons": _handle_tool_lessons,
-    "tool_skills": _handle_tool_skills,
     "tool_reliability": _handle_tool_reliability,
     "mem_log": _handle_mem_log,
 }

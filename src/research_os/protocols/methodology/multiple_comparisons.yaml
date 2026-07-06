@@ -35,7 +35,7 @@ trigger: |
     - methodology/preregistration step asks for the multiplicity rule.
 
 prerequisites:
-- hypotheses are registered via mem_hypothesis_add (so the protocol can count them and inspect their kind).
+- hypotheses are registered via mem_hypothesis (operation=add) (so the protocol can count them and inspect their kind).
 - analysis_plan exists OR a draft is in workspace/.
 
 editorial_voice:
@@ -60,7 +60,7 @@ steps:
         tables with k predictors implicitly test k null hypotheses;
         decide which subset is "the family")
 
-    Pull from mem_hypothesis_list. Augment with anything in
+    Pull from mem_hypothesis (operation=list). Augment with anything in
     analysis_plan.md not yet logged.
 
 - id: declare_families

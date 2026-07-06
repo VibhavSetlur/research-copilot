@@ -97,7 +97,7 @@ steps:
   name: Scaffold the study folder + hand off to its analysis loop
   description: |
     Create the study as a child surface UNDER studies/. A study is NOT a
-    numbered analysis step — do NOT use sys_path (that creates
+    numbered analysis step — do NOT use sys_state_get (that creates
     workspace/NN_<slug>/). Instead materialise the study directory directly:
       sys_file_write filepath="studies/<slug>/README.md" (creates the
       studies/<slug>/ surface), stating its scope, the program hypothesis it
@@ -155,6 +155,6 @@ decomposition:
 - protocol: program/study_register
   purpose: Bind the study to the codebook + prereg, declare its roll-up contribution, scaffold it harmonized.
 - tool: sys_file_write
-  purpose: Materialise the new sub-study directory + README under studies/<slug>/ (NOT sys_path — a study is not a numbered analysis step).
+  purpose: Materialise the new sub-study directory + README under studies/<slug>/ (NOT sys_state_get — a study is not a numbered analysis step).
 - tool: mem_log
   purpose: Record the study registration (bound to commons vX).

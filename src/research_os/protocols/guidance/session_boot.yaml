@@ -46,7 +46,7 @@ steps:
       - next_protocol (pipeline-recommended) + dep_inventory
       - active_plan (any in-flight decomposition from a previous turn)
       - freshness (is_stale + signals + prompt_for_ai from
-                   tool_state_freshness_check; surface to researcher
+                   tool_audit (operation=state_freshness); surface to researcher
                    when freshness.is_stale is true)
       - daemon_notes (if a daemon is running: its background self-check —
                    structure/provenance/mode-health/stalled-job/abandoned-
@@ -57,8 +57,8 @@ steps:
                    rather than re-deriving the method from memory)
       - advice — one-line guidance for what to do next
 
-    Do NOT call sys_state_get / sys_config(operation='get') / sys_protocol_history /
-    sys_dep_inventory / sys_protocol_next / tool_state_freshness_check
+    Do NOT call sys_state_get / sys_boot(operation='config_get') / sys_protocol_get(operation='history') /
+    sys_env(operation='inventory') / sys_protocol_get(operation='next') / tool_audit(operation='state_freshness')
     separately. They are all in sys_boot's payload. Sequential or
     parallel — doesn't matter — they cost ~5× more tokens than
     necessary.
@@ -165,7 +165,7 @@ steps:
     Execute every entry in `this_turn` IN ORDER. After each entry, call
     tool_plan. When this_turn finishes, call tool_plan
     again for the next batch — OR, if chat_split_recommended is true,
-    call sys_session_handoff and tell the researcher to start a fresh
+    call tool_session_handoff and tell the researcher to start a fresh
     chat with "pick up where we left off".
 
 expected_outputs:

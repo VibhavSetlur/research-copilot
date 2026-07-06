@@ -129,11 +129,11 @@ steps:
   description: |
     Whatever the verdict, preserve the evidence so the decision is durable
     and reversible:
-      - sys_checkpoint_create to snapshot the spike + its environment at
+      - tool_git (operation=commit) to snapshot the spike + its environment at
         the moment of decision, so a later session (or
         build/dependency_integration) can return to exactly the state that
-        produced the verdict. sys_checkpoint_list shows prior checkpoints;
-        sys_checkpoint_rollback returns to one if a later step goes wrong.
+        produced the verdict. tool_git (operation=log) shows prior commits;
+        tool_git (operation=rollback) returns to one if a later step goes wrong.
       - mem_log the verdict: candidate + pinned version, the input
         hash tested, the pass/fail bar, the actual result, and the
         ADOPT / REJECT / NEEDS-MORE call with its reason.
@@ -171,7 +171,7 @@ steps:
 expected_outputs:
 - A throwaway spike in scratch (deleted on reject, preserved as a checkpoint on adopt)
 - A sys_env snapshot of the spike environment + the pinned candidate version and input hash
-- A sys_checkpoint_create snapshot capturing the decision state
+- A tool_git (operation=commit) snapshot capturing the decision state
 - mem_log entry with the (version, input-hash, bar, result, verdict) record
 
 next_protocol: build/dependency_integration
@@ -203,7 +203,7 @@ decomposition:
   purpose: Capture the interpreter + dependency versions the spike ran under.
 - tool: tool_scratch
   purpose: Run the throwaway spike in the scratch surface, never in the real tree.
-- tool: sys_checkpoint_create
+- tool: tool_git (operation=commit)
   purpose: Snapshot the spike + env at the decision moment so it's re-runnable / reversible.
 - tool: mem_log
   purpose: Record (version, input-hash, bar, result, verdict).

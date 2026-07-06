@@ -74,7 +74,7 @@ steps:
   description: |
     Reason from the rating task's profile (from the prior step) to the
     agreement statistic, then surface the matching one via
-    tool_research_method and cite the source that justifies it for THIS
+    tool_search and cite the source that justifies it for THIS
     task type. The dimensions that drive the choice — reason over each,
     don't pick from memory:
 
@@ -153,9 +153,9 @@ steps:
   name: Compute agreement on the IRR sample
   description: |
     The AI authors the computation in its own script (tool_python_exec /
-    tool_r_exec) — Research-OS does not compute IRR internally. Use a
+    tool_bash_exec) — Research-OS does not compute IRR internally. Use a
     maintained implementation of the chosen statistic from the project's
-    runtime; surface one via tool_research_tool rather than defaulting to
+    runtime; surface one via tool_search rather than defaulting to
     a remembered package, and record which implementation + version was
     used (the result must be reproducible).
 

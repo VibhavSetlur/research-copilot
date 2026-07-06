@@ -92,8 +92,8 @@ steps:
   description: |
     When the notebook becomes an analysis step:
       - Register the question as a hypothesis if it is one:
-        mem_hypothesis_add statement="<H: the claim the notebook tests>".
-      - Create the step: sys_path name="<slug>" hypothesis="<H<id>: <text>>".
+        mem_hypothesis (operation=add) statement="<H: the claim the notebook tests>".
+      - Create the step: tool_plan (operation=create_step) name="<slug>" hypothesis="<H<id>: <text>>".
       - Carry the notebook + extracted script(s) into the step
         (workspace/<NN_slug>/), and copy the notebook's headline into the
         step's context/notes.md as "Origin: promoted from notebook <name>".
@@ -169,7 +169,7 @@ token_estimate: 1500
 decomposition:
 - protocol: notebook/notebook_promote
   purpose: Decide the durable form, extract reusable logic / create the step, trace artefacts, hand off.
-- tool: sys_path
+- tool: sys_state_get
   purpose: Create the numbered step when promoting a notebook to an analysis step.
 - tool: mem_log
   purpose: Record the promotion (notebook → script / step / figure).

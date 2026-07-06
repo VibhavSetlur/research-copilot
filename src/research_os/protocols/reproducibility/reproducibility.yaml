@@ -77,7 +77,7 @@ steps:
   name: Emit RO-Crate + CodeMeta Manifests
   description: |
     Open-science manifests make the project machine-discoverable + citable.
-    sys_export_ro_crate(operation='build') writes ro-crate-metadata.json
+    tool_finalize_project(operation='build') writes ro-crate-metadata.json
     (RO-Crate 1.1 Lightweight Profile, JSON-LD with
     @context: https://w3id.org/ro/crate/1.1/context) AND codemeta.json
     (CodeMeta 2.0, @context: https://doi.org/10.5063/schema/codemeta-2.0)
@@ -87,7 +87,7 @@ steps:
     (softwareRequirements), and a walk of synthesis/ + workspace/*/outputs/
     for hasPart entries (including every *.prov.json sidecar).
 
-    sys_export_share_archive automatically refreshes + bundles these
+    tool_finalize_project automatically refreshes + bundles these
     manifests at archive root, so collaborators can point ro-crate-py
     or cffconvert at the zip and validate it.
 

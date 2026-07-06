@@ -1462,13 +1462,10 @@ _ESSENTIAL_TOOLS = (
     "tool_route",
     "tool_plan",
     "sys_protocol_get",
-    "sys_protocol_list",
-    "sys_protocol_log",
     "sys_state_get",
     "sys_file_read",
     "sys_file_list",
     "sys_notify",
-    "sys_tool_describe",
     "sys_active_tools",
     "mem_log",
 )
@@ -1524,7 +1521,7 @@ def active_tools_for_protocol(protocol_name: str) -> dict[str, Any]:
             "active_tools_count": len(tools),
             "advice": (
                 "Prefer these tools while executing the protocol. Other "
-                "tools remain reachable via sys_tool_describe, but stay "
+                "tools remain reachable via sys_active_tools, but stay "
                 "in this scope unless a step explicitly calls something "
                 "outside it."
             ),
@@ -2599,16 +2596,13 @@ _TURN_BUDGET = {
 # Typst deliverables. A test guard enforces the no-drift invariant.
 DELIVERABLE_TOOLS = frozenset({
     "tool_typst_compile",
-    "tool_latex_compile",
     "tool_synthesis_scaffold",
 })
 
 _HEAVY_TOOLS = {
     "tool_typst_compile": 3,
-    "tool_audit_reproducibility": 3,
-    "tool_audit_synthesis": 2,
-    "tool_literature_search_and_save": 2,
-    "tool_research_method": 2,
+    "tool_audit": 3,
+    "tool_search": 2,
     "tool_synthesis_scaffold": 2,
 }
 

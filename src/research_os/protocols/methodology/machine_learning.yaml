@@ -88,7 +88,7 @@ steps:
     / random / nearest-neighbour) — sets the floor. Also fit the
     strong baseline the field's recent benchmark literature names —
     this is what the main model must actually beat. Surface the
-    strong baseline via `tool_research_method`; do not pick from
+    strong baseline via `tool_search`; do not pick from
     memory.
 
 - id: train_and_tune
@@ -116,7 +116,7 @@ steps:
   name: Interpretation — match method to model + audience
   description: |
     Pick interpretation tools that fit the model family + the
-    deployment audience. Surface options via `tool_research_method`
+    deployment audience. Surface options via `tool_search`
     framed as "interpretability for <model family> in <deployment
     context>". Document which option was chosen + why, with
     citation. Aggregate explanations alone are insufficient when

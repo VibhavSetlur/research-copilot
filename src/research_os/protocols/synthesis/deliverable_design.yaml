@@ -24,7 +24,7 @@ description: |
   layout archetypes + professional palettes + a type system, plus the
   principles and branch points for choosing among them. The numeric budgets
   live in the design audit (tool_audit(scope='synthesis', dimension=
-  'dashboard_content') + tool_synthesis_check), not here — so the AI reasons
+  'dashboard_content') + tool_synthesis_scaffold (operation=check)), not here — so the AI reasons
   about fit, and the audit enforces the limits.
 
   Use this BEFORE authoring a dashboard / poster / slide deck (the
@@ -148,8 +148,8 @@ steps:
   description: |
     Run the design audit:
       - dashboard: tool_audit(scope='synthesis', dimension='dashboard_content')
-        + tool_synthesis_check.
-      - poster / slides: tool_synthesis_check.
+        + tool_synthesis_scaffold (operation=check).
+      - poster / slides: tool_synthesis_scaffold (operation=check).
       - figures: tool_audit(scope='step', dimension='figure_full').
     It reviews stylistic choices — scroll budget, in-page nav, claim (not step)
     headings, professional colour (neon / restraint / contrast), captioned +
@@ -174,9 +174,9 @@ tools: |
   tool_synthesis_scaffold (kind + archetype + palette) — composes the chosen
     design system, stamps data-archetype for the audit.
   tool_audit(scope='synthesis', dimension='dashboard_content') — dashboard design review.
-  tool_synthesis_check — poster / slides / dashboard structure + design lints.
+  tool_synthesis_scaffold (operation=check) — poster / slides / dashboard structure + design lints.
   tool_audit(scope='step', dimension='figure_full') — figure technical + style review.
-  tool_figure_palette — CVD-safe palette source for embedded figures.
+  pick CVD-safe hex colors inline — CVD-safe palette source for embedded figures.
 
 expected_outputs:
 - A deliverable whose layout archetype + palette are a recorded, defended choice.

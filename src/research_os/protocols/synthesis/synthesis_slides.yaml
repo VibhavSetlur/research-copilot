@@ -111,7 +111,7 @@ steps:
 - id: inspect
   name: Inspect what's ready
   description: |
-    tool_synthesize_plan returns per-step conclusions + focal
+    tool_synthesis_scaffold (operation=plan) returns per-step conclusions + focal
     figures the deck can draw on.
 
 - id: scaffold
@@ -158,12 +158,12 @@ steps:
     likely objections; a deck with no Q&A prep is half-finished.
     Sources — workspace/<step>/conclusions.md
     Limitations sections, workspace/logs/audit_report.md, mem_log
-    close-call decisions, sys_path dead-end paths.
+    close-call decisions, sys_state_get dead-end paths.
 
 - id: audit
   name: Audit
   description: |
-    tool_synthesis_check(file='synthesis/slides.typ') catches short
+    tool_synthesis_scaffold (operation=check)(file='synthesis/slides.typ') catches short
     decks, missing speaker notes, citation over-cap, path leaks.
 
 - id: compile
@@ -180,10 +180,10 @@ steps:
     won't show.
 
 tools: |
-  - tool_synthesize_plan — what's ready
+  - tool_synthesis_scaffold (operation=plan) — what's ready
   - tool_synthesis_scaffold(kind='slides') — seed Touying starter
-  - tool_synthesis_check — slide-count + speaker-notes + path-leak audit
-  - tool_synthesis_curate_figures — TALK-version figures
+  - tool_synthesis_scaffold (operation=check) — slide-count + speaker-notes + path-leak audit
+  - tool_synthesis_scaffold (operation=curate_figures) — TALK-version figures
   - tool_typst_compile — render synthesis/slides.pdf
 
 expected_outputs:
@@ -225,7 +225,7 @@ decomposition:
 - tool: tool_synthesis_scaffold
   args:
     kind: slides
-- tool: tool_synthesis_check
+- tool: tool_synthesis_scaffold (operation=check)
   args:
     file: synthesis/slides.typ
 - tool: tool_typst_compile

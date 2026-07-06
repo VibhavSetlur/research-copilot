@@ -75,7 +75,7 @@ steps:
 - id: apply_safely
   name: Copy into RO format (original untouched) and verify
   description: |
-    Once the plan is agreed, call tool_migrate_apply(source_dir=<src>,
+    Once the plan is agreed, call tool_migrate_audit (operation=apply)(source_dir=<src>,
     dest_dir=<dest>). It COPIES (never moves/deletes the source), skips
     collisions, verifies every copy by size + hash, and writes an auditable
     migration_manifest.json under .os_state/.
@@ -89,12 +89,12 @@ steps:
   name: Confirm the result is a structurally sound RO project
   description: |
     A pile of correctly-placed files is not yet a coherent RO project. Run:
-      - tool_structure_audit — verifies steps are well-formed, the state
+      - tool_audit (scope='project', dimension='structure') — verifies steps are well-formed, the state
         ledger matches disk, no orphaned outputs. Fix any BLOCK findings.
-      - tool_workspace_repair (dry_run first) — heals any missing scaffold
+      - tool_migrate_audit (operation='repair', dry_run=true first) — heals any missing scaffold
         dirs / state drift the copy didn't create.
 
-    Then run tool_intake_autofill so the project gets a real research
+    Then run mem_log (operation='intake_autofill') so the project gets a real research
     question + domain inferred from the now-organized inputs (or capture
     what the researcher tells you in chat). The migrated project should end
     this protocol indistinguishable from one that started clean.
@@ -110,7 +110,7 @@ steps:
 quality_bar: |
   - The researcher's original directory is provably untouched (copy-only).
   - Every file is accounted for — copied, intentionally skipped, or flagged.
-  - tool_structure_audit reports zero BLOCK findings at the end.
+  - tool_audit (scope='project', dimension='structure') reports zero BLOCK findings at the end.
   - The migrated project has a real research question + domain set.
   - Nothing important silently landed in "other" without the researcher seeing it.
 

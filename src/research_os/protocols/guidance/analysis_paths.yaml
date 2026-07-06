@@ -40,12 +40,12 @@ steps:
         contaminate the main analysis if mixed into one step
 
     The cases that do NOT clear the bar (extend the current step instead):
-      - a minor parameter tweak (version-bump the script: tool_step iterate)
+      -       a minor parameter tweak (version-bump the script: tool_plan (operation='iterate'))
       - a curiosity with no decision riding on it
       - you already know which way you'll go — then just go that way
 
     When two options both have merit but you're unsure branching is worth it,
-    tool_branch_recommendation reason="<short>" returns whether to fork a
+    tool_plan (operation='branch_recommendation', reason="<short>") returns whether to fork a
     parallel path or finish the current one first. Use it as a tie-breaker,
     not a substitute for the judgement above.
 
@@ -74,9 +74,9 @@ steps:
       did_policy_alt_a       vs  did_policy_alt_b        # rival identification strategies
 
     Create the path so the workspace records the lineage:
-      sys_path operation='create' name="<slug>" hypothesis="<H: text>" branch_of="<parent_step>"
+      sys_file_write / tool_plan (operation='create_step', name="<slug>", hypothesis="<H: text>", branch_of="<parent_step>")
     branch_of is what links siblings and the parent — it is what makes the
-    fork visible in sys_path operation='list' and reconstructable by a fresh
+    fork visible in sys_state_get and reconstructable by a fresh
     AI. Record in each path's plan.md: the fork question, what this branch
     pursues, and what observation would make it the winner.
 
@@ -93,7 +93,7 @@ steps:
     Decide the comparison criterion BEFORE seeing each branch's result, so the
     winner isn't chosen post-hoc to fit a preference. The criterion is
     field-specific — name it and ground it in the literature, don't default to
-    a familiar metric. tool_alternative_path_propose can seed a rival path
+    a familiar metric.     tool_plan (operation='alternative_path') can seed a rival path
     with cited comparative evidence when the fork is method-vs-method.
 
 - id: compare_and_decide
@@ -132,7 +132,7 @@ steps:
   name: Abandon a Losing or Dead Path (preserve it)
   description: |
     For a path that lost the comparison or proved unworkable, route the close:
-      sys_path operation='abandon' path_name="<slug>" rationale="<why, + what it ruled out>"
+      tool_plan (operation='abandon_step', path_name="<slug>", rationale="<why, + what it ruled out>")
     This preserves the folder (renamed __DEAD_END), records the status, and
     removes it from the active list. Capture the LESSON — what this path ruled
     out applies to the surviving paths and to future forks
@@ -144,7 +144,7 @@ steps:
     AUTONOMY GATE:
       Risk: irreversible-in-spirit — a dead-end declaration is loud and
       downstream readers treat it as final, though the files survive. This is
-      a floor gate (mirrors guidance/autopilot's sys_path:abandon floor).
+      a floor gate (mirrors guidance/autopilot's dead_end_abandon floor).
       proceed (adaptive default, autopilot) → abandon once the comparison is
         decided + recorded, but PAUSE before abandoning a path the researcher
         invested in or one whose loss is close. (Under autopilot this stays a
@@ -196,11 +196,13 @@ triggers:
 summary: 'Keep a multi-path exploration legible: when to branch, how to name + compare branches on equal footing, when to merge the winner or abandon a loser.'
 token_estimate: 1500
 decomposition:
-- tool: tool_branch_recommendation
-  purpose: Tie-break whether to fork a parallel path or finish the current one first.
-- tool: sys_path
+- tool: tool_plan
   args:
-    operation: create
+    operation: branch_recommendation
+  purpose: Tie-break whether to fork a parallel path or finish the current one first.
+- tool: tool_plan
+  args:
+    operation: create_step
   purpose: Create the branch path with branch_of recording the lineage.
 - protocol: guidance/analysis_paths
   purpose: Hold branches comparable, compare on a pre-declared criterion, merge or abandon.

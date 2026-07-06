@@ -69,7 +69,7 @@ steps:
     Do NOT default to "wall-clock time" reflexively. State what the metric
     captures and what it omits. Where the field has a canonical metric for
     this kind of tool, use it and cite why (surface it via tool_search /
-    tool_research_tool rather than asserting from memory).
+    tool_search rather than asserting from memory).
 
 - id: fair_conditions
   name: Hold the conditions fair across every comparator

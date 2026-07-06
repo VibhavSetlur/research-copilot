@@ -72,7 +72,7 @@ steps:
       - Python → tool_package_install pins it into environment/requirements.txt;
         tighten to ==X.Y.Z (or the proven commit SHA for a from-source dep).
       - other languages → pin in the manifest/lockfile via tool_bash_exec.
-    Then sys_dep_inventory to confirm the dependency tree is what you
+    Then sys_env (operation=inventory) to confirm the dependency tree is what you
     expect and to surface any transitive surprises the pin pulled in.
 
     Record the dependency's LICENCE and its obligations in the tool's
@@ -133,7 +133,7 @@ steps:
       - Breaking-change handling: what the seam protects against, and the
         fallback if upstream breaks or is abandoned (pin-and-hold, fork,
         or the in-house alternative the scout already identified).
-      - Deprecation watch: tool_deprecations_summary / sys_dep_inventory to
+      - Deprecation watch: sys_env (operation=deprecations) / sys_env (operation=inventory) to
         keep the pin's health visible over time.
 
     The point is that the next person to bump this dependency inherits a
@@ -142,9 +142,9 @@ steps:
 - id: commit_with_provenance
   name: Commit the integration with full provenance, behind a rollback
   description: |
-    Before committing, make the step reversible: sys_checkpoint_create so
+    Before committing, make the step reversible: tool_git (operation=commit) so
     the pre-integration / post-integration boundary is a state you can
-    return to (sys_checkpoint_rollback) if a later problem traces back to
+    return to (tool_git (operation=rollback)) if a later problem traces back to
     this dependency.
 
     Commit in the inner repo via tool_git(operation='commit', step_id=...)
@@ -187,7 +187,7 @@ expected_outputs:
 - The dependency pinned at the proven version in the manifest/lockfile (e.g. environment/requirements.txt)
 - An adapter/seam isolating the dependency, with tests exercising it through the seam
 - A version-change + re-proof policy recorded (decisions/ or governance.md), licence recorded
-- A sys_checkpoint_create snapshot at the integration boundary + a provenance-bearing commit (Research-OS-Step trailer)
+- A tool_git (operation=commit) snapshot at the integration boundary + a provenance-bearing commit (Research-OS-Step trailer)
 - mem_log entry tying gap → scout → spike → integrated version
 
 next_protocol: build/implement_iteration
@@ -215,9 +215,9 @@ decomposition:
   purpose: Carry provenance forward, pin the proven version, integrate behind a seam, test through it, set a version-change policy, commit with provenance behind a checkpoint.
 - tool: tool_package_install
   purpose: Pin the dependency at the exact proven version in the manifest/lockfile.
-- tool: sys_dep_inventory
+- tool: sys_env (operation=inventory)
   purpose: Confirm the dependency tree + surface transitive surprises.
-- tool: sys_checkpoint_create
+- tool: tool_git (operation=commit)
   purpose: Snapshot the integration boundary so it can be rolled back if it goes wrong.
 - tool: mem_log
   purpose: Tie gap → scout → spike → integrated version into one durable record.

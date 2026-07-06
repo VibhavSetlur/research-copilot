@@ -38,7 +38,7 @@ description: |
     - `tool_notebook_exec`   — writes per-notebook provenance,
     - `tool_sensitivity(operation='run')` — writes the spec-curve sidecar.
 
-  Scripts run via `tool_python_exec` / `tool_r_exec` MUST call
+  Scripts run via `tool_python_exec` / `tool_bash_exec` (for R scripts, pass them via tool_bash_exec) MUST call
   `write_output_provenance` themselves at the end of every artefact
   write, OR funnel their figures through an AI-authored plotting script (see visualization/figure_guidelines) (which
   takes the data path + chart kind and handles the sidecar).
@@ -155,7 +155,7 @@ steps:
 
     `audit/audit_and_validation` reads this file and rolls the
     BLOCKER count into the master audit; any BLOCKER surfaces as a
-    blocker on `tool_synthesis_check` when the AI validates the
+    blocker on `tool_synthesis_scaffold (operation='check')` when the AI validates the
     authored synthesis file.
 
 - id: fix_missing_sidecars
@@ -185,7 +185,7 @@ steps:
         for you.
 
       - Re-runs the script via `tool_python_exec` (or
-        `tool_r_exec` — R scripts call into the provenance
+        `tool_bash_exec` — R scripts call into the provenance
         module via `reticulate` or write the sidecar by hand
         per the JSON schema in `provenance.py`).
 

@@ -198,7 +198,7 @@ decomposition:
   purpose: Define the shared codebook, frame the program prereg, plan the roll-up, scaffold the first study.
 - tool: sys_file_write
   purpose: Write shared/codebook.md, shared/preregistration.md, roll_up/README.md.
-- tool: sys_path
+- tool: sys_state_get
   purpose: Scaffold the first sub-study under studies/.
 - tool: mem_log
   purpose: Record the program-setup decision (shared commons frozen).

@@ -168,9 +168,9 @@ steps:
       - runtime.compute_environment + shared_server — so runs + scheduling
         decisions are right (especially on shared HPC).
       - interaction.agent_notes — seed any standing project preferences the
-        agent should obey, and record new ones via sys_config(operation=
-        'note') as the researcher corrects the agent (the learn-the-user
-        loop).
+          agent should obey, and record new ones via sys_boot (operation=
+          'config_get') and mem_log as the researcher corrects the agent (the learn-the-user
+          loop).
     Where the agent layer has its own memory (e.g. Hermes), the durable,
     cross-project facts live there; the project-specific contract lives in
     researcher_config. Keep both in sync.
@@ -254,5 +254,5 @@ token_estimate: 1400
 decomposition:
 - protocol: guidance/agent_setup
   purpose: Assess current setup, name needed capabilities, wire RO into the chosen layer, tailor researcher_config, align skills with protocols.
-- tool: sys_config
-  purpose: Record the model class + project knobs the agent reads every session.
+- tool: sys_boot
+  purpose: Record the model class + project knobs the agent reads every session (operation='config_get').

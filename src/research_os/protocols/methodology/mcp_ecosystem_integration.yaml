@@ -123,7 +123,7 @@ steps:
 - id: check_collisions
   name: Check for tool-name collisions
   description: |
-    Run sys_protocol_list (or `mcp list` in the IDE) to see
+    Run tool_protocols_list (or `mcp list` in the IDE) to see
     Research OS's current tool surface. Cross-reference with
     the candidate MCP's tool names.
 

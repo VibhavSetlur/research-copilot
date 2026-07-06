@@ -165,7 +165,7 @@ steps:
 
     This protects against the failure mode where the next session re-
     asks the same clarifying question and the researcher re-explains
-    from scratch. sys_session_handoff picks up the decision log.
+    from scratch. tool_session_handoff picks up the decision log.
 
 expected_outputs:
 - docs/scope_notes.md

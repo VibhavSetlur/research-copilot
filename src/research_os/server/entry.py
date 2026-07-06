@@ -1,12 +1,10 @@
 """MCP server wiring + `main()` CLI entry point.
 
 This module is the user-facing entry. It:
-1. Discovers protocol packs and infra adapters (so their tools are visible
-   in list_tools).
-2. Annotates every TOOL_DEFINITIONS entry with pack=/status= metadata
+1. Annotates every TOOL_DEFINITIONS entry with pack=/status= metadata
    for sys_tool_describe / tool_tools_list filters.
-3. Wires the MCP Server object + list_tools + call_tool handlers.
-4. Provides `main()` for `research-os start`.
+2. Wires the MCP Server object + list_tools + call_tool handlers.
+3. Provides `main()` for `research-os start`.
 
 Keeps the file lean — the bulk of the work happens in dispatch.py,
 registry.py, handlers/, and tool_definitions/.
@@ -23,7 +21,6 @@ from pathlib import Path
 from .aliases import _DEPRECATED_ALIASES, _REMOVED_TOOLS
 from .dispatch import _handle_tool_call
 from .envelopes import HAS_MCP, TextContent
-from .pack_loader import _discover_adapters_once, _discover_packs_once
 from .registry import TOOL_DEFINITIONS
 from .tool_surface import select_visible_tools
 
@@ -90,9 +87,7 @@ def _annotate_core_tool_metadata() -> None:
             schema.setdefault("status", "live")
 
 
-# ── One-time discovery + metadata annotation ─────────────────────────
-_discover_packs_once()
-_discover_adapters_once()
+# ── One-time metadata annotation ─────────────────────────────────────
 _annotate_core_tool_metadata()
 
 

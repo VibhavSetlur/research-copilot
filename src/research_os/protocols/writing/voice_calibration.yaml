@@ -139,7 +139,7 @@ steps:
     ground truth — a profile is only as good as the drafts it produces.
     Refine the profile from their feedback ("more clipped", "I'd never say
     'leverage'", "too informal for this venue"), and record durable,
-    cross-project preferences via sys_config(operation='note') so they
+    cross-project preferences via sys_boot (operation=config_get)(operation='note') so they
     persist even outside this project's voice profile.
 
     From here on, writing_core consults workspace/.style/voice_profile.md
@@ -158,7 +158,7 @@ quality_bar: |
     owns the discretionary space.
   - Voice tunes HOW things are said, never WHETHER a claim is grounded.
   - A draft written to the profile was confirmed against the researcher's own
-    reaction, and durable preferences were persisted via sys_config note.
+    reaction, and durable preferences were persisted via sys_boot (operation=config_get) note.
 
 next_protocol:
 next_protocol_kind: terminal

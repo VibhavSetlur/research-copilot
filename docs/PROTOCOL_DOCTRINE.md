@@ -77,7 +77,7 @@ Patterns that work:
 - **Name the dimension, not the value.** "Justify the split from the
   deployment regime" beats "Use a 70/15/15 split."
 - **Demand grounding, not a tool.** "Surface the field's current
-  best-practice estimator via `tool_research_method`" beats "Use
+  best-practice estimator via `tool_search`" beats "Use
   DESeq2."
 - **Frame thresholds as field-specific.** "Cite the source for
   whichever cutoff is used" beats "Use CFI ≥ 0.95."

@@ -107,7 +107,7 @@ steps:
           requires: [data/intermediate/dge_table.tsv]
           outputs: [outputs/figures/01_pathway_enrichment.png]
 
-    `tool_path_finalize` reads pipeline.yaml to generate tools.md
+    `tool_plan (operation=finalize_step)` reads pipeline.yaml to generate tools.md
     bullets per language + provenance per script.
 
 - id: capture_versions_per_language
@@ -142,7 +142,7 @@ steps:
 - id: log_to_tools_md
   name: Log all languages used to tools.md
   description: |
-    tool_path_finalize handles this when pipeline.yaml is present and
+    tool_plan (operation=finalize_step) handles this when pipeline.yaml is present and
     `language:` tags are set per script. Spot-check the tools.md
     block after finalize — both Python AND R packages should appear
     under this step's section. If only one shows, the regex missed a

@@ -87,7 +87,7 @@ steps:
            "predict <outcome> from <p> features when n ≪ p"
            "compare <treatment> effect on <outcome> in observational
             data without random assignment"
-      2. Run `tool_research_method query="<phrasing>"` — pulls
+      2. Run `tool_search query="<phrasing>"` — pulls
          sources across academic + best-practice providers.
       3. From the returned sources, extract the method families
          that the literature currently treats as competitive for

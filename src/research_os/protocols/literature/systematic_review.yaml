@@ -22,7 +22,7 @@ steps:
 - id: create_review_step
   name: Create Review Experiment Folder
   description: |
-    sys_path name="systematic_review" hypothesis="<one-sentence PICO question>"
+    tool_plan (operation='create_step', name="systematic_review", hypothesis="<one-sentence PICO question>")
 
 - id: protocol_registration
   name: Pre-register the Protocol

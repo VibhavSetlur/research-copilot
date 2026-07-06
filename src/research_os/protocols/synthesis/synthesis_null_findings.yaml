@@ -53,7 +53,7 @@ steps:
          than assuming a convention.
       3. Dead-end paths — every `workspace/<id>__DEAD_END/` folder.
 
-    The tool `tool_null_findings_report` does this walk automatically
+    The tool `tool_synthesis_scaffold (operation=null_findings)` does this walk automatically
     and produces `synthesis/null_findings.md` as the starting
     draft; refine the prose from there.
 
@@ -148,4 +148,4 @@ triggers:
 - refuted hypothesis
 - dead ends paper
 summary: Publishable companion for refuted / inconclusive / underpowered / abandoned.
-shortcut_tool: tool_null_findings_report
+shortcut_tool: tool_synthesis_scaffold (operation=null_findings)

@@ -18,7 +18,7 @@ description: |
   pointer to the revised paper text or a new experiment step to
   address the concern empirically.
 
-  Distinct from the AI's OWN red-team review (`tool_redteam_review`,
+  Distinct from the AI's OWN red-team review (run via `tool_audit (operation='redteam')`,
   which the AI runs against its own paper) — this protocol handles
   the case where a real EXTERNAL reviewer's comments arrive and
   need a structured response.
@@ -114,7 +114,7 @@ steps:
     new experiment (re-run with a different model, add a
     sensitivity analysis, run on a held-out subset). These are
     NOT handled inside this protocol — they get their own
-    numbered step via `sys_path` and walk through
+    numbered step via `tool_plan (operation='create_step')` and walk through
     `guidance/analysis_plan` like any analysis.
 
     The response letter THEN cites the new step's results once
@@ -152,8 +152,8 @@ steps:
         must map to a real change in `synthesis/paper.md`.
       - Every "we have added <analysis>" must map to a real
         new step / figure / table.
-      - Every "we have added <citation>" must verify via
-        `tool_citations_verify`.
+      -        Every "we have added <citation>" must verify via
+        `tool_audit (scope='project', dimension='citations')`.
       - Every "we now report <metric>" must trace through
         `tool_audit(scope='project', dimension='claims')` (the number must live in a
         workspace output).

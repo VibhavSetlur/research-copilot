@@ -54,7 +54,7 @@ steps:
     Confirm WHICH funder template applies. If unclear, ask the
     researcher once. Then surface the live requirements:
 
-      tool_research_method query="<funder> data management plan
+      tool_search query="<funder> data management plan
                           template <year>"
 
     Capture: the section names, word/page limits, required artefacts
@@ -113,7 +113,7 @@ steps:
       - Chemistry: ChEBI, InChI
       - Generic: Dublin Core, schema.org/Dataset
 
-    tool_research_method query="metadata standard <field> data
+    tool_search query="metadata standard <field> data
                          sharing" if not obvious.
 
     Also commit to: a README per dataset, a codebook for tabular
@@ -169,7 +169,7 @@ steps:
     (NIH DMSP since 2023; UKRI). Capture:
       - repository deposit fees (e.g. Dryad ~$120, Zenodo free,
         field-specific can be higher) — VERIFY current pricing
-        via tool_research_method, do not quote from memory.
+        via tool_search, do not quote from memory.
       - personnel time for curation
       - storage costs over the retention window
       - access-broker costs for controlled access

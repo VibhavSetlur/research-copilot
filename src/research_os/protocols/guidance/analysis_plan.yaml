@@ -48,13 +48,13 @@ steps:
 
     Also: if you haven't called sys_boot this session, do so once now
     to pick up state + autonomy. Never re-call sys_state_get +
-    sys_config(operation='get') separately while sys_boot's payload is still fresh.
+    sys_boot(operation='config_get') separately while sys_boot's payload is still fresh.
 
     BEFORE starting a non-trivial step, optionally:
       tool_lessons tags=[<step_kind>, <method>, <data_type>]
         → retrieves lessons from prior similar steps (recency +
           tag-overlap scored) as a prompt block to prepend
-      tool_plan_step_grounded step_id=<NN_slug>
+      tool_plan (operation='grounded_step', step_id=<NN_slug>)
         → returns a Thought / Required-Grounding / Action /
           Verification scaffold per sub-task (ReAct + CoVe). Use
           when scope_step flagged the step as method-heavy or
@@ -79,7 +79,7 @@ steps:
       confirm first (manual / supervised) → present the scope; ask for confirmation.
 
     SIZE GATE: if scope mentions >3 distinct methods OR multiple subgroups
-    OR custom pipelines, you MUST call tool_plan_step before coding. The
+    OR custom pipelines, you MUST call tool_plan before coding. The
     plan markdown becomes part of the experiment record.
 
     STEPS CAN GROW. A single step is allowed to get long (many
@@ -103,7 +103,7 @@ steps:
   name: Ground Methodology in Literature (HARD GATE) — STEP-SCOPED
   description: |
     You MUST search literature BEFORE choosing any method. Selecting from
-    training memory alone is FORBIDDEN — `tool_path_finalize` warns if
+    training memory alone is FORBIDDEN — `tool_plan (operation=finalize_step)` warns if
     `conclusions.md` cites references but no `tool_search_*` calls
     were logged for the project (workspace/logs/searches.log). The
     pre-submission audit BLOCKS synthesis on this warning.
@@ -119,7 +119,7 @@ steps:
 
       (1) **Surface candidate methods online.** For the analytical
           question this step targets, run:
-            tool_research_method query="<question> + <data shape>"
+            tool_search query="<question> + <data shape>" mode=literature
               — writes a structured report into outputs/reports/
                 comparing 2-3 candidate methods.
           OR (if you already know the candidates):
@@ -133,13 +133,13 @@ steps:
           FDR cutoff, which model family, which sensitivity test),
           cite the actual paper that justifies the choice. The
           citation MUST be saved into the step's literature folder:
-            tool_literature_search_and_save
+            tool_search (mode=literature)
               query="<canonical paper for the method>"
               source="semantic_scholar"
               step_id="<this step's NN_slug>"
               limit=5  download_top=2
           Each PDF gets a .meta.yaml sidecar (title/authors/year/doi).
-          `tool_path_finalize` auto-folds the per-step
+          `tool_plan (operation=finalize_step)` auto-folds the per-step
           `conclusions.md` `## References to ground` section into
           project-wide `workspace/citations.md` AND
           per-step `literature/key_papers.md`.
@@ -179,9 +179,8 @@ steps:
     K-Dense science pack, or any external Agent Skills library — usually names
     the right library with correct parameters, faster + safer than guessing.
     If no skill covers it:
-      tool_research_tool task="<concrete task>" language="<python|r|julia|any>"
-    For external/paid/GUI tools that you cannot run:
-      tool_external_tool_instructions tool_name=<X> purpose=<Y> url=<Z>
+      tool_search query="<concrete task>" mode=literature language="<python|r|julia|any>"
+    For external/paid/GUI tools that you cannot run, describe the setup inline and link to the tool's documentation.
     Then commit the tool decision via mem_log, recording whether it came from
     a skill (and which) or from discovery.
 
@@ -256,7 +255,7 @@ steps:
 - id: create_step_folder
   name: Create the Numbered Experiment Folder
   description: |
-    sys_path name="<slug>" hypothesis="<H<id>: <text>>"
+    tool_plan (operation='create_step', name="<slug>", hypothesis="<H<id>: <text>>")
 
     NAMING — the AI picks the slug based on what THIS step actually does.
     There are NO canonical names. Derive the slug from the step's goal,
@@ -289,14 +288,14 @@ steps:
     data/{project_inputs, past_step_input, next_step_output, share},
     outputs/{figures, tables, reports}, environment}. Sets it as
     current_path. NN is auto-assigned (next free number, continuous across
-    paths). No step_summary.yaml or pipeline.yaml is created at this point
+    paths).     No step_summary.yaml or pipeline.yaml is created at this point
     — step_summary.yaml is retired, and pipeline.yaml only appears if you
-    call tool_step_pipeline(operation='define').
+    call tool_workflow_dag(operation='define').
 
     WHEN TO SUGGEST A NEW STEP (proactive — surface to researcher,
     don't just decide on your own unless autopilot):
       - conclusions.md > Findings now covers ≥2 distinct hypothesis
-        IDs that aren't tightly coupled (mem_hypothesis_list shows
+        IDs that aren't tightly coupled (mem_hypothesis (operation=list) shows
         H1 + H3 in this step's evidence)
       - the scope has drifted past its original ≤2 sentence charter
         ("we also tried…", "while we were at it…")
@@ -310,8 +309,8 @@ steps:
 
     How to suggest: in supervised/manual mode, say once: "this step
     is starting to cover two questions — want me to spin off a new
-    step for <X> so both stay easy to read?" In autopilot, call
-    `tool_branch_recommendation reason="<why>"` and act on its
+    step for <X> so both stay easy to read?"     In autopilot, call
+    `tool_plan (operation='branch_recommendation', reason="<why>")` and act on its
     output. NEVER force a new step on the researcher — long, focused
     steps are fine and often preferable to step-fragmentation.
 
@@ -370,10 +369,10 @@ steps:
        ingest → validate → clean → featurize → split → fit
                                                 ↘ diagnose → visualize → report
 
-    Declare it once via tool_step_pipeline(operation='define') which seeds
+    Declare it once via tool_workflow_dag(operation='define') which seeds
     workspace/<step>/pipeline.yaml with the 7-node template; edit
     the script + inputs + outputs per node; run with
-    tool_step_pipeline(operation='run'). The runner topologically orders nodes,
+    tool_workflow_dag(operation='run'). The runner topologically orders nodes,
     content-hash-caches inputs+params+script (so editing the
     clean script only re-runs clean → fit → diagnose → report),
     writes a .pipeline_run/run_<ts>.json audit trail, and drops a
@@ -417,12 +416,12 @@ steps:
     manually. Use style B only when sub-tasks branch.
 
     In BOTH styles: `_v<k>` is the iteration suffix; bump it via
-    `tool_step(operation='iterate')` when materially changing a sub-task.
+    `tool_plan(operation='iterate')` when materially changing a sub-task.
 
     The naming convention is WATCHED, not just documented:
     `tool_audit(scope='step', dimension='script_naming')` validates every
     script against `<NN>[a-z]_<snake_name>_v<k>.<ext>` (with `<NN>` = this
-    step's number); `tool_step_complete` surfaces violations as completeness
+    step's number); `tool_audit(scope='step', dimension='completeness')` surfaces violations as completeness
     warnings; and a running daemon flags them in the daemon_notes that
     sys_boot surfaces. So a
     mis-named scripts/ folder gets caught early — don't rely on remembering
@@ -435,18 +434,18 @@ steps:
       - tool_audit(scope='step', dimension='code_quality') BLOCKS scripts with bare `except`,
         `import *`, `eval`/`exec`, hardcoded absolute paths, or
         functions >150 lines / complexity >20.
-      - tool_audit_quality_full runs every gate together before
+      - tool_audit (scope='project', dimension='all') runs every gate together before
         synthesis. tool_plan refuses to walk past a
         deliverable tool until the gate is green.
 
     Allowed script types (pick the right tool for the language):
       Python (.py)        → tool_python_exec
-      R (.R)              → tool_r_exec
-      Julia (.jl)         → tool_julia_exec
+      R (.R)              → tool_bash_exec (pass Rscript to bash)
+      Julia (.jl)         → tool_bash_exec (pass julia to bash)
       Bash (.sh)          → tool_bash_exec
       Jupyter (.ipynb)    → tool_notebook_exec
-      R-markdown (.Rmd)   → tool_rmarkdown_render
-      Quarto (.qmd)       → tool_rmarkdown_render
+      R-markdown (.Rmd)   → tool_bash_exec (render via Rscript -e rmarkdown::render)
+      Quarto (.qmd)       → tool_bash_exec (render via quarto render)
 
     LONG-RUNNING (estimated > runtime.long_running_threshold_seconds, or
     on shared_server=true): use tool_task(operation='run') instead of
@@ -546,24 +545,24 @@ steps:
       tool_audit(scope='step', dimension='completeness',
                  override_completeness_gate=true,
                  override_rationale="<why this analyse step has no figure>")
-    (tool_path_finalize itself only accepts override_literature_gate +
+    (tool_plan (operation='finalize_step') itself only accepts override_literature_gate +
     override_rationale — it gates step literature, not figures. Use it
     only to opt out of the per-step literature loop:
-      tool_path_finalize override_literature_gate=true
-                          override_rationale="<why this step needs no new lit>")
+      tool_plan (operation='finalize_step', override_literature_gate=true,
+                 override_rationale="<why this step needs no new lit>"))
 
     Outputs spanning multiple categories (figures + tables + reports)
     WITHOUT a pipeline.yaml is ALSO a HARD FAIL — the mega-script
     anti-pattern. Separate scripts per sub-task (one for the fit,
     one per figure, one per table, one for the report) and declare
-    them via tool_step_pipeline(operation='define').
+    them via tool_workflow_dag(operation='define').
 
     Versioning has TWO distinct modes:
 
       - BUG FIX → bump `_v<n>` on the affected script, re-run; the
         content-hash cache invalidates downstream nodes automatically.
       - DELIBERATE ITERATION (recolour Fig 2, tighten a cutoff, swap
-        a model spec) → call tool_step(operation='iterate') with a rationale FIRST.
+        a model spec) → call tool_plan(operation='iterate') with a rationale FIRST.
         It snapshots the current scripts + outputs + captions +
         conclusion into .versions/v<n>/ as a coordinated unit so the
         prior version is preserved before you edit anything. Then
@@ -687,7 +686,7 @@ steps:
     isolation — a global env may not cover every step, and even when it does
     you want a per-step record of exactly what THIS step used.
 
-    `tool_path_finalize` (the finalize_step below) now does this automatically:
+    `tool_plan (operation='finalize_step')` (the finalize_step below) now does this automatically:
     for any step that ran scripts it calls the per-step env lock, writing
     `workspace/<NN_slug>/environment/` with requirements.txt + python_version
     + session.yaml + conda.yaml + Dockerfile + entrypoint.sh (the single
@@ -696,7 +695,7 @@ steps:
 
     Do it explicitly when you want the recipe BEFORE finalize, or to add
     Apptainer/Podman for an HPC target:
-      tool_step(operation='env_lock', step_id='<NN_slug>')                 # full recipe
+      tool_plan(operation='env_lock', step_id='<NN_slug>')                 # full recipe
       sys_env(operation='snapshot', step_id='<NN_slug>')                   # requirements only
       sys_env(operation='docker_generate', step_id='<NN_slug>')            # (re)build the step Dockerfile
 
@@ -708,7 +707,7 @@ steps:
 - id: finalize_step
   name: Finalize the Step (mandatory before decide_next)
   description: |
-    tool_path_finalize — runs the finalize sequence:
+    tool_plan (operation='finalize_step') — runs the finalize sequence:
 
     Per-step file refresh (rewrites the step's stub README + every
     subfolder README from what actually got produced):
@@ -821,7 +820,7 @@ steps:
 
     Mechanics:
 
-      1. Call `tool_step(operation='revision_options') step_id="<NN_slug>"`.
+      1. Call `tool_plan(operation='revision_options') step_id="<NN_slug>"`.
          This returns:
            - would_benefit_from_revision (bool)
            - risk_signals (e.g. citations claimed but no
@@ -871,9 +870,9 @@ steps:
                             decision and wait for the researcher.
       confirm first (manual / supervised) → wait for the researcher's reply (a/b/c/d).
 
-    ONE-SHOT GUARD: if the AI calls `sys_path` immediately
-    after `tool_path_finalize` without calling
-    `tool_step(operation='revision_options')` first, the next routing log will
+    ONE-SHOT GUARD: if the AI creates a new step immediately
+    after `tool_plan (operation='finalize_step')` without calling
+    `tool_plan(operation='revision_options')` first, the next routing log will
     flag this as a protocol violation. Don't do it.
 
 - id: decide_next
@@ -887,15 +886,14 @@ steps:
       - Revise → load `guidance/scope_clarification` for a focused
                  revision pass on the same step (re-iterate the
                  sub-task that needs fixing; bump the script's
-                 `_v<n>` via `tool_step(operation='iterate')`).
-      - Branch → create a parallel experiment via `sys_path`
+                 `_v<n>` via `tool_plan(operation='iterate')`).
+      - Branch → create a parallel experiment via `tool_plan (operation='create_step')`
                  with `branch_of=<this step>` and a different
                  methodology (kept active alongside this one).
       - Handoff → load `guidance/chat_handoff` + run
-                  `sys_session_handoff` so the next chat resumes
+                  `tool_session_handoff` so the next chat resumes
                   cleanly with all the step's state intact.
-      - Abandon → `sys_path` + load
-                  `guidance/dead_end_routing`.
+      - Abandon → load `guidance/dead_end_routing`.
       - Advance to reproducibility — only when ALL planned
         experiments have non-empty `conclusions.md` (decisions are
         'proceed' or 'branch', NONE 'dead-end') AND at least one
@@ -980,16 +978,16 @@ triggers:
 summary: Iterative experiment loop — create step, script, audit, conclude.
 token_estimate: 2100
 decomposition:
-- tool: sys_path
-  purpose: Create the next numbered experiment folder.
-- tool: tool_research_method
-  purpose: Ground methodology before coding.
-- tool: tool_plan_step
+- tool: tool_plan
+  purpose: Create the next numbered experiment folder (operation='create_step').
+- tool: tool_search
+  purpose: Ground methodology before coding (mode=literature).
+- tool: tool_plan
   purpose: Decompose the step into atomic sub-tasks.
 - tool: sys_file_write
   purpose: Write scripts/<NN>_<slug>_v1.<ext>.
 - tool: tool_python_exec
-  purpose: Run the script (or tool_r_exec / tool_julia_exec / tool_bash_exec).
+  purpose: Run the script (or tool_bash_exec for R/Julia/Bash).
 - tool: mem_log
   purpose: Log method + parameters + justification.
 - tool: sys_file_write

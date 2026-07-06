@@ -95,7 +95,7 @@ steps:
       - the most recent conclusions.md per active step
       - workspace/logs/audit_report.md (for warnings the discussion
         must acknowledge)
-      - mem_hypothesis_list (for which hypotheses were supported /
+      - mem_hypothesis (operation=list) (for which hypotheses were supported /
                              refuted / inconclusive)
       - workspace/<step>/outputs/reports/sensitivity_*.md
         (when sensitivity ran)
@@ -135,7 +135,7 @@ steps:
     implication" block. This step pipes those into
     `synthesis/discussion.md`:
 
-      tool_writing_discussion_from_verdicts
+      tool_reviewer (operation=discussion_from_verdicts)
 
     Reads every `workspace/<step>/literature/findings_vs_literature.md`,
     parses `## Claim:` blocks + Verdict + Discussion implication, and
@@ -144,7 +144,7 @@ steps:
     auto-generated block (HTML-comment-delimited markers) while
     preserving your hand-edited prose outside the markers.
 
-    After this step, the BLOCK gate `tool_discussion_coverage_audit`
+    After this step, the BLOCK gate `tool_reviewer (operation=coverage_audit)`
     verifies every non-AGREES verdict has a corresponding paragraph in
     `synthesis/discussion.md`. The validate step (below) honours it as
     a hard BLOCKER.
@@ -259,7 +259,7 @@ steps:
 - id: validate
   name: Validate against writing standards + verdict coverage gate
   description: |
-    sys_file_validate_md filepath="synthesis/discussion.md"
+    tool_audit (scope=file, dimension=markdown) filepath="synthesis/discussion.md"
       protocol_name="writing_core"
     Run tool_audit(scope='project', dimension='prose') on synthesis/discussion.md — surfaces
     hedging clusters, vague quantifiers, reading-level issues.
@@ -268,11 +268,11 @@ steps:
     OR to a verified citation.
 
     MANDATORY BLOCK gate:
-      tool_discussion_coverage_audit
+      tool_reviewer (operation=coverage_audit)
     Returns status='error' + a blocker list if any non-AGREES
     verdict from `findings_vs_literature.md` is not addressed in
     `synthesis/discussion.md`. If the gate blocks:
-      - Re-run `tool_writing_discussion_from_verdicts` (the
+      - Re-run `tool_reviewer (operation=discussion_from_verdicts)` (the
         pipe_verdicts_into_discussion step above), OR
       - Hand-write the missing paragraph(s) covering each claim, OR
       - If the verdict is genuinely no longer relevant (claim

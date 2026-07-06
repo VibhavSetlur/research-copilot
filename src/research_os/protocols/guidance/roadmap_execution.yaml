@@ -42,8 +42,8 @@ steps:
   description: |
     ONE batch in parallel:
       - sys_boot               # state + autonomy_level + active_plan + pause_classification
-      - sys_path operation=list   # which milestones/paths exist + their status
-      - mem_hypothesis_list    # the assumptions the roadmap is tracking
+      - sys_state_get            # which milestones/paths exist + their status
+      - mem_hypothesis (operation=list)    # the assumptions the roadmap is tracking
       - sys_file_read filepath="inputs/research_plan.md"   # the roadmap itself
 
     Reconstruct WHERE the project is against the roadmap: which milestones are
@@ -95,15 +95,15 @@ steps:
     that the step ran:
       - the finding / decision the milestone produced
       - which roadmap assumptions it confirmed, strained, or falsified
-        (update those hypotheses: mem_hypothesis_add upserts the status)
+        (update those hypotheses: mem_hypothesis (operation=add) upserts the status)
       - which decision point (if any) it just resolved, and which way
       - mem_log the milestone outcome with its rationale
 
-    Then run tool_path_finalize for the executed step so its READMEs reflect
+    Then run tool_plan (operation='finalize_step') for the executed step so its READMEs reflect
     what was actually produced, and (in hands-off runs) snapshot:
-    sys_checkpoint_create so a runaway loop can be undone in one call.
+    tool_git (operation='commit') so a runaway loop can be undone in one call.
 
-    JUDGE THE MILESTONE before moving on. Call tool_judge_score with the
+    JUDGE THE MILESTONE before moving on. Call tool_audit (operation='judge') with the
     dimensions that matter for THIS work (0-5 + a real justification each),
     the honest limitations, the concrete improvements, and a verdict:
       - ship   → this milestone is good enough for the goal.
@@ -162,7 +162,7 @@ steps:
 
     FLOOR GATES (page even on autopilot — these are not bypassable):
       - the final deliverable compile (the artefact becomes shareable)
-      - declaring a milestone / path a dead end (sys_path operation='abandon')
+      - declaring a milestone / path a dead end (route to guidance/dead_end_routing)
       - installing packages, spending real money, or launching a large
         background job relative to the project's budget
     These mirror guidance/autopilot's enforced floors; consult that protocol
@@ -236,7 +236,7 @@ decomposition:
   purpose: Load state + autonomy + active plan to reconstruct the thread.
 - protocol: guidance/roadmap_execution
   purpose: Select next milestone, execute, record result, re-plan, decide pause-or-proceed.
-- tool: tool_judge_score
-  purpose: Score each milestone (verdict ship/iterate/redo) — the loop reads the verdict to continue or converge.
+- tool: tool_audit
+  purpose: Score each milestone (verdict ship/iterate/redo) — the loop reads the verdict to continue or converge (operation='judge').
 - tool: sys_file_write
   purpose: Keep inputs/research_plan.md in sync; append to the iteration log each re-plan.

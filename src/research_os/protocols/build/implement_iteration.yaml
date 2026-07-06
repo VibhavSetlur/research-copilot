@@ -87,8 +87,8 @@ steps:
     workspace — that holds spec/decisions/eval, not the tool). Use the
     exec tool that matches the tool's language:
       Python (.py)     → tool_python_exec
-      R (.R)           → tool_r_exec
-      Julia (.jl)      → tool_julia_exec
+      R (.R)           → tool_bash_exec
+      Julia (.jl)      → tool_bash_exec
       Shell (.sh)      → tool_bash_exec
       Notebook (.ipynb)→ tool_notebook_exec
     and tool_bash_exec for build/compile steps, package managers, and
@@ -225,7 +225,7 @@ steps:
   description: |
     Many increments deep, context degrades and the AI starts one-shotting.
     When several increments have landed this session, suggest
-    sys_session_handoff + a fresh chat before the next increment — the
+    tool_session_handoff + a fresh chat before the next increment — the
     handoff doc + the inner repo's git log let the next session resume
     cleanly. The git history IS the durable state here; lean on it.
 
@@ -272,7 +272,7 @@ decomposition:
 - tool: sys_file_write
   purpose: Implement the scoped increment in the inner repo.
 - tool: tool_python_exec
-  purpose: Run the test that proves the increment (or tool_r_exec / tool_julia_exec / tool_bash_exec per language).
+  purpose: Run the test that proves the increment (or tool_bash_exec / tool_bash_exec / tool_bash_exec per language).
 - tool: tool_bash_exec
   purpose: Run the build + full test suite + linters; then git add + git commit with a message linked to the objective.
 - tool: mem_log

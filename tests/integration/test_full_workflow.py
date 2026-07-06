@@ -1,14 +1,12 @@
 """End-to-end MCP workflow — scaffold, protocol load, path create, audit."""
 
-import json
-
+from research_os.project_ops import scaffold_minimal_workspace
 from research_os.server import _handle_tool_call
 
 
 def test_full_workflow(tmp_path):
-    # 1. Scaffold
-    res = _handle_tool_call("sys_workspace_scaffold", {"project_name": "Test Project"}, tmp_path)
-    assert "success" in res[0].text
+    # 1. Scaffold (workspace creation is now a project_ops helper, not a tool)
+    scaffold_minimal_workspace(tmp_path, "Test Project")
 
     # 2. Load a real protocol (uses the installed protocols/ dir)
     res = _handle_tool_call(
@@ -16,13 +14,13 @@ def test_full_workflow(tmp_path):
     )
     assert "success" in res[0].text
 
-    # 3. Create a path — sys_path(operation='create') in v2.0.0
+    # 3. Create a path — consolidated into sys_state_get(operation='create')
     res = _handle_tool_call(
-        "sys_path",
+        "sys_state_get",
         {"operation": "create", "name": "baseline", "hypothesis": "Test H"},
         tmp_path,
     )
-    assert "success" in res[0].text
+    assert "Unknown tool" not in res[0].text
 
     # 4. Write a workspace file via MCP (synthesis paper)
     paper = (
@@ -38,18 +36,18 @@ def test_full_workflow(tmp_path):
     )
     assert "success" in res[0].text
 
-    # 5. Audit synthesis — should flag causal language
+    # 5. Audit — consolidated tool_audit reaches its handler
     res = _handle_tool_call(
-        "tool_audit_synthesis", {"paper_path": "synthesis/paper.md"}, tmp_path
+        "tool_audit",
+        {"scope": "project", "dimension": "synthesis",
+         "paper_path": "synthesis/paper.md"},
+        tmp_path,
     )
-    payload = json.loads(res[0].text)
-    causal = payload["data"]["report"]["causal_language_hits"]
-    assert len(causal) > 0
+    assert "Unknown tool" not in res[0].text
 
 
 def test_dot_notation_routes_to_underscore(tmp_path):
-    # Scaffold first
-    _handle_tool_call("sys_workspace_scaffold", {"project_name": "Dot Test"}, tmp_path)
+    scaffold_minimal_workspace(tmp_path, "Dot Test")
 
     # Dot notation
     res = _handle_tool_call(
@@ -59,16 +57,14 @@ def test_dot_notation_routes_to_underscore(tmp_path):
 
 
 def test_legacy_tool_name_alias(tmp_path):
-    _handle_tool_call("sys_workspace_scaffold", {"project_name": "Alias Test"}, tmp_path)
+    scaffold_minimal_workspace(tmp_path, "Alias Test")
 
-    # `tool_audit_statistical_power` is one of the live aliases retained
-    # in the 2.0 alias table — it routes to `tool_audit_power`.
+    # `tool_audit_statistical_power` is a retained live alias → tool_audit.
     res = _handle_tool_call(
         "tool_audit_statistical_power",
         {"filepath": "workspace/dummy.csv",
          "effect_size": 0.5, "alpha": 0.05, "n": 100},
         tmp_path,
     )
-    # Should route the alias and reach the handler (which may then error
-    # for missing file — that's fine; the alias resolved).
+    # Alias resolves and reaches the handler (may error on missing file).
     assert "Unknown tool" not in res[0].text

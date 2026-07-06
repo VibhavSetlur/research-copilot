@@ -67,7 +67,7 @@ steps:
       - sys_file_list directory="inputs/literature"
       - sys_file_list directory="inputs/context"
       - sys_file_list directory="inputs/"          (catch loose files)
-      - sys_path                              (any existing steps)
+      - sys_state_get                              (any existing steps)
 
     For each artefact, record what TYPE it is — results table, draft
     figure, prior report, notes, draft section, methods note, citation
@@ -81,7 +81,7 @@ steps:
 - id: route_loose_files
   name: Route loose files into the right inputs subfolder
   description: |
-    tool_context_intake also_autofill=false
+    mem_log (operation=context_intake) also_autofill=false
     Loose PDFs go to inputs/literature; loose CSVs / parquet to
     inputs/raw_data; loose markdown / docx / txt / notebooks to
     inputs/context. The router's per-file log lands in
@@ -108,7 +108,7 @@ steps:
 - id: create_shadow_step
   name: Create a shadow workspace step
   description: |
-    sys_path name="<short_slug>_shadow_synthesis"
+    tool_plan (operation=create_step) name="<short_slug>_shadow_synthesis"
       hypothesis="(inputs-derived synthesis — no in-RO analysis)"
 
     The folder exists ONLY so the standard synthesis tooling has
@@ -187,7 +187,7 @@ steps:
         cites its source. Never seed a method that is not in the
         inputs.
       - citations.md: the citation list the source artefacts named.
-        Run tool_citations_verify to weed out citations that don't
+        Run tool_audit (scope=project, dimension=citations) to weed out citations that don't
         resolve.
 
 - id: run_the_target_synthesis
@@ -261,5 +261,5 @@ token_estimate: 1800
 decomposition:
 - protocol: synthesis/synthesis_from_inputs
   purpose: Build a shadow step + provenance manifest, then run target synthesis.
-- tool: tool_context_intake
-- tool: sys_path
+- tool: mem_log (operation=context_intake)
+- tool: sys_state_get

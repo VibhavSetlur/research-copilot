@@ -90,12 +90,12 @@ steps:
   name: Cross-Check Against Citations
   description: |
     Any citation referenced must exist in workspace/citations.md. If not,
-    run mem_citations_generate after updating inputs/literature_index.yaml.
+    run mem_log (operation=citations_generate) after updating inputs/literature_index.yaml.
 
 - id: validate
   name: Validate Style
   description: |
-    sys_file_validate_md filepath="workspace/methods.md" protocol_name="writing_core"
+    tool_audit (scope=file, dimension=markdown) filepath="workspace/methods.md" protocol_name="writing_core"
 
 expected_outputs:
 - workspace/methods.md

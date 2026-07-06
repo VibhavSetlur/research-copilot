@@ -82,7 +82,7 @@ steps:
         recent papers on the same question
       - field-specific venue lists (CCF for CS, ABS for business,
         REF for UK humanities, NIH-friendly clinical journals)
-      - tool_research_method query="<field> <type> journal" for a
+      - tool_search query="<field> <type> journal" for a
         recency-aware sweep
 
     DO NOT seed exclusively from impact factor or journal-finder

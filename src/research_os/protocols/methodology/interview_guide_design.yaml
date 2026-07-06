@@ -67,7 +67,7 @@ steps:
       - Case study: question set tailored to the case logic
         (within-case + cross-case comparison).
 
-    tool_research_method query="<paradigm> interview guide best
+    tool_search query="<paradigm> interview guide best
                          practice" when the field convention is
     not obvious.
 

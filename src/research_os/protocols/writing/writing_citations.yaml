@@ -23,10 +23,10 @@ steps:
 - id: regenerate_from_index
   name: Regenerate citations.md from literature_index
   description: |
-    mem_citations_generate — rebuilds workspace/citations.md from
+    mem_log (operation=citations_generate) — rebuilds workspace/citations.md from
     inputs/literature_index.yaml. The literature_index gets entries when:
       - Papers are dropped into inputs/literature/.
-      - tool_literature_download is called.
+      - tool_search (mode=literature) is called.
 
 - id: verify_each_citation
   name: Verify Each Citation Online

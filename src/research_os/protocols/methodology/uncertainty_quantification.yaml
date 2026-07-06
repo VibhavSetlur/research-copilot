@@ -113,7 +113,7 @@ steps:
   description: |
     Implement the chosen method via tool_python_exec, surfacing the
     implementing library from the project's runtime with
-    tool_research_tool rather than reaching for a remembered package
+    tool_search rather than reaching for a remembered package
     — mature implementations of recalibration, conformal prediction,
     and quantile/Bayesian UQ exist in both the Python and R
     ecosystems, and the right one depends on what the model is

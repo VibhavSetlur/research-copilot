@@ -105,7 +105,7 @@ steps:
 - id: ground_literature
   name: Ground in literature
   description: |
-    tool_research_method (deep) for each Aim. Verified citations
+    tool_search (deep) for each Aim. Verified citations
     only.
 
 - id: scaffold
@@ -142,7 +142,7 @@ steps:
 - id: audit
   name: Audit
   description: |
-    tool_synthesis_check(file='synthesis/grant.typ') catches
+    tool_synthesis_scaffold (operation=check)(file='synthesis/grant.typ') catches
     section-coverage, cliches, and reference resolution issues.
 
 - id: compile
@@ -152,10 +152,10 @@ steps:
     synthesis/grant.pdf.
 
 tools: |
-  - tool_synthesize_plan — what's ready
+  - tool_synthesis_scaffold (operation=plan) — what's ready
   - tool_synthesis_scaffold(kind='paper') — structural base
-  - tool_synthesis_check — substantiveness + structure + cliche audit
-  - tool_research_method — funder-relevant literature sweep
+  - tool_synthesis_scaffold (operation=check) — substantiveness + structure + cliche audit
+  - tool_search — funder-relevant literature sweep
   - tool_typst_compile — render synthesis/grant.pdf
 
 expected_outputs:
@@ -175,4 +175,4 @@ triggers:
 - wellcome
 - specific aims
 summary: AI authors grant.typ (R01 / NSF / Wellcome / etc.).
-shortcut_tool: tool_synthesize_plan
+shortcut_tool: tool_synthesis_scaffold (operation=plan)

@@ -190,7 +190,7 @@ steps:
   name: Register generated hypotheses (provisional)
   description: |
     For each generated hypothesis the researcher endorses:
-      mem_hypothesis_add statement="<text>" status="exploratory"
+      mem_hypothesis (operation=add) statement="<text>" status="exploratory"
 
     Use `status="exploratory"` explicitly. The hypothesis tracker
     treats exploratory hypotheses differently from testing /

@@ -45,10 +45,10 @@ steps:
   name: Run Qual + Quant in Their Own Steps
   description: |
     Create one numbered step per strand:
-      sys_path name="quant_<topic>"  → routes through
+      tool_plan (operation=create_step) name="quant_<topic>"  → routes through
                                                methodology/* (the chosen
                                                quant method)
-      sys_path name="qual_<topic>"   → routes through
+      tool_plan (operation=create_step) name="qual_<topic>"   → routes through
                                                methodology/qualitative_research
     Each strand runs its own protocol independently — do not blur
     methods (e.g. don't apply quant inference to coded themes, don't
@@ -69,7 +69,7 @@ steps:
 - id: joint_display
   name: Build the Joint Display
   description: |
-    sys_path name="mixed_integration". Build
+    tool_plan (operation=create_step) name="mixed_integration". Build
     outputs/reports/joint_display.md:
       | Theme | Quant finding | Convergence | Interpretation |
       |-------|---------------|-------------|----------------|

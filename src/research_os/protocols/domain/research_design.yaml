@@ -60,7 +60,7 @@ steps:
         thumb tied to model size.
 
     Surface the field's current practice for THIS design via
-    tool_research_method / tool_search before committing, and offload the
+    tool_search / tool_search before committing, and offload the
     actual computation to methodology/power_analysis. Save the computation as
     a short script in workspace/<step>/scripts/ or inline in
     docs/research_design.md, citing the assumptions and their source.
@@ -80,7 +80,7 @@ steps:
     Cite prior work that used the same design for a similar question — enough
     to show the design is accepted practice for this kind of study, and to
     surface any design-specific pitfall those papers hit. Add the citations to
-    workspace/citations.md via mem_citations_generate after updating
+    workspace/citations.md via mem_log (operation=citations_generate) after updating
     inputs/literature_index.yaml.
 
 expected_outputs:

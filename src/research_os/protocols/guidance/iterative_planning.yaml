@@ -22,9 +22,9 @@ steps:
   description: |
     ONE batch in parallel:
       - sys_state_get
-      - sys_path
-      - sys_protocol_history limit=10
-      - mem_hypothesis_list
+      - sys_state_get (operation='paths')
+      - sys_protocol_get (operation='history', limit=10)
+      - mem_hypothesis (operation=list)
       - sys_file_read filepath="inputs/research_plan.md"   # whole-project arc, if present
     Combine into a working summary. The research_plan.md is the living
     project plan you are iterating ON — anchor the next-step proposal to
@@ -35,7 +35,7 @@ steps:
 - id: propose_via_tool
   name: Generate a Next-Step Plan
   description: |
-    tool_plan_next_step goal="<optional focus>"
+    tool_plan (operation='next_step', goal="<optional focus>")
     This:
       - pulls recent conclusions + audit warnings
       - searches Semantic Scholar for fresh literature on the open hypothesis
@@ -74,7 +74,7 @@ steps:
 - id: branch_or_extend
   name: Branch vs Extend (when ambiguous)
   description: |
-    If two options both have merit, call tool_branch_recommendation reason="<short>".
+    If two options both have merit, call tool_plan (operation='branch_recommendation', reason="<short>").
     The recommendation tells you whether to fork a new parallel experiment
     OR finish the current one first.
 
@@ -110,10 +110,10 @@ triggers:
 - what do i do
 - what do i do next
 summary: AI proposes the next best step based on state + literature + tools.
-shortcut_tool: tool_plan_next_step
+shortcut_tool: tool_plan
 token_estimate: 800
 decomposition:
-- tool: tool_plan_next_step
-  purpose: Survey state + search + propose options.
+- tool: tool_plan
+  purpose: Survey state + search + propose options (operation='next_step').
 - tool: mem_log
   purpose: Log the chosen direction.

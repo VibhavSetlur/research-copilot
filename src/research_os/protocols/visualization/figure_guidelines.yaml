@@ -34,13 +34,13 @@ description: |
        briefly research the right tool, not default to matplotlib.
     2. A chart-chooser table (which kind for which question).
     3. The Okabe-Ito / viridis / PuOr CVD-safe palettes (call
-       `tool_figure_palette` or copy the hex codes from
+       `pick CVD-safe hex colors inline` or copy the hex codes from
        `visualization/color_accessibility_audit`).
     4. A `common_pitfalls_to_avoid` catalog drawn from real
        reviewer-blocking mistakes — label overlap, clipped y-axes,
        legends-on-data, untitled colour legends, DejaVu Sans.
     5. A pre-publish self-review checklist run BEFORE
-       `tool_path_finalize` so the audit gate stays cheap.
+       `tool_plan (operation=finalize_step)` so the audit gate stays cheap.
 
   What the SERVER then enforces (so you can't accidentally ship a
   figure without these): DPI ≥300, both `.caption.md` + `.summary.md`
@@ -89,7 +89,7 @@ research_the_right_library_first:
     answer; it goes stale at the rate the field's tooling does.
   how: |
     Quick check (skip if obvious):
-      - tool_research_tool topic="<chart kind> for <data type> in <field>"
+      - tool_search topic="<chart kind> for <data type> in <field>"
         — returns the dominant tool in current literature.
       - tool_search query="best <chart_kind> python|R 2025 <domain>"
         — surfaces "this is how people in this field plot this".
@@ -130,7 +130,7 @@ pull_visualization_skills:
        kind + domain you are about to render.
     2. If none fits, search for a best-practice skill / reference for
        this specific chart type in this field —
-       tool_research_tool topic="<chart kind> best practice in <field>"
+       tool_search topic="<chart kind> best practice in <field>"
        or tool_search query="<chart_kind> skill <domain>".
     3. Prefer the field's canonical idioms the skill encodes over a
        generic default — the skill captures what reviewers in this venue
@@ -423,7 +423,7 @@ mandatory_per_step_figure:
     even if the step's role is data plumbing or methodology selection.
     A step with no visual representation is hard to follow, hard to
     review, and gets skipped in dashboards. tool_audit(scope='step', dimension='completeness')
-    flags this as a BLOCKER that surfaces on tool_synthesis_check.
+    flags this as a BLOCKER that surfaces on tool_synthesis_scaffold (operation=check).
   rationale: |
     Researchers follow analysis visually before they follow it
     numerically. A focal figure makes each step legible at a glance
@@ -507,7 +507,7 @@ formatting:
   palettes:
     sequential: viridis
     diverging: PuOr / RdBu_r
-    qualitative: Okabe-Ito (CVD-safe; call tool_figure_palette(kind='qualitative') for hex codes)
+    qualitative: Okabe-Ito (CVD-safe; call pick CVD-safe hex colors inline(kind='qualitative') for hex codes)
   typography:
     axis_label_size: ≥10pt
     tick_label_size: ≥9pt
@@ -615,7 +615,7 @@ publication_aesthetics:
     For figure kinds you're unfamiliar with, run a quick literature
     pass BEFORE coding:
       tool_search query="best <chart_kind> python 2025 publication"
-      tool_research_tool topic="<chart_kind> for <data type>"
+      tool_search topic="<chart_kind> for <data type>"
     Read 1-2 results, note any tool / package recommendation that
     consistently appears, and pin it in `environment/requirements.txt`.
 
@@ -649,7 +649,7 @@ caption_rules:
       Either write it yourself in your voice, OR run
       authoring the <stem>.summary.md sidecar directly to produce a
       competent draft from the existing caption + the step's
-      conclusions.md Findings section, OR run tool_path_finalize
+      conclusions.md Findings section, OR run tool_plan (operation=finalize_step)
       which auto-synthesises missing summaries for every figure in
       the step.
 
@@ -668,7 +668,7 @@ steps:
     `research_the_right_library_first.domain_defaults` table above
     — your field probably has a canonical stack (RNA-seq → ggplot2
     + EnhancedVolcano, single-cell → scanpy, GWAS → qqman, etc.).
-    If you're unsure, call `tool_research_tool` or `tool_search`
+    If you're unsure, call `tool_search` or `tool_search`
     for "best <chart_kind> <language> <field>" before coding.
 
     Record the choice + the reason in workspace/methods.md so the
@@ -725,7 +725,7 @@ steps:
           (highly recommended — enables the SVG label-overlap audit)
     DPI ≥ 300. Palette CVD-safe (the `apply_research_os_style()`
     preset sets the accent palette automatically; for other stacks
-    call `tool_figure_palette(kind='qualitative'|'sequential'|'diverging'|'accent')`).
+    call `pick CVD-safe hex colors inline(kind='qualitative'|'sequential'|'diverging'|'accent')`).
 
 - id: write_caption
   name: Write the Technical Caption
@@ -847,7 +847,7 @@ steps:
     pitfall above. Emits BLOCKERs and warnings that
     tool_audit(scope='step', dimension='completeness') aggregates.
 
-    `tool_path_finalize` ALSO runs this audit on every figure in
+    `tool_plan (operation=finalize_step)` ALSO runs this audit on every figure in
     the step automatically, and surfaces blockers / warnings in
     the finalize response's `figure_audit` field. Don't skip the
     per-figure audit just because finalize will catch it — fixing

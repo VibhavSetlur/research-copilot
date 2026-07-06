@@ -27,7 +27,7 @@ steps:
     Otherwise, before loading this YAML at format='full', call
     tool_route(prompt=<researcher's ask>). For an intake-shaped ask
     ("fill the intake", "I dropped files", "what do I have") tool_route
-    will recommend tool_intake_autofill as a SHORTCUT — you can call
+    will recommend mem_log (operation='intake_autofill') as a SHORTCUT — you can call
     that directly without the full project_startup load.
 
 - id: scan_inputs
@@ -54,7 +54,7 @@ steps:
     MANDATORY before autofill_intake. Avoids regenerating an
     already-approved intake mid-pipeline.
 
-      tool_intake_freshness  → returns {recommended_depth, mid_pipeline_entry_recommended}
+      tool_audit (operation='intake_freshness')  → returns {recommended_depth, mid_pipeline_entry_recommended}
 
     recommended_depth values:
       full         — intake.md missing, stub, or contains template
@@ -78,12 +78,13 @@ steps:
     ONLY when check_intake_freshness returned recommended_depth='full'.
     Skip otherwise.
 
-    tool_intake_autofill takes TWO input paths, combinable:
+    mem_log (operation='intake_autofill') takes TWO input paths, combinable:
 
     CHAT path (use whenever the researcher described the project in chat —
     most common): pass what they SAID directly so they never have to edit a
     file —
-      tool_intake_autofill(
+      mem_log(
+        operation='intake_autofill',
         question="<their research question>",
         domain="<their field, if stated>",
         hypotheses=["<H1>", "<H2>", ...],
@@ -91,8 +92,8 @@ steps:
     Explicit args win over inference, so this works even with an empty
     inputs/ folder.
 
-    FILE path (when they dropped files): call tool_intake_autofill() with no
-    args. It:
+    FILE path (when they dropped files): call mem_log(operation='intake_autofill') with no
+    extra args. It:
       - infers domain from columns / file extensions / context keywords
       - extracts research_question from context notes ("Research question:" /
         "Aim:" / "Objective:" or the first sentence ending in "?")
@@ -176,8 +177,8 @@ steps:
                                 year_min=<recent window — see below>
       tool_search        query=<central method or dataset name>
                                 year_min=<recent window — see below>
-      tool_research_method method=<the canonical method the PI
-                                likely expects> domain=<domain>
+      tool_search        query=<central method or dataset name>
+                                mode=literature domain=<domain>
 
     Choose the recency window from the FIELD's pace, not a fixed
     number: a fast-moving area (single-cell, foundation models,
@@ -187,7 +188,7 @@ steps:
 
     Specific patterns:
       - PI brief named papers ("Cite Himes 2014", "GTEx airway
-        atlas") → tool_literature_search_and_save for each.
+        atlas") → tool_search (mode=literature) for each.
       - intake_autofill returned a `named_paper_references` list
         → fetch every entry.
 
@@ -273,12 +274,12 @@ triggers:
 - i have data what now
 - got a csv
 summary: 'First substantive protocol: intake + classify + question lock-in.'
-shortcut_tool: tool_intake_autofill
+shortcut_tool: mem_log
 token_estimate: 1400
 decomposition:
-- tool: tool_context_intake
-  purpose: Route any loose files into inputs/ first.
-- tool: tool_intake_autofill
-  purpose: Infer domain + question + hypotheses from inputs.
+- tool: mem_log
+  purpose: Route any loose files into inputs/ first (operation='context_intake').
+- tool: mem_log
+  purpose: Infer domain + question + hypotheses from inputs (operation='intake_autofill').
 - tool: sys_state_get
   purpose: Confirm registered hypotheses + new docs.

@@ -30,7 +30,7 @@ description: |
        accelerated failure time, time-split Cox) and document the choice.
 
   The protocol is GUIDANCE — Research OS does not run the stats itself;
-  the AI writes a `tool_python_exec` (or `tool_r_exec`) script that
+  the AI writes a `tool_python_exec` (or `tool_bash_exec`) script that
   performs the test, saves the per-covariate p-value table + the
   log-log + scaled-Schoenfeld figures with provenance sidecars, then
   reads the report.
@@ -116,7 +116,7 @@ steps:
 - id: run_and_read
   name: Run the script + read the report
   description: |
-    tool_python_exec script=<path-from-step-2> (or `tool_r_exec`).
+    tool_python_exec script=<path-from-step-2> (or `tool_bash_exec`).
     Then sys_file_read `outputs/reports/cox_ph_diagnostics.md` and
     surface to the researcher:
       - the global Grambsch-Therneau p-value,
@@ -267,6 +267,6 @@ decomposition:
 - protocol: methodology/cox_ph_diagnostics
   purpose: Detect Cox fit, run Schoenfeld + log-log + per-covariate tests, route to fallback on violation.
 - tool: tool_python_exec
-  purpose: Run the diagnostics script (lifelines / sksurv / statsmodels) or tool_r_exec for survival::coxph.
+  purpose: Run the diagnostics script (lifelines / sksurv / statsmodels) or tool_bash_exec for survival::coxph.
 - tool: tool_audit
   purpose: Record the PH-assumption verdict alongside the other assumption checks (scope='step', dimension='assumptions').

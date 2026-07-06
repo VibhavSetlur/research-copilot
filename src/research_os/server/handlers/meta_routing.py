@@ -221,8 +221,23 @@ def _handle_sys_protocol_get(name, arguments, root):
 
 def _handle_sys_boot(name, arguments, root):
     from research_os.tools.actions.router import sys_boot
+    from .meta_workspace import _handle_sys_where
+    from .meta_sys import _handle_sys_config
 
-    lean = bool((arguments or {}).get("lean", False))
+    arguments = arguments or {}
+    operation = arguments.get("operation", "boot")
+
+    if operation == "where":
+        return _handle_sys_where(name, arguments, root)
+
+    if operation in ("config_get", "config_note"):
+        # Map to sys_config's expected `operation` arg ('get' or 'note').
+        mapped = dict(arguments)
+        mapped["operation"] = "get" if operation == "config_get" else "note"
+        return _handle_sys_config(name, mapped, root)
+
+    # Default: boot
+    lean = bool(arguments.get("lean", False))
     res = sys_boot(root, lean=lean)
     if res.get("status") == "success":
         return _text(_success(res))
@@ -231,6 +246,11 @@ def _handle_sys_boot(name, arguments, root):
 
 def _handle_tool_route(name, arguments, root):
     from research_os.tools.actions.router import route_request
+
+    arguments = arguments or {}
+    mode = arguments.get("mode", "route")
+    if mode == "tool_search":
+        return _handle_sys_semantic_tool_search(name, arguments, root)
 
     res = route_request(
         arguments["prompt"],
@@ -506,21 +526,11 @@ def _handle_sys_active_project(name, arguments, root):
 
 
 HANDLERS = {
-    "sys_protocol_list": _handle_sys_protocol_list,
-    "tool_protocols_list": _handle_tool_protocols_list,
-    "tool_tools_list": _handle_tool_tools_list,
     "sys_protocol_get": _handle_sys_protocol_get,
     "sys_boot": _handle_sys_boot,
     "tool_route": _handle_tool_route,
-    "tool_semantic_route": _handle_tool_semantic_route,
-    "sys_semantic_tool_search": _handle_sys_semantic_tool_search,
     "sys_active_tools": _handle_sys_active_tools,
-    "tool_cache_clear": _handle_tool_cache_clear,
     "tool_workflow_dag": _handle_tool_workflow_dag,
-    "sys_tool_describe": _handle_sys_tool_describe,
-    "sys_protocol_validate": _handle_sys_protocol_validate,
-    "sys_protocol_next": _handle_sys_protocol_next,
-    "sys_protocol_log": _handle_sys_protocol_log,
-    "sys_protocol_history": _handle_sys_protocol_history,
+    "tool_protocols_list": _handle_tool_protocols_list,
     "sys_active_project": _handle_sys_active_project,
 }

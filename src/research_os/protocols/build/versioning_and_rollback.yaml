@@ -159,7 +159,7 @@ steps:
     someone built. Before moving back, capture the regressed state so the
     idea can be retried: keep it on a branch or behind a tag/recorded SHA
     (tool_git(operation='branch', ...) / tool_git(operation='tag', ...)),
-    and note WHY it was rolled back. sys_checkpoint_create can snapshot the
+    and note WHY it was rolled back. tool_git (operation=commit) can snapshot the
     workspace boundary so the whole decision point is recoverable.
 
     Then return the working tree to the blessed version. Use
@@ -245,7 +245,7 @@ decomposition:
   purpose: Decide if a state is worth marking, bless it with its eval verdict, recognise a regression, decide roll back vs fix forward, roll back without losing work, record + resume.
 - tool: tool_git
   purpose: "Inner-repo version discipline: tag (bless) an eval-passing state, log/status to read state, and restore (operation='restore', name=<good tag>) to return the working tree to a known-good version non-destructively — HEAD stays put, history preserved, reports rolled_back_from."
-- tool: sys_checkpoint_create
+- tool: tool_git (operation=commit)
   purpose: Snapshot the workspace boundary so the rollback decision point is recoverable.
 - tool: mem_log
   purpose: Record the version event with the two-way version↔result link, or the rollback (regression + target + preserved work).

@@ -59,7 +59,7 @@ steps:
       - On which baseline characteristics could imbalance still
         confound the effect?
     The literature for the disease area names which baseline
-    characteristics matter; surface them via `tool_research_method`
+    characteristics matter; surface them via `tool_search`
     and tabulate by arm. Document the comparison strategy + any
     flagged imbalances. The threshold for "concerning imbalance"
     is field-specific — cite the source for whichever cutoff is

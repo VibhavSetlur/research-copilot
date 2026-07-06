@@ -49,7 +49,7 @@ steps:
 - id: audit_master
   name: Master Quality Audit — one call, every gate (PREFERRED)
   description: |
-    tool_audit_quality_full
+    tool_audit (scope='project', dimension='all')
     Runs the complete audit chain and aggregates the blockers:
       - step_completeness — focal figure + caption + summary +
         provenance + non-stub conclusions per step;
@@ -62,7 +62,7 @@ steps:
       - tool_verify — every decision record in
         workspace/decisions/ resolves to a registered grounding source
         (catches ungrounded synthesis claims).
-    Writes workspace/logs/audit_master.md. tool_synthesis_check
+    Writes workspace/logs/audit_master.md. tool_synthesis_scaffold (operation='check')
     calls this as its first gate when validating a synthesis file.
 
     For per-step debugging, the components are also exposed
@@ -137,7 +137,7 @@ steps:
         "*(the single most important result", etc.).
       - environment/, literature/, context/, data/ all carry a
         non-trivial README (≥1 paragraph; not just the create-time stub).
-    For every step that fails, run tool_path_finalize and re-check.
+    For every step that fails, run tool_plan (operation='finalize_step') and re-check.
     Persistently empty step folders after finalize indicate the step
     had no environment/literature/data activity at all — fine, the
     finalize note already explains that.
@@ -172,12 +172,12 @@ steps:
 - id: audit_discussion_coverage
   name: Verdict-coverage gate for the Discussion
   description: |
-    tool_discussion_coverage_audit
+    tool_reviewer (operation='coverage_audit')
     Every non-AGREES verdict in any step's
     `findings_vs_literature.md` must have a corresponding paragraph
     in `synthesis/discussion.md`. BLOCKs assembly if any verdict is
     uncovered. The companion writer is
-    `tool_writing_discussion_from_verdicts` (also runnable
+    `tool_reviewer (operation='discussion_from_verdicts')` (also runnable
     standalone) — re-running idempotently replaces the
     auto-generated block without touching researcher's hand-written
     prose outside the markers.

@@ -45,17 +45,14 @@ FLOOR_GATES: list[tuple[str, dict]] = [
     ("tool_typst_compile", {}),
     # 2. reproducibility audit
     ("tool_audit", {"scope": "step", "dimension": "reproducibility"}),
-    # 3. paid research-tool candidate
-    ("tool_research_tool", {"task": "lit review", "source": "paid"}),
-    # 4. sys_path abandon
-    ("sys_path", {"operation": "abandon", "path_name": "p", "rationale": "x"}),
-    # 5. sys_file_write to synthesis/ with force=true
+    # 3. paid search candidate (consolidated search entry point)
+    ("tool_search", {"query": "lit review", "source": "paid"}),
+    # 4. sys_file_write to synthesis/ with force=true
     ("sys_file_write", {"filepath": "synthesis/paper.typ", "content": "x", "force": True}),
-    # 6. package install
+    # 5. package install
     ("tool_package_install", {"packages": ["numpy"]}),
-    # 7. expensive task (operation='run')  +  sys_checkpoint_rollback
+    # 6. expensive task (operation='run')
     ("tool_task", {"operation": "run", "command": "ls"}),
-    ("sys_checkpoint_rollback", {"checkpoint_id": "ckpt-1"}),
 ]
 
 
@@ -168,7 +165,6 @@ def test_dotfile_prefix_not_confused_for_synthesis():
 def test_unit_requires_confirmation_truth_table():
     """Sanity check the gate-decision helper directly (no config IO)."""
     assert _requires_confirmation("tool_package_install", {})
-    assert _requires_confirmation("sys_checkpoint_rollback", {})
     assert _requires_confirmation(
         "sys_file_write",
         {"filepath": "synthesis/paper.md", "force": True, "content": "x"},
@@ -177,17 +173,15 @@ def test_unit_requires_confirmation_truth_table():
         "sys_file_write",
         {"filepath": "synthesis/paper.md", "content": "x"},
     )
-    assert _requires_confirmation("sys_path", {"operation": "abandon"})
-    assert not _requires_confirmation("sys_path", {"operation": "create"})
     assert _requires_confirmation("tool_task", {"operation": "run"})
     assert not _requires_confirmation("tool_task", {"operation": "kill"})
     assert _requires_confirmation(
-        "tool_research_tool", {"task": "x", "source": "paid"}
+        "tool_search", {"query": "x", "source": "paid"}
     )
     assert _requires_confirmation(
-        "tool_research_tool", {"task": "x", "paid": True}
+        "tool_search", {"query": "x", "paid": True}
     )
-    assert not _requires_confirmation("tool_research_tool", {"task": "x"})
+    assert not _requires_confirmation("tool_search", {"query": "x"})
     assert _requires_confirmation(
         "tool_audit", {"scope": "step", "dimension": "reproducibility"}
     )

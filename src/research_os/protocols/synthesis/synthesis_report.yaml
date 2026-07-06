@@ -90,9 +90,9 @@ steps:
 - id: assemble
   name: Audit + Compile
   description: |
-    tool_synthesis_check(file='synthesis/report.md') — checks
+    tool_synthesis_scaffold (operation=check)(file='synthesis/report.md') — checks
     substantiveness, cliches, section coverage.
-    tool_citations_verify — every citation resolves.
+    tool_audit (scope=project, dimension=citations) — every citation resolves.
     tool_typst_compile(source='synthesis/report.typ') when a PDF is
     needed (otherwise the markdown is the deliverable).
 
@@ -109,4 +109,4 @@ triggers:
 - internal report
 - stakeholder report
 summary: AI authors a technical / executive report.
-shortcut_tool: tool_synthesize_plan
+shortcut_tool: tool_synthesis_scaffold (operation=plan)

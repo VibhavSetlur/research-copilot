@@ -43,25 +43,26 @@ enforcement:
     when: {}
     floor: light
     reason: installs mutate the environment irreversibly
-  - key: sys_checkpoint_rollback
-    tool: sys_checkpoint_rollback
-    when: {}
+  - key: tool_git (operation=rollback)
+    tool: tool_git
+    when:
+      operation: rollback
     floor: light
     reason: workspace mutation, reversible only by another rollback
-  - key: sys_path:abandon
-    tool: sys_path
+  - key: dead_end_abandon
+    tool: tool_plan
     when:
-      operation: abandon
+      operation: dead_end
     floor: light
     reason: dead-end declarations are loud and semantically irreversible
-  - key: tool_research_tool:paid
-    tool: tool_research_tool
+  - key: search_paid_sources
+    tool: tool_search
     when:
       any_of:
       - source: [paid, paid_or_licensed]
       - paid: {truthy: true}
     floor: light
-    reason: paid / licensed candidates spend real money
+    reason: paid / licensed search candidates spend real money
   - key: tool_typst_compile
     tool: tool_typst_compile
     when: {}
@@ -104,7 +105,7 @@ steps:
   description: |
     ONE sentence to the researcher: "Autopilot until <end-condition>.
     I'll page you if: <gates>." End-conditions can be:
-      - "synthesis/paper.typ exists and passes tool_synthesis_check"
+      - "synthesis/paper.typ exists and passes tool_synthesis_scaffold (operation='check')"
       - "N planned experiment steps are completed"
       - "all active hypotheses reach status != testing"
       - "I hit a configured gate (see below)"
@@ -117,8 +118,8 @@ steps:
          / poster / grant / report PDF). The compile is the moment the
          artefact becomes shareable.
       2. tool_audit(scope='step', dimension='reproducibility') (slow + expensive).
-      3. Any tool_research_tool candidate tagged paid_or_licensed.
-      4. sys_path (dead-end declarations are reversible but loud).
+      3. Any tool_search candidate tagged paid_or_licensed.
+      4. Dead-end declarations (routing to guidance/dead_end_routing) are reversible but loud.
       5. Any sys_file_write to synthesis/ with force=true.
       6. tool_package_install for a package not already in
          environment/requirements.txt.
@@ -129,8 +130,8 @@ steps:
          on. If the project declares a resource budget in config,
          gate against that; otherwise gate on any run you'd hesitate
          to launch unattended.
-      8. sys_checkpoint_rollback (workspace mutation; reversible only by
-         re-rolling back to a different checkpoint).
+      8. tool_git (operation='rollback') (workspace mutation; reversible only by
+         re-rolling back to a different commit).
     For each gate, sys_notify level="action_required" and wait one turn.
 
     SERVER-SIDE ENFORCEMENT: these floor gates are enforced by the
@@ -152,10 +153,10 @@ steps:
   name: Auto-Checkpoint Every Major Step
   description: |
     After each completed numbered experiment step, in this order:
-      1. tool_path_finalize — rewrites the step's READMEs from what was
+      1. tool_plan (operation='finalize_step') — rewrites the step's READMEs from what was
          produced (so empty environment/literature/data folders carry an
          informative note, not blank space).
-      2. sys_checkpoint_create description="autopilot after <step_id>"
+      2. tool_git (operation='commit', message="autopilot after <step_id>")
          — keeps a rollback target so a runaway autopilot can be undone
          in one call.
 
@@ -205,9 +206,9 @@ steps:
   name: Final Deliverable Gate
   description: |
     Before tool_typst_compile for the named deliverable:
-      - tool_synthesis_check(file='synthesis/<artefact>.typ') passes
+      - tool_synthesis_scaffold(file='synthesis/<artefact>.typ', operation='check') passes
       - tool_audit(scope='project', dimension='citations') passes
-      - tool_synthesis_preview shows the predicted shape (word count,
+      - tool_synthesis_scaffold(operation='preview') shows the predicted shape (word count,
         page count, figure count, citation count) to the researcher
     Wait for approval. Only after explicit "go" does the compile run.
 
@@ -238,11 +239,9 @@ triggers:
 summary: Drive the project hands-off; explicit gates only.
 token_estimate: 1100
 decomposition:
-- tool: sys_config
+- tool: sys_boot
   args:
-    operation: set
-    key: interaction.autonomy_level
-    value: autopilot
+    operation: config_get
 - protocol: guidance/autopilot
   purpose: Load gates + heartbeat policy.
 - protocol: guidance/analysis_plan

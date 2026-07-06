@@ -156,7 +156,7 @@ steps:
     For each quantitative claim, identify the source. If it lives
     in a workspace output, the claim is grounded; if it lives in a
     citation, ensure the citation is verified
-    (`tool_citations_verify`). If it lives in neither, either
+    (`tool_audit (scope=project, dimension=citations)`). If it lives in neither, either
     remove the claim or generate the supporting artefact first.
 
     CoVe-style verification on the top-N most load-bearing claims
@@ -233,7 +233,7 @@ steps:
   name: Programmatic validation (optional)
   description: |
     For substantial drafts:
-      sys_file_validate_md filepath="<path>" protocol_name="writing_core"
+      tool_audit (scope=file, dimension=markdown) filepath="<path>" protocol_name="writing_core"
     Flags banned phrases and missing structural headers.
 
 expected_outputs: []
