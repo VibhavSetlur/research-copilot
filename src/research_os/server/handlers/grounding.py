@@ -480,6 +480,54 @@ def _handle_tool_reliability(name, arguments, root):
     return _text(_error(f"Unknown reliability operation '{op}'"))
 
 
+def _persist_memory_record(kind, arguments, root):
+    """Best-effort side-effect: persist a MemoryRecord for semantic search.
+
+    Called from _handle_mem_log after kind is validated.  Skips 'methods'
+    (no matching MemoryRecord.kind) and skips empty content.  Never raises.
+    """
+    # 'methods' has no MemoryRecord.kind counterpart — skip.  The rest map
+    # 1:1 onto MemoryRecord.kind (result/error included for forward-compat).
+    _RECORD_KINDS = {
+        "analysis", "decision", "hypothesis", "lesson", "result", "error",
+    }
+    if kind not in _RECORD_KINDS:
+        return
+    # A bare kind='hypothesis' with no hypothesis_id is rejected by the
+    # dispatcher below — don't persist a record for a call that errors out.
+    if kind == "hypothesis" and not arguments.get("hypothesis_id"):
+        return
+    try:
+        from research_os.memory import MemoryRecord, MemoryRetriever  # lazy
+        content = (
+            arguments.get("entry")
+            or arguments.get("content")
+            or arguments.get("statement")
+            or arguments.get("note")
+            or arguments.get("decision")
+            or arguments.get("text")
+            or ""
+        )
+        if not content:
+            return
+        tags = arguments.get("tags")
+        record = MemoryRecord(
+            kind=kind,
+            content=content,
+            project=root.name,
+            summary=content[:200],
+            tags=tags if isinstance(tags, list) else [],
+            protocol=arguments.get("protocol"),
+            run_id=arguments.get("run_id"),
+        )
+        MemoryRetriever(root).store(record)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).debug(
+            "_persist_memory_record failed silently", exc_info=True
+        )
+
+
 def _handle_mem_log(name, arguments, root):
     """Unified memory-log dispatcher.
 
@@ -504,6 +552,8 @@ def _handle_mem_log(name, arguments, root):
         return _text(_error(
             "mem_log requires kind='methods'|'decision'|'hypothesis'|'analysis'|'lesson'"
         ))
+    # Best-effort: persist to the MemoryRecord store for semantic search.
+    _persist_memory_record(kind, arguments, root)
     if kind == "methods":
         return _handle_mem_methods_append(name, arguments, root)
     if kind == "decision":

@@ -26,20 +26,43 @@ def _handle_mem_search(name, arguments, root):
     """Semantic search over recorded project memory.
 
     Searches across:
+      - MemoryRecord store (semantic / keyword; new store)
       - state.active_hypotheses  (kind filter: 'hypothesis')
       - workspace/analysis.md    (kind filter: 'analysis')
       - workspace/methods.md     (kind filter: 'methods')
       - workspace/decisions.md   (kind filter: 'decision')
 
-    Implementation: case-insensitive substring/keyword match (no daemon
-    required). Returns up to top_k results. If no store exists or nothing
-    matches, returns an empty success envelope.
+    Returns up to top_k results (semantic hits first, then ad-hoc).
+    Envelope includes "semantic": bool indicating which backend ran.
     """
     try:
         query = (arguments.get("query") or "").strip().lower()
         kind = (arguments.get("kind") or "").strip().lower()
         top_k = int(arguments.get("top_k") or 10)
         results: list[dict] = []
+        semantic_available = False
+
+        # ── New MemoryRecord store (semantic / keyword) ───────────────────
+        try:
+            from research_os.memory import MemoryRetriever, search_all_projects  # lazy
+            retriever = MemoryRetriever(root)
+            semantic_available = retriever.available
+            raw_query = (arguments.get("query") or "").strip()
+            if arguments.get("all_projects"):
+                sem_hits = search_all_projects(raw_query, k=top_k, root=root)
+            else:
+                sem_hits = retriever.search(raw_query, k=top_k, kind=(kind or None))
+            for score, record in sem_hits:
+                results.append({
+                    "kind": record.kind,
+                    "id": record.id,
+                    "score": round(score, 4),
+                    "summary": record.summary,
+                    "text": record.content,
+                    "source": "memory_store",
+                })
+        except Exception:
+            pass
 
         # ── Hypothesis store ──────────────────────────────────────────────
         if not kind or kind == "hypothesis":
@@ -62,7 +85,7 @@ def _handle_mem_search(name, arguments, root):
             "decision": root / "workspace" / "decisions.md",
         }
         for fkind, fpath in file_map.items():
-            if kind and kind not in (fkind, "methods" if fkind == "methods" else fkind):
+            if kind and kind != fkind:
                 continue
             if not fpath.exists():
                 continue
@@ -81,6 +104,7 @@ def _handle_mem_search(name, arguments, root):
             "kind_filter": kind or None,
             "count": len(results),
             "results": results,
+            "semantic": semantic_available,
         }))
     except Exception as e:
         return _text(_error(str(e)))
@@ -158,6 +182,19 @@ def _handle_mem_retrieve(name, arguments, root):
 
         if pointer:
             import re
+            # MemoryRecord id pointer — try resolving before H\d+ / file-path
+            try:
+                from research_os.memory import MemoryRetriever  # lazy
+                rec = MemoryRetriever(root).get(pointer)
+                if rec is not None:
+                    return _text(_success({
+                        "pointer": pointer,
+                        "kind": "memory_record",
+                        "record": rec.model_dump(mode="json"),
+                        "content": rec.content,
+                    }))
+            except Exception:
+                pass
             # Hypothesis id pointer (e.g. "H1", "H12")
             if re.fullmatch(r"H\d+", pointer, re.IGNORECASE):
                 mapped = dict(arguments)
