@@ -320,8 +320,9 @@ CONSOLIDATED_TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
             "type": "object",
             "properties": {
                 "query": {"type": "string"},
-                "top_k": {"type": "number"},
+                "top_k": {"type": "integer", "minimum": 1},
                 "kind": {"type": "string"},
+                "all_projects": {"type": "boolean"},
             },
             "required": ["query"],
         },
@@ -350,7 +351,7 @@ CONSOLIDATED_TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
             "properties": {
                 "pointer": {"type": "string"},
                 "query": {"type": "string"},
-                "top_k": {"type": "number"},
+                "top_k": {"type": "integer", "minimum": 1},
             },
             "required": [],
         },
