@@ -59,8 +59,8 @@ def test_route_intake_prompt(tmp_path):
     res = route_request("fill the intake", tmp_path)
     assert res["status"] == "success"
     assert res["primary_protocol"] == "guidance/project_startup"
-    # Shortcut tool should resolve to intake autofill.
-    assert res["shortcut_tool"] == "tool_intake_autofill"
+    # Shortcut tool resolves to the consolidated memory-logging entry point.
+    assert res["shortcut_tool"] == "mem_log"
     assert "decomposition" in res
     assert res["complexity"] == "low"  # short prompt
 
@@ -107,7 +107,7 @@ def test_route_resume_prompt(tmp_path):
     res = route_request("pick up where we left off", tmp_path)
     assert res["status"] == "success"
     assert res["primary_protocol"] == "guidance/session_resume"
-    assert res["shortcut_tool"] == "tool_session_resume"
+    assert res["shortcut_tool"] == "tool_session_handoff"
 
 
 def test_route_handoff_prompt(tmp_path):
@@ -134,7 +134,7 @@ def test_route_punctuation_does_not_block_shortcut(tmp_path):
     scaffold_minimal_workspace(tmp_path, "Punct Shortcut Test")
     res = route_request("the workspace looks broken, fix it", tmp_path)
     assert res["status"] == "success"
-    assert res["shortcut_tool"] == "tool_workspace_repair"
+    assert res["shortcut_tool"] == "tool_migrate_audit"
 
 
 def test_route_baseline_eda_prompt_resolves(tmp_path):
@@ -154,15 +154,14 @@ def test_route_baseline_eda_prompt_resolves(tmp_path):
 
 
 def test_route_context_intake_shortcut(tmp_path):
-    """Regression: 'I just dropped a paper' should trigger
-    tool_context_intake. Pre-v1.2.2 there was no shortcut entry, so
-    the prompt fell through to ask_user."""
+    """Regression: 'I just dropped a paper' should trigger the context-intake
+    shortcut, now consolidated into mem_log."""
     scaffold_minimal_workspace(tmp_path, "Context Intake Test")
     res = route_request(
         "I just dropped a new paper in literature, integrate it", tmp_path,
     )
     assert res["status"] == "success"
-    assert res["shortcut_tool"] == "tool_context_intake"
+    assert res["shortcut_tool"] == "mem_log"
 
 
 def test_semantic_leaf_no_decomposition_downgrades_complexity(tmp_path):
@@ -318,7 +317,7 @@ def test_route_returns_active_tools(tmp_path):
     assert isinstance(tools, list)
     assert "sys_boot" in tools         # essential
     assert "tool_route" in tools       # essential
-    assert "tool_intake_autofill" in tools  # protocol's shortcut
+    assert "mem_log" in tools          # protocol's consolidated shortcut
 
 
 def test_active_tools_for_protocol_direct_lookup(tmp_path):
@@ -327,9 +326,8 @@ def test_active_tools_for_protocol_direct_lookup(tmp_path):
     assert res["status"] == "success"
     assert res["intent_class"] == "synthesize"
     assert res["sub_intent"] == "paper"
-    # Decomposition includes the synthesis planning + check tools.
-    assert "tool_synthesize_plan" in res["active_tools"]
-    assert "tool_synthesis_check" in res["active_tools"]
+    # Decomposition includes the consolidated synthesis + compile tools.
+    assert "tool_synthesis_scaffold" in res["active_tools"]
     assert "tool_typst_compile" in res["active_tools"]
     # Essentials still present.
     assert "sys_boot" in res["active_tools"]
@@ -624,12 +622,10 @@ def test_route_pre_submission_checklist(tmp_path):
 
 
 def test_sys_active_project_exists_in_router_essentials_or_handlers(tmp_path):
-    """Smoke: sys_active_project + sys_help are wired."""
+    """Smoke: sys_active_project is wired."""
     from research_os.server import TOOL_DEFINITIONS, _HANDLERS
     assert "sys_active_project" in TOOL_DEFINITIONS
     assert "sys_active_project" in _HANDLERS
-    assert "sys_help" in TOOL_DEFINITIONS
-    assert "sys_help" in _HANDLERS
 
 
 def test_sys_active_project_returns_root(tmp_path):
@@ -668,38 +664,6 @@ def test_sys_active_project_advises_when_unscaffolded(tmp_path):
     assert data["has_os_state"] is False
     assert "advice" in data
     assert "research-os init" in data["advice"]
-
-
-def test_sys_help_returns_orientation(tmp_path):
-    from research_os.server import _handle_sys_help
-    out = _handle_sys_help("sys_help", {}, tmp_path)
-    assert out and out[0].text
-    import json
-    payload = json.loads(out[0].text)
-    assert payload["status"] == "success"
-    data = payload["data"]
-    # Trimmed default: orientation only the AI needs on every call.
-    assert "namespaces" in data
-    assert "session_start" in data
-    assert "topics" in data
-
-
-def test_sys_help_categories_topic_returns_protocol_categories(tmp_path):
-    from research_os.server import _handle_sys_help
-    import json
-    out = _handle_sys_help("sys_help", {"topic": "categories"}, tmp_path)
-    data = json.loads(out[0].text)["data"]
-    assert "protocol_categories" in data
-
-
-def test_sys_help_topic_synthesis_returns_synthesis_protocols(tmp_path):
-    from research_os.server import _handle_sys_help
-    out = _handle_sys_help("sys_help", {"topic": "synthesis"}, tmp_path)
-    assert out and out[0].text
-    import json
-    payload = json.loads(out[0].text)
-    assert payload["status"] == "success"
-    assert "synthesis_protocols" in payload["data"]
 
 
 def test_resolve_project_root_uses_env_var_when_set(tmp_path):
@@ -744,11 +708,7 @@ def test_tool_alias_resolution(tmp_path):
     from research_os.server import _resolve_tool_name
     # Dot → underscore
     assert _resolve_tool_name("sys.state.get") == "sys_state_get"
-    # v2.0.0: tool.audit.synthesis → tool_audit_synthesis → tool_audit
-    # (consolidated audit family; param injection sets scope=synthesis,
-    # dimension=all on dispatch).
-    assert _resolve_tool_name("tool.audit.synthesis") == "tool_audit"
-    # Legacy alias — also routed through the v2 audit dispatcher.
+    # Legacy audit nickname routes through the consolidated audit dispatcher.
     assert _resolve_tool_name("tool_audit_figure_quality") == "tool_audit"
     # tool_log_decision resolves directly to mem_log in v2.0.0
     # (mem_decision_log was hard-removed in phase-14a).

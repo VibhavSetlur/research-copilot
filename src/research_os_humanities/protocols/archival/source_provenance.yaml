@@ -1,7 +1,7 @@
 id: source_provenance
 name: Source Provenance — chain-of-custody for quotations
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [humanities, theory_math]
   audience: [auditor]
@@ -35,140 +35,124 @@ trigger: |
   reception loop".
 
 prerequisites:
-  - At least one quotation the researcher wants to use in writing,
-    with the secondary source it was actually read in (page + edition).
-  - Access to the relevant critical editions / translations / facsimiles
-    — physical, IIIF, HathiTrust, archive.org, or a holding identified
-    by shelfmark via archival/archival_research.
+- At least one quotation the researcher wants to use in writing, with the secondary source it was actually read in (page + edition).
+- Access to the relevant critical editions / translations / facsimiles — physical, IIIF, HathiTrust, archive.org, or a holding identified by shelfmark via archival/archival_research.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Every link in the chain names a specific witness — manuscript
-       shelfmark, critical edition siglum, translator + year, secondary
-       page. 'See Aquinas, ST I.2.3' is not a citation; it is a gesture."
-    - "If the researcher has not personally inspected a link, the chain
-       marks it `[unverified]` with the reason. Silent fudging of the
-       reception history is the single most common form of humanities
-       fraud and is treated as such here."
-    - "Translations are interpretations, not transparencies. When the
-       argument turns on a word, the chain records the original-language
-       lemma and the translator's choice, and flags any rendering
-       Schleiermacher would call 'paraphrastic'."
-    - "Aristotle → Aquinas → Heidegger reception chains are reconstructed
-       from the actual textual evidence (which edition of the Metaphysics
-       did Aquinas read? Moerbeke's Latin? which manuscript family?), not
-       from a doxographic summary."
-    - "A quotation whose chain cannot be closed is either dropped from
-       the argument or marked openly in the paper as second-hand. There
-       is no third option."
+  - "Every link in the chain names a specific witness — manuscript shelfmark, critical edition siglum, translator + year, secondary page. 'See Aquinas, ST I.2.3' is not a citation; it is a gesture."
+  - "If the researcher has not personally inspected a link, the chain marks it `[unverified]` with the reason. Silent fudging of the reception history is the single most common form of humanities fraud and is treated as such here."
+  - "Translations are interpretations, not transparencies. When the argument turns on a word, the chain records the original-language lemma and the translator's choice, and flags any rendering Schleiermacher would call 'paraphrastic'."
+  - "Aristotle → Aquinas → Heidegger reception chains are reconstructed from the actual textual evidence (which edition of the Metaphysics did Aquinas read? Moerbeke's Latin? which manuscript family?), not from a doxographic summary."
+  - "A quotation whose chain cannot be closed is either dropped from the argument or marked openly in the paper as second-hand. There is no third option."
 
 steps:
-  - id: inventory_quotations
-    name: Inventory the quotations
-    description: |
-      Pull every quotation the researcher intends to use into a single
-      register at workspace/citations/quotation_register.md. For each:
-        - the quoted text as it will appear in the paper
-        - the secondary source the researcher actually read it in
-          (author, title, edition, page)
-        - the claimed original (author + work, if stated in the secondary)
-        - the rhetorical load (decorative / supporting / load-bearing)
-      Load-bearing quotations get full chains; decorative ones can be
-      cut or relegated to a footnote if the chain is expensive to close.
-      Use tool_search to find any earlier appearance of the same
-      quotation in the literature — if everyone is citing the same
-      secondary, that is itself a finding worth recording in mem_log.
+- id: inventory_quotations
+  name: Inventory the quotations
+  description: |
+    Pull every quotation the researcher intends to use into a single
+    register at workspace/citations/quotation_register.md. For each:
+      - the quoted text as it will appear in the paper
+      - the secondary source the researcher actually read it in
+        (author, title, edition, page)
+      - the claimed original (author + work, if stated in the secondary)
+      - the rhetorical load (decorative / supporting / load-bearing)
+    Load-bearing quotations get full chains; decorative ones can be
+    cut or relegated to a footnote if the chain is expensive to close.
+    Use tool_search to find any earlier appearance of the same
+    quotation in the literature — if everyone is citing the same
+    secondary, that is itself a finding worth recording in mem_log.
 
-  - id: identify_witness
-    name: Identify the earliest extant witness
-    description: |
-      For each load-bearing quotation, work backwards to the earliest
-      surviving textual witness. The witness is not the original
-      composition (which is usually lost) — it is the oldest manuscript,
-      papyrus, inscription, or print that transmits the text. For
-      Aristotle this means a Greek manuscript family (Bekker's, the
-      Aldine, or a specific Byzantine codex); for Aquinas, a Leonine
-      edition manuscript or the autograph fragments; for early modern
-      texts, a specific imprint with STC / VD16 number.
-      Call tool_humanities_archive_lookup to plan queries against IIIF
-      consortia, HathiTrust, archive.org, Gallica, the relevant national
-      library. If the witness is known only through later copies, name
-      the stemma position. Record the witness in
-      workspace/citations/chain_<slug>.md under "Witness".
+- id: identify_witness
+  name: Identify the earliest extant witness
+  description: |
+    For each load-bearing quotation, work backwards to the earliest
+    surviving textual witness. The witness is not the original
+    composition (which is usually lost) — it is the oldest manuscript,
+    papyrus, inscription, or print that transmits the text. For
+    Aristotle this means a Greek manuscript family (Bekker's, the
+    Aldine, or a specific Byzantine codex); for Aquinas, a Leonine
+    edition manuscript or the autograph fragments; for early modern
+    texts, a specific imprint with STC / VD16 number.
+    Call tool_humanities_archive_lookup to plan queries against IIIF
+    consortia, HathiTrust, archive.org, Gallica, the relevant national
+    library. If the witness is known only through later copies, name
+    the stemma position. Record the witness in
+    workspace/citations/chain_<slug>.md under "Witness".
 
-  - id: locate_critical_edition
-    name: Locate the standard critical edition
-    description: |
-      Between the witness and the modern reader sits the critical edition
-      — the editorial reconstruction with apparatus. Identify which one
-      is standard for this text in this discipline (the Loeb is not the
-      Oxford Classical Text; the Vulgate Stuttgartensia is not the
-      Nestle-Aland). For contested texts, name the editions and the
-      editorial schools they represent (Lachmannian stemmatics vs.
-      best-text vs. genealogical-Bayesian methods like Mink's CBGM for
-      NT studies).
-      Record edition + editor + year + siglum + page/line for the exact
-      passage. If multiple critical editions exist and they disagree at
-      the quoted passage, flag it — the choice of edition is now part
-      of the argument and must be defended.
+- id: locate_critical_edition
+  name: Locate the standard critical edition
+  description: |
+    Between the witness and the modern reader sits the critical edition
+    — the editorial reconstruction with apparatus. Identify which one
+    is standard for this text in this discipline (the Loeb is not the
+    Oxford Classical Text; the Vulgate Stuttgartensia is not the
+    Nestle-Aland). For contested texts, name the editions and the
+    editorial schools they represent (Lachmannian stemmatics vs.
+    best-text vs. genealogical-Bayesian methods like Mink's CBGM for
+    NT studies).
+    Record edition + editor + year + siglum + page/line for the exact
+    passage. If multiple critical editions exist and they disagree at
+    the quoted passage, flag it — the choice of edition is now part
+    of the argument and must be defended.
 
-  - id: trace_translation
-    name: Trace the translation lineage
-    description: |
-      If the quotation appears in a language other than the witness
-      language, the translator becomes a witness too. Record:
-        - translator, year of translation, edition consulted
-        - source text the translator worked from (which critical edition?)
-        - any prior translation the translator was working against
-          (Moerbeke against Boethius, Tyndale against Wycliffe, Lattimore
-          against Pope)
-      For load-bearing quotations, transcribe the original-language
-      lemma alongside the translation. Where the argument turns on a
-      term, note alternative renderings from at least one rival
-      translation. Hermeneutic stakes get a sentence: a Heideggerian
-      reading of Aristotle's `ousia` is not a Thomistic reading is not
-      an analytic reading, and the translation choice tracks the
-      tradition.
+- id: trace_translation
+  name: Trace the translation lineage
+  description: |
+    If the quotation appears in a language other than the witness
+    language, the translator becomes a witness too. Record:
+      - translator, year of translation, edition consulted
+      - source text the translator worked from (which critical edition?)
+      - any prior translation the translator was working against
+        (Moerbeke against Boethius, Tyndale against Wycliffe, Lattimore
+        against Pope)
+    For load-bearing quotations, transcribe the original-language
+    lemma alongside the translation. Where the argument turns on a
+    term, note alternative renderings from at least one rival
+    translation. Hermeneutic stakes get a sentence: a Heideggerian
+    reading of Aristotle's `ousia` is not a Thomistic reading is not
+    an analytic reading, and the translation choice tracks the
+    tradition.
 
-  - id: verify_secondary
-    name: Verify the secondary citation the researcher used
-    description: |
-      Close the loop back to where the researcher actually encountered
-      the quote. Pull the secondary source and confirm:
-        - the quoted text matches verbatim (catch silent ellipses)
-        - the page reference resolves
-        - the secondary's own citation matches the critical edition you
-          located in step 3 (catch citation drift across reception)
-      If the secondary itself cites only "as quoted in" another source,
-      walk that chain too — every "ut citatur in" is a flag that the
-      author may not have read the witness. Heidegger's citations of
-      pre-Socratics, for instance, often run through Diels-Kranz rather
-      than primary manuscripts, and that matters for what the citation
-      can support.
+- id: verify_secondary
+  name: Verify the secondary citation the researcher used
+  description: |
+    Close the loop back to where the researcher actually encountered
+    the quote. Pull the secondary source and confirm:
+      - the quoted text matches verbatim (catch silent ellipses)
+      - the page reference resolves
+      - the secondary's own citation matches the critical edition you
+        located in step 3 (catch citation drift across reception)
+    If the secondary itself cites only "as quoted in" another source,
+    walk that chain too — every "ut citatur in" is a flag that the
+    author may not have read the witness. Heidegger's citations of
+    pre-Socratics, for instance, often run through Diels-Kranz rather
+    than primary manuscripts, and that matters for what the citation
+    can support.
 
-  - id: close_or_mark
-    name: Close the chain or mark it openly
-    description: |
-      For each quotation, the chain in workspace/citations/chain_<slug>.md
-      now has four nodes: witness → critical edition → translation →
-      secondary. Every node is either verified (researcher inspected) or
-      `[unverified]` with a stated reason (facsimile inaccessible, MS
-      held in private collection, library closed, language barrier).
-      Decide per quotation:
-        - All links verified → quotation is usable as primary evidence.
-        - One or more `[unverified]` but reachable in principle → flag
-          for a return pass; do not cite as primary until closed.
-        - Genuinely unreachable witness → cite the secondary openly
-          ("as quoted in X, who cites Y MS Z f.42r") and let the reader
-          judge.
-      Call mem_log with the decision and rationale per quotation. The
-      register becomes the audit trail the reviewer will check.
+- id: close_or_mark
+  name: Close the chain or mark it openly
+  description: |
+    For each quotation, the chain in workspace/citations/chain_<slug>.md
+    now has four nodes: witness → critical edition → translation →
+    secondary. Every node is either verified (researcher inspected) or
+    `[unverified]` with a stated reason (facsimile inaccessible, MS
+    held in private collection, library closed, language barrier).
+    Decide per quotation:
+      - All links verified → quotation is usable as primary evidence.
+      - One or more `[unverified]` but reachable in principle → flag
+        for a return pass; do not cite as primary until closed.
+      - Genuinely unreachable witness → cite the secondary openly
+        ("as quoted in X, who cites Y MS Z f.42r") and let the reader
+        judge.
+    Call mem_log with the decision and rationale per quotation. The
+    register becomes the audit trail the reviewer will check.
 
 expected_outputs:
-  - workspace/citations/quotation_register.md
-  - workspace/citations/chain_<slug>.md  # one per load-bearing quotation
-  - workspace/citations/provenance_audit.md  # per-quotation verification status
+- workspace/citations/quotation_register.md
+- workspace/citations/chain_<slug>.md    # one per load-bearing quotation
+- workspace/citations/provenance_audit.md    # per-quotation verification status
 
 quality_bar:
   load_bearing_chains_closed: |
@@ -191,4 +175,20 @@ quality_bar:
 
 next_protocol: humanities/output/scholarly_edition
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: audit_wrap
+sub_intent: provenance
+triggers:
+- source provenance
+- where does this quote come from
+- translation chain
+- citation chain
+- trace this quotation
+summary: 'Chain-of-custody for quotations: ms → critical edition → translation → secondary citation.'
+shortcut_tool: tool_humanities_citation_chain
+token_estimate: 1300
+decomposition:
+- tool: tool_humanities_citation_chain
+  purpose: Scaffold the chain-of-custody markdown.
+- protocol: humanities/archival/source_provenance
+  purpose: Walk the chain back link by link.

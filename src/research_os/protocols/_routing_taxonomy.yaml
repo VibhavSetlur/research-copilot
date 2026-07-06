@@ -1,0 +1,309 @@
+# Routing taxonomy — the irreducible human-authored routing metadata that
+# is NOT derivable from protocol bodies. Two blocks:
+#   hierarchy        L1 intent_class labels + L2 sub_intent descriptions
+#                    (used for ambiguity resolution + ask_user prompts).
+#   shortcut_intents cross-intent tool shortcuts (a trigger set → one tool)
+#                    that bypass protocol loading entirely.
+# Everything else (per-protocol intent_class/triggers/decomposition/...) now
+# lives in the protocol bodies. scripts/build_protocols.py reads this file
+# plus every protocol YAML to compile _protocols.bundle.
+schema_version: '3.0'
+hierarchy:
+  session:
+    label: Session management
+    sub_intents:
+      boot: Start of a session
+      resume: Continue a paused project
+      handoff: End session cleanly (AI → AI)
+      collaborator: Hand off to a HUMAN outside Research-OS
+      autopilot: Let the AI drive with explicit gates
+      disagree: Constructive disagreement — AI pushback rules
+  discover:
+    label: Project intake + question lock-in
+    sub_intents:
+      intake: Read inputs and propose project metadata
+      mid_entry: Enter an in-progress project (prior work outside RO)
+      clarify: Narrow a vague / cross-disciplinary ask before picking a protocol
+      explore_triage: 'exploration: rank cheap, high-information probes on fresh data'
+  plan:
+    label: Planning + iteration
+    sub_intents:
+      next_step: Propose the best next experiment
+      deep_plan: Build a rigorous, branchable research roadmap step by step
+      roadmap: Autonomously build toward a roadmap, re-planning from results
+      casual: Lightweight exploration
+      program_setup: 'multi_study: shared codebook + prereg + how studies roll up'
+      study_register: 'multi_study: register a new sub-study against the program commons'
+      codebook_governance: 'multi_study: amend the shared commons safely after studies started'
+  execute:
+    label: Experiment execution
+    sub_intents:
+      new_experiment: Create + run the next numbered step
+      extend: Iterate on the active step
+      branch: Fork into an alternative approach
+      abandon: Mark current path as a dead end
+      build_spec: 'tool_build: clarify what a tool must do + how ''done'' is judged'
+      build_implement: 'tool_build: the inner build loop — one commit/increment per pass'
+      build_test: 'tool_build: design the testing regime + CI gate for the tool'
+      build_benchmark: 'tool_build: measure the tool against the right baseline(s)'
+      build_release: 'tool_build: cut a versioned, reproducible release + changelog'
+      build_publish: 'tool_build: publish the cut release to a registry (PyPI/crates/npm/conda)'
+      explore_probe: 'exploration: one probe → observe → decide cycle in scratch'
+      explore_promote: 'exploration: graduate a probe into a real numbered step'
+      notebook_run: 'notebook: author + run a notebook with cell-provenance discipline'
+      notebook_reproduce: 'notebook: harden a notebook so anyone can re-run it (pin env, declare inputs, parameterize)'
+      notebook_promote: 'notebook: graduate a trustworthy notebook into a script / step / figure'
+      hybrid_run: 'hybrid: build a tool and use it for analysis in one project, provenance spanning both'
+      hybrid_handoff: 'hybrid: cross the tool↔analysis boundary with the tool version pinned'
+  methodology:
+    label: Methodology choice + study design
+    sub_intents:
+      pick: Choose statistical / computational method
+      causal: Causal inference (DAG / IV / DiD)
+      ml: Supervised learning
+      rct: Randomised controlled trial
+      survey: Survey + psychometric
+      qualitative: Interviews / thematic / grounded theory
+      simulation: ADEMP simulation study
+      replication: Replication of a published analysis
+      ablation: Component-by-component ablation
+      pilot: Small-N feasibility before full study
+      mixed: Mixed methods (qual + quant)
+      meta: Meta-analysis / pooled effects
+      design: Study design
+      tool_pick: Find a candidate library / CLI
+      prereg: Freeze SAP + hypotheses before analysis
+      bayesian: Bayesian workflow (priors → posterior → checks)
+      timeseries: Time-aware analysis + forecasting
+      subfield_pipeline: Identify the specific subfield + survey its canonical pipeline
+      eda: Exploratory data analysis + hypothesis generation
+      comparison: Head-to-head benchmark of N methods on one task
+      data_audit: Standalone data quality / QC audit
+      power: Power / sample-size justification (standalone)
+      reproduce: Attempt to reproduce a published analysis
+      consult: Methodological consultation / explain / teach (no project commit)
+      eval_design: Design the train/val/test split, CV, metrics, comparison test
+      sweep: Design a hyperparameter sweep (search space, budget, strategy)
+      ethics: Data ethics review (IRB / privacy / consent / fairness)
+      tool_setup: Install + verify external tools (Node / Quarto / Docker / R / Julia / ffmpeg / LaTeX)
+      mcp_compose: Compose other MCP servers alongside Research OS (Postgres / Slack / GitHub / Figma / etc.)
+      dmp: Data Management Plan (funder-compliant, FAIR-aligned)
+      multiplicity: Multiple-comparisons / multiplicity correction strategy
+      qual_design: Pre-collection qualitative — interview / topic guide
+      qual_coding: Codebook / coding-scheme development for qualitative data
+      irr: Inter-rater reliability design + computation
+      survey_design: Pre-collection survey / questionnaire instrument design
+      fairness: Fairness audit for ML / decision systems
+      bootstrap: Bootstrap / resampling design
+      uq: Uncertainty quantification + calibration
+  literature:
+    label: Literature search + synthesis
+    sub_intents:
+      search: Broad literature pass
+      systematic: PRISMA systematic review
+      evidence_grade: GRADE-style evidence synthesis
+      compare: Compare-and-contrast 2-N papers
+  synthesize:
+    label: Final deliverables
+    sub_intents:
+      paper: IMRAD paper with verified citations
+      abstract: Structured / unstructured abstract
+      poster: LaTeX conference poster
+      dashboard: Offline HTML dashboard
+      grant: Grant narrative
+      report: Technical / executive report
+      figures: Figure styling + guidelines
+      viz_build: Build / polish a figure or figure deck (workflow)
+      writing: Writing rules (methods, citations, conclusions, ...)
+      null_findings: Publishable companion for refuted / inconclusive / abandoned
+      slides: Talk / presentation deck (lab meeting / conference / defense)
+      lay: Lay summary / press release / outreach
+      update: Progress update for PI / advisor / lab
+      inputs_only: Synthesis from inputs/ alone (no in-RO analysis ran)
+      cover_letter: Journal cover letter for submission
+      title: Title workshop (single most-read sentence)
+      handout: Printable one-page handout / leave-behind
+      multi_panel: Compose a multi-panel figure (Figure 2 = A / B / C / D)
+      figure_arc: Order figures across a paper / talk / poster
+      a11y: Color-blind + WCAG accessibility audit
+      network: Network / graph visualization (DAGs, citation, knowledge graphs)
+      geo: Geospatial / map visualization (choropleth, points, raster)
+      animation: Animation for time-series / model behaviour / talks
+      uncertainty: Uncertainty visualization (intervals, fans, posteriors)
+      distribution: Distribution-comparison visualization (raincloud, halfeye, ridgeline)
+      interactive: Interactive dashboard design (Observable, Streamlit, Shiny, deck.gl)
+      showcase: Showcase / novel-research visualization (the visual IS the contribution)
+      end_matter: Data / code availability + CRediT + funding + COI + ack
+      venue: Journal / venue selection + fit assessment
+      outline: Manuscript outline + narrative arc (pre-draft)
+      defense: Defense / talk Q&A preparation
+      humanities_essay: Non-IMRAD humanities essay (thesis + close readings + counter)
+      reviewer_sim: Pre-submission adversarial self-review (7 personas)
+      notebook_synthesize: 'notebook: weave notebook outputs into the requested deliverable'
+      cross_study_synthesis: 'multi_study: roll the studies up into one program-level claim'
+  audit_wrap:
+    label: Audit + reproducibility
+    sub_intents:
+      audit: Audit a synthesis output
+      repro: Snapshot + verify everything reruns clean
+      submission: Pre-submission checklist (final ready-to-submit gate)
+  memory:
+    label: Hypothesis + glossary bookkeeping
+    sub_intents:
+      hypothesis: Add / update / list hypotheses
+      glossary: Extend the glossary
+  review:
+    label: Review research artefacts
+    sub_intents:
+      quick: Fast critical appraisal of an external paper
+      code: Code review of analysis scripts (yours or collaborator's)
+      respond: Draft response to peer-review comments on YOUR paper
+      figure: Critique a single figure (yours or theirs)
+shortcut_intents:
+  judge_quality:
+    triggers:
+    - score this work
+    - score the work
+    - rate this work
+    - rate the work
+    - is this good enough
+    - is this good enough to ship
+    - good enough to ship
+    - is this ready to ship
+    - how good is this
+    - judge this work
+    - judge the work
+    - assess the quality
+    - what are the limitations
+    - ship iterate or redo
+    tool: tool_audit
+  progress_check:
+    triggers:
+    - progress
+    - project status
+    - status update
+    - where are we
+    - what's done
+    - progress digest
+    - digest
+    tool: tool_audit (operation=progress_digest)
+  context_intake:
+    triggers:
+    - i just dropped a paper
+    - dropped a new paper
+    - i just added a paper
+    - integrate this paper
+    - integrate the new paper
+    - ingest this paper
+    - added a new dataset
+    - added context
+    - pi sent me a paper
+    - new paper in literature
+    - new paper in context
+    - pull in this file
+    tool: mem_log
+  dead_end_lessons:
+    triggers:
+    - lessons
+    - what did we learn
+    - past mistakes
+    - previous dead ends
+    tool: tool_lessons
+    args:
+      operation: dead_end
+  distill_skills:
+    triggers:
+    - distill skills
+    - crystallize lessons
+    - save lessons as skills
+    - what have we learned
+    - turn lessons into skills
+    - learn from this project
+    - build my skill library
+    tool: tool_search
+    args:
+      operation: distill
+  promote_skills:
+    triggers:
+    - promote skills
+    - carry lessons across projects
+    - remember this for next project
+    - update my profile from lessons
+    - learn my preferences
+    tool: tool_search
+    args:
+      operation: promote
+  list_protocols:
+    triggers:
+    - list protocols
+    - what protocols
+    - available protocols
+    tool: tool_protocols_list
+  dep_inventory:
+    triggers:
+    - missing dependencies
+    - what's installed
+    - which tools work
+    tool: sys_env
+  workspace_repair:
+    triggers:
+    - broken
+    - workspace is broken
+    - workspace looks broken
+    - fix workspace
+    - fix the workspace
+    - repair
+    - repair the workspace
+    tool: tool_migrate_audit
+  background_task:
+    triggers:
+    - background
+    - long running
+    - kick off
+    - fire and forget
+    tool: tool_task
+  run_build_checks:
+    triggers:
+    - run the tests
+    - run tests
+    - run the test suite
+    - run the build
+    - run the linter
+    - run the linters
+    - run the checks
+    - run lint
+    - rerun the tests
+    tool: tool_build
+  scratch_sandbox:
+    triggers:
+    - quick test
+    - syntax check
+    - scratch
+    - throwaway
+    tool: tool_scratch
+  step_iterate:
+    triggers:
+    - iterate on this step
+    - iterate the figure
+    - iterate the analysis
+    - iterate on figure
+    - iterate on the figure
+    - rerun with different
+    - recolor figure
+    - recolour figure
+    - tighten the cutoff
+    - tighten cutoff
+    - swap the model
+    - snapshot this version
+    - version this iteration
+    - design iteration
+    - v2 of this step
+    tool: tool_plan
+  version_coherence:
+    triggers:
+    - version drift
+    - stale outputs
+    - outputs out of sync
+    - are my figures up to date
+    - version coherence
+    tool: tool_audit

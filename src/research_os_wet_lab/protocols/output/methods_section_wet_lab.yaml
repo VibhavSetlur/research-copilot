@@ -1,7 +1,7 @@
 id: methods_section_wet_lab
 name: Materials & Methods Section (wet-lab format)
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [wet_lab, biology, qualitative, humanities]
   audience: [auditor, maintainer]
@@ -43,226 +43,210 @@ trigger: |
   link for methods".
 
 prerequisites:
-  - workspace/reagents/ populated via wet_lab/protocol/reagent_lot_tracking
-  - workspace/<step>/ folders contain reagents.yaml + protocol.md
-  - workspace/instruments/ exists (or will be created in step 2)
-  - workspace/ethics/ contains approval letters or pre-registration IDs
-  - Analysis-methods section drafted (or stubbed) in the computational
-    pack — wet-lab methods cross-links to it, does not duplicate it
+- workspace/reagents/ populated via wet_lab/protocol/reagent_lot_tracking
+- workspace/<step>/ folders contain reagents.yaml + protocol.md
+- workspace/instruments/ exists (or will be created in step 2)
+- workspace/ethics/ contains approval letters or pre-registration IDs
+- Analysis-methods section drafted (or stubbed) in the computational pack — wet-lab methods cross-links to it, does not duplicate it
 
 editorial_voice:
   mode: prescription
   rules:
-    - "Name an antibody by clone, not by vendor. 'Anti-CD3 (clone
-       OKT3, BioLegend cat 317302, lot B345678, RRID:AB_571927)' is
-       reproducible. 'Anti-CD3 from BioLegend' is not. The reviewer
-       will catch this; spare them the round trip."
-    - "Every instrument gets manufacturer + model + firmware + the
-       three or four run parameters that actually affect the result
-       (laser power, exposure, gain, gradient, flow rate, whatever
-       the technique demands). 'Confocal microscopy was performed'
-       is not a methods sentence, it is a placeholder."
-    - "Cell lines without a mycoplasma test date within the last 6
-       months and an STR profile (or a documented authentication
-       method) are a desk-reject at most journals now. Log the
-       authentication date, do not just claim authentication."
-    - "Statistics paragraph names the test, the assumptions checked,
-       the n (biological vs. technical replicates spelled out), the
-       multiple-comparison correction, and the software + version.
-       'Student's t-test, p<0.05' is not statistics, it is folklore."
-    - "If the study was preregistered, the preregistration URL goes
-       in the methods, not buried in a supplement. If it was not
-       preregistered, say so — silence reads as evasion."
+  - "Name an antibody by clone, not by vendor. 'Anti-CD3 (clone OKT3, BioLegend cat 317302, lot B345678, RRID:AB_571927)' is reproducible. 'Anti-CD3 from BioLegend' is not. The reviewer will catch this; spare them the round trip."
+  - "Every instrument gets manufacturer + model + firmware + the three or four run parameters that actually affect the result (laser power, exposure, gain, gradient, flow rate, whatever the technique demands). 'Confocal microscopy was performed' is not a methods sentence, it is a placeholder."
+  - "Cell lines without a mycoplasma test date within the last 6 months and an STR profile (or a documented authentication method) are a desk-reject at most journals now. Log the authentication date, do not just claim authentication."
+  - "Statistics paragraph names the test, the assumptions checked, the n (biological vs. technical replicates spelled out), the multiple-comparison correction, and the software + version. 'Student's t-test, p<0.05' is not statistics, it is folklore."
+  - "If the study was preregistered, the preregistration URL goes in the methods, not buried in a supplement. If it was not preregistered, say so — silence reads as evasion."
 
 quality_bar:
   required_sections:
-    - reagents_table
-    - instruments_table
-    - organism_and_cell_line_table
-    - assay_protocols_narrative
-    - statistical_methods
-    - ethical_approvals
-    - data_and_code_availability
-    - preregistration_statement
+  - reagents_table
+  - instruments_table
+  - organism_and_cell_line_table
+  - assay_protocols_narrative
+  - statistical_methods
+  - ethical_approvals
+  - data_and_code_availability
+  - preregistration_statement
   required_per_antibody:
-    - clone
-    - supplier
-    - catalog_number
-    - lot_number
-    - rrid
-    - dilution_or_concentration_used
-    - validation_evidence_or_reference
+  - clone
+  - supplier
+  - catalog_number
+  - lot_number
+  - rrid
+  - dilution_or_concentration_used
+  - validation_evidence_or_reference
   required_per_instrument:
-    - manufacturer
-    - model
-    - firmware_or_software_version
-    - run_parameters_summary
+  - manufacturer
+  - model
+  - firmware_or_software_version
+  - run_parameters_summary
   required_per_cell_line:
-    - source
-    - passage_number_at_use
-    - mycoplasma_test_date
-    - authentication_method_and_date
+  - source
+  - passage_number_at_use
+  - mycoplasma_test_date
+  - authentication_method_and_date
   required_per_animal_study:
-    - species_strain_sex_age
-    - housing_conditions
-    - iacuc_protocol_number
-    - approving_institution
+  - species_strain_sex_age
+  - housing_conditions
+  - iacuc_protocol_number
+  - approving_institution
   required_per_human_study:
-    - irb_protocol_number
-    - approving_institution
-    - consent_procedure
-    - icmje_or_helsinki_statement
+  - irb_protocol_number
+  - approving_institution
+  - consent_procedure
+  - icmje_or_helsinki_statement
   forbidden:
-    - "vendor-only antibody references (no clone, no catalog)"
-    - "instrument named without manufacturer + model"
-    - "cell line used without mycoplasma + authentication"
-    - "statistical test named without n + replicate type + correction"
+  - "vendor-only antibody references (no clone, no catalog)"
+  - "instrument named without manufacturer + model"
+  - "cell line used without mycoplasma + authentication"
+  - "statistical test named without n + replicate type + correction"
 
 steps:
-  - id: assemble_reagents_table
-    name: Assemble the per-reagent table from workspace/reagents/
-    description: |
-      Walk workspace/reagents/ and emit a single Markdown / LaTeX
-      table with one row per reagent that touched a sample. Columns:
-      reagent, clone (antibodies only), supplier, catalog, lot,
-      RRID (antibodies + cell lines), concentration / dilution
-      used, application (WB / IHC / FACS / etc.).
-      For each antibody without an RRID, call tool_search against
-      scicrunch.org/resources and back-fill before publication.
-      If a reagent has a TODO field, the reproducibility audit will
-      block submission — mem_log the gap and route to
-      wet_lab/protocol/reagent_lot_tracking to resolve.
-      Output: workspace/methods/reagents_table.md (also .tex for
-      LaTeX downstream).
+- id: assemble_reagents_table
+  name: Assemble the per-reagent table from workspace/reagents/
+  description: |
+    Walk workspace/reagents/ and emit a single Markdown / LaTeX
+    table with one row per reagent that touched a sample. Columns:
+    reagent, clone (antibodies only), supplier, catalog, lot,
+    RRID (antibodies + cell lines), concentration / dilution
+    used, application (WB / IHC / FACS / etc.).
+    For each antibody without an RRID, call tool_search against
+    scicrunch.org/resources and back-fill before publication.
+    If a reagent has a TODO field, the reproducibility audit will
+    block submission — mem_log the gap and route to
+    wet_lab/protocol/reagent_lot_tracking to resolve.
+    Output: workspace/methods/reagents_table.md (also .tex for
+    LaTeX downstream).
 
-  - id: assemble_instruments_table
-    name: Assemble the instruments table with run parameters
-    description: |
-      For every instrument used to generate data in a figure: record
-      manufacturer + model + firmware/software version + the run
-      parameters that materially affect the result. The relevant
-      parameters are technique-specific:
-        - confocal: objective NA, laser line + power, PMT gain,
-          pixel dwell, z-step, averaging
-        - flow cytometer: detector voltages or template name,
-          compensation matrix source, gating strategy reference
-        - qPCR: thermal protocol, dye chemistry, master mix,
-          reference gene + Pfaffl/2^-ddCt choice
-        - LC-MS: column + gradient + flow rate + ionisation mode +
-          mass range + collision energy
-        - sequencer: instrument + chemistry version + read length +
-          library prep kit + index strategy
-      Do not paste the full instrument manual; capture the parameters
-      a replicating lab needs to match the assay window.
-      Output: workspace/methods/instruments_table.md.
+- id: assemble_instruments_table
+  name: Assemble the instruments table with run parameters
+  description: |
+    For every instrument used to generate data in a figure: record
+    manufacturer + model + firmware/software version + the run
+    parameters that materially affect the result. The relevant
+    parameters are technique-specific:
+      - confocal: objective NA, laser line + power, PMT gain,
+        pixel dwell, z-step, averaging
+      - flow cytometer: detector voltages or template name,
+        compensation matrix source, gating strategy reference
+      - qPCR: thermal protocol, dye chemistry, master mix,
+        reference gene + Pfaffl/2^-ddCt choice
+      - LC-MS: column + gradient + flow rate + ionisation mode +
+        mass range + collision energy
+      - sequencer: instrument + chemistry version + read length +
+        library prep kit + index strategy
+    Do not paste the full instrument manual; capture the parameters
+    a replicating lab needs to match the assay window.
+    Output: workspace/methods/instruments_table.md.
 
-  - id: assemble_organism_cell_line_table
-    name: Compile organism / cell-line authentication block
-    description: |
-      One row per biological source used in the study. For cell
-      lines: source (ATCC / DSMZ / depositing lab), passage at
-      experimental use, mycoplasma test date + result + method
-      (PCR vs. luminescence), authentication method (STR profile
-      preferred, document the date and the matching service).
-      For primary cells: donor demographics permitted by IRB,
-      isolation date, viability at thaw.
-      For animal studies: species + strain + sex + age + supplier
-      + housing (light cycle, diet, group size), IACUC protocol
-      number + approving institution.
-      For human studies: IRB protocol number, approving institution,
-      consent procedure (written / oral / waiver-of-consent
-      justification), Helsinki / ICMJE statement.
-      If a cell line has no mycoplasma test within the last 6 months,
-      flag the gap — most journals desk-reject on this now.
-      Output: workspace/methods/biological_sources_table.md.
+- id: assemble_organism_cell_line_table
+  name: Compile organism / cell-line authentication block
+  description: |
+    One row per biological source used in the study. For cell
+    lines: source (ATCC / DSMZ / depositing lab), passage at
+    experimental use, mycoplasma test date + result + method
+    (PCR vs. luminescence), authentication method (STR profile
+    preferred, document the date and the matching service).
+    For primary cells: donor demographics permitted by IRB,
+    isolation date, viability at thaw.
+    For animal studies: species + strain + sex + age + supplier
+    + housing (light cycle, diet, group size), IACUC protocol
+    number + approving institution.
+    For human studies: IRB protocol number, approving institution,
+    consent procedure (written / oral / waiver-of-consent
+    justification), Helsinki / ICMJE statement.
+    If a cell line has no mycoplasma test within the last 6 months,
+    flag the gap — most journals desk-reject on this now.
+    Output: workspace/methods/biological_sources_table.md.
 
-  - id: draft_assay_narrative
-    name: Draft the assay-protocols narrative
-    description: |
-      For each experimental method, write a paragraph in past tense,
-      passive-where-natural, that links each sample-handling step
-      to the corresponding reagent table row and instrument table
-      row. Each paragraph cites the source SOP (workspace/<step>/
-      protocol.md) and any published protocol it adapts (with a
-      DOI or protocols.io URL — not just an author name).
-      A good test: a postdoc in another country reading only this
-      paragraph + the linked tables should be able to perform the
-      assay without contacting the authors. If your draft fails
-      that test, the gap is real and needs to be closed before
-      submission.
-      Output: workspace/methods/assay_narrative.md.
+- id: draft_assay_narrative
+  name: Draft the assay-protocols narrative
+  description: |
+    For each experimental method, write a paragraph in past tense,
+    passive-where-natural, that links each sample-handling step
+    to the corresponding reagent table row and instrument table
+    row. Each paragraph cites the source SOP (workspace/<step>/
+    protocol.md) and any published protocol it adapts (with a
+    DOI or protocols.io URL — not just an author name).
+    A good test: a postdoc in another country reading only this
+    paragraph + the linked tables should be able to perform the
+    assay without contacting the authors. If your draft fails
+    that test, the gap is real and needs to be closed before
+    submission.
+    Output: workspace/methods/assay_narrative.md.
 
-  - id: draft_statistics_subsection
-    name: Draft the statistics subsection (cross-link to analysis pack)
-    description: |
-      The wet-lab methods statistics paragraph is short but
-      load-bearing: it names the experimental-design statistics
-      (group allocation, blinding, sample-size justification, n
-      reported as biological vs. technical replicates) and points
-      to the analysis pack's analysis-methods section for the
-      downstream pipeline (alignment, differential expression,
-      multiple-comparison correction, etc.).
-      Required elements:
-        - sample size + how it was chosen (power analysis with
-          assumed effect size + alpha + 1-beta; or pragmatic
-          justification — say which)
-        - blinding + randomisation status (or explicit "not blinded"
-          with a one-sentence reason)
-        - definition of biological vs. technical replicate for THIS
-          assay (varies by technique)
-        - statistical test + assumption checks performed (normality,
-          variance homogeneity) + correction for multiple testing
-        - software + version (e.g. GraphPad Prism 10.2.3, R 4.4.1
-          with package + version)
-      Output: workspace/methods/statistics.md.
+- id: draft_statistics_subsection
+  name: Draft the statistics subsection (cross-link to analysis pack)
+  description: |
+    The wet-lab methods statistics paragraph is short but
+    load-bearing: it names the experimental-design statistics
+    (group allocation, blinding, sample-size justification, n
+    reported as biological vs. technical replicates) and points
+    to the analysis pack's analysis-methods section for the
+    downstream pipeline (alignment, differential expression,
+    multiple-comparison correction, etc.).
+    Required elements:
+      - sample size + how it was chosen (power analysis with
+        assumed effect size + alpha + 1-beta; or pragmatic
+        justification — say which)
+      - blinding + randomisation status (or explicit "not blinded"
+        with a one-sentence reason)
+      - definition of biological vs. technical replicate for THIS
+        assay (varies by technique)
+      - statistical test + assumption checks performed (normality,
+        variance homogeneity) + correction for multiple testing
+      - software + version (e.g. GraphPad Prism 10.2.3, R 4.4.1
+        with package + version)
+    Output: workspace/methods/statistics.md.
 
-  - id: assemble_ethics_and_preregistration_block
-    name: Assemble the ethics + preregistration block
-    description: |
-      One paragraph per oversight body whose approval was required:
-      IRB (human subjects), IACUC (vertebrate animals), IBC
-      (recombinant DNA / BSL-2+), institutional radiation-safety
-      committee (radio-isotopes), and any IRB-equivalent for
-      international collaborators.
-      Each cites the protocol number + approving institution +
-      approval date range. For consent: written vs. oral vs.
-      waiver, and the justification if waiver.
-      If the study was preregistered (OSF, AsPredicted, ClinicalTrials.gov,
-      ISRCTN, etc.), include the registry + ID + URL in the methods,
-      not the supplement. If not preregistered, include a single
-      sentence saying so — reviewers read silence as evasion.
-      Output: workspace/methods/ethics_and_preregistration.md.
+- id: assemble_ethics_and_preregistration_block
+  name: Assemble the ethics + preregistration block
+  description: |
+    One paragraph per oversight body whose approval was required:
+    IRB (human subjects), IACUC (vertebrate animals), IBC
+    (recombinant DNA / BSL-2+), institutional radiation-safety
+    committee (radio-isotopes), and any IRB-equivalent for
+    international collaborators.
+    Each cites the protocol number + approving institution +
+    approval date range. For consent: written vs. oral vs.
+    waiver, and the justification if waiver.
+    If the study was preregistered (OSF, AsPredicted, ClinicalTrials.gov,
+    ISRCTN, etc.), include the registry + ID + URL in the methods,
+    not the supplement. If not preregistered, include a single
+    sentence saying so — reviewers read silence as evasion.
+    Output: workspace/methods/ethics_and_preregistration.md.
 
-  - id: assemble_final_section_and_audit
-    name: Assemble the final M&M section and run the audit
-    description: |
-      Concatenate the per-piece outputs into a single
-      workspace/methods/materials_and_methods.md in journal-typical
-      order: assay narrative first, then tables (reagents,
-      instruments, biological sources), then statistics, then
-      ethics + preregistration, then data + code availability
-      (DOI of the deposited dataset + DOI / URL of the analysis
-      code repository at a tagged release).
-      Run wet_lab/audit/wet_lab_reproducibility_audit. The audit
-      scans for: TODO placeholders, antibodies without RRIDs,
-      vendor-only references, instruments without run parameters,
-      cell lines missing mycoplasma + authentication dates, stats
-      paragraphs missing n / correction / software version, and
-      missing ethics or preregistration statements.
-      Fix every blocker before the manuscript leaves the lab.
-      Use sys_path to confirm the final file path and mem_log the
-      submission-ready state.
+- id: assemble_final_section_and_audit
+  name: Assemble the final M&M section and run the audit
+  description: |
+    Concatenate the per-piece outputs into a single
+    workspace/methods/materials_and_methods.md in journal-typical
+    order: assay narrative first, then tables (reagents,
+    instruments, biological sources), then statistics, then
+    ethics + preregistration, then data + code availability
+    (DOI of the deposited dataset + DOI / URL of the analysis
+    code repository at a tagged release).
+    Run wet_lab/audit/wet_lab_reproducibility_audit. The audit
+    scans for: TODO placeholders, antibodies without RRIDs,
+    vendor-only references, instruments without run parameters,
+    cell lines missing mycoplasma + authentication dates, stats
+    paragraphs missing n / correction / software version, and
+    missing ethics or preregistration statements.
+    Fix every blocker before the manuscript leaves the lab.
+    Use sys_path to confirm the final file path and mem_log the
+    submission-ready state.
 
 expected_outputs:
-  - workspace/methods/reagents_table.md
-  - workspace/methods/instruments_table.md
-  - workspace/methods/biological_sources_table.md
-  - workspace/methods/assay_narrative.md
-  - workspace/methods/statistics.md
-  - workspace/methods/ethics_and_preregistration.md
-  - workspace/methods/materials_and_methods.md
+- workspace/methods/reagents_table.md
+- workspace/methods/instruments_table.md
+- workspace/methods/biological_sources_table.md
+- workspace/methods/assay_narrative.md
+- workspace/methods/statistics.md
+- workspace/methods/ethics_and_preregistration.md
+- workspace/methods/materials_and_methods.md
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: |
   If the audit blocks submission, do not paper over it in the
@@ -272,3 +256,15 @@ on_failure: |
   workspace/<step>/protocol.md, missing ethics IDs to the lab's
   compliance officer. The methods section is the audit trail; if
   it cannot be assembled honestly, the data is not ready to publish.
+intent_class: synthesize
+sub_intent: methods
+triggers:
+- wet lab methods
+- materials and methods
+- antibody methods section
+- rrid
+summary: Materials & Methods format for wet-lab papers (antibody clone + lot + RRID, not just 'we used an anti-FLAG antibody').
+token_estimate: 1500
+decomposition:
+- protocol: wet_lab/output/methods_section_wet_lab
+  purpose: Build the wet-lab Materials & Methods section.

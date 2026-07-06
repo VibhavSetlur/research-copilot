@@ -28,6 +28,10 @@ __all__ = [
 def _handle_tool_search(name, arguments, root):
     """Unified search dispatcher (this-release consolidation of 5 search tools).
 
+    mode='search'     (default) — literature/web search by source/auto
+    mode='scrape'               — web scrape a URL (delegates to tool_web_scrape)
+    mode='literature'           — search + save to inputs/literature/
+
     Selects provider by:
       1. Explicit `source` arg (one of: semantic_scholar | pubmed | crossref |
          arxiv | web | auto).
@@ -35,6 +39,13 @@ def _handle_tool_search(name, arguments, root):
          (tool_search_<provider>), pick that provider for back-compat.
       3. Default 'auto' — picks providers based on a quick keyword heuristic.
     """
+    arguments = arguments or {}
+    mode = arguments.get("mode", "search")
+    if mode == "scrape":
+        return _handle_tool_web_scrape(name, arguments, root)
+    if mode == "literature":
+        return _handle_tool_literature_search_and_save(name, arguments, root)
+
     q = arguments["query"]
     limit = arguments.get("limit", 5)
 
@@ -301,16 +312,5 @@ def _handle_tool_citations_verify(name, arguments, root):
 
 HANDLERS = {
     "tool_search": _handle_tool_search,
-    "tool_web_scrape": _handle_tool_web_scrape,
-    "tool_literature_download": _handle_tool_literature_download,
-    "tool_literature_search_and_save": _handle_tool_literature_search_and_save,
-    "tool_step_literature_list": _handle_tool_step_literature_list,
     "tool_data": _handle_tool_data,
-    "tool_research_method": _handle_tool_research_method,
-    "tool_research_tool": _handle_tool_research_tool,
-    "tool_external_tool_instructions": _handle_tool_external_tool_instructions,
-    "tool_alternative_path_propose": _handle_tool_alternative_path_propose,
-    "tool_intake_autofill": _handle_tool_intake_autofill,
-    "tool_context_intake": _handle_tool_context_intake,
-    "tool_citations_verify": _handle_tool_citations_verify,
 }

@@ -33,6 +33,16 @@ __all__ = [
 ]
 
 def _handle_tool_python_exec(name, arguments, root):
+    arguments = arguments or {}
+    data_op = arguments.get("data_operation")
+    if data_op:
+        # Delegate to tool_data: map data_operation → tool_data's `operation`.
+        # Pass through filepath/n_rows/strategy/output_format as-is.
+        from .research_search import _handle_tool_data
+        mapped = dict(arguments)
+        mapped["operation"] = data_op  # sample | profile | convert
+        return _handle_tool_data(name, mapped, root)
+
     p = root / arguments["script_path"]
     if not p.exists():
         return _text(_error(
@@ -91,6 +101,23 @@ def _handle_tool_python_exec(name, arguments, root):
     env["payload"].update(payload)
     env["data"] = env["payload"]
     return _text(env)
+
+
+def _handle_tool_bash_exec(name, arguments, root):
+    """tool_bash_exec with optional task_operation/background dispatch.
+
+    If `task_operation` is present (run/status/list/kill) OR `background` is
+    truthy, delegate to _handle_tool_task (maps task_operation → operation).
+    Otherwise execute normally as a bash script.
+    """
+    arguments = arguments or {}
+    task_op = arguments.get("task_operation")
+    background = arguments.get("background")
+    if task_op or background:
+        mapped = dict(arguments)
+        mapped["operation"] = task_op if task_op else "run"
+        return _handle_tool_task(name, mapped, root)
+    return _handle_tool_script_exec("tool_bash_exec", arguments, root)
 
 
 def _handle_tool_script_exec(name, arguments, root):
@@ -403,20 +430,11 @@ def _handle_tool_structure_audit(name, arguments, root):
 
 HANDLERS = {
     "tool_python_exec": _handle_tool_python_exec,
-    "tool_r_exec": _handle_tool_script_exec,
-    "tool_julia_exec": _handle_tool_script_exec,
-    "tool_bash_exec": _handle_tool_script_exec,
+    "tool_bash_exec": _handle_tool_bash_exec,
     "tool_package_install": _handle_tool_package_install,
     "tool_slurm_submit": _handle_tool_slurm_submit,
-    "tool_slurm_status": _handle_tool_slurm_status,
-    "tool_slurm_fetch": _handle_tool_slurm_fetch,
-    "tool_slurm_list": _handle_tool_slurm_list,
     "tool_task": _handle_tool_task,
     "tool_notebook_exec": _handle_tool_notebook_exec,
-    "tool_rmarkdown_render": _handle_tool_rmarkdown_render,
     "tool_scratch": _handle_tool_scratch,
-    "tool_workspace_repair": _handle_tool_workspace_repair,
     "tool_migrate_audit": _handle_tool_migrate_audit,
-    "tool_migrate_apply": _handle_tool_migrate_apply,
-    "tool_structure_audit": _handle_tool_structure_audit,
 }

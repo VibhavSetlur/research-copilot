@@ -2,98 +2,118 @@ id: iterative_planning
 tier: 'plan'
 name: Iterative Planning
 version: '3.9.0'
-schema_version: '2.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-25'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai]
   workflow_shape: [any]
 see_also:
-  - methodology/deep_planning              # the heavier "build a whole branchable roadmap" planning protocol
-  - guidance/roadmap_execution             # when the next step is one node of a roadmap being built autonomously
-  - guidance/analysis_plan                 # where a committed next-step experiment runs
-  - guidance/constructive_disagreement     # how to ground an option the researcher leans away from
+- methodology/deep_planning                # the heavier "build a whole branchable roadmap" planning protocol
+- guidance/roadmap_execution               # when the next step is one node of a roadmap being built autonomously
+- guidance/analysis_plan                   # where a committed next-step experiment runs
+- guidance/constructive_disagreement       # how to ground an option the researcher leans away from
 description: For researchers who want the AI to PROPOSE next steps rather than dictate them. Iteratively assesses state + literature + tools and recommends the best move.
 trigger: Researcher says "what should I do next?" / "iterate with me" / "propose the next step" — OR analysis_plan finishes a step and autopilot is on.
 
 steps:
-  - id: assess_state
-    name: Read the Current State
-    description: |
-      ONE batch in parallel:
-        - sys_state_get
-        - sys_path
-        - sys_protocol_history limit=10
-        - mem_hypothesis_list
-        - sys_file_read filepath="inputs/research_plan.md"   # whole-project arc, if present
-      Combine into a working summary. The research_plan.md is the living
-      project plan you are iterating ON — anchor the next-step proposal to
-      its planned sequence + open questions, and after the researcher
-      chooses, append the decision to its iteration log so the plan stays
-      the source of truth. Do NOT call other tools yet.
+- id: assess_state
+  name: Read the Current State
+  description: |
+    ONE batch in parallel:
+      - sys_state_get
+      - sys_state_get (operation='paths')
+      - sys_protocol_get (operation='history', limit=10)
+      - mem_hypothesis (operation=list)
+      - sys_file_read filepath="inputs/research_plan.md"   # whole-project arc, if present
+    Combine into a working summary. The research_plan.md is the living
+    project plan you are iterating ON — anchor the next-step proposal to
+    its planned sequence + open questions, and after the researcher
+    chooses, append the decision to its iteration log so the plan stays
+    the source of truth. Do NOT call other tools yet.
 
-  - id: propose_via_tool
-    name: Generate a Next-Step Plan
-    description: |
-      tool_plan_next_step goal="<optional focus>"
-      This:
-        - pulls recent conclusions + audit warnings
-        - searches Semantic Scholar for fresh literature on the open hypothesis
-        - searches the web for relevant tools / libraries (if goal supplied)
-        - writes a structured plan markdown into the active step
-        - returns recommendations sorted by priority
+- id: propose_via_tool
+  name: Generate a Next-Step Plan
+  description: |
+    tool_plan (operation='next_step', goal="<optional focus>")
+    This:
+      - pulls recent conclusions + audit warnings
+      - searches Semantic Scholar for fresh literature on the open hypothesis
+      - searches the web for relevant tools / libraries (if goal supplied)
+      - writes a structured plan markdown into the active step
+      - returns recommendations sorted by priority
 
-  - id: present_options
-    name: Present 2-3 Concrete Options
-    description: |
-      Distil the plan markdown into 2-3 concrete options for the researcher:
-        OPTION A: <action> — pros, cons, time estimate
-        OPTION B: <action> — pros, cons, time estimate
-        OPTION C: <action> — pros, cons, time estimate
-      Recommend ONE (with rationale). Ask the researcher to pick or refine.
+- id: present_options
+  name: Present 2-3 Concrete Options
+  description: |
+    Distil the plan markdown into 2-3 concrete options for the researcher:
+      OPTION A: <action> — pros, cons, time estimate
+      OPTION B: <action> — pros, cons, time estimate
+      OPTION C: <action> — pros, cons, time estimate
+    Recommend ONE (with rationale). Ask the researcher to pick or refine.
 
-      Source the rationale from grounded evidence — recent literature
-      pulled by the prior step, audit warnings in workspace/logs/, or
-      prior decisions in mem_log. Avoid options whose only
-      support is "AI intuition"; they collapse under
-      constructive_disagreement.
+    Source the rationale from grounded evidence — recent literature
+    pulled by the prior step, audit warnings in workspace/logs/, or
+    prior decisions in mem_log. Avoid options whose only
+    support is "AI intuition"; they collapse under
+    constructive_disagreement.
 
-      AUTONOMY GATE:
-        Risk: reversible — picking a plan option commits nothing; the
-        researcher can redirect at any time.
-        proceed (adaptive default, autopilot) → pick OPTION A (your top choice), tell the
-                              researcher "I'm going with A — say stop to switch".
-        confirm first (manual / supervised) → wait for the researcher to choose.
+    AUTONOMY GATE:
+      Risk: reversible — picking a plan option commits nothing; the
+      researcher can redirect at any time.
+      proceed (adaptive default, autopilot) → pick OPTION A (your top choice), tell the
+                            researcher "I'm going with A — say stop to switch".
+      confirm first (manual / supervised) → wait for the researcher to choose.
 
-      AMBIGUITY POSTURE GATE:
-        ask_when_uncertain → ask + wait when 2+ options are within
-                              striking distance of each other.
-        take_best_default  → announce the chosen default + the runner-up
-                              you nearly picked, then proceed.
+    AMBIGUITY POSTURE GATE:
+      ask_when_uncertain → ask + wait when 2+ options are within
+                            striking distance of each other.
+      take_best_default  → announce the chosen default + the runner-up
+                            you nearly picked, then proceed.
 
-  - id: branch_or_extend
-    name: Branch vs Extend (when ambiguous)
-    description: |
-      If two options both have merit, call tool_branch_recommendation reason="<short>".
-      The recommendation tells you whether to fork a new parallel experiment
-      OR finish the current one first.
+- id: branch_or_extend
+  name: Branch vs Extend (when ambiguous)
+  description: |
+    If two options both have merit, call tool_plan (operation='branch_recommendation', reason="<short>").
+    The recommendation tells you whether to fork a new parallel experiment
+    OR finish the current one first.
 
-  - id: commit_and_run
-    name: Commit the Decision and Run It
-    description: |
-      mem_log
-        context="Iterative-planning step"
-        selected="<the chosen option>"
-        rationale="<from the plan markdown>"
+- id: commit_and_run
+  name: Commit the Decision and Run It
+  description: |
+    mem_log
+      context="Iterative-planning step"
+      selected="<the chosen option>"
+      rationale="<from the plan markdown>"
 
-      Then load the matching protocol:
-        - new experiment → guidance/analysis_plan
-        - failed direction → guidance/dead_end_routing
-        - ready for paper → synthesis/synthesis_paper
-        - reproducibility check → reproducibility/reproducibility
+    Then load the matching protocol:
+      - new experiment → guidance/analysis_plan
+      - failed direction → guidance/dead_end_routing
+      - ready for paper → synthesis/synthesis_paper
+      - reproducibility check → reproducibility/reproducibility
 
 expected_outputs: []
 
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: plan
+sub_intent: next_step
+triggers:
+- what should i do next
+- what's next
+- propose next
+- iterate on the plan
+- iterate the approach
+- i'm stuck
+- what now
+- what do i do
+- what do i do next
+summary: AI proposes the next best step based on state + literature + tools.
+shortcut_tool: tool_plan
+token_estimate: 800
+decomposition:
+- tool: tool_plan
+  purpose: Survey state + search + propose options (operation='next_step').
+- tool: mem_log
+  purpose: Log the chosen direction.

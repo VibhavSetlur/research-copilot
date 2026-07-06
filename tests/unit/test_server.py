@@ -130,16 +130,16 @@ def test_dispatcher_passes_underscore_names_through():
 
 
 def test_routing_tools_registered():
-    """sys_boot + tool_route + sys_tool_describe + plan tool must be wired.
+    """Core routing/planning/discovery tools must be wired.
 
-    tool_plan_advance / tool_plan_clear were hard-removed in phase-14a;
-    callers now use tool_plan(operation='advance'|'clear').
+    Discovery folded into sys_active_tools; plan sub-ops flow through
+    tool_plan(operation=...).
     """
     for name in (
         "sys_boot",
         "tool_route",
         "tool_plan",
-        "sys_tool_describe",
+        "sys_active_tools",
     ):
         assert name in TOOL_DEFINITIONS, f"{name} missing from TOOL_DEFINITIONS"
 

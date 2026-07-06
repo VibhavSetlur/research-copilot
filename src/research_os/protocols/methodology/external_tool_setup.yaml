@@ -2,14 +2,14 @@ id: external_tool_setup
 tier: 'plan'
 name: External Tool Setup (top-tier viz / analysis stacks installed properly)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/mcp_ecosystem_integration  # the linear successor: wiring installed tools as MCP servers
+- methodology/mcp_ecosystem_integration    # the linear successor: wiring installed tools as MCP servers
 description: |
   Many top-tier deliverables require tools beyond `pip install
   research-os`. This protocol guides researchers through installing
@@ -44,178 +44,165 @@ trigger: |
     - visualization/interactive_dashboard_design /
       showcase_visualization needs Node / Observable / Three.js
       / D3 stack,
-    - sys_dep_inventory (or sys_boot's inventory block) flags an
+    - sys_env (operation=inventory) (or sys_boot's inventory block) flags an
       optional dep as missing AND the active protocol needs it.
 
 prerequisites:
-  - The TARGET deliverable / protocol is identified — drives which
-    stack we install. Don't install everything; install what's
-    needed.
-  - The researcher's OS + package manager preference is known
-    (macOS + Homebrew, Linux + apt, Windows + WSL2 + apt, conda
-    cross-platform).
+- The TARGET deliverable / protocol is identified — drives which stack we install. Don't install everything; install what's needed.
+- The researcher's OS + package manager preference is known (macOS + Homebrew, Linux + apt, Windows + WSL2 + apt, conda cross-platform).
 
 editorial_voice:
   rules:
-    - "NEVER auto-install without explicit researcher confirmation.
-       Their environment may have load-bearing pinned versions for
-       other projects. Surface the diff + the install commands;
-       let them run."
-    - "Prefer per-project ISOLATION. Conda env, venv, npm local
-       install. Global installs are reserved for CLI tools the
-       researcher actively uses across projects (gh, git, docker)."
-    - "Verify after install. Every install step is followed by a
-       version-print command. A green tick that doesn't actually
-       work is worse than a red error."
-    - "Document the verification commands in the project's README
-       so the next contributor (or the researcher in 6 months)
-       can confirm the env is intact."
+  - "NEVER auto-install without explicit researcher confirmation. Their environment may have load-bearing pinned versions for other projects. Surface the diff + the install commands; let them run."
+  - "Prefer per-project ISOLATION. Conda env, venv, npm local install. Global installs are reserved for CLI tools the researcher actively uses across projects (gh, git, docker)."
+  - "Verify after install. Every install step is followed by a version-print command. A green tick that doesn't actually work is worse than a red error."
+  - "Document the verification commands in the project's README so the next contributor (or the researcher in 6 months) can confirm the env is intact."
 
 steps:
-  - id: identify_what_is_needed
-    name: Identify which tools are needed (and which are NOT)
-    description: |
-      Don't install everything. List the active protocol's tool
-      requirements. Common needs:
+- id: identify_what_is_needed
+  name: Identify which tools are needed (and which are NOT)
+  description: |
+    Don't install everything. List the active protocol's tool
+    requirements. Common needs:
 
-        OBSERVABLE FRAMEWORK / D3 / VEGA-LITE / THREE.JS — Node
-          (a current LTS) + npm; per-project `npm init` + `npm install`.
+      OBSERVABLE FRAMEWORK / D3 / VEGA-LITE / THREE.JS — Node
+        (a current LTS) + npm; per-project `npm init` + `npm install`.
 
-        QUARTO (academic publishing) — quarto.org installer +
-          system LaTeX (for PDF) + Pandoc (bundled).
+      QUARTO (academic publishing) — quarto.org installer +
+        system LaTeX (for PDF) + Pandoc (bundled).
 
-        DOCKER (reproducibility, audit) — Docker Desktop
-          (macOS / Windows) or docker-ce + buildx (Linux).
+      DOCKER (reproducibility, audit) — Docker Desktop
+        (macOS / Windows) or docker-ce + buildx (Linux).
 
-        R + TIDYVERSE — R ≥ 4.3 + `install.packages(c(
-          "tidyverse", "rmarkdown", "renv"))`.
+      R + TIDYVERSE — R ≥ 4.3 + `install.packages(c(
+        "tidyverse", "rmarkdown", "renv"))`.
 
-        JULIA — juliaup or per-project channel.
+      JULIA — juliaup or per-project channel.
 
-        GEOSPATIAL (geopandas / sf / kepler) — system geos +
-          gdal + proj. conda-forge `geopandas` pulls these
-          transparently; pip-installed geopandas needs system
-          libs.
+      GEOSPATIAL (geopandas / sf / kepler) — system geos +
+        gdal + proj. conda-forge `geopandas` pulls these
+        transparently; pip-installed geopandas needs system
+        libs.
 
-        FFMPEG (animation render to mp4) — system binary.
+      FFMPEG (animation render to mp4) — system binary.
 
-        PUBLICATION LaTeX — texlive-full (Linux) / MacTeX
-          (macOS) / MikTeX (Windows). HEAVY (~4 GiB).
+      PUBLICATION LaTeX — texlive-full (Linux) / MacTeX
+        (macOS) / MikTeX (Windows). HEAVY (~4 GiB).
 
-        IMAGE MAGICK / GHOSTSCRIPT — figure conversion.
+      IMAGE MAGICK / GHOSTSCRIPT — figure conversion.
 
-        HOSTED SERVICE CLIs — gh (github), huggingface-cli,
-          gcloud, fly, vercel, wrangler.
+      HOSTED SERVICE CLIs — gh (github), huggingface-cli,
+        gcloud, fly, vercel, wrangler.
 
-      Write workspace/.toolsetup/needed.md.
+    Write workspace/.toolsetup/needed.md.
 
-  - id: pick_install_path_per_tool
-    name: Pick the install path per tool (researcher's preference)
-    description: |
-      Per tool, document the recommended install command for the
-      researcher's OS + package manager:
+- id: pick_install_path_per_tool
+  name: Pick the install path per tool (researcher's preference)
+  description: |
+    Per tool, document the recommended install command for the
+    researcher's OS + package manager:
 
-        macOS + Homebrew:
-          - Node: `brew install node`
-          - Quarto: `brew install quarto`
-          - R: `brew install r`
-          - ffmpeg: `brew install ffmpeg`
-          - LaTeX: `brew install --cask mactex` (heavy) OR
-            `brew install --cask basictex`
+      macOS + Homebrew:
+        - Node: `brew install node`
+        - Quarto: `brew install quarto`
+        - R: `brew install r`
+        - ffmpeg: `brew install ffmpeg`
+        - LaTeX: `brew install --cask mactex` (heavy) OR
+          `brew install --cask basictex`
 
-        Ubuntu/Debian + apt:
-          - Node: NodeSource setup script (avoid the old apt node)
-          - Quarto: download .deb from quarto.org
-          - R: CRAN apt repo (avoid the apt-default R, often
-            outdated)
-          - ffmpeg: `sudo apt install ffmpeg`
-          - LaTeX: `sudo apt install texlive-full`
+      Ubuntu/Debian + apt:
+        - Node: NodeSource setup script (avoid the old apt node)
+        - Quarto: download .deb from quarto.org
+        - R: CRAN apt repo (avoid the apt-default R, often
+          outdated)
+        - ffmpeg: `sudo apt install ffmpeg`
+        - LaTeX: `sudo apt install texlive-full`
 
-        Conda (cross-platform, recommended for scientific stacks):
-          - `conda install -c conda-forge nodejs quarto r-base
-            ffmpeg texlive-core geopandas`
+      Conda (cross-platform, recommended for scientific stacks):
+        - `conda install -c conda-forge nodejs quarto r-base
+          ffmpeg texlive-core geopandas`
 
-        Per-project Node:
-          - `cd <project>; npm init -y; npm install d3 vega-lite
-            observable-framework three`
-          (NOT global — avoids version conflicts across projects.)
+      Per-project Node:
+        - `cd <project>; npm init -y; npm install d3 vega-lite
+          observable-framework three`
+        (NOT global — avoids version conflicts across projects.)
 
-      Each command paired with a verification that prints the version,
-      checked against the minimum the TARGET protocol / stack actually
-      documents (look it up at setup time — pinned minimums drift):
-          `node --version`
-          `quarto --version`
-          `R --version`
-          `ffmpeg -version`
-          `latex --version`
+    Each command paired with a verification that prints the version,
+    checked against the minimum the TARGET protocol / stack actually
+    documents (look it up at setup time — pinned minimums drift):
+        `node --version`
+        `quarto --version`
+        `R --version`
+        `ffmpeg -version`
+        `latex --version`
 
-      Document the resolved minimum + the observed version in
-      workspace/.toolsetup/install_<tool>.md.
+    Document the resolved minimum + the observed version in
+    workspace/.toolsetup/install_<tool>.md.
 
-  - id: propose_setup_script
-    name: Propose a one-shot setup script (researcher reviews)
-    description: |
-      For the chosen tools, produce a single shell script
-      `workspace/.toolsetup/setup_v<n>.sh` (or .ps1 on Windows)
-      that the researcher can READ and run themselves. The script:
-        - states the OS + package manager assumed
-        - has a `dry-run` mode (echo commands, don't execute)
-        - logs every install + verification to a transcript
-        - exits non-zero on the first failure
-        - does NOT touch global config without explicit prompts
+- id: propose_setup_script
+  name: Propose a one-shot setup script (researcher reviews)
+  description: |
+    For the chosen tools, produce a single shell script
+    `workspace/.toolsetup/setup_v<n>.sh` (or .ps1 on Windows)
+    that the researcher can READ and run themselves. The script:
+      - states the OS + package manager assumed
+      - has a `dry-run` mode (echo commands, don't execute)
+      - logs every install + verification to a transcript
+      - exits non-zero on the first failure
+      - does NOT touch global config without explicit prompts
 
-      The AI does NOT execute this script. The researcher runs it
-      after reviewing.
+    The AI does NOT execute this script. The researcher runs it
+    after reviewing.
 
-  - id: verify_and_handle_failures
-    name: Verify each install + handle failures
-    description: |
-      After the researcher runs the setup script, run the
-      verification commands via `tool_bash_exec` or
-      `sys_dep_inventory`:
-        - Each tool's `--version` returns expected
-        - Each library is importable from the relevant env
-        - sys_dep_inventory shows the previously-missing items
-          as present
+- id: verify_and_handle_failures
+  name: Verify each install + handle failures
+  description: |
+    After the researcher runs the setup script, run the
+    verification commands via `tool_bash_exec` or
+    `sys_env (operation=inventory)`:
+      - Each tool's `--version` returns expected
+      - Each library is importable from the relevant env
+      - sys_env (operation=inventory) shows the previously-missing items
+        as present
 
-      For each failure, surface:
-        - the error text
-        - 1-2 likely causes (PATH not updated, version too old,
-          OS-specific gotcha)
-        - the next command to try
+    For each failure, surface:
+      - the error text
+      - 1-2 likely causes (PATH not updated, version too old,
+        OS-specific gotcha)
+      - the next command to try
 
-      DO NOT mask failures by skipping — broken installs that
-      look green are how research projects fail silently weeks
-      later.
+    DO NOT mask failures by skipping — broken installs that
+    look green are how research projects fail silently weeks
+    later.
 
-  - id: document_in_project_readme
-    name: Document the env in the project README
-    description: |
-      Append to the project's README a "Tool requirements" section
-      listing:
-        - each external tool + min version
-        - the install command + verification command per OS
-        - any per-project Node / R / conda env paths
-        - the date the env was verified working
-        - a pointer to workspace/.toolsetup/ for the full transcript
+- id: document_in_project_readme
+  name: Document the env in the project README
+  description: |
+    Append to the project's README a "Tool requirements" section
+    listing:
+      - each external tool + min version
+      - the install command + verification command per OS
+      - any per-project Node / R / conda env paths
+      - the date the env was verified working
+      - a pointer to workspace/.toolsetup/ for the full transcript
 
-      Future-you (or a collaborator) needs this to reconstruct
-      the environment. The README is the contract.
+    Future-you (or a collaborator) needs this to reconstruct
+    the environment. The README is the contract.
 
-  - id: route_back
-    name: Route back to the protocol that needed the tool
-    description: |
-      Confirm with the researcher that the install is complete +
-      verified. Then route back to the protocol that triggered
-      this setup (e.g. visualization/interactive_dashboard_design,
-      visualization/showcase_visualization, methodology/replication_study).
+- id: route_back
+  name: Route back to the protocol that needed the tool
+  description: |
+    Confirm with the researcher that the install is complete +
+    verified. Then route back to the protocol that triggered
+    this setup (e.g. visualization/interactive_dashboard_design,
+    visualization/showcase_visualization, methodology/replication_study).
 
 expected_outputs:
-  - workspace/.toolsetup/needed.md
-  - workspace/.toolsetup/install_<tool>.md   # per tool
-  - workspace/.toolsetup/setup_v<n>.sh       # single-shot script
-  - workspace/.toolsetup/transcript_<iso>.log
-  - (entry appended to project README under "Tool requirements")
+- workspace/.toolsetup/needed.md
+- workspace/.toolsetup/install_<tool>.md     # per tool
+- workspace/.toolsetup/setup_v<n>.sh         # single-shot script
+- workspace/.toolsetup/transcript_<iso>.log
+- (entry appended to project README under "Tool requirements")
 
 quality_bar:
   needed_tools_listed_with_rationale_per_active_protocol: true
@@ -229,3 +216,23 @@ quality_bar:
 next_protocol: methodology/mcp_ecosystem_integration
 next_protocol_kind: forward_default
 on_failure: guidance/scope_clarification
+intent_class: methodology
+sub_intent: tool_setup
+triggers:
+- install
+- setup
+- set up
+- how do i install
+- install node
+- install quarto
+- install docker
+- install r
+- install julia
+- install ffmpeg
+- install latex
+- missing dependency
+- command not found
+- tool setup
+- environment setup
+- configure my system
+summary: Install + verify top-tier external tools (Node / Quarto / Docker / R / Julia / ffmpeg / LaTeX) for the active workflow.

@@ -1,7 +1,7 @@
 id: requirements_traceability
 name: Requirements Traceability (SRS → SDD → Tests)
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering]
   audience: [auditor, maintainer]
@@ -33,48 +33,30 @@ trigger: |
   tests", "rtm", "v model", "verification matrix".
 
 prerequisites:
-  - "An SRS exists at inputs/engineering/srs.yaml with each requirement
-     having an id field (e.g. REQ-001) and a verification method
-     (test | analysis | inspection | demonstration)."
-  - "An SDD exists at inputs/engineering/sdd.yaml whose design elements
-     reference back to SRS ids via a satisfies field (list of REQ-*)."
-  - "Test suite is discoverable (pytest collect-only, or equivalent)
-     and tests carry a @requirement('REQ-001') marker OR a structured
-     docstring tag readable by tool_engineering_requirements_matrix."
+- "An SRS exists at inputs/engineering/srs.yaml with each requirement having an id field (e.g. REQ-001) and a verification method (test | analysis | inspection | demonstration)."
+- "An SDD exists at inputs/engineering/sdd.yaml whose design elements reference back to SRS ids via a satisfies field (list of REQ-*)."
+- "Test suite is discoverable (pytest collect-only, or equivalent) and tests carry a @requirement('REQ-001') marker OR a structured docstring tag readable by tool_engineering_requirements_matrix."
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "A requirement without a verification method is a wish. Reject
-       the SRS row before it enters the matrix."
-    - "Forward coverage (REQ → test) and backward coverage (test → REQ)
-       are NOT the same metric. Report both. A suite at 100% forward
-       and 60% backward is a suite full of orphans."
-    - "Orphan tests are not free. They run on every CI, they break on
-       refactors, they accumulate maintenance debt. Delete or adopt;
-       do not ignore."
-    - "The matrix is read by auditors, not by the team that wrote it.
-       Write requirement text + test descriptions for a stranger six
-       months from now, not for the original author."
+  - "A requirement without a verification method is a wish. Reject the SRS row before it enters the matrix."
+  - "Forward coverage (REQ → test) and backward coverage (test → REQ) are NOT the same metric. Report both. A suite at 100% forward and 60% backward is a suite full of orphans."
+  - "Orphan tests are not free. They run on every CI, they break on refactors, they accumulate maintenance debt. Delete or adopt; do not ignore."
+  - "The matrix is read by auditors, not by the team that wrote it. Write requirement text + test descriptions for a stranger six months from now, not for the original author."
 
 quality_bar:
-  forward_coverage_target: "100% of REQ rows have at least one linked
-    test_id OR a documented non-test verification (analysis report,
-    inspection record). 100% is the only acceptable target for
-    safety-relevant requirements; 95% is the floor for everything else."
-  backward_coverage_target: "100% of test cases trace to at least one
-    REQ id. Tests that cannot be traced are orphans and must be
-    adopted (add a @requirement marker) or deleted before the matrix
-    is signed off."
+  forward_coverage_target: "100% of REQ rows have at least one linked test_id OR a documented non-test verification (analysis report, inspection record). 100% is the only acceptable target for safety-relevant requirements; 95% is the floor for everything else."
+  backward_coverage_target: "100% of test cases trace to at least one REQ id. Tests that cannot be traced are orphans and must be adopted (add a @requirement marker) or deleted before the matrix is signed off."
   required_columns:
-    - req_id
-    - req_text
-    - verification_method
-    - sdd_ref
-    - test_ids
-    - test_status
-    - last_run
-    - coverage_state
+  - req_id
+  - req_text
+  - verification_method
+  - sdd_ref
+  - test_ids
+  - test_status
+  - last_run
+  - coverage_state
   coverage_state_values: "covered | partial | uncovered | orphan_test"
   rationale: |
     100% forward is non-negotiable on safety items because the
@@ -86,100 +68,118 @@ quality_bar:
     nobody trusts.
 
 steps:
-  - id: parse_srs
-    name: Parse + validate the SRS
-    description: |
-      Read inputs/engineering/srs.yaml. For each requirement row,
-      assert that id is unique, text is non-empty, and
-      verification_method is one of {test, analysis, inspection,
-      demonstration}. Reject the run with a clear error if any row
-      fails — a malformed SRS poisons the rest of the matrix.
+- id: parse_srs
+  name: Parse + validate the SRS
+  description: |
+    Read inputs/engineering/srs.yaml. For each requirement row,
+    assert that id is unique, text is non-empty, and
+    verification_method is one of {test, analysis, inspection,
+    demonstration}. Reject the run with a clear error if any row
+    fails — a malformed SRS poisons the rest of the matrix.
 
-      Log the parsed requirement count + the breakdown by
-      verification_method with mem_log so the operator sees the
-      shape of the SRS before the heavy work starts.
+    Log the parsed requirement count + the breakdown by
+    verification_method with mem_log so the operator sees the
+    shape of the SRS before the heavy work starts.
 
-  - id: parse_sdd_links
-    name: Parse the SDD + collect satisfies links
-    description: |
-      Read inputs/engineering/sdd.yaml. For each design element,
-      collect its satisfies list (REQ-* ids it claims to implement).
-      Build a forward map req_id → [sdd_refs] and the inverse map
-      sdd_ref → [req_ids].
+- id: parse_sdd_links
+  name: Parse the SDD + collect satisfies links
+  description: |
+    Read inputs/engineering/sdd.yaml. For each design element,
+    collect its satisfies list (REQ-* ids it claims to implement).
+    Build a forward map req_id → [sdd_refs] and the inverse map
+    sdd_ref → [req_ids].
 
-      Flag two structural problems here, before tests are even
-      considered: SDD elements that claim to satisfy a REQ id that
-      does not exist in the SRS (typo or stale link), and REQ ids
-      that no SDD element claims (designed but undesigned). Both
-      block the matrix until resolved.
+    Flag two structural problems here, before tests are even
+    considered: SDD elements that claim to satisfy a REQ id that
+    does not exist in the SRS (typo or stale link), and REQ ids
+    that no SDD element claims (designed but undesigned). Both
+    block the matrix until resolved.
 
-  - id: discover_tests
-    name: Discover tests + extract requirement markers
-    description: |
-      Use tool_search or the project's test discovery (pytest
-      --collect-only -q for Python suites) to enumerate every test
-      case. For each test, extract its @requirement('REQ-*') marker
-      or structured docstring tag.
+- id: discover_tests
+  name: Discover tests + extract requirement markers
+  description: |
+    Use tool_search or the project's test discovery (pytest
+    --collect-only -q for Python suites) to enumerate every test
+    case. For each test, extract its @requirement('REQ-*') marker
+    or structured docstring tag.
 
-      Tests with no marker are NOT auto-failed at this step — they
-      become orphan candidates that step 5 will report on. The point
-      of this step is to produce two clean lists: marked_tests with
-      their REQ links, and unmarked_tests for later triage.
+    Tests with no marker are NOT auto-failed at this step — they
+    become orphan candidates that step 5 will report on. The point
+    of this step is to produce two clean lists: marked_tests with
+    their REQ links, and unmarked_tests for later triage.
 
-  - id: build_matrix
-    name: Build the matrix + assign coverage_state
-    description: |
-      Call tool_engineering_requirements_matrix(
-        srs_path='inputs/engineering/srs.yaml',
-        sdd_path='inputs/engineering/sdd.yaml',
-        test_discovery_path='workspace/engineering/tests/discovered.json'
-      ) which joins the three sources on REQ id.
+- id: build_matrix
+  name: Build the matrix + assign coverage_state
+  description: |
+    Call tool_engineering_requirements_matrix(
+      srs_path='inputs/engineering/srs.yaml',
+      sdd_path='inputs/engineering/sdd.yaml',
+      test_discovery_path='workspace/engineering/tests/discovered.json'
+    ) which joins the three sources on REQ id.
 
-      For each row, assign coverage_state:
-        - "covered"      → has sdd_ref AND at least one passing test_id
-        - "partial"      → has sdd_ref AND tests exist but some failing
-        - "uncovered"    → has sdd_ref but zero test_ids (verification
-                           method = test) OR non-test verification with
-                           no linked artifact
-        - "orphan_test"  → a separate appendix row, one per unmarked
-                           test, so reviewers can adopt-or-delete
+    For each row, assign coverage_state:
+      - "covered"      → has sdd_ref AND at least one passing test_id
+      - "partial"      → has sdd_ref AND tests exist but some failing
+      - "uncovered"    → has sdd_ref but zero test_ids (verification
+                         method = test) OR non-test verification with
+                         no linked artifact
+      - "orphan_test"  → a separate appendix row, one per unmarked
+                         test, so reviewers can adopt-or-delete
 
-  - id: review_gaps
-    name: Review gaps with the responsible engineer
-    description: |
-      Sort the matrix by coverage_state (uncovered + partial first,
-      orphan_test appendix last). For each non-covered row, the
-      responsible engineer must do exactly one of:
-        - write the missing test + link it
-        - document the non-test verification (analysis report path,
-          inspection record id) and switch the requirement's method
-        - explicitly waive the requirement with senior sign-off and
-          a CHANGELOG/DECISIONS.md entry
+- id: review_gaps
+  name: Review gaps with the responsible engineer
+  description: |
+    Sort the matrix by coverage_state (uncovered + partial first,
+    orphan_test appendix last). For each non-covered row, the
+    responsible engineer must do exactly one of:
+      - write the missing test + link it
+      - document the non-test verification (analysis report path,
+        inspection record id) and switch the requirement's method
+      - explicitly waive the requirement with senior sign-off and
+        a CHANGELOG/DECISIONS.md entry
 
-      For orphan tests: adopt (add the @requirement marker pointing
-      at a real REQ id) or delete. "Leave it for now" is not an
-      option — orphans rot.
+    For orphan tests: adopt (add the @requirement marker pointing
+    at a real REQ id) or delete. "Leave it for now" is not an
+    option — orphans rot.
 
-  - id: render_and_sign
-    name: Render the matrix + capture sign-off
-    description: |
-      Render workspace/engineering/traceability/<stem>.{csv,md} with
-      the required_columns from quality_bar. The Markdown version
-      bolds uncovered + partial rows and groups orphan_test rows in
-      a clearly labeled appendix at the bottom.
+- id: render_and_sign
+  name: Render the matrix + capture sign-off
+  description: |
+    Render workspace/engineering/traceability/<stem>.{csv,md} with
+    the required_columns from quality_bar. The Markdown version
+    bolds uncovered + partial rows and groups orphan_test rows in
+    a clearly labeled appendix at the bottom.
 
-      Capture the sign-off block at the top of the Markdown:
-      reviewer name, date, forward_coverage %, backward_coverage %,
-      and the list of waived REQ ids with links to the
-      DECISIONS.md entries. The sign-off is the artifact an auditor
-      will ask for first.
+    Capture the sign-off block at the top of the Markdown:
+    reviewer name, date, forward_coverage %, backward_coverage %,
+    and the list of waived REQ ids with links to the
+    DECISIONS.md entries. The sign-off is the artifact an auditor
+    will ask for first.
 
 expected_outputs:
-  - workspace/engineering/traceability/<stem>.csv
-  - workspace/engineering/traceability/<stem>.md
-  - workspace/engineering/traceability/orphan_tests.md
-  - workspace/engineering/traceability/sign_off.md
+- workspace/engineering/traceability/<stem>.csv
+- workspace/engineering/traceability/<stem>.md
+- workspace/engineering/traceability/orphan_tests.md
+- workspace/engineering/traceability/sign_off.md
 
 next_protocol: engineering/safety/fmea_protocol
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: audit_wrap
+sub_intent: provenance
+triggers:
+- requirements traceability
+- srs
+- sdd
+- traceability matrix
+- verification + validation
+- v&v
+- trace requirements to tests
+summary: Requirements (SRS) ↔ design elements (SDD) ↔ test cases ↔ test results. Bidirectional matrix.
+shortcut_tool: tool_engineering_requirements_matrix
+token_estimate: 1600
+decomposition:
+- tool: tool_engineering_requirements_matrix
+  purpose: Render the bidirectional matrix + flag orphans.
+- protocol: engineering/design/requirements_traceability
+  purpose: Walk the requirement → design → test → result loop.

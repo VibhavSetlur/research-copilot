@@ -2,16 +2,16 @@ id: methodology_selection
 tier: 'plan'
 name: Methodology Selection (with lightweight lookup mode)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [experiment_pipeline]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/methodological_consultation # upstream "teach me X" before committing
-  - methodology/method_comparison           # when more than one survives, benchmark them
-  - methodology/deep_domain_research        # when the right answer is a canonical pipeline
+- methodology/methodological_consultation   # upstream "teach me X" before committing
+- methodology/method_comparison             # when more than one survives, benchmark them
+- methodology/deep_domain_research          # when the right answer is a canonical pipeline
 description: |
   Pick the statistical / computational method(s) for the active
   hypotheses. Document implementation, parameters, and assumptions.
@@ -30,190 +30,206 @@ trigger: |
 editorial_voice:
   mode: hybrid
   rules:
-    - "Frame methodological choices as REASONING — 'consider whether
-       the outcome's distribution is skewed enough to motivate a rank-
-       based test' beats 'run Welch ANOVA'."
-    - "Hard requirement: every chosen method cites at least two prior
-       sources in the justification. Lightweight lookup mode allows
-       one for runners-up."
-    - "Defaults are starting points, not commitments. Document the
-       reasoning that led to the final pick."
+  - "Frame methodological choices as REASONING — 'consider whether the outcome's distribution is skewed enough to motivate a rank- based test' beats 'run Welch ANOVA'."
+  - "Hard requirement: every chosen method cites at least two prior sources in the justification. Lightweight lookup mode allows one for runners-up."
+  - "Defaults are starting points, not commitments. Document the reasoning that led to the final pick."
 
 steps:
-  - id: load_pipeline_plan_if_present
-    name: Load the committed pipeline (if deep_domain_research already ran)
-    description: |
-      If `docs/pipeline_plan.md` exists, this protocol is operating ON
-      TOP of a literature-grounded pipeline — the test-family choice
-      for each stage is constrained by the pipeline's per-stage
-      assumptions. Read the file FIRST so the candidate-enumeration
-      step below starts from the pipeline's stage list, not from a
-      generic table.
+- id: load_pipeline_plan_if_present
+  name: Load the committed pipeline (if deep_domain_research already ran)
+  description: |
+    If `docs/pipeline_plan.md` exists, this protocol is operating ON
+    TOP of a literature-grounded pipeline — the test-family choice
+    for each stage is constrained by the pipeline's per-stage
+    assumptions. Read the file FIRST so the candidate-enumeration
+    step below starts from the pipeline's stage list, not from a
+    generic table.
 
-      If the file is absent and the analysis lives in a subfield
-      where the right answer is a multi-stage canonical pipeline
-      (snRNA-seq, metagenomics, protein embeddings, fMRI, MD,
-      ...) — route to `methodology/deep_domain_research` FIRST,
-      then return here.
+    If the file is absent and the analysis lives in a subfield
+    where the right answer is a multi-stage canonical pipeline
+    (snRNA-seq, metagenomics, protein embeddings, fMRI, MD,
+    ...) — route to `methodology/deep_domain_research` FIRST,
+    then return here.
 
-  - id: classify_problem
-    name: Classify the problem on three axes
-    description: |
-      A method's appropriateness almost always reduces to three
-      questions about the data:
+- id: classify_problem
+  name: Classify the problem on three axes
+  description: |
+    A method's appropriateness almost always reduces to three
+    questions about the data:
 
-        1. Outcome type — continuous / binary / count / time-to-event /
-           ordinal / nominal / text / image / network.
-        2. Data structure — independent / repeated / nested / spatial
-           / temporal / sequential.
-        3. Dimensionality — univariate / low-D (p ≪ n) / high-D
-           (p ≈ n or p ≫ n).
+      1. Outcome type — continuous / binary / count / time-to-event /
+         ordinal / nominal / text / image / network.
+      2. Data structure — independent / repeated / nested / spatial
+         / temporal / sequential.
+      3. Dimensionality — univariate / low-D (p ≪ n) / high-D
+         (p ≈ n or p ≫ n).
 
-      Cross-check against the data profile reports under
-      `outputs/reports/profile_*.md`. Record the (type, structure,
-      dim) triple in the project methods record (one entry per
-      hypothesis is the usual factoring).
+    Cross-check against the data profile reports under
+    `outputs/reports/profile_*.md`. Record the (type, structure,
+    dim) triple in the project methods record (one entry per
+    hypothesis is the usual factoring).
 
-  - id: enumerate_candidates
-    name: Enumerate a small candidate set (from literature, not memory)
-    description: |
-      Generate the candidate set from the LITERATURE, not from this
-      file. The protocol does not name methods on purpose — naming
-      them here would push the AI to pick from a finite menu rather
-      than reason about the actual data.
+- id: enumerate_candidates
+  name: Enumerate a small candidate set (from literature, not memory)
+  description: |
+    Generate the candidate set from the LITERATURE, not from this
+    file. The protocol does not name methods on purpose — naming
+    them here would push the AI to pick from a finite menu rather
+    than reason about the actual data.
 
-      Workflow:
-        1. Phrase the analytical question in the literature's own
-           vocabulary, using the (outcome type, dependency structure,
-           dimensionality) triple from the previous step. Example
-           phrasings (illustrative, write your own):
-             "regression for <outcome> with <dependency> sample
-              size <n> per group"
-             "predict <outcome> from <p> features when n ≪ p"
-             "compare <treatment> effect on <outcome> in observational
-              data without random assignment"
-        2. Run `tool_research_method query="<phrasing>"` — pulls
-           sources across academic + best-practice providers.
-        3. From the returned sources, extract the method families
-           that the literature currently treats as competitive for
-           this combination — usually a handful, not a long menu.
-           Note WHICH paper named each.
+    Workflow:
+      1. Phrase the analytical question in the literature's own
+         vocabulary, using the (outcome type, dependency structure,
+         dimensionality) triple from the previous step. Example
+         phrasings (illustrative, write your own):
+           "regression for <outcome> with <dependency> sample
+            size <n> per group"
+           "predict <outcome> from <p> features when n ≪ p"
+           "compare <treatment> effect on <outcome> in observational
+            data without random assignment"
+      2. Run `tool_search query="<phrasing>"` — pulls
+         sources across academic + best-practice providers.
+      3. From the returned sources, extract the method families
+         that the literature currently treats as competitive for
+         this combination — usually a handful, not a long menu.
+         Note WHICH paper named each.
 
-      Record the candidates with:
-        - method name (as the literature names it)
-        - pros / cons relative to this project's data
-        - 1+ citation per candidate
-        - whether the candidate is the "safe default" the field
-          would reach for, or a more recent alternative that
-          out-performs on this data shape
+    Record the candidates with:
+      - method name (as the literature names it)
+      - pros / cons relative to this project's data
+      - 1+ citation per candidate
+      - whether the candidate is the "safe default" the field
+        would reach for, or a more recent alternative that
+        out-performs on this data shape
 
-      The runners-up are not wasted work — they become the
-      sensitivity-analysis options later.
+    The runners-up are not wasted work — they become the
+    sensitivity-analysis options later.
 
-      What NOT to do:
-        - Pick a method because the AI knows it well.
-        - Skip the literature pass on the grounds that the method
-          choice is "obvious" — even obvious choices have a current
-          best-practice paper that pins down parameter conventions.
-        - Treat a deep_domain_research `pipeline_plan.md` as
-          dispensing with this step. The pipeline names the STAGES;
-          this step picks the METHOD per stage.
+    What NOT to do:
+      - Pick a method because the AI knows it well.
+      - Skip the literature pass on the grounds that the method
+        choice is "obvious" — even obvious choices have a current
+        best-practice paper that pins down parameter conventions.
+      - Treat a deep_domain_research `pipeline_plan.md` as
+        dispensing with this step. The pipeline names the STAGES;
+        this step picks the METHOD per stage.
 
-  - id: ground_in_literature
-    name: Ground each candidate in the literature (MANDATORY)
-    description: |
-      For each candidate, consult the literature before committing.
-      The depth of the pass scales with the stakes:
+- id: ground_in_literature
+  name: Ground each candidate in the literature (MANDATORY)
+  description: |
+    For each candidate, consult the literature before committing.
+    The depth of the pass scales with the stakes:
 
-        - **Light** (a familiar method, a routine choice): one or two
-          targeted searches via the literature tools, citing the
-          canonical reference and a recent best-practice paper.
-        - **Deep** (an unfamiliar method, a high-stakes choice, or a
-          method whose conventions have shifted): a fuller research
-          pass producing a structured report under
-          `outputs/reports/method_research_*.md`.
+      - **Light** (a familiar method, a routine choice): one or two
+        targeted searches via the literature tools, citing the
+        canonical reference and a recent best-practice paper.
+      - **Deep** (an unfamiliar method, a high-stakes choice, or a
+        method whose conventions have shifted): a fuller research
+        pass producing a structured report under
+        `outputs/reports/method_research_*.md`.
 
-      The winning method's justification field must cite at least two
-      sources; each runner-up at least one. If the citation chain
-      can't be built, the method is not yet groundable — pick again
-      or expand the literature pass.
+    The winning method's justification field must cite at least two
+    sources; each runner-up at least one. If the citation chain
+    can't be built, the method is not yet groundable — pick again
+    or expand the literature pass.
 
-  - id: pick_tools
-    name: Pick the implementation
-    description: |
-      Once the method is settled, decide on the implementation.
-      Prefer installable libraries (Python / R / Julia) over GUI or
-      paid tools. Verify the library is maintained (recent commits,
-      open issues handled, semver discipline) and compatible with the
-      project environment. For ML / software-heavy methods, this is
-      often a separate decision from the method choice.
+- id: pick_tools
+  name: Pick the implementation
+  description: |
+    Once the method is settled, decide on the implementation.
+    Prefer installable libraries (Python / R / Julia) over GUI or
+    paid tools. Verify the library is maintained (recent commits,
+    open issues handled, semver discipline) and compatible with the
+    project environment. For ML / software-heavy methods, this is
+    often a separate decision from the method choice.
 
-      Where an external / paid / GUI tool genuinely fits best,
-      document why and capture instructions so the workflow remains
-      reproducible without it being installed locally.
+    Where an external / paid / GUI tool genuinely fits best,
+    document why and capture instructions so the workflow remains
+    reproducible without it being installed locally.
 
-  - id: record_choice_and_assumptions
-    name: Record choice + assumptions
-    description: |
-      Commit the WINNING method to the project methods record:
-        - method name
-        - which step will run it (slug + number)
-        - dataset name + hash from intake
-        - implementation library + version
-        - key parameters
-        - justification (2 sentences + citation keys)
-        - assumptions list (every assumption to be tested in-step).
+- id: record_choice_and_assumptions
+  name: Record choice + assumptions
+  description: |
+    Commit the WINNING method to the project methods record:
+      - method name
+      - which step will run it (slug + number)
+      - dataset name + hash from intake
+      - implementation library + version
+      - key parameters
+      - justification (2 sentences + citation keys)
+      - assumptions list (every assumption to be tested in-step).
 
-      Also log the decision (context / selected / rationale / options
-      considered / linked citation keys). The grounding registry will
-      see this and surface it during master audit.
+    Also log the decision (context / selected / rationale / options
+    considered / linked citation keys). The grounding registry will
+    see this and surface it during master audit.
 
-  - id: list_assumption_tests
-    name: Plan assumption checks (guidance, not prescription)
-    description: |
-      For every assumption a chosen method makes, the AI must name a
-      diagnostic that would falsify it. The DIAGNOSTIC names a check
-      (residual plot, calibration curve, sensitivity to subset,
-      coverage simulation); the specific TEST family follows from
-      the check + the literature for this subfield.
+- id: list_assumption_tests
+  name: Plan assumption checks (guidance, not prescription)
+  description: |
+    For every assumption a chosen method makes, the AI must name a
+    diagnostic that would falsify it. The DIAGNOSTIC names a check
+    (residual plot, calibration curve, sensitivity to subset,
+    coverage simulation); the specific TEST family follows from
+    the check + the literature for this subfield.
 
-      How to fill this in:
-        - For each method's assumption, ask: "if this assumption
-          failed, what would I see in the data or in the model
-          output?"
-        - Name the visual / numerical check that would show it.
-        - Cite the source you got the check from (a methods paper,
-          a textbook section, a current best-practice review).
-        - If a check has a canonical formal test in the literature
-          for this subfield, name it — but never invent one from
-          memory because it sounds reasonable.
+    How to fill this in:
+      - For each method's assumption, ask: "if this assumption
+        failed, what would I see in the data or in the model
+        output?"
+      - Name the visual / numerical check that would show it.
+      - Cite the source you got the check from (a methods paper,
+        a textbook section, a current best-practice review).
+      - If a check has a canonical formal test in the literature
+        for this subfield, name it — but never invent one from
+        memory because it sounds reasonable.
 
-      Record the assumption-check plan inside the methods record so
-      the in-step audit can pick it up automatically. If you can't
-      name a falsifying diagnostic for an assumption, the assumption
-      isn't testable — that's a finding to log, not a step to skip.
+    Record the assumption-check plan inside the methods record so
+    the in-step audit can pick it up automatically. If you can't
+    name a falsifying diagnostic for an assumption, the assumption
+    isn't testable — that's a finding to log, not a step to skip.
 
-  - id: lookup_mode
-    name: Lookup mode (lightweight scan when uncertain)
-    description: |
-      Sometimes you don't yet know enough to enumerate candidates —
-      you need a quick "what's the current best practice" scan.
-      Run this step BEFORE `enumerate_candidates`:
+- id: lookup_mode
+  name: Lookup mode (lightweight scan when uncertain)
+  description: |
+    Sometimes you don't yet know enough to enumerate candidates —
+    you need a quick "what's the current best practice" scan.
+    Run this step BEFORE `enumerate_candidates`:
 
-        1. Characterise the data quickly from intake + any existing
-           profile report.
-        2. State the analytical GOAL in one phrase (description /
-           association / prediction / causal effect / classification
-           / clustering / ranking / anomaly detection / generation).
-        3. Run a few targeted literature searches against the
-           goal-and-data combination.
-        4. Pull the most recent / most cited candidates forward into
-           the `enumerate_candidates` step.
+      1. Characterise the data quickly from intake + any existing
+         profile report.
+      2. State the analytical GOAL in one phrase (description /
+         association / prediction / causal effect / classification
+         / clustering / ranking / anomaly detection / generation).
+      3. Run a few targeted literature searches against the
+         goal-and-data combination.
+      4. Pull the most recent / most cited candidates forward into
+         the `enumerate_candidates` step.
 
 expected_outputs:
-  - workspace/methods.md
-  - workspace/<active step>/outputs/reports/method_research_*.md (when deep grounding)
+- workspace/methods.md
+- workspace/<active step>/outputs/reports/method_research_*.md (when deep grounding)
 
 next_protocol: literature/literature_search
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: pick
+triggers:
+- pick method
+- which method
+- choose model
+- what should i use
+- what stats should i use
+- what statistics should i use
+- what test should i use
+- which test should i use
+- what statistical test
+- which statistical test
+- is my result significant
+- is this significant
+- is my result statistically significant
+- how do i test this
+- what analysis should i run
+- which model should i use
+- what method should i use
+summary: Choose statistical / computational method given design + data.

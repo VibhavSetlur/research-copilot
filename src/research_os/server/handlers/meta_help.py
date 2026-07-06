@@ -617,6 +617,4 @@ def _handle_sys_help(name, arguments, root):
 
 
 
-HANDLERS = {
-    "sys_help": _handle_sys_help,
-}
+HANDLERS: dict[str, object] = {}

@@ -2,16 +2,16 @@ id: spatial_analysis
 tier: 'plan'
 name: Spatial Analysis
 version: '3.2.6'
-schema_version: '2.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-19'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [any]
 see_also:
-  - methodology/deep_domain_research      # survey the subfield's canonical spatial pipeline first
-  - visualization/geospatial_visualization  # render the map AFTER the analysis
-  - methodology/causal_inference_deep      # if the spatial question is causal
+- methodology/deep_domain_research        # survey the subfield's canonical spatial pipeline first
+- visualization/geospatial_visualization    # render the map AFTER the analysis
+- methodology/causal_inference_deep        # if the spatial question is causal
 description: |
   Reasoning scaffold for analysing data with a spatial structure —
   geoscience, ecology, epidemiology, remote sensing, econ geography,
@@ -20,7 +20,7 @@ description: |
   aspatial model choice, scale / resolution / MAUP, edge effects,
   spatial validation) WITHOUT prescribing methods, weights matrices,
   or cutoffs — those come from the subfield's literature via
-  tool_research_method.
+  tool_search.
 
   This is the ANALYSIS counterpart to visualization/geospatial_
   visualization (which only renders a map): the system previously had
@@ -33,86 +33,92 @@ trigger: Data has coordinates / a spatial index (lat-lon, raster, polygons, grid
 editorial_voice:
   mode: guidance
   rules:
-    - "Spatial autocorrelation is the default, not the exception:
-       nearby observations are usually NOT independent. An analysis
-       that ignores it (a plain OLS / t-test on spatial data) reports
-       overconfident standard errors. Test for it before, not after."
-    - "The coordinate reference system is load-bearing. Mixing CRSs,
-       computing distances/areas in an unprojected geographic CRS, or
-       an undeclared datum silently corrupts every spatial statistic.
-       Record the CRS of every layer."
-    - "Conclusions are scale-dependent (the Modifiable Areal Unit
-       Problem). A result at the county level need not hold at the
-       tract level. State the unit of analysis and whether the finding
-       is robust to a different aggregation."
-    - "On observational spatial data, association is not causation —
-       use 'associated with' / 'clustered with', not 'causes' (route
-       to causal_inference_deep if the question is genuinely causal)."
+  - "Spatial autocorrelation is the default, not the exception: nearby observations are usually NOT independent. An analysis that ignores it (a plain OLS / t-test on spatial data) reports overconfident standard errors. Test for it before, not after."
+  - "The coordinate reference system is load-bearing. Mixing CRSs, computing distances/areas in an unprojected geographic CRS, or an undeclared datum silently corrupts every spatial statistic. Record the CRS of every layer."
+  - "Conclusions are scale-dependent (the Modifiable Areal Unit Problem). A result at the county level need not hold at the tract level. State the unit of analysis and whether the finding is robust to a different aggregation."
+  - "On observational spatial data, association is not causation — use 'associated with' / 'clustered with', not 'causes' (route to causal_inference_deep if the question is genuinely causal)."
 
 steps:
-  - id: characterise_spatial_data
-    name: Characterise the spatial data
-    description: |
-      Surface from `inputs/` and `inputs/literature/`:
-        - Geometry type: points / lines / polygons (areal) / raster
-          (gridded) / point-pattern. Each implies different methods.
-        - The coordinate reference system + datum of EACH layer, and
-          whether they must be reprojected to a common projected CRS
-          for distance / area work.
-        - Spatial resolution / support (pixel size, polygon grain) and
-          temporal resolution if it is a raster time series.
-        - The unit of analysis and how it was defined (administrative,
-          grid, sampling design).
+- id: characterise_spatial_data
+  name: Characterise the spatial data
+  description: |
+    Surface from `inputs/` and `inputs/literature/`:
+      - Geometry type: points / lines / polygons (areal) / raster
+        (gridded) / point-pattern. Each implies different methods.
+      - The coordinate reference system + datum of EACH layer, and
+        whether they must be reprojected to a common projected CRS
+        for distance / area work.
+      - Spatial resolution / support (pixel size, polygon grain) and
+        temporal resolution if it is a raster time series.
+      - The unit of analysis and how it was defined (administrative,
+        grid, sampling design).
 
-  - id: spatial_dependence
-    name: Test + characterise spatial dependence
-    description: |
-      Reason about whether and how observations depend on location.
-      Dimensions the literature names: global vs local autocorrelation,
-      the neighbourhood / spatial-weights definition (contiguity vs
-      distance vs k-nearest — this choice is consequential and must be
-      justified), anisotropy, and (for point patterns) clustering vs
-      complete spatial randomness. Pick the diagnostic the subfield's
-      literature endorses (surface it via tool_research_method); do not
-      assume a default weights matrix.
+- id: spatial_dependence
+  name: Test + characterise spatial dependence
+  description: |
+    Reason about whether and how observations depend on location.
+    Dimensions the literature names: global vs local autocorrelation,
+    the neighbourhood / spatial-weights definition (contiguity vs
+    distance vs k-nearest — this choice is consequential and must be
+    justified), anisotropy, and (for point patterns) clustering vs
+    complete spatial randomness. Pick the diagnostic the subfield's
+    literature endorses (surface it via tool_search); do not
+    assume a default weights matrix.
 
-  - id: model_choice
-    name: Spatial vs aspatial model choice
-    description: |
-      Decide whether spatial structure enters the model and how:
-      ignore (only if dependence is shown absent), incorporate via a
-      spatial term / spatially-explicit model, or stratify. The family
-      (lag vs error vs GWR vs kriging vs CAR/BYM vs spatial GLMM vs a
-      neural / ML spatial model) follows from the geometry + the
-      question + the subfield, NOT from a menu here. Ground the choice
-      in cited sources and record the assumption each method makes.
+- id: model_choice
+  name: Spatial vs aspatial model choice
+  description: |
+    Decide whether spatial structure enters the model and how:
+    ignore (only if dependence is shown absent), incorporate via a
+    spatial term / spatially-explicit model, or stratify. The family
+    (lag vs error vs GWR vs kriging vs CAR/BYM vs spatial GLMM vs a
+    neural / ML spatial model) follows from the geometry + the
+    question + the subfield, NOT from a menu here. Ground the choice
+    in cited sources and record the assumption each method makes.
 
-  - id: scale_and_edge
-    name: Scale, MAUP, and edge effects
-    description: |
-      Reason explicitly about: sensitivity to the aggregation unit
-      (MAUP) and whether the finding survives a different grain; edge
-      effects (units near the study-area boundary have truncated
-      neighbourhoods) and the chosen correction or buffer; and, for
-      raster time series / remote sensing, alignment + resampling +
-      change-detection baseline. Document what was held fixed.
+- id: scale_and_edge
+  name: Scale, MAUP, and edge effects
+  description: |
+    Reason explicitly about: sensitivity to the aggregation unit
+    (MAUP) and whether the finding survives a different grain; edge
+    effects (units near the study-area boundary have truncated
+    neighbourhoods) and the chosen correction or buffer; and, for
+    raster time series / remote sensing, alignment + resampling +
+    change-detection baseline. Document what was held fixed.
 
-  - id: spatial_validation
-    name: Spatial validation
-    description: |
-      Standard random cross-validation LEAKS across spatially
-      autocorrelated folds and overstates skill. Use a spatially-aware
-      scheme (spatial / block / buffered-leave-one-out CV) appropriate
-      to the dependence range, and report the validation design. For a
-      predictive surface, quantify uncertainty spatially, not just a
-      single global metric.
+- id: spatial_validation
+  name: Spatial validation
+  description: |
+    Standard random cross-validation LEAKS across spatially
+    autocorrelated folds and overstates skill. Use a spatially-aware
+    scheme (spatial / block / buffered-leave-one-out CV) appropriate
+    to the dependence range, and report the validation design. For a
+    predictive surface, quantify uncertainty spatially, not just a
+    single global metric.
 
 expected_outputs:
-  - workspace/*/outputs/reports/spatial_data_characterisation.md
-  - workspace/*/outputs/reports/spatial_dependence.md
-  - workspace/*/outputs/reports/spatial_model_choice.md
-  - workspace/*/outputs/reports/spatial_validation.md
+- workspace/*/outputs/reports/spatial_data_characterisation.md
+- workspace/*/outputs/reports/spatial_dependence.md
+- workspace/*/outputs/reports/spatial_model_choice.md
+- workspace/*/outputs/reports/spatial_validation.md
 
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: pick
+triggers:
+- spatial analysis
+- spatial autocorrelation
+- spatial dependence
+- spatial regression
+- spatial model
+- geostatistics
+- kriging
+- moran's i
+- morans i
+- point pattern
+- areal data
+- spatial cross-validation
+- spatial econometrics
+summary: Analyse spatial data — CRS, spatial dependence/autocorrelation, spatial-vs-aspatial model choice, MAUP/edge effects, spatial cross-validation. The analysis counterpart to map plotting.

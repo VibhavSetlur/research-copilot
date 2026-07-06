@@ -1,7 +1,7 @@
 id: distant_reading
 name: Distant Reading — corpus analysis with interpretation gate
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [humanities, qualitative]
   audience: [auditor]
@@ -42,194 +42,173 @@ trigger: |
   documents", "BERTopic", "let's run Burrows's Delta".
 
 prerequisites:
-  - A defined corpus exists as a directory of plain-text files OR a
-    structured table with one row per document (the unit of analysis
-    must be declared — sentence, paragraph, chapter, work).
-  - "Corpus metadata exists (at minimum title, author, date,
-    language) — without it the computational findings cannot be
-    contextualized historically."
+- A defined corpus exists as a directory of plain-text files OR a structured table with one row per document (the unit of analysis must be declared — sentence, paragraph, chapter, work).
+- "Corpus metadata exists (at minimum title, author, date, language) — without it the computational findings cannot be contextualized historically."
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Distant reading is hypothesis-generating, not hypothesis-
-       confirming. A topic model that surfaces an interesting
-       cluster has produced a question for close reading to answer,
-       not an answer itself. Cite Underwood (2019) on this point —
-       he is explicit about it."
-    - "Every named cluster / topic / authorship attribution carries
-       the label PROVISIONAL until at least N=5 top-loading
-       documents have been read and the label has either been
-       confirmed, refined, or replaced. The model does not name
-       its own topics."
-    - "Preprocessing choices (stopword list, lemmatization, n-gram
-       range, minimum document frequency) are interpretive acts and
-       must be documented in the methods section. A corpus
-       stripped of function words has been stripped of style; a
-       corpus stemmed aggressively has been stripped of register."
-    - "Negative findings publish. A topic model that fails to
-       separate genres the scholar expected to separate is a
-       finding about the corpus or the model, not a failure of the
-       researcher. Moretti's own counter-intuitive findings (gothic
-       novels clustering with sentimental fiction, e.g.) are the
-       genre's signature contribution."
+  - "Distant reading is hypothesis-generating, not hypothesis- confirming. A topic model that surfaces an interesting cluster has produced a question for close reading to answer, not an answer itself. Cite Underwood (2019) on this point — he is explicit about it."
+  - "Every named cluster / topic / authorship attribution carries the label PROVISIONAL until at least N=5 top-loading documents have been read and the label has either been confirmed, refined, or replaced. The model does not name its own topics."
+  - "Preprocessing choices (stopword list, lemmatization, n-gram range, minimum document frequency) are interpretive acts and must be documented in the methods section. A corpus stripped of function words has been stripped of style; a corpus stemmed aggressively has been stripped of register."
+  - "Negative findings publish. A topic model that fails to separate genres the scholar expected to separate is a finding about the corpus or the model, not a failure of the researcher. Moretti's own counter-intuitive findings (gothic novels clustering with sentimental fiction, e.g.) are the genre's signature contribution."
 
 steps:
-  - id: define_corpus_and_unit
-    name: Define the corpus and the unit of analysis
-    description: |
-      Before any modelling, lock down two things in writing:
-        1. What is in the corpus and what is out. A corpus is
-           always a sample of some larger imagined universe;
-           name that universe and the inclusion criteria.
-        2. What counts as a document. The same texts modelled at
-           the chapter level vs the paragraph level vs the whole-
-           work level will produce completely different topic
-           distributions.
-      Call tool_search to verify the corpus boundaries against any
-      published corpora in the field (e.g., the Stanford Literary
-      Lab releases, HathiTrust Extracted Features, Project
-      Gutenberg's reliable-text subset). Borrowing a defined corpus
-      is preferable to inventing one, both for comparability and
-      because the boundary decisions have been argued through.
-      Output: inputs/corpus/corpus_definition.md with N documents,
-      date range, language(s), inclusion + exclusion criteria, and
-      the unit of analysis explicitly named.
+- id: define_corpus_and_unit
+  name: Define the corpus and the unit of analysis
+  description: |
+    Before any modelling, lock down two things in writing:
+      1. What is in the corpus and what is out. A corpus is
+         always a sample of some larger imagined universe;
+         name that universe and the inclusion criteria.
+      2. What counts as a document. The same texts modelled at
+         the chapter level vs the paragraph level vs the whole-
+         work level will produce completely different topic
+         distributions.
+    Call tool_search to verify the corpus boundaries against any
+    published corpora in the field (e.g., the Stanford Literary
+    Lab releases, HathiTrust Extracted Features, Project
+    Gutenberg's reliable-text subset). Borrowing a defined corpus
+    is preferable to inventing one, both for comparability and
+    because the boundary decisions have been argued through.
+    Output: inputs/corpus/corpus_definition.md with N documents,
+    date range, language(s), inclusion + exclusion criteria, and
+    the unit of analysis explicitly named.
 
-  - id: document_preprocessing_choices
-    name: Document the preprocessing pipeline
-    description: |
-      Every preprocessing step is a methodological commitment.
-      Record each one with a one-sentence justification:
-        - tokenization (whitespace? language-specific? subword?)
-        - case folding (yes/no — affects proper nouns)
-        - stopword list (which one? custom additions?)
-        - lemmatization vs stemming vs neither
-        - n-gram range (unigrams only loses "New York"; trigrams
-          balloon the vocabulary)
-        - minimum / maximum document frequency cutoffs
-        - OCR cleanup (if applicable — flag the OCR engine + error
-          rate; Underwood + Auvil 2017 estimate ~2-5% word-level
-          error for clean 19th-c. HathiTrust scans)
-      Cite the preprocessing recipe of any prior study you're
-      replicating or extending. Output: workspace/distant/
-      preprocessing_choices.md with the pipeline as runnable
-      pseudocode.
+- id: document_preprocessing_choices
+  name: Document the preprocessing pipeline
+  description: |
+    Every preprocessing step is a methodological commitment.
+    Record each one with a one-sentence justification:
+      - tokenization (whitespace? language-specific? subword?)
+      - case folding (yes/no — affects proper nouns)
+      - stopword list (which one? custom additions?)
+      - lemmatization vs stemming vs neither
+      - n-gram range (unigrams only loses "New York"; trigrams
+        balloon the vocabulary)
+      - minimum / maximum document frequency cutoffs
+      - OCR cleanup (if applicable — flag the OCR engine + error
+        rate; Underwood + Auvil 2017 estimate ~2-5% word-level
+        error for clean 19th-c. HathiTrust scans)
+    Cite the preprocessing recipe of any prior study you're
+    replicating or extending. Output: workspace/distant/
+    preprocessing_choices.md with the pipeline as runnable
+    pseudocode.
 
-  - id: run_computational_pass
-    name: Run the computational analysis
-    description: |
-      Pick the method that matches the research question, not the
-      method most recently in fashion:
-        - topic modelling (LDA, BERTopic, STM) for "what is this
-          corpus about, latently"
-        - stylometry (Burrows's Delta, MFW PCA, Eder's zeta) for
-          authorship / style attribution
-        - network analysis (NetworkX, igraph) for character or
-          citation structure
-        - word embeddings (word2vec, GloVe, contextual) for
-          semantic change over time (Hamilton et al. 2016)
-      Run with multiple parameter settings — a single k for LDA is
-      a single hypothesis; sweep k across a reasonable range and
-      inspect coherence scores AND the topics themselves at each.
-      Save model artifacts deterministically (set random seeds;
-      record library versions). Output: workspace/distant/models/
-      <method>_<params>/.
+- id: run_computational_pass
+  name: Run the computational analysis
+  description: |
+    Pick the method that matches the research question, not the
+    method most recently in fashion:
+      - topic modelling (LDA, BERTopic, STM) for "what is this
+        corpus about, latently"
+      - stylometry (Burrows's Delta, MFW PCA, Eder's zeta) for
+        authorship / style attribution
+      - network analysis (NetworkX, igraph) for character or
+        citation structure
+      - word embeddings (word2vec, GloVe, contextual) for
+        semantic change over time (Hamilton et al. 2016)
+    Run with multiple parameter settings — a single k for LDA is
+    a single hypothesis; sweep k across a reasonable range and
+    inspect coherence scores AND the topics themselves at each.
+    Save model artifacts deterministically (set random seeds;
+    record library versions). Output: workspace/distant/models/
+    <method>_<params>/.
 
-  - id: surface_patterns_for_inspection
-    name: Surface the patterns the model found
-    description: |
-      The model has produced numbers. Translate them into things a
-      human can inspect:
-        - for topic models: top-N words per topic + top-N documents
-          per topic (the documents matter more than the words)
-        - for stylometry: dendrograms + the actual outlier texts
-        - for networks: the graph visualized AND the high-
-          centrality nodes named
-        - for embeddings: nearest-neighbour lists for the terms
-          you care about, at each time slice
-      Do NOT label topics or clusters yet. Resist the temptation to
-      paste an LDA topic's top-10 words into a paper as "the
-      religion topic" — that's the AI of 2013 doing it for you, and
-      it's wrong about 30% of the time even when it looks right.
-      Output: workspace/distant/patterns/<method>_inspection.md
-      with raw model outputs, unlabelled.
+- id: surface_patterns_for_inspection
+  name: Surface the patterns the model found
+  description: |
+    The model has produced numbers. Translate them into things a
+    human can inspect:
+      - for topic models: top-N words per topic + top-N documents
+        per topic (the documents matter more than the words)
+      - for stylometry: dendrograms + the actual outlier texts
+      - for networks: the graph visualized AND the high-
+        centrality nodes named
+      - for embeddings: nearest-neighbour lists for the terms
+        you care about, at each time slice
+    Do NOT label topics or clusters yet. Resist the temptation to
+    paste an LDA topic's top-10 words into a paper as "the
+    religion topic" — that's the AI of 2013 doing it for you, and
+    it's wrong about 30% of the time even when it looks right.
+    Output: workspace/distant/patterns/<method>_inspection.md
+    with raw model outputs, unlabelled.
 
-  - id: close_reading_gate
-    name: GATE — close-read representative documents
-    description: |
-      This is the protocol's hinge. For every pattern you intend to
-      cite in writing, sample representative documents and
-      close-read them:
-        - topic models: read the top 5 documents loading on each
-          topic you'll name. If the documents don't cohere
-          thematically the way the top words suggested, the topic
-          is an artifact (often function-word clusters or OCR-
-          noise clusters masquerading as content).
-        - stylometry: read the outliers. A text flagged as a
-          misattribution gets read in full before the attribution
-          claim leaves the workspace.
-        - networks: walk the high-centrality nodes through the
-          actual narrative. A character with high betweenness who
-          turns out to be a servant carrying letters is a finding
-          about the network method, not about the plot.
-      Log every close-reading session to mem_log with the
-      pattern_id and the verdict (confirmed / refined / rejected).
-      A pattern that fails the close-reading gate does NOT
-      disappear — it gets written up as a negative finding in the
-      methods section. Output: workspace/distant/close_reading/
-      <pattern_id>.md per inspected pattern.
+- id: close_reading_gate
+  name: GATE — close-read representative documents
+  description: |
+    This is the protocol's hinge. For every pattern you intend to
+    cite in writing, sample representative documents and
+    close-read them:
+      - topic models: read the top 5 documents loading on each
+        topic you'll name. If the documents don't cohere
+        thematically the way the top words suggested, the topic
+        is an artifact (often function-word clusters or OCR-
+        noise clusters masquerading as content).
+      - stylometry: read the outliers. A text flagged as a
+        misattribution gets read in full before the attribution
+        claim leaves the workspace.
+      - networks: walk the high-centrality nodes through the
+        actual narrative. A character with high betweenness who
+        turns out to be a servant carrying letters is a finding
+        about the network method, not about the plot.
+    Log every close-reading session to mem_log with the
+    pattern_id and the verdict (confirmed / refined / rejected).
+    A pattern that fails the close-reading gate does NOT
+    disappear — it gets written up as a negative finding in the
+    methods section. Output: workspace/distant/close_reading/
+    <pattern_id>.md per inspected pattern.
 
-  - id: triangulate_against_external_knowledge
-    name: Triangulate against domain knowledge
-    description: |
-      Distant reading findings only become arguments when they
-      connect to what specialists already know. For each surviving
-      pattern, ask:
-        - does this confirm, complicate, or contradict the
-          received account in the field's secondary literature?
-          (call tool_search to find the relevant scholarship)
-        - is there a known historical event / cultural shift that
-          could explain the temporal pattern? (a spike in
-          religious vocabulary in 1859-1862 in an Anglophone
-          corpus probably wants Darwin in the methods)
-        - has anyone done this analysis on a comparable corpus?
-          (Underwood & Sellers 2016 on novel reception; Algee-
-          Hewitt et al. 2016 on canon vs archive)
-      A finding that aligns with prior scholarship is corroborated;
-      a finding that contradicts it is the interesting case and
-      deserves an extra round of close reading + methodological
-      audit before publication. Output: workspace/distant/
-      triangulation.md.
+- id: triangulate_against_external_knowledge
+  name: Triangulate against domain knowledge
+  description: |
+    Distant reading findings only become arguments when they
+    connect to what specialists already know. For each surviving
+    pattern, ask:
+      - does this confirm, complicate, or contradict the
+        received account in the field's secondary literature?
+        (call tool_search to find the relevant scholarship)
+      - is there a known historical event / cultural shift that
+        could explain the temporal pattern? (a spike in
+        religious vocabulary in 1859-1862 in an Anglophone
+        corpus probably wants Darwin in the methods)
+      - has anyone done this analysis on a comparable corpus?
+        (Underwood & Sellers 2016 on novel reception; Algee-
+        Hewitt et al. 2016 on canon vs archive)
+    A finding that aligns with prior scholarship is corroborated;
+    a finding that contradicts it is the interesting case and
+    deserves an extra round of close reading + methodological
+    audit before publication. Output: workspace/distant/
+    triangulation.md.
 
-  - id: write_methods_section_with_negative_findings
-    name: Write the methods section, negative findings included
-    description: |
-      The methods section is not a recipe — it is the audit trail
-      that lets another scholar replicate or contest your work.
-      Include:
-        - corpus definition + provenance (link to corpus_definition.md)
-        - preprocessing pipeline (link to preprocessing_choices.md)
-        - method + parameters + library versions + random seeds
-        - the patterns you investigated AND the ones that failed
-          the close-reading gate
-        - the patterns you renamed during close reading + why
-      Negative findings + relabellings are not embarrassments. They
-      are the evidence that the close-reading gate did its job.
-      Reviewers in the digital humanities (the journal, the field)
-      now expect this transparency — Da 2019's critique of LDA
-      papers is widely cited and any submission that hides
-      preprocessing choices will be flagged. Output:
-      synthesis/distant/methods_section.md.
+- id: write_methods_section_with_negative_findings
+  name: Write the methods section, negative findings included
+  description: |
+    The methods section is not a recipe — it is the audit trail
+    that lets another scholar replicate or contest your work.
+    Include:
+      - corpus definition + provenance (link to corpus_definition.md)
+      - preprocessing pipeline (link to preprocessing_choices.md)
+      - method + parameters + library versions + random seeds
+      - the patterns you investigated AND the ones that failed
+        the close-reading gate
+      - the patterns you renamed during close reading + why
+    Negative findings + relabellings are not embarrassments. They
+    are the evidence that the close-reading gate did its job.
+    Reviewers in the digital humanities (the journal, the field)
+    now expect this transparency — Da 2019's critique of LDA
+    papers is widely cited and any submission that hides
+    preprocessing choices will be flagged. Output:
+    synthesis/distant/methods_section.md.
 
 expected_outputs:
-  - inputs/corpus/corpus_definition.md
-  - workspace/distant/preprocessing_choices.md
-  - workspace/distant/models/<method>_<params>/
-  - workspace/distant/patterns/<method>_inspection.md
-  - workspace/distant/close_reading/<pattern_id>.md  # one per inspected pattern
-  - workspace/distant/triangulation.md
-  - synthesis/distant/methods_section.md
+- inputs/corpus/corpus_definition.md
+- workspace/distant/preprocessing_choices.md
+- workspace/distant/models/<method>_<params>/
+- workspace/distant/patterns/<method>_inspection.md
+- workspace/distant/close_reading/<pattern_id>.md    # one per inspected pattern
+- workspace/distant/triangulation.md
+- synthesis/distant/methods_section.md
 
 quality_bar:
   close_reading_minimum: |
@@ -252,4 +231,18 @@ quality_bar:
 
 next_protocol: humanities/method/digital_humanities_workflow
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: methodology
+sub_intent: method_pick
+triggers:
+- distant reading
+- corpus analysis
+- topic model
+- stylometry
+- text mining
+- computational literary
+summary: Text-as-data corpus analysis (NLP / topic models / stylometry) WITH humanistic interpretation gate.
+token_estimate: 1800
+decomposition:
+- protocol: humanities/textual/distant_reading
+  purpose: Build the corpus + analysis + interpretation gate.

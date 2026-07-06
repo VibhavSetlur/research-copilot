@@ -2,16 +2,16 @@ id: power_analysis
 tier: 'plan'
 name: Power Analysis / Sample Size Justification (standalone)
 version: '3.0.1'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/pilot_study           # pilot variance is the preferred source for the effect-size assumption
-  - methodology/preregistration       # the chosen N + SAP get frozen here before data collection
-  - domain/research_design            # the inline sample-size step lives here when sizing is part of design
+- methodology/pilot_study             # pilot variance is the preferred source for the effect-size assumption
+- methodology/preregistration         # the chosen N + SAP get frozen here before data collection
+- domain/research_design              # the inline sample-size step lives here when sizing is part of design
 description: |
   Standalone power / sample-size justification — for the case where the
   researcher needs the calculation as a deliverable in its own right
@@ -36,30 +36,16 @@ trigger: |
   "minimum detectable effect", "for the IRB", "for the grant — power".
 
 prerequisites:
-  - The research question is stated (research_overview.md or a
-    sentence in the prompt).
-  - The design is at least sketched (RCT / cohort / cross-sectional /
-    survey / paired-measurements / clustered — affects which
-    formulation applies).
+- The research question is stated (research_overview.md or a sentence in the prompt).
+- The design is at least sketched (RCT / cohort / cross-sectional / survey / paired-measurements / clustered — affects which formulation applies).
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "The effect size IS the calculation. A power calc with an
-       unjustified effect-size assumption is just a calc — the
-       justification is what makes it a power ANALYSIS."
-    - "Cite the source of every assumption. Pilot data, prior
-       published effects, the field's MCID (minimum clinically
-       important difference), or a conservative default if nothing
-       else — but always cite, never assert."
-    - "Classical post-hoc power is misleading; replace it with
-       sensitivity / detectable-effect-size analysis or with
-       achieved-precision (CI width) analysis. Reviewers who ask
-       for 'observed power' usually accept this substitute when
-       framed properly."
-    - "The answer to 'how many?' is a TABLE, not a single number.
-       Power varies with effect size, alpha, allocation ratio,
-       attrition — show the table; let the reader pick a point."
+  - "The effect size IS the calculation. A power calc with an unjustified effect-size assumption is just a calc — the justification is what makes it a power ANALYSIS."
+  - "Cite the source of every assumption. Pilot data, prior published effects, the field's MCID (minimum clinically important difference), or a conservative default if nothing else — but always cite, never assert."
+  - "Classical post-hoc power is misleading; replace it with sensitivity / detectable-effect-size analysis or with achieved-precision (CI width) analysis. Reviewers who ask for 'observed power' usually accept this substitute when framed properly."
+  - "The answer to 'how many?' is a TABLE, not a single number. Power varies with effect size, alpha, allocation ratio, attrition — show the table; let the reader pick a point."
 
 audience_profile:
   prospective_grant:
@@ -87,193 +73,193 @@ audience_profile:
       this gate.
 
 steps:
-  - id: scope_the_calculation
-    name: Scope the calculation
-    description: |
-      Confirm in one line:
-        - shape: prospective | post-hoc (sensitivity) | sequential
-        - audience: grant | IRB | preregistration | journal reviewer |
-          self
-        - the primary outcome (continuous / binary / count / time-to-
-          event / proportion / count-rate) — affects the test family
-        - the comparison: one-sample / two-sample / paired / clustered /
-          factorial / regression-adjusted
+- id: scope_the_calculation
+  name: Scope the calculation
+  description: |
+    Confirm in one line:
+      - shape: prospective | post-hoc (sensitivity) | sequential
+      - audience: grant | IRB | preregistration | journal reviewer |
+        self
+      - the primary outcome (continuous / binary / count / time-to-
+        event / proportion / count-rate) — affects the test family
+      - the comparison: one-sample / two-sample / paired / clustered /
+        factorial / regression-adjusted
 
-      A power calc without these four pieces is not a calc; it is a
-      number. Block downstream steps until they're recorded.
+    A power calc without these four pieces is not a calc; it is a
+    number. Block downstream steps until they're recorded.
 
-  - id: source_the_effect_size_assumption
-    name: Source + justify the effect size assumption (MANDATORY)
-    description: |
-      The effect size assumption is THE bottleneck. Sources, in order
-      of preference:
+- id: source_the_effect_size_assumption
+  name: Source + justify the effect size assumption (MANDATORY)
+  description: |
+    The effect size assumption is THE bottleneck. Sources, in order
+    of preference:
 
-        1. PILOT DATA from this project — when a pilot has run, use
-           the observed effect with its CI; treat the lower CI bound
-           as the conservative anchor.
-        2. PRIOR PUBLISHED effects in the SAME population — a recent
-           meta-analysis is best; otherwise the largest well-powered
-           single study. Cite explicitly.
-        3. FIELD CONVENTION minimum effect — the MCID for clinical
-           outcomes, the smallest effect of practical interest the
-           field would act on. Cite the consensus document or
-           guideline.
-        4. SMALLEST-EFFECT-OF-INTEREST fallback — when 1-3 are
-           unavailable, anchor on the smallest effect that would change
-           a decision in this field, NOT on a generic "small effect"
-           convention from a textbook. If you cite a benchmark-magnitude
-           convention at all, cite it as a benchmark for THIS field and
-           flag prominently that no project- or field-specific source
-           was available.
+      1. PILOT DATA from this project — when a pilot has run, use
+         the observed effect with its CI; treat the lower CI bound
+         as the conservative anchor.
+      2. PRIOR PUBLISHED effects in the SAME population — a recent
+         meta-analysis is best; otherwise the largest well-powered
+         single study. Cite explicitly.
+      3. FIELD CONVENTION minimum effect — the MCID for clinical
+         outcomes, the smallest effect of practical interest the
+         field would act on. Cite the consensus document or
+         guideline.
+      4. SMALLEST-EFFECT-OF-INTEREST fallback — when 1-3 are
+         unavailable, anchor on the smallest effect that would change
+         a decision in this field, NOT on a generic "small effect"
+         convention from a textbook. If you cite a benchmark-magnitude
+         convention at all, cite it as a benchmark for THIS field and
+         flag prominently that no project- or field-specific source
+         was available.
 
-      Write the assumption + source to
-      workspace/<step>/outputs/reports/power_assumptions.md.
-      Run tool_research_method query="effect size <outcome> <population>"
-      when the source is not obvious; cite what comes back.
+    Write the assumption + source to
+    workspace/<step>/outputs/reports/power_assumptions.md.
+    Run tool_search query="effect size <outcome> <population>"
+    when the source is not obvious; cite what comes back.
 
-  - id: name_the_statistical_test
-    name: Name the statistical test the power calc will be for
-    description: |
-      The power calculation is only valid for the test the analysis will
-      ACTUALLY run, so fix the test family before sizing — by reasoning from
-      the design, not by reaching for a default. Three dimensions determine
-      it; state each for THIS study:
-        - the outcome's distributional family (what kind of variable is it,
-          and what does its conditional distribution look like?)
-        - the dependency structure (independent, paired, clustered,
-          repeated — what induces correlation between observations?)
-        - whether the estimand is marginal or adjusted (a raw group effect
-          vs an effect conditional on covariates the model will carry)
+- id: name_the_statistical_test
+  name: Name the statistical test the power calc will be for
+  description: |
+    The power calculation is only valid for the test the analysis will
+    ACTUALLY run, so fix the test family before sizing — by reasoning from
+    the design, not by reaching for a default. Three dimensions determine
+    it; state each for THIS study:
+      - the outcome's distributional family (what kind of variable is it,
+        and what does its conditional distribution look like?)
+      - the dependency structure (independent, paired, clustered,
+        repeated — what induces correlation between observations?)
+      - whether the estimand is marginal or adjusted (a raw group effect
+        vs an effect conditional on covariates the model will carry)
 
-      Name the test those dimensions imply for this design and cite the
-      source that justifies it (the field's reporting standard, a methods
-      text, or a comparable published analysis). A power calc done for the
-      wrong test family gives a misleading N — the justification is what
-      makes the chosen N defensible to a reviewer.
+    Name the test those dimensions imply for this design and cite the
+    source that justifies it (the field's reporting standard, a methods
+    text, or a comparable published analysis). A power calc done for the
+    wrong test family gives a misleading N — the justification is what
+    makes the chosen N defensible to a reviewer.
 
-  - id: build_the_power_table_not_a_single_number
-    name: Build the power TABLE (not a single number)
-    description: |
-      Run the power calc across a GRID of plausible inputs and write
-      the resulting table to
-      workspace/<step>/data/next_step_output/power_grid.csv:
+- id: build_the_power_table_not_a_single_number
+  name: Build the power TABLE (not a single number)
+  description: |
+    Run the power calc across a GRID of plausible inputs and write
+    the resulting table to
+    workspace/<step>/data/next_step_output/power_grid.csv:
 
-        - effect size: low / planned / high (the planned value plus
-          a range that brackets the assumption uncertainty)
-        - alpha: the significance level the field / regulator requires for
-          this design — cite it; sweep the stricter levels the audience
-          expects rather than assuming a single conventional value
-        - allocation ratio (for two-group): 1:1 + the unequal ratio
-          when that's a real constraint
-        - attrition: 0% / planned / pessimistic
-        - power: the range the field reports against (commonly several
-          points spanning the conventional target); cite the target the
-          audience expects
+      - effect size: low / planned / high (the planned value plus
+        a range that brackets the assumption uncertainty)
+      - alpha: the significance level the field / regulator requires for
+        this design — cite it; sweep the stricter levels the audience
+        expects rather than assuming a single conventional value
+      - allocation ratio (for two-group): 1:1 + the unequal ratio
+        when that's a real constraint
+      - attrition: 0% / planned / pessimistic
+      - power: the range the field reports against (commonly several
+        points spanning the conventional target); cite the target the
+        audience expects
 
-      Use whichever power library the field reaches for THIS design;
-      surface that via tool_research_tool rather than defaulting to the
-      one you know best, and tag the library + version in the
-      assumptions report.
+    Use whichever power library the field reaches for THIS design;
+    surface that via tool_search rather than defaulting to the
+    one you know best, and tag the library + version in the
+    assumptions report.
 
-      For non-standard designs (multilevel / non-inferiority /
-      time-to-event with stratification / cluster-randomised), a
-      closed-form calc may not exist — prefer a SIMULATION-based power
-      calc:
-        tool_python_exec script that simulates the data + runs the
-        intended test under each grid cell + estimates power as the
-        proportion of rejections across replications.
+    For non-standard designs (multilevel / non-inferiority /
+    time-to-event with stratification / cluster-randomised), a
+    closed-form calc may not exist — prefer a SIMULATION-based power
+    calc:
+      tool_python_exec script that simulates the data + runs the
+      intended test under each grid cell + estimates power as the
+      proportion of rejections across replications.
 
-  - id: visualise_the_power_curve
-    name: Build the canonical power-curve figure
-    description: |
-      a `line` chart per the guidance in visualization/figure_guidelines
-        data="<power_grid.csv>"
-        x="effect_size" y="power"
-        with one line per (alpha, allocation, attrition) combination
-        and a horizontal reference line at the target power the audience
-        expects (cite it).
+- id: visualise_the_power_curve
+  name: Build the canonical power-curve figure
+  description: |
+    a `line` chart per the guidance in visualization/figure_guidelines
+      data="<power_grid.csv>"
+      x="effect_size" y="power"
+      with one line per (alpha, allocation, attrition) combination
+      and a horizontal reference line at the target power the audience
+      expects (cite it).
 
-      The figure is what reviewers look at first. Caption leads with
-      the substantive claim: "the design has <target> power to detect an
-      effect of <X> or larger at the stated α; below <Y> the study is
-      underpowered." Add both sidecars.
+    The figure is what reviewers look at first. Caption leads with
+    the substantive claim: "the design has <target> power to detect an
+    effect of <X> or larger at the stated α; below <Y> the study is
+    underpowered." Add both sidecars.
 
-  - id: pick_n_and_justify
-    name: Pick the chosen N and write the one-paragraph justification
-    description: |
-      For prospective designs: pick N from the table at the planned
-      effect size, target power, allocation, and attrition. Round UP
-      (never down — rounding down silently under-powers the study) to
-      a practical enrolment unit for this study's scale and allocation.
+- id: pick_n_and_justify
+  name: Pick the chosen N and write the one-paragraph justification
+  description: |
+    For prospective designs: pick N from the table at the planned
+    effect size, target power, allocation, and attrition. Round UP
+    (never down — rounding down silently under-powers the study) to
+    a practical enrolment unit for this study's scale and allocation.
 
-      Write the justification paragraph (the reviewer-facing prose):
+    Write the justification paragraph (the reviewer-facing prose):
 
-        "To detect an effect of <X> on <outcome> with <power>
-         at α=<alpha>, assuming <allocation ratio>, <test family>,
-         and <attrition>, we require N=<chosen>. The effect-size
-         assumption is sourced from <pilot data / cited reference /
-         field MCID>, with sensitivity analyses (Appendix Table) showing
-         that N=<chosen> retains ≥<power-low>% power down to an effect
-         of <X-lower>. Attrition is budgeted at <%>, giving an enrolled
-         target of N_target=<inflated>."
+      "To detect an effect of <X> on <outcome> with <power>
+       at α=<alpha>, assuming <allocation ratio>, <test family>,
+       and <attrition>, we require N=<chosen>. The effect-size
+       assumption is sourced from <pilot data / cited reference /
+       field MCID>, with sensitivity analyses (Appendix Table) showing
+       that N=<chosen> retains ≥<power-low>% power down to an effect
+       of <X-lower>. Attrition is budgeted at <%>, giving an enrolled
+       target of N_target=<inflated>."
 
-      Length: 80-150 words. Goes verbatim into the grant / IRB / SAP.
+    Length: 80-150 words. Goes verbatim into the grant / IRB / SAP.
 
-  - id: handle_post_hoc_correctly
-    name: Handle post-hoc correctly (sensitivity, not 'observed power')
-    description: |
-      For shape (b) — post-hoc requests:
-        - REFUSE classical post-hoc power. State why in one sentence
-          (deterministically linked to the p-value; provides no new
-          information beyond the CI).
-        - INSTEAD compute:
-            * detectable effect size — given N_achieved, alpha, target
-              power, what's the smallest effect we could have detected?
-            * achieved precision — width of the 95% CI on the primary
-              estimate
-        - Frame the interpretation: "With N=<x>, the study could detect
-          effects ≥<MDE>; the observed estimate <Y> lies <where>
-          relative to that threshold."
+- id: handle_post_hoc_correctly
+  name: Handle post-hoc correctly (sensitivity, not 'observed power')
+  description: |
+    For shape (b) — post-hoc requests:
+      - REFUSE classical post-hoc power. State why in one sentence
+        (deterministically linked to the p-value; provides no new
+        information beyond the CI).
+      - INSTEAD compute:
+          * detectable effect size — given N_achieved, alpha, target
+            power, what's the smallest effect we could have detected?
+          * achieved precision — width of the 95% CI on the primary
+            estimate
+      - Frame the interpretation: "With N=<x>, the study could detect
+        effects ≥<MDE>; the observed estimate <Y> lies <where>
+        relative to that threshold."
 
-      This is what reviewers asking for 'observed power' actually
-      want — they want to know whether the null result reflects a
-      true small effect or insufficient sample.
+    This is what reviewers asking for 'observed power' actually
+    want — they want to know whether the null result reflects a
+    true small effect or insufficient sample.
 
-  - id: handle_sequential_correctly
-    name: Handle sequential designs correctly
-    description: |
-      For shape (c) — group-sequential / alpha-spending:
-        - name and justify the boundary / spending family chosen
-          (the field names several — e.g. O'Brien-Fleming, Pocock,
-          Haybittle-Peto, or a named alpha-spending function); the
-          choice trades early-stopping aggressiveness against final-look
-          power, so cite the basis for picking one over the others
-        - state the information fraction schedule (how many interim
-          looks, at what enrolment fractions)
-        - report operating characteristics: expected sample size under
-          null + under alternative, type-I error preserved at the
-          nominal level
-        - the calc must run BEFORE the first batch is examined; route
-          to methodology/preregistration to freeze.
+- id: handle_sequential_correctly
+  name: Handle sequential designs correctly
+  description: |
+    For shape (c) — group-sequential / alpha-spending:
+      - name and justify the boundary / spending family chosen
+        (the field names several — e.g. O'Brien-Fleming, Pocock,
+        Haybittle-Peto, or a named alpha-spending function); the
+        choice trades early-stopping aggressiveness against final-look
+        power, so cite the basis for picking one over the others
+      - state the information fraction schedule (how many interim
+        looks, at what enrolment fractions)
+      - report operating characteristics: expected sample size under
+        null + under alternative, type-I error preserved at the
+        nominal level
+      - the calc must run BEFORE the first batch is examined; route
+        to methodology/preregistration to freeze.
 
-  - id: route_next
-    name: Route next
-    description: |
-      Three exits:
-        - prospective → route to methodology/preregistration (freeze
-          the SAP including the chosen N) → then research_design /
-          analysis_plan.
-        - post-hoc sensitivity → return to whichever protocol
-          summoned this audit; the detectable-effect-size paragraph
-          goes into the discussion / limitations of the manuscript.
-        - sequential → route to methodology/preregistration to freeze
-          the spending plan + boundaries.
+- id: route_next
+  name: Route next
+  description: |
+    Three exits:
+      - prospective → route to methodology/preregistration (freeze
+        the SAP including the chosen N) → then research_design /
+        analysis_plan.
+      - post-hoc sensitivity → return to whichever protocol
+        summoned this audit; the detectable-effect-size paragraph
+        goes into the discussion / limitations of the manuscript.
+      - sequential → route to methodology/preregistration to freeze
+        the spending plan + boundaries.
 
 expected_outputs:
-  - workspace/<step>/outputs/reports/power_assumptions.md
-  - workspace/<step>/data/next_step_output/power_grid.csv
-  - workspace/<step>/outputs/figures/power_curve.png
-  - workspace/<step>/outputs/reports/power_justification.md
+- workspace/<step>/outputs/reports/power_assumptions.md
+- workspace/<step>/data/next_step_output/power_grid.csv
+- workspace/<step>/outputs/figures/power_curve.png
+- workspace/<step>/outputs/reports/power_justification.md
 
 quality_bar:
   effect_size_assumption_sourced_and_cited: true
@@ -285,3 +271,26 @@ quality_bar:
 next_protocol: methodology/preregistration
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: power
+triggers:
+- power analysis
+- sample size
+- sample size calculation
+- how many subjects
+- how many participants
+- how many samples
+- power calculation
+- detectable effect size
+- minimum detectable effect
+- mde
+- n required
+- for the irb power
+- for the grant power
+- post-hoc power
+- achieved precision
+summary: Standalone power / sample-size justification (prospective / post-hoc sensitivity / sequential).
+token_estimate: 1500
+decomposition:
+- protocol: methodology/power_analysis
+  purpose: Source effect size, name test, build power table + curve, justify N.

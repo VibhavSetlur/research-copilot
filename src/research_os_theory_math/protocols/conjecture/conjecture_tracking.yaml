@@ -1,7 +1,7 @@
 id: conjecture_tracking
 name: Conjecture Tracking — open-problem register
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [theory_math]
   audience: [auditor]
@@ -39,141 +39,132 @@ trigger: |
   already known".
 
 prerequisites:
-  - The conjecture is stated formally enough to be true-or-false
-    in principle. "Something interesting happens near the
-    boundary" is not a conjecture; "the spectral gap is bounded
-    below by c log(n)" is.
-  - The project has a `workspace/conjectures/` directory (created
-    by this protocol on first run if absent).
-  - A literature scan has been attempted before registering — at
-    minimum a tool_search pass and a `mem_log search` against the
-    project's reference notes, so the entry doesn't duplicate a
-    known result.
+- The conjecture is stated formally enough to be true-or-false in principle. "Something interesting happens near the boundary" is not a conjecture; "the spectral gap is bounded below by c log(n)" is.
+- The project has a `workspace/conjectures/` directory (created by this protocol on first run if absent).
+- A literature scan has been attempted before registering — at minimum a tool_search pass and a `mem_log search` against the project's reference notes, so the entry doesn't duplicate a known result.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Every status change cites a source. A status flip from
-       open to proven without a link to the proof (paper, arXiv
-       id, internal `workspace/proofs/<slug>.md`, or formal-check
-       artifact) is rejected on the next audit."
-    - "Partial progress is a first-class status, not a holding
-       pen. Record what fragment was proven and under what extra
-       assumptions, so the next attempt knows the residual gap
-       rather than restarting from zero."
-    - "Negative results stay registered. A disproven conjecture
-       and its counter-example are more valuable than silence —
-       they bound the search space for the next conjecture."
-    - "A conjecture attributed to another author keeps that
-       attribution even if the project proves it. The register
-       records who first stated it (Erdős, Conway, project
-       founder), separately from who eventually settled it."
+  - "Every status change cites a source. A status flip from open to proven without a link to the proof (paper, arXiv id, internal `workspace/proofs/<slug>.md`, or formal-check artifact) is rejected on the next audit."
+  - "Partial progress is a first-class status, not a holding pen. Record what fragment was proven and under what extra assumptions, so the next attempt knows the residual gap rather than restarting from zero."
+  - "Negative results stay registered. A disproven conjecture and its counter-example are more valuable than silence — they bound the search space for the next conjecture."
+  - "A conjecture attributed to another author keeps that attribution even if the project proves it. The register records who first stated it (Erdős, Conway, project founder), separately from who eventually settled it."
 
 quality_bar:
   citation_floor_per_status_change: 1
   partial_progress_must_record:
-    - "the exact fragment that is now proven (a sub-claim or
-       restricted case)"
-    - "the extra hypotheses required (so the residual gap is
-       explicit)"
-    - "the prover's name + date + artifact pointer"
+  - "the exact fragment that is now proven (a sub-claim or restricted case)"
+  - "the extra hypotheses required (so the residual gap is explicit)"
+  - "the prover's name + date + artifact pointer"
   reattribution_required_when:
-    - "the original statement was incorrect and the project's
-       restatement is what got proven"
-    - "the proof reveals the conjecture was a corollary of a
-       deeper, previously-unstated result"
+  - "the original statement was incorrect and the project's restatement is what got proven"
+  - "the proof reveals the conjecture was a corollary of a deeper, previously-unstated result"
   audit_cadence_days: 90
 
 steps:
-  - id: scan_register
-    name: Scan the existing register before adding
-    description: |
-      Open `workspace/conjectures/_index.md` (create if missing)
-      and `git grep` the conjecture's keywords across both
-      `workspace/conjectures/` and the project's reference notes
-      in `inputs/references/`. Also run `mem_log search` against
-      the project's memory namespace and `tool_search` against
-      the project's literature cache. The goal is to confirm
-      this is not already registered under a different name —
-      a surprisingly common failure mode is the same conjecture
-      stated in three notations across three subfolders.
+- id: scan_register
+  name: Scan the existing register before adding
+  description: |
+    Open `workspace/conjectures/_index.md` (create if missing)
+    and `git grep` the conjecture's keywords across both
+    `workspace/conjectures/` and the project's reference notes
+    in `inputs/references/`. Also run `mem_log search` against
+    the project's memory namespace and `tool_search` against
+    the project's literature cache. The goal is to confirm
+    this is not already registered under a different name —
+    a surprisingly common failure mode is the same conjecture
+    stated in three notations across three subfolders.
 
-  - id: state_conjecture
-    name: State the conjecture formally
-    description: |
-      Create `workspace/conjectures/<slug>.md` with sections:
-      `## Statement` (the formal claim, using project notation),
-      `## Attribution` (who first stated it + year + source),
-      `## Why it matters` (1 paragraph on what depends on it or
-      what it would unlock), `## Status` (initial value is open
-      unless prior progress is already known). The slug should
-      be short and stable — it will be cited from proof drafts
-      and the paper, so renaming later is costly. Use the
-      conjecturer's surname when possible (`erdos_distinct_distances`)
-      rather than a topic word that could clash.
+- id: state_conjecture
+  name: State the conjecture formally
+  description: |
+    Create `workspace/conjectures/<slug>.md` with sections:
+    `## Statement` (the formal claim, using project notation),
+    `## Attribution` (who first stated it + year + source),
+    `## Why it matters` (1 paragraph on what depends on it or
+    what it would unlock), `## Status` (initial value is open
+    unless prior progress is already known). The slug should
+    be short and stable — it will be cited from proof drafts
+    and the paper, so renaming later is costly. Use the
+    conjecturer's surname when possible (`erdos_distinct_distances`)
+    rather than a topic word that could clash.
 
-  - id: link_dependents
-    name: Link dependents and prerequisites
-    description: |
-      In the same file add `## Depends on` (other conjectures
-      whose truth is assumed) and `## Implies` (results that
-      follow if this conjecture is proven). Cross-link by slug.
-      If the project's theorem dependency graph exists (per
-      `theory_math/proof/proof_verification_workflow`), add a
-      node for this conjecture so impact-of-change analysis
-      picks it up. A conjecture nobody else cites is fine, but
-      flag it — isolated conjectures are often the ones that
-      should be retired rather than worked on.
+- id: link_dependents
+  name: Link dependents and prerequisites
+  description: |
+    In the same file add `## Depends on` (other conjectures
+    whose truth is assumed) and `## Implies` (results that
+    follow if this conjecture is proven). Cross-link by slug.
+    If the project's theorem dependency graph exists (per
+    `theory_math/proof/proof_verification_workflow`), add a
+    node for this conjecture so impact-of-change analysis
+    picks it up. A conjecture nobody else cites is fine, but
+    flag it — isolated conjectures are often the ones that
+    should be retired rather than worked on.
 
-  - id: log_partial_progress
-    name: Log partial progress as it lands
-    description: |
-      When a sub-result is proven (a special case, a weakened
-      form, a counter-example to a corollary), append to the
-      file's `## Progress log` section. Each entry has: date,
-      prover, the exact fragment proven (formal statement),
-      extra hypotheses required, and an artifact pointer
-      (`workspace/proofs/<slug>.md`, arXiv id, paper DOI).
-      Do not silently overwrite earlier log entries. If a
-      later result subsumes an earlier one, mark the earlier
-      one as superseded with a forward pointer rather than
-      deleting it — the path of attempts is itself useful
-      context for the next attempt.
+- id: log_partial_progress
+  name: Log partial progress as it lands
+  description: |
+    When a sub-result is proven (a special case, a weakened
+    form, a counter-example to a corollary), append to the
+    file's `## Progress log` section. Each entry has: date,
+    prover, the exact fragment proven (formal statement),
+    extra hypotheses required, and an artifact pointer
+    (`workspace/proofs/<slug>.md`, arXiv id, paper DOI).
+    Do not silently overwrite earlier log entries. If a
+    later result subsumes an earlier one, mark the earlier
+    one as superseded with a forward pointer rather than
+    deleting it — the path of attempts is itself useful
+    context for the next attempt.
 
-  - id: transition_status
-    name: Transition status with a citation
-    description: |
-      Allowed transitions: open → partial_progress, open →
-      proven, open → disproven, open → counter_example_found,
-      partial_progress → proven, partial_progress → disproven,
-      partial_progress → counter_example_found. The reverse
-      transition proven → open is allowed only if a flaw is
-      found in a previously-accepted proof (record the flaw
-      + the finder + the date in a `## Reopened` section; do
-      not delete the prior proof citation). Every transition
-      requires at least one citation in the same commit.
-      Update `## Status` and `## Status history` in the file,
-      and refresh the entry in `workspace/conjectures/_index.md`.
+- id: transition_status
+  name: Transition status with a citation
+  description: |
+    Allowed transitions: open → partial_progress, open →
+    proven, open → disproven, open → counter_example_found,
+    partial_progress → proven, partial_progress → disproven,
+    partial_progress → counter_example_found. The reverse
+    transition proven → open is allowed only if a flaw is
+    found in a previously-accepted proof (record the flaw
+    + the finder + the date in a `## Reopened` section; do
+    not delete the prior proof citation). Every transition
+    requires at least one citation in the same commit.
+    Update `## Status` and `## Status history` in the file,
+    and refresh the entry in `workspace/conjectures/_index.md`.
 
-  - id: audit_register
-    name: Periodic audit of the register
-    description: |
-      Every audit_cadence_days (default 90), run through every
-      open and partial_progress entry. For each: (a) re-run a
-      literature scan via `tool_search` and `tool_redteam_review`
-      with focus='conjecture_status' to catch external proofs
-      that landed since the last audit; (b) check the citation
-      chain still resolves (linkrot is common for preprints);
-      (c) flag entries with no progress log activity in >12
-      months as candidates for retirement or reframing. Retirement
-      is not deletion — move to `## Retired conjectures` in the
-      index with a 1-sentence reason.
+- id: audit_register
+  name: Periodic audit of the register
+  description: |
+    Every audit_cadence_days (default 90), run through every
+    open and partial_progress entry. For each: (a) re-run a
+    literature scan via `tool_search` and `tool_redteam_review`
+    with focus='conjecture_status' to catch external proofs
+    that landed since the last audit; (b) check the citation
+    chain still resolves (linkrot is common for preprints);
+    (c) flag entries with no progress log activity in >12
+    months as candidates for retirement or reframing. Retirement
+    is not deletion — move to `## Retired conjectures` in the
+    index with a 1-sentence reason.
 
 expected_outputs:
-  - workspace/conjectures/_index.md
-  - workspace/conjectures/<slug>.md
-  - workspace/conjectures/<slug>_audit_<YYYY-MM-DD>.md  # per audit pass
+- workspace/conjectures/_index.md
+- workspace/conjectures/<slug>.md
+- workspace/conjectures/<slug>_audit_<YYYY-MM-DD>.md    # per audit pass
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: literature/literature_search
+intent_class: memory
+sub_intent: register
+triggers:
+- open problem
+- conjecture
+- conjecture tracking
+- open conjecture
+- register a conjecture
+summary: Open-conjecture register with status (open / partial / proven / disproven / counter-example).
+token_estimate: 1300
+decomposition:
+- protocol: theory_math/conjecture/conjecture_tracking
+  purpose: Add / update / triage conjectures.

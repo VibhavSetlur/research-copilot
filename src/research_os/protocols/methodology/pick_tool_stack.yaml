@@ -2,16 +2,16 @@ id: pick_tool_stack
 tier: 'plan'
 name: Pick Tool Stack (language + library per analysis sub-task)
 version: '4.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [experiment_pipeline]
 last_reviewed: '2026-06-25'
 see_also:
-  - methodology/methodology_selection   # settles the METHOD; this settles the implementation language/library
-  - methodology/polyglot_analysis       # the broader choose-+-run-+-record discipline this feeds
-  - methodology/mixed_language_orchestration  # when one step must mix languages
+- methodology/methodology_selection     # settles the METHOD; this settles the implementation language/library
+- methodology/polyglot_analysis         # the broader choose-+-run-+-record discipline this feeds
+- methodology/mixed_language_orchestration    # when one step must mix languages
 description: |
   Sister protocol to `visualization/figure_guidelines`'s `pick_library`
   step — but for the ANALYSIS side, not the figure side. Asks the AI to
@@ -27,7 +27,7 @@ description: |
   Research-OS is deliberately language-agnostic. `python_exec`,
   `r_exec`, `julia_exec`, `bash_exec` all exist. The AI's job is to
   match the implementation to current field practice, surfaced from the
-  literature for THIS method in THIS domain via `tool_research_tool` —
+  literature for THIS method in THIS domain via `tool_search` —
   not to copy a language/library default from training memory. The
   canonical implementation of a method drifts across subfields and
   decades; the protocol therefore names the QUESTION ("where does this
@@ -54,90 +54,88 @@ trigger: |
       already uses is fine.
 
 prerequisites:
-  - The step's method has been settled (via methodology_selection or
-    inherited from analysis_plan).
-  - The project's environment supports the candidate languages — check
-    `workspace/environment/README.md` and `workspace/<step>/environment/`.
+- The step's method has been settled (via methodology_selection or inherited from analysis_plan).
+- The project's environment supports the candidate languages — check `workspace/environment/README.md` and `workspace/<step>/environment/`.
 
 steps:
-  - id: enumerate_language_candidates
-    name: Enumerate candidate implementations for this method
-    description: |
-      For the method already settled (via methodology_selection or
-      inherited from analysis_plan), name the languages where it has a
-      maintained, field-validated implementation, and the canonical
-      library in each. Do NOT enumerate from memory — surface the
-      candidates from the literature for THIS method in THIS domain:
+- id: enumerate_language_candidates
+  name: Enumerate candidate implementations for this method
+  description: |
+    For the method already settled (via methodology_selection or
+    inherited from analysis_plan), name the languages where it has a
+    maintained, field-validated implementation, and the canonical
+    library in each. Do NOT enumerate from memory — surface the
+    candidates from the literature for THIS method in THIS domain:
 
-        tool_research_tool query="<method> <domain> implementation library"
+      tool_search query="<method> <domain> implementation library"
 
-      Capture the candidate set (language + library + a one-line note on
-      maturity / maintenance) in the step's scratch/stack_plan.md. The
-      goal is the list a domain reviewer would recognise, not the list
-      the AI is most fluent in.
+    Capture the candidate set (language + library + a one-line note on
+    maturity / maintenance) in the step's scratch/stack_plan.md. The
+    goal is the list a domain reviewer would recognise, not the list
+    the AI is most fluent in.
 
-  - id: query_field_practice
-    name: Break the tie on field practice (literature signal)
-    description: |
-      For the top candidates, score on which implementation appears in
-      the methods sections of recent papers in THIS domain — the one a
-      reviewer expects to see, not the one the AI types fastest. Pull
-      that signal directly:
+- id: query_field_practice
+  name: Break the tie on field practice (literature signal)
+  description: |
+    For the top candidates, score on which implementation appears in
+    the methods sections of recent papers in THIS domain — the one a
+    reviewer expects to see, not the one the AI types fastest. Pull
+    that signal directly:
 
-        tool_research_tool query="<method> <domain> <library>"
+      tool_search query="<method> <domain> <library>"
 
-      If the literature doesn't break the tie, document that in
-      stack_plan.md and prefer the implementation with the better
-      reproducibility story (active maintenance, version discipline, a
-      pinnable environment) — and cite the basis for that judgement.
+    If the literature doesn't break the tie, document that in
+    stack_plan.md and prefer the implementation with the better
+    reproducibility story (active maintenance, version discipline, a
+    pinnable environment) — and cite the basis for that judgement.
 
-  - id: check_env_compatibility
-    name: Check env compatibility before committing
-    description: |
-      sys_env(operation='snapshot', scope='step', step_id='<NN_slug>')
-      Confirm the chosen language + library is installed in the project
-      env. If the field-practice choice isn't installed but a
-      lower-fidelity alternative is, do NOT silently fall back —
-      surface the install requirement instead:
-        - Update environment/environment.yml or DESCRIPTION.
-        - Note the install command in stack_plan.md.
-        - Falling back to a more-convenient equivalent because it was
-          already installed is how projects end up with
-          non-field-standard analyses a reviewer flags.
+- id: check_env_compatibility
+  name: Check env compatibility before committing
+  description: |
+    sys_env(operation='snapshot', scope='step', step_id='<NN_slug>')
+    Confirm the chosen language + library is installed in the project
+    env. If the field-practice choice isn't installed but a
+    lower-fidelity alternative is, do NOT silently fall back —
+    surface the install requirement instead:
+      - Update environment/environment.yml or DESCRIPTION.
+      - Note the install command in stack_plan.md.
+      - Falling back to a more-convenient equivalent because it was
+        already installed is how projects end up with
+        non-field-standard analyses a reviewer flags.
 
-  - id: decide_on_mixing
-    name: Decide whether to mix languages within the step
-    description: |
-      If the analysis spans multiple sub-tasks where field practice
-      differs (e.g. WGCNA in R + visualization in Python), consider:
+- id: decide_on_mixing
+  name: Decide whether to mix languages within the step
+  description: |
+    If the analysis spans multiple sub-tasks where field practice
+    differs (e.g. WGCNA in R + visualization in Python), consider:
 
-        Option A — split into separate steps, one language per step
-                   (cleaner, easier to reproduce, more boilerplate)
-        Option B — single step, mix Python + R via subprocess
-                   (faster, but logs + tools.md must cover both)
+      Option A — split into separate steps, one language per step
+                 (cleaner, easier to reproduce, more boilerplate)
+      Option B — single step, mix Python + R via subprocess
+                 (faster, but logs + tools.md must cover both)
 
-      Default: Option A unless the data hand-off would be expensive
-      (large objects, slow re-load) or the step is genuinely a
-      pipeline (R model fit → Python plot of same model object).
+    Default: Option A unless the data hand-off would be expensive
+    (large objects, slow re-load) or the step is genuinely a
+    pipeline (R model fit → Python plot of same model object).
 
-      If picking Option B, route through:
-        methodology/mixed_language_orchestration
+    If picking Option B, route through:
+      methodology/mixed_language_orchestration
 
-  - id: record_choice
-    name: Record choice in stack_plan.md + analysis.md
-    description: |
-      Write a 3-line block to workspace/<step>/scratch/stack_plan.md:
-        - language: <python|R|julia|bash|mixed>
-        - library: <name + version pin>
-        - rationale: <one-line "field practice for this method is X" + citation_key>
+- id: record_choice
+  name: Record choice in stack_plan.md + analysis.md
+  description: |
+    Write a 3-line block to workspace/<step>/scratch/stack_plan.md:
+      - language: <python|R|julia|bash|mixed>
+      - library: <name + version pin>
+      - rationale: <one-line "field practice for this method is X" + citation_key>
 
-      Append the same block to workspace/analysis.md via
-      `mem_log` so the project narrative captures the choice.
+    Append the same block to workspace/analysis.md via
+    `mem_log` so the project narrative captures the choice.
 
 expected_outputs:
-  - workspace/<step>/scratch/stack_plan.md
-  - workspace/analysis.md (appended block)
-  - workspace/<step>/environment/* (updated for the chosen language)
+- workspace/<step>/scratch/stack_plan.md
+- workspace/analysis.md (appended block)
+- workspace/<step>/environment/* (updated for the chosen language)
 
 quality_bar:
   language_choice_grounded_in_field_practice: true
@@ -147,3 +145,19 @@ quality_bar:
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: methodology/methodology_selection
+intent_class: methodology
+sub_intent: pick
+triggers:
+- pick language
+- which language
+- python or r
+- r or python
+- tool stack
+- which library
+- implementation choice
+- language choice
+- deseq2 or pydeseq2
+- seurat or scanpy
+- survminer or lifelines
+- field practice
+summary: Pick language + library per sub-task (R Bioconductor for DE, Python scanpy for scRNA, R survival for Cox PH, etc.) — sister to figure_guidelines.pick_library at the analysis level.

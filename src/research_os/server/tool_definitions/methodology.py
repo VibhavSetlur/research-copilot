@@ -93,6 +93,7 @@ METHODOLOGY_TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
                 },
                 "nodes": {
                     "type": "array",
+                    "items": {"type": "object"},
                     "description": "operation='define' — optional custom node list (see analysis_plan protocol for shape).",
                 },
                 "template": {

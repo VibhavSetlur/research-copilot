@@ -2,16 +2,16 @@ id: writing_discussion
 tier: 'synthesize'
 name: Writing — Discussion (the hardest section)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - writing/writing_results            # reports what this section interprets
-  - writing/writing_limitations        # the sub-section this protocol routes into
-  - literature/literature_per_step     # produces the findings-vs-literature verdicts piped in here
+- writing/writing_results              # reports what this section interprets
+- writing/writing_limitations          # the sub-section this protocol routes into
+- literature/literature_per_step       # produces the findings-vs-literature verdicts piped in here
 description: |
   Draft / iterate the Discussion section. The Discussion is where most
   papers under-deliver — it either restates the Results, over-claims
@@ -34,33 +34,17 @@ trigger: |
   "the discussion needs work".
 
 prerequisites:
-  - synthesis/results.md exists (or workspace conclusions cover the
-    results substantively).
-  - At least one verified citation in workspace/citations.md the
-    discussion will engage with.
+- synthesis/results.md exists (or workspace conclusions cover the results substantively).
+- At least one verified citation in workspace/citations.md the discussion will engage with.
 
 editorial_voice:
   mode: prescription
   rules:
-    - "Lead with the principal finding restated in INTERPRETIVE terms,
-       not in results-restatement terms. 'Our model predicted survival
-       at 0.84 AUROC' is results restatement; 'The signal carried by
-       routine vitals appears sufficient to outperform the prior
-       deployed scoring system in our cohort' is interpretation."
-    - "Every interpretive claim CITES — either an upstream paper it
-       agrees / disagrees with, or a specific workspace finding it
-       rests on. Free-floating interpretation reads as opinion."
-    - "Name the ALTERNATIVE EXPLANATIONS. If the only explanation
-       you can offer for a finding is your preferred mechanism, the
-       paper is fragile. The Discussion is where the reviewer's
-       devil's-advocate question gets answered before they ask."
-    - "Limit the contribution to what the evidence supports. The
-       difference between 'demonstrates' and 'suggests' is the
-       difference between a paper that ages well and one that
-       doesn't."
-    - "Future work belongs in the conclusion or a dedicated paragraph
-       — NOT scattered through interpretive paragraphs as a hedge
-       against weakness."
+  - "Lead with the principal finding restated in INTERPRETIVE terms, not in results-restatement terms. 'Our model predicted survival at 0.84 AUROC' is results restatement; 'The signal carried by routine vitals appears sufficient to outperform the prior deployed scoring system in our cohort' is interpretation."
+  - "Every interpretive claim CITES — either an upstream paper it agrees / disagrees with, or a specific workspace finding it rests on. Free-floating interpretation reads as opinion."
+  - "Name the ALTERNATIVE EXPLANATIONS. If the only explanation you can offer for a finding is your preferred mechanism, the paper is fragile. The Discussion is where the reviewer's devil's-advocate question gets answered before they ask."
+  - "Limit the contribution to what the evidence supports. The difference between 'demonstrates' and 'suggests' is the difference between a paper that ages well and one that doesn't."
+  - "Future work belongs in the conclusion or a dedicated paragraph — NOT scattered through interpretive paragraphs as a hedge against weakness."
 
 structure_options:
   classical:
@@ -88,220 +72,220 @@ structure_options:
       what distinguishes it from classical.
 
 steps:
-  - id: select_structure
-    name: Select discussion structure
-    description: |
-      Ask (or infer from target_venue):
-        "Structure? classical | three_paragraph | thesis_chapter |
-         guideline_clinical."
-      Match the structure to the venue's expectation: a standard
-      journal article tends toward the classical six-block form;
-      short-form / letter venues toward the three-paragraph form; a
-      dissertation chapter toward the longer thesis form; and some
-      clinical journals mandate the structured "strengths and
-      limitations" (guideline) form. When the venue mandates a
-      structure, that mandate wins over any default.
+- id: select_structure
+  name: Select discussion structure
+  description: |
+    Ask (or infer from target_venue):
+      "Structure? classical | three_paragraph | thesis_chapter |
+       guideline_clinical."
+    Match the structure to the venue's expectation: a standard
+    journal article tends toward the classical six-block form;
+    short-form / letter venues toward the three-paragraph form; a
+    dissertation chapter toward the longer thesis form; and some
+    clinical journals mandate the structured "strengths and
+    limitations" (guideline) form. When the venue mandates a
+    structure, that mandate wins over any default.
 
-  - id: pull_the_evidence_floor
-    name: Pull the evidence floor (what the data ACTUALLY support)
-    description: |
-      Before interpreting, write down ON DISK what the data actually
-      support. Pull in ONE batch:
-        - synthesis/results.md   (when present)
-        - the most recent conclusions.md per active step
-        - workspace/logs/audit_report.md (for warnings the discussion
-          must acknowledge)
-        - mem_hypothesis_list (for which hypotheses were supported /
-                               refuted / inconclusive)
-        - workspace/<step>/outputs/reports/sensitivity_*.md
-          (when sensitivity ran)
+- id: pull_the_evidence_floor
+  name: Pull the evidence floor (what the data ACTUALLY support)
+  description: |
+    Before interpreting, write down ON DISK what the data actually
+    support. Pull in ONE batch:
+      - synthesis/results.md   (when present)
+      - the most recent conclusions.md per active step
+      - workspace/logs/audit_report.md (for warnings the discussion
+        must acknowledge)
+      - mem_hypothesis (operation=list) (for which hypotheses were supported /
+                             refuted / inconclusive)
+      - workspace/<step>/outputs/reports/sensitivity_*.md
+        (when sensitivity ran)
 
-      Write workspace/scratch/discussion_evidence.md as a bulleted
-      ledger: every quantitative claim available + its provenance
-      (which step, which output, which CI, which p, which n). The
-      Discussion below CITES from this ledger; never invents.
+    Write workspace/scratch/discussion_evidence.md as a bulleted
+    ledger: every quantitative claim available + its provenance
+    (which step, which output, which CI, which p, which n). The
+    Discussion below CITES from this ledger; never invents.
 
-  - id: draft_principal_findings_first
-    name: Draft principal findings FIRST (one paragraph)
-    description: |
-      The first paragraph is THE most-read paragraph in the
-      Discussion. Constraints:
-        - one tight paragraph — long enough to state the finding and
-          its scope, short enough that a reader gets the headline
-          before their attention drifts
-        - leads with the principal finding in interpretive form (NOT
-          a results restatement)
-        - includes the headline number with its uncertainty (e.g.
-          "the effect was 0.42 [95% CI 0.31-0.52]")
-        - names the population and design in passing so the reader
-          knows the SCOPE the claim applies to
-        - ends with a one-sentence framing of what the rest of the
-          Discussion will address
+- id: draft_principal_findings_first
+  name: Draft principal findings FIRST (one paragraph)
+  description: |
+    The first paragraph is THE most-read paragraph in the
+    Discussion. Constraints:
+      - one tight paragraph — long enough to state the finding and
+        its scope, short enough that a reader gets the headline
+        before their attention drifts
+      - leads with the principal finding in interpretive form (NOT
+        a results restatement)
+      - includes the headline number with its uncertainty (e.g.
+        "the effect was 0.42 [95% CI 0.31-0.52]")
+      - names the population and design in passing so the reader
+        knows the SCOPE the claim applies to
+      - ends with a one-sentence framing of what the rest of the
+        Discussion will address
 
-      Write to synthesis/discussion.md under the structure's first
-      section.
+    Write to synthesis/discussion.md under the structure's first
+    section.
 
-  - id: pipe_verdicts_into_discussion
-    name: Pipe per-step literature verdicts into the Discussion
-    description: |
-      MANDATORY before drafting the comparison-to-prior-work section.
+- id: pipe_verdicts_into_discussion
+  name: Pipe per-step literature verdicts into the Discussion
+  description: |
+    MANDATORY before drafting the comparison-to-prior-work section.
 
-      Per-step `findings_vs_literature.md` files record verdicts
-      (AGREES | DISAGREES | EXTENDS | DEFERRED) plus a "Discussion
-      implication" block. This step pipes those into
-      `synthesis/discussion.md`:
+    Per-step `findings_vs_literature.md` files record verdicts
+    (AGREES | DISAGREES | EXTENDS | DEFERRED) plus a "Discussion
+    implication" block. This step pipes those into
+    `synthesis/discussion.md`:
 
-        tool_writing_discussion_from_verdicts
+      tool_reviewer (operation=discussion_from_verdicts)
 
-      Reads every `workspace/<step>/literature/findings_vs_literature.md`,
-      parses `## Claim:` blocks + Verdict + Discussion implication, and
-      appends one Discussion paragraph per non-AGREES verdict citing the
-      contested literature. Idempotent — repeated calls replace the
-      auto-generated block (HTML-comment-delimited markers) while
-      preserving your hand-edited prose outside the markers.
+    Reads every `workspace/<step>/literature/findings_vs_literature.md`,
+    parses `## Claim:` blocks + Verdict + Discussion implication, and
+    appends one Discussion paragraph per non-AGREES verdict citing the
+    contested literature. Idempotent — repeated calls replace the
+    auto-generated block (HTML-comment-delimited markers) while
+    preserving your hand-edited prose outside the markers.
 
-      After this step, the BLOCK gate `tool_discussion_coverage_audit`
-      verifies every non-AGREES verdict has a corresponding paragraph in
-      `synthesis/discussion.md`. The validate step (below) honours it as
-      a hard BLOCKER.
+    After this step, the BLOCK gate `tool_reviewer (operation=coverage_audit)`
+    verifies every non-AGREES verdict has a corresponding paragraph in
+    `synthesis/discussion.md`. The validate step (below) honours it as
+    a hard BLOCKER.
 
-  - id: build_comparison_to_prior_work
-    name: Compare to prior work (cited)
-    description: |
-      For each major finding, name ≥1 prior paper the finding AGREES
-      WITH and ≥1 prior paper the finding DISAGREES WITH (when one
-      exists). Use the literature already in workspace/citations.md;
-      run tool_search for fresh disagreements when
-      the existing corpus is thin.
+- id: build_comparison_to_prior_work
+  name: Compare to prior work (cited)
+  description: |
+    For each major finding, name ≥1 prior paper the finding AGREES
+    WITH and ≥1 prior paper the finding DISAGREES WITH (when one
+    exists). Use the literature already in workspace/citations.md;
+    run tool_search for fresh disagreements when
+    the existing corpus is thin.
 
-      Pattern for each:
-        "Our estimate of <X> aligns with <author, year>'s finding of
-         <Y>, while it differs from <author, year>'s <Z>. The
-         difference likely reflects <data / population / methodology
-         / outcome definition difference>."
+    Pattern for each:
+      "Our estimate of <X> aligns with <author, year>'s finding of
+       <Y>, while it differs from <author, year>'s <Z>. The
+       difference likely reflects <data / population / methodology
+       / outcome definition difference>."
 
-      A Discussion that only cites agreement is incomplete; reviewers
-      read absence of disagreement as either lazy literature work or
-      confirmation bias.
+    A Discussion that only cites agreement is incomplete; reviewers
+    read absence of disagreement as either lazy literature work or
+    confirmation bias.
 
-  - id: name_alternative_explanations
-    name: Name the alternative explanations (mandatory)
-    description: |
-      For each principal finding, NAME at least one credible
-      alternative explanation:
-        - chance (sample-size limitations, multiple testing)
-        - bias (selection, measurement, confounding, recall, attrition)
-        - reverse causation (when applicable to the design)
-        - effect modification by an unmeasured variable
-        - measurement-instrument artefact
-        - publication-context / Hawthorne-effect / desirability
-          (for behavioural / clinical / survey contexts)
+- id: name_alternative_explanations
+  name: Name the alternative explanations (mandatory)
+  description: |
+    For each principal finding, NAME at least one credible
+    alternative explanation:
+      - chance (sample-size limitations, multiple testing)
+      - bias (selection, measurement, confounding, recall, attrition)
+      - reverse causation (when applicable to the design)
+      - effect modification by an unmeasured variable
+      - measurement-instrument artefact
+      - publication-context / Hawthorne-effect / desirability
+        (for behavioural / clinical / survey contexts)
 
-      For each alternative, state in one sentence WHY the preferred
-      explanation still holds (cite the diagnostic / robustness
-      check / sensitivity that rules it out — OR acknowledge it as
-      a limitation to be carried into the next section).
+    For each alternative, state in one sentence WHY the preferred
+    explanation still holds (cite the diagnostic / robustness
+    check / sensitivity that rules it out — OR acknowledge it as
+    a limitation to be carried into the next section).
 
-      This is the single most under-done step in real Discussions.
-      Reviewers will name the alternatives the paper does not — the
-      protocol's job is to surface them first.
+    This is the single most under-done step in real Discussions.
+    Reviewers will name the alternatives the paper does not — the
+    protocol's job is to surface them first.
 
-  - id: route_to_limitations
-    name: Route to writing_limitations for the limitations sub-section
-    description: |
-      Load `writing/writing_limitations` for the limitations
-      sub-section. That protocol enforces a deeper discipline than
-      a generic "limitations paragraph" — it asks the AI to surface
-      ≥3 specific limitations with their downstream implications,
-      not the boilerplate "small sample, observational design" line.
+- id: route_to_limitations
+  name: Route to writing_limitations for the limitations sub-section
+  description: |
+    Load `writing/writing_limitations` for the limitations
+    sub-section. That protocol enforces a deeper discipline than
+    a generic "limitations paragraph" — it asks the AI to surface
+    ≥3 specific limitations with their downstream implications,
+    not the boilerplate "small sample, observational design" line.
 
-      The limitations section is woven INTO the Discussion (not
-      tacked on at the end), so write it third — after the
-      comparison + alternatives but before implications + future
-      work.
+    The limitations section is woven INTO the Discussion (not
+    tacked on at the end), so write it third — after the
+    comparison + alternatives but before implications + future
+    work.
 
-  - id: draft_implications_proportionate_to_evidence
-    name: Draft implications — proportionate to evidence
-    description: |
-      Implications inflate when the writer is excited and deflate
-      when the writer is honest. The protocol enforces honesty:
+- id: draft_implications_proportionate_to_evidence
+  name: Draft implications — proportionate to evidence
+  description: |
+    Implications inflate when the writer is excited and deflate
+    when the writer is honest. The protocol enforces honesty:
 
-        - one paragraph per implication CATEGORY (mechanistic /
-          methodological / clinical / policy / pedagogical) — only
-          for the categories the evidence actually supports
-        - every implication ends with the SCOPE LIMIT: "in
-          populations similar to <ours>", "under designs that
-          mirror <ours>", "for outcomes measured as <we measured
-          them>"
-        - no implication generalises beyond what the data permit.
-          A study of 412 patients in two academic medical centres
-          does not generalise to global clinical practice.
+      - one paragraph per implication CATEGORY (mechanistic /
+        methodological / clinical / policy / pedagogical) — only
+        for the categories the evidence actually supports
+      - every implication ends with the SCOPE LIMIT: "in
+        populations similar to <ours>", "under designs that
+        mirror <ours>", "for outcomes measured as <we measured
+        them>"
+      - no implication generalises beyond what the data permit.
+        A study of 412 patients in two academic medical centres
+        does not generalise to global clinical practice.
 
-      Where the implication category genuinely doesn't apply (e.g.
-      a pure simulation study has no direct clinical implication),
-      say so explicitly. The absence of clinical implications in a
-      methods paper is not a weakness — pretending otherwise is.
+    Where the implication category genuinely doesn't apply (e.g.
+    a pure simulation study has no direct clinical implication),
+    say so explicitly. The absence of clinical implications in a
+    methods paper is not a weakness — pretending otherwise is.
 
-  - id: draft_future_work_concrete
-    name: Draft future work — concrete, not vague
-    description: |
-      Vague future work ("further research is needed") reads as a
-      hedge. Concrete future work names the SPECIFIC NEXT STUDY:
-        - the SPECIFIC hypothesis the next study would test
-        - the SPECIFIC data / sample / design needed
-        - what the result of THIS study would licence the next study
-          to do that it could not do without
+- id: draft_future_work_concrete
+  name: Draft future work — concrete, not vague
+  description: |
+    Vague future work ("further research is needed") reads as a
+    hedge. Concrete future work names the SPECIFIC NEXT STUDY:
+      - the SPECIFIC hypothesis the next study would test
+      - the SPECIFIC data / sample / design needed
+      - what the result of THIS study would licence the next study
+        to do that it could not do without
 
-      A handful of concrete future-work items beats a generic "future
-      research". When you can't name a specific next study, the
-      finding may be too small / fragile to lever future work —
-      that's a finding worth noting.
+    A handful of concrete future-work items beats a generic "future
+    research". When you can't name a specific next study, the
+    finding may be too small / fragile to lever future work —
+    that's a finding worth noting.
 
-  - id: causal_language_pass
-    name: Causal-language pass (mandatory for observational designs)
-    description: |
-      For observational designs, walk the Discussion line by line
-      and replace causal verbs with associational ones:
-        "causes" / "leads to" / "results in" / "drives"  →
-        "is associated with" / "is correlated with" / "is consistent
-         with" / "would be expected under"
+- id: causal_language_pass
+  name: Causal-language pass (mandatory for observational designs)
+  description: |
+    For observational designs, walk the Discussion line by line
+    and replace causal verbs with associational ones:
+      "causes" / "leads to" / "results in" / "drives"  →
+      "is associated with" / "is correlated with" / "is consistent
+       with" / "would be expected under"
 
-      Causal language is licensed when design supports it
-      (RCT / IV / RDD / DiD / mathematical proof). For everything
-      else, the audit (tool_audit(scope='synthesis', dimension='all')) will flag every causal
-      verb and BLOCK the paper assembly. Save the audit the round
-      trip — do the pass here.
+    Causal language is licensed when design supports it
+    (RCT / IV / RDD / DiD / mathematical proof). For everything
+    else, the audit (tool_audit(scope='synthesis', dimension='all')) will flag every causal
+    verb and BLOCK the paper assembly. Save the audit the round
+    trip — do the pass here.
 
-  - id: validate
-    name: Validate against writing standards + verdict coverage gate
-    description: |
-      sys_file_validate_md filepath="synthesis/discussion.md"
-        protocol_name="writing_core"
-      Run tool_audit(scope='project', dimension='prose') on synthesis/discussion.md — surfaces
-      hedging clusters, vague quantifiers, reading-level issues.
-      Run tool_audit(scope='project', dimension='claims') if any numbers in the Discussion;
-      every number must trace to workspace/scratch/discussion_evidence.md
-      OR to a verified citation.
+- id: validate
+  name: Validate against writing standards + verdict coverage gate
+  description: |
+    tool_audit (scope=file, dimension=markdown) filepath="synthesis/discussion.md"
+      protocol_name="writing_core"
+    Run tool_audit(scope='project', dimension='prose') on synthesis/discussion.md — surfaces
+    hedging clusters, vague quantifiers, reading-level issues.
+    Run tool_audit(scope='project', dimension='claims') if any numbers in the Discussion;
+    every number must trace to workspace/scratch/discussion_evidence.md
+    OR to a verified citation.
 
-      MANDATORY BLOCK gate:
-        tool_discussion_coverage_audit
-      Returns status='error' + a blocker list if any non-AGREES
-      verdict from `findings_vs_literature.md` is not addressed in
-      `synthesis/discussion.md`. If the gate blocks:
-        - Re-run `tool_writing_discussion_from_verdicts` (the
-          pipe_verdicts_into_discussion step above), OR
-        - Hand-write the missing paragraph(s) covering each claim, OR
-        - If the verdict is genuinely no longer relevant (claim
-          retracted, step abandoned), update the
-          `findings_vs_literature.md` verdict to AGREES or DEFERRED
-          with a one-line rationale before re-running the audit.
+    MANDATORY BLOCK gate:
+      tool_reviewer (operation=coverage_audit)
+    Returns status='error' + a blocker list if any non-AGREES
+    verdict from `findings_vs_literature.md` is not addressed in
+    `synthesis/discussion.md`. If the gate blocks:
+      - Re-run `tool_reviewer (operation=discussion_from_verdicts)` (the
+        pipe_verdicts_into_discussion step above), OR
+      - Hand-write the missing paragraph(s) covering each claim, OR
+      - If the verdict is genuinely no longer relevant (claim
+        retracted, step abandoned), update the
+        `findings_vs_literature.md` verdict to AGREES or DEFERRED
+        with a one-line rationale before re-running the audit.
 
-      There is no override flag — coverage of contested literature is
-      the entire point of the Discussion section.
+    There is no override flag — coverage of contested literature is
+    the entire point of the Discussion section.
 
 expected_outputs:
-  - synthesis/discussion.md
-  - workspace/scratch/discussion_evidence.md
+- synthesis/discussion.md
+- workspace/scratch/discussion_evidence.md
 
 quality_bar:
   principal_findings_paragraph_is_one_tight_paragraph: true
@@ -314,4 +298,24 @@ quality_bar:
 
 next_protocol: writing/writing_limitations
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: writing
+triggers:
+- draft the discussion
+- write the discussion
+- discussion section
+- what does this mean
+- interpret these results
+- interpret the results
+- the discussion needs work
+- tighten the discussion
+summary: Draft the Discussion section (principal findings, alternative explanations, limitations route).
+token_estimate: 1700
+decomposition:
+- protocol: writing/writing_discussion
+  purpose: Pull evidence floor + draft per-section discipline.
+- tool: tool_audit
+  purpose: Audit prose for hedging / causal-language / reading level (scope='project', dimension='prose').
+- tool: tool_audit
+  purpose: Audit every number traces to a workspace output (scope='project', dimension='claims').

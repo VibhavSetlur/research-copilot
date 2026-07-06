@@ -2,15 +2,15 @@ id: qualitative_pii_redaction
 tier: 'plan'
 name: Qualitative PII Redaction (HIPAA / IRB / GDPR-safe transcripts before coding)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [qualitative, humanities, engineering]
   audience: [auditor]
   workflow_shape: [interview_study, experiment_pipeline]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/qualitative_research        # consumes the redacted transcripts this produces
-  - methodology/qualitative_quality_audit   # the late quote-level anonymisation defence-in-depth check
+- methodology/qualitative_research          # consumes the redacted transcripts this produces
+- methodology/qualitative_quality_audit     # the late quote-level anonymisation defence-in-depth check
 description: |
   Run BEFORE `qualitative_research` opens transcripts for coding.
   Strips direct + quasi-identifiers from interview / focus-group
@@ -63,39 +63,28 @@ trigger: |
       humanities/textual/distant_reading.)
 
 prerequisites:
-  - "`inputs/raw_data/` contains at least one transcript file."
-  - "A PII policy exists at `inputs/policy/pii_policy.md` (template at templates/qualitative/pii_policy.md). It declares which identifier classes are removed, which are generalised, and which are pseudonymised."
+- "`inputs/raw_data/` contains at least one transcript file."
+- "A PII policy exists at `inputs/policy/pii_policy.md` (template at templates/qualitative/pii_policy.md). It declares which identifier classes are removed, which are generalised, and which are pseudonymised."
 
 # Machine-checkable subset (precondition gate): redaction needs raw data
 # to redact AND a policy declaring how. Both are checkable existence facts.
 requires:
   checks:
-    - kind: glob_min
-      pattern: inputs/raw_data/**/*
-      min: 1
-      because: there must be raw data to redact
-    - kind: file_exists
-      path: inputs/policy/pii_policy.md
-      because: redaction follows a declared PII policy
+  - kind: glob_min
+    pattern: inputs/raw_data/**/*
+    min: 1
+    because: there must be raw data to redact
+  - kind: file_exists
+    path: inputs/policy/pii_policy.md
+    because: redaction follows a declared PII policy
 
 editorial_voice:
   mode: prescription
   rules:
-    - "Redaction is an IRREVERSIBLE transform from the AI's
-       perspective. The pseudonym map is the only path back, and
-       it lives outside the AI's read scope by design (in
-       `inputs/private/pseudonym_map.csv`, gitignored)."
-    - "HIPAA Safe Harbor names 18 identifier classes; the policy
-       file must address each one explicitly (REMOVE / GENERALISE
-       / PSEUDONYMISE / NOT_APPLICABLE)."
-    - "Generalisation (employer → 'a regional hospital') is
-       preferred over deletion (employer → '[redacted]') because
-       it preserves analytic context. Use deletion only when no
-       safe generalisation exists."
-    - "The redaction ledger records WHAT was replaced WHERE.
-       Re-running the protocol against the same raw transcripts
-       must produce byte-identical redacted output (deterministic
-       pseudonym assignment from the existing map)."
+  - "Redaction is an IRREVERSIBLE transform from the AI's perspective. The pseudonym map is the only path back, and it lives outside the AI's read scope by design (in `inputs/private/pseudonym_map.csv`, gitignored)."
+  - "HIPAA Safe Harbor names 18 identifier classes; the policy file must address each one explicitly (REMOVE / GENERALISE / PSEUDONYMISE / NOT_APPLICABLE)."
+  - "Generalisation (employer → 'a regional hospital') is preferred over deletion (employer → '[redacted]') because it preserves analytic context. Use deletion only when no safe generalisation exists."
+  - "The redaction ledger records WHAT was replaced WHERE. Re-running the protocol against the same raw transcripts must produce byte-identical redacted output (deterministic pseudonym assignment from the existing map)."
 
 quality_bar:
   policy_addresses_all_18_HIPAA_classes: true
@@ -106,202 +95,219 @@ quality_bar:
   ner_recall_audited_against_project_declared_floor: true  # floor set by the IRB/policy, cited in pii_policy.md
 
 steps:
-  - id: create_step
-    name: Create the redaction step
-    description: |
-      sys_path name="qual_pii_redact"
-        hypothesis="(de-identification — no analytic hypothesis)"
+- id: create_step
+  name: Create the redaction step
+  description: |
+    tool_plan (operation=create_step) name="qual_pii_redact"
+      hypothesis="(de-identification — no analytic hypothesis)"
 
-      Write `workspace/<step>/step_summary.yaml` with the
-      ENGINEERING-style contract (it's a data-engineering step):
+    Write `workspace/<step>/step_summary.yaml` with the
+    ENGINEERING-style contract (it's a data-engineering step):
 
-        step_intent: ground         # closest fit — produces a
-                                    # processed artefact, not a
-                                    # finding.
-        figure_required: false
-        table_required: false       # the redaction ledger IS a
-                                    # table but it's a process
-                                    # artefact, not an analytic
-                                    # finding.
-        literature_required: false  # de-identification policy is
-                                    # cited from the pii_policy.md
-                                    # header, not the literature
-                                    # loop.
+      step_intent: ground         # closest fit — produces a
+                                  # processed artefact, not a
+                                  # finding.
+      figure_required: false
+      table_required: false       # the redaction ledger IS a
+                                  # table but it's a process
+                                  # artefact, not an analytic
+                                  # finding.
+      literature_required: false  # de-identification policy is
+                                  # cited from the pii_policy.md
+                                  # header, not the literature
+                                  # loop.
 
-  - id: load_or_draft_policy
-    name: Load (or draft) the PII policy
-    description: |
-      Read `inputs/policy/pii_policy.md`. If it does not exist,
-      draft one from the template at
-      `templates/qualitative/pii_policy.md` and ask the researcher
-      to confirm BEFORE proceeding. The policy declares, per
-      identifier class, ONE of:
+- id: load_or_draft_policy
+  name: Load (or draft) the PII policy
+  description: |
+    Read `inputs/policy/pii_policy.md`. If it does not exist,
+    draft one from the template at
+    `templates/qualitative/pii_policy.md` and ask the researcher
+    to confirm BEFORE proceeding. The policy declares, per
+    identifier class, ONE of:
 
-        REMOVE          — replace with `[redacted: <class>]`
-        GENERALISE      — replace with a less-specific descriptor
-                          (e.g. employer → "a regional hospital")
-        PSEUDONYMISE    — replace with a stable token (P01, R03,
-                          OrgA — assigned deterministically from
-                          `inputs/private/pseudonym_map.csv`)
-        NOT_APPLICABLE  — class is absent from this corpus
+      REMOVE          — replace with `[redacted: <class>]`
+      GENERALISE      — replace with a less-specific descriptor
+                        (e.g. employer → "a regional hospital")
+      PSEUDONYMISE    — replace with a stable token (P01, R03,
+                        OrgA — assigned deterministically from
+                        `inputs/private/pseudonym_map.csv`)
+      NOT_APPLICABLE  — class is absent from this corpus
 
-      HIPAA Safe Harbor 18 identifier classes (45 CFR §164.514(b)(2)):
-        1. Names
-        2. Geographic subdivisions smaller than a state
-        3. Dates (except year) related to the individual
-        4. Telephone numbers
-        5. Fax numbers
-        6. Email addresses
-        7. Social security numbers
-        8. Medical record numbers
-        9. Health plan beneficiary numbers
-        10. Account numbers
-        11. Certificate / license numbers
-        12. Vehicle identifiers + serial numbers (including plates)
-        13. Device identifiers + serial numbers
-        14. URLs
-        15. IP addresses
-        16. Biometric identifiers
-        17. Full-face photographs + comparable images
-        18. Any other unique identifying number / characteristic / code
+    HIPAA Safe Harbor 18 identifier classes (45 CFR §164.514(b)(2)):
+      1. Names
+      2. Geographic subdivisions smaller than a state
+      3. Dates (except year) related to the individual
+      4. Telephone numbers
+      5. Fax numbers
+      6. Email addresses
+      7. Social security numbers
+      8. Medical record numbers
+      9. Health plan beneficiary numbers
+      10. Account numbers
+      11. Certificate / license numbers
+      12. Vehicle identifiers + serial numbers (including plates)
+      13. Device identifiers + serial numbers
+      14. URLs
+      15. IP addresses
+      16. Biometric identifiers
+      17. Full-face photographs + comparable images
+      18. Any other unique identifying number / characteristic / code
 
-      Also document IRB / GDPR-specific add-ons (rare conditions,
-      protected-class status, etc.) the policy treats as identifiers.
+    Also document IRB / GDPR-specific add-ons (rare conditions,
+    protected-class status, etc.) the policy treats as identifiers.
 
-      GATE: if any of the 18 classes is unaddressed in the policy,
-      this step BLOCKS. Add the missing rows and re-run.
+    GATE: if any of the 18 classes is unaddressed in the policy,
+    this step BLOCKS. Add the missing rows and re-run.
 
-  - id: load_or_create_pseudonym_map
-    name: Load (or create) the pseudonym map
-    description: |
-      The map lives at `inputs/private/pseudonym_map.csv` with the
-      schema:
-        original,replacement,class,first_seen_transcript
-      e.g.
-        "Jane Doe","P01","name","interview_03.txt"
-        "Mercy Hospital","OrgA","employer","interview_07.txt"
+- id: load_or_create_pseudonym_map
+  name: Load (or create) the pseudonym map
+  description: |
+    The map lives at `inputs/private/pseudonym_map.csv` with the
+    schema:
+      original,replacement,class,first_seen_transcript
+    e.g.
+      "Jane Doe","P01","name","interview_03.txt"
+      "Mercy Hospital","OrgA","employer","interview_07.txt"
 
-      `inputs/private/` MUST be in `.gitignore` (the wizard adds
-      it at `research-os init`). If it isn't, BLOCK and surface
-      a hard error: pseudonym maps committed to a repo defeat the
-      purpose of pseudonymisation.
+    `inputs/private/` MUST be in `.gitignore` (the wizard adds
+    it at `research-os init`). If it isn't, BLOCK and surface
+    a hard error: pseudonym maps committed to a repo defeat the
+    purpose of pseudonymisation.
 
-      Assignment is DETERMINISTIC: the same original string ALWAYS
-      gets the same replacement. New originals append rows; existing
-      rows are never rewritten. This makes the protocol re-runnable
-      without churning prior coding.
+    Assignment is DETERMINISTIC: the same original string ALWAYS
+    gets the same replacement. New originals append rows; existing
+    rows are never rewritten. This makes the protocol re-runnable
+    without churning prior coding.
 
-  - id: detect_and_redact
-    name: Detect + redact each transcript
-    description: |
-      For each transcript in `inputs/raw_data/`, run a detection +
-      redaction pass via `tool_python_exec`. Reference invocation:
+- id: detect_and_redact
+  name: Detect + redact each transcript
+  description: |
+    For each transcript in `inputs/raw_data/`, run a detection +
+    redaction pass via `tool_python_exec`. Reference invocation:
 
-        tool_python_exec script="scripts/qual_pii_redact.py"
-            args="--transcript inputs/raw_data/<file>
-                  --policy inputs/policy/pii_policy.md
-                  --pseudonym-map inputs/private/pseudonym_map.csv
-                  --output-dir inputs/raw_data_redacted/
-                  --ledger-dir workspace/<step>/outputs/reports/"
+      tool_python_exec script="scripts/qual_pii_redact.py"
+          args="--transcript inputs/raw_data/<file>
+                --policy inputs/policy/pii_policy.md
+                --pseudonym-map inputs/private/pseudonym_map.csv
+                --output-dir inputs/raw_data_redacted/
+                --ledger-dir workspace/<step>/outputs/reports/"
 
-      The pass needs three detection layers, whatever libraries
-      implement them (a NER toolkit such as Presidio / spaCy is the
-      common choice; pick the maintained one the field trusts and pin
-      its version):
+    The pass needs three detection layers, whatever libraries
+    implement them (a NER toolkit such as Presidio / spaCy is the
+    common choice; pick the maintained one the field trusts and pin
+    its version):
 
-        - NAMED-ENTITY detection for the direct identifiers (PERSON,
-          PHONE, EMAIL, LOCATION, DATE_TIME, SSN, MEDICAL_LICENSE,
-          IP_ADDRESS, URL).
-        - RELATION / context NER for quasi-identifiers a flat entity
-          tagger misses (employer / institution / role).
-        - A REGEX sweep for the structured HIPAA patterns entity
-          taggers under-catch (medical record numbers, vehicle plates,
-          device serials).
+      - NAMED-ENTITY detection for the direct identifiers (PERSON,
+        PHONE, EMAIL, LOCATION, DATE_TIME, SSN, MEDICAL_LICENSE,
+        IP_ADDRESS, URL).
+      - RELATION / context NER for quasi-identifiers a flat entity
+        tagger misses (employer / institution / role).
+      - A REGEX sweep for the structured HIPAA patterns entity
+        taggers under-catch (medical record numbers, vehicle plates,
+        device serials).
 
-      Conservative review threshold: when a span's detection confidence
-      is below the policy-declared cutoff, EMIT a ledger row with
-      `requires_review: true` and leave a `[REVIEW: <span>]` marker for
-      the researcher to resolve in `manual_review`. The cutoff is set in
-      pii_policy.md to favour recall (a missed identifier is a breach; a
-      false positive is only lost context).
+    Conservative review threshold: when a span's detection confidence
+    is below the policy-declared cutoff, EMIT a ledger row with
+    `requires_review: true` and leave a `[REVIEW: <span>]` marker for
+    the researcher to resolve in `manual_review`. The cutoff is set in
+    pii_policy.md to favour recall (a missed identifier is a breach; a
+    false positive is only lost context).
 
-      OUTPUTS per transcript:
-        - inputs/raw_data_redacted/<file>     # coding-safe copy
-        - workspace/<step>/outputs/reports/redaction_ledger_<file>.csv
-            schema: line,start,end,original_hash,class,replacement,score,requires_review
+    OUTPUTS per transcript:
+      - inputs/raw_data_redacted/<file>     # coding-safe copy
+      - workspace/<step>/outputs/reports/redaction_ledger_<file>.csv
+          schema: line,start,end,original_hash,class,replacement,score,requires_review
 
-  - id: manual_review
-    name: Resolve REVIEW markers
-    description: |
-      Open each `redaction_ledger_*.csv` and walk every row with
-      `requires_review: true`. For each:
+- id: manual_review
+  name: Resolve REVIEW markers
+  description: |
+    Open each `redaction_ledger_*.csv` and walk every row with
+    `requires_review: true`. For each:
 
-        - Confirm the span is identifying → mark `resolved=true`,
-          add the original → replacement row to the pseudonym map,
-          re-run `detect_and_redact` to fold the resolution in.
-        - Confirm the span is NOT identifying (a false positive —
-          a common name used as a noun, etc.) → mark
-          `resolved=false` and the redaction stays as plain text.
+      - Confirm the span is identifying → mark `resolved=true`,
+        add the original → replacement row to the pseudonym map,
+        re-run `detect_and_redact` to fold the resolution in.
+      - Confirm the span is NOT identifying (a false positive —
+        a common name used as a noun, etc.) → mark
+        `resolved=false` and the redaction stays as plain text.
 
-      The audit step (next) BLOCKS if any `requires_review: true`
-      row is still unresolved.
+    The audit step (next) BLOCKS if any `requires_review: true`
+    row is still unresolved.
 
-  - id: audit
-    name: Audit redaction completeness (held-out sample)
-    description: |
-      Sample ≥ 5% of transcript lines (≥ 50 lines minimum,
-      whichever is larger). For each sampled line, manually verify:
+- id: audit
+  name: Audit redaction completeness (held-out sample)
+  description: |
+    Sample ≥ 5% of transcript lines (≥ 50 lines minimum,
+    whichever is larger). For each sampled line, manually verify:
 
-        - No raw PII slipped through (false negative).
-        - No analytic context was destroyed unnecessarily (false
-          positive — a redaction that didn't need to be one).
+      - No raw PII slipped through (false negative).
+      - No analytic context was destroyed unnecessarily (false
+        positive — a redaction that didn't need to be one).
 
-      Record results in
-      `workspace/<step>/outputs/reports/redaction_audit.md`:
+    Record results in
+    `workspace/<step>/outputs/reports/redaction_audit.md`:
 
-        ## Sample size: <N> lines (X% of corpus)
-        ## False negatives: <count>  (HARD GATE: must be 0)
-        ## False positives: <count>  (target: minimise)
-        ## NER recall on sample: <fraction>  (against the recall floor
-           the IRB/policy declares in pii_policy.md — cite it, don't
-           assume a number)
+      ## Sample size: <N> lines (X% of corpus)
+      ## False negatives: <count>  (HARD GATE: must be 0)
+      ## False positives: <count>  (target: minimise)
+      ## NER recall on sample: <fraction>  (against the recall floor
+         the IRB/policy declares in pii_policy.md — cite it, don't
+         assume a number)
 
-      GATE: if false_negatives > 0, BLOCK. Iterate on the policy
-      (tighten generalisation rules) or the pseudonym map (add the
-      missed terms) and re-run.
+    GATE: if false_negatives > 0, BLOCK. Iterate on the policy
+    (tighten generalisation rules) or the pseudonym map (add the
+    missed terms) and re-run.
 
-      The audit numbers feed the synthesis-level pre-submission
-      audit (`tool_audit(scope='synthesis', dimension='all')`) as a "data-handling provenance"
-      block.
+    The audit numbers feed the synthesis-level pre-submission
+    audit (`tool_audit(scope='synthesis', dimension='all')`) as a "data-handling provenance"
+    block.
 
-  - id: handoff_to_qualitative_research
-    name: Hand off to the coding pipeline
-    description: |
-      Update `workspace/<step>/conclusions.md`:
+- id: handoff_to_qualitative_research
+  name: Hand off to the coding pipeline
+  description: |
+    Update `workspace/<step>/conclusions.md`:
 
-        ## Decision
-          proceed → methodology/qualitative_research
+      ## Decision
+        proceed → methodology/qualitative_research
 
-        ## Next steps
-          - Run methodology/qualitative_research; it reads from
-            inputs/raw_data_redacted/ instead of inputs/raw_data/.
-          - The pseudonym map at inputs/private/pseudonym_map.csv
-            stays out of the AI's read scope. Verbatim quotes in
-            themes.md cite participant tokens (P01, R03), never
-            original names.
+      ## Next steps
+        - Run methodology/qualitative_research; it reads from
+          inputs/raw_data_redacted/ instead of inputs/raw_data/.
+        - The pseudonym map at inputs/private/pseudonym_map.csv
+          stays out of the AI's read scope. Verbatim quotes in
+          themes.md cite participant tokens (P01, R03), never
+          original names.
 
-      Set `next_protocol: methodology/qualitative_research` for the
-      router. The qualitative_research protocol detects the
-      redacted folder's presence and routes its ingest there.
+    Set `next_protocol: methodology/qualitative_research` for the
+    router. The qualitative_research protocol detects the
+    redacted folder's presence and routes its ingest there.
 
 expected_outputs:
-  - inputs/policy/pii_policy.md
-  - inputs/private/pseudonym_map.csv                       # gitignored
-  - inputs/raw_data_redacted/<file>                        # one per raw transcript
-  - workspace/<step>/outputs/reports/redaction_ledger_<file>.csv
-  - workspace/<step>/outputs/reports/redaction_audit.md
-  - workspace/<step>/step_summary.yaml
+- inputs/policy/pii_policy.md
+- inputs/private/pseudonym_map.csv                         # gitignored
+- inputs/raw_data_redacted/<file>                          # one per raw transcript
+- workspace/<step>/outputs/reports/redaction_ledger_<file>.csv
+- workspace/<step>/outputs/reports/redaction_audit.md
+- workspace/<step>/step_summary.yaml
 
 next_protocol: methodology/qualitative_research
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: qualitative
+triggers:
+- redact transcripts
+- anonymise interviews
+- anonymize interviews
+- hipaa transcripts
+- gdpr transcripts
+- remove pii
+- pseudonymise participants
+- pseudonymize participants
+- de-identify transcripts
+- deidentify transcripts
+- pii redaction
+- safe harbor
+- irb redaction
+summary: HIPAA / IRB / GDPR-safe transcript redaction BEFORE coding (presidio + spaCy NER + regex; deterministic pseudonym map).

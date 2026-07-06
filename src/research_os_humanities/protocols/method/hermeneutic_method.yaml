@@ -1,7 +1,7 @@
 id: hermeneutic_method
 name: Hermeneutic Method — name your theory of interpretation
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [humanities, qualitative]
   audience: [researcher]
@@ -46,172 +46,146 @@ trigger: |
   "what tradition am I reading from", "before I close-read this".
 
 prerequisites:
-  - A primary text (or corpus) is identified and locatable. The text
-    can be canonical (Plato, the Hebrew Bible, Beloved) or non-canonical
-    (a clinic intake form, a TikTok transcript, a Reddit thread) —
-    hermeneutics applies to any object treated as meaning-bearing.
-  - The researcher has at least a working sense of the interpretive
-    question. "What does this text mean?" is not yet a question;
-    "What does this text mean for whom, under what conditions, with
-    what stakes?" is.
+- A primary text (or corpus) is identified and locatable. The text can be canonical (Plato, the Hebrew Bible, Beloved) or non-canonical (a clinic intake form, a TikTok transcript, a Reddit thread) — hermeneutics applies to any object treated as meaning-bearing.
+- The researcher has at least a working sense of the interpretive question. "What does this text mean?" is not yet a question; "What does this text mean for whom, under what conditions, with what stakes?" is.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Name the interpretive tradition by author, not by adjective.
-       'A Gadamerian reading' is a commitment; 'a hermeneutical reading'
-       is a hedge. If the framework is a hybrid (e.g. Ricoeurian
-       suspicion fused with feminist restoration), name both lineages
-       and the seam between them."
-    - "Refuse the neutral interpreter. Every reading has a social
-       location, a confessional or anti-confessional stance, and a
-       set of texts it treats as canonical. Bracketing these is itself
-       a methodological commitment (the New Critical / formalist one).
-       Make the commitment visible."
-    - "Distinguish hermeneutics-of-the-text from hermeneutics-of-the-
-       interpreter. Schleiermacher and Gadamer are about how meaning
-       arrives; feminist and post-colonial hermeneutics are about
-       whose meanings have been licensed and whose suppressed. A
-       reading can do both, but it has to do them deliberately."
-    - "Reception history is part of the text. Aquinas's Aristotle is
-       not Heidegger's Aristotle; King James's Paul is not Schüssler
-       Fiorenza's Paul. If you're reading a text with a long reception
-       chain, name the link you're reading from — pretending you have
-       unmediated access to the urtext is a tell."
-    - "The hermeneutic circle is not a problem to be solved; it is the
-       condition of the work. Don't apologize for it. Do declare which
-       loop you're in (part-to-whole, prejudice-to-revision,
-       suspicion-to-restoration) and what would count as the loop
-       tightening or breaking."
+  - "Name the interpretive tradition by author, not by adjective. 'A Gadamerian reading' is a commitment; 'a hermeneutical reading' is a hedge. If the framework is a hybrid (e.g. Ricoeurian suspicion fused with feminist restoration), name both lineages and the seam between them."
+  - "Refuse the neutral interpreter. Every reading has a social location, a confessional or anti-confessional stance, and a set of texts it treats as canonical. Bracketing these is itself a methodological commitment (the New Critical / formalist one). Make the commitment visible."
+  - "Distinguish hermeneutics-of-the-text from hermeneutics-of-the- interpreter. Schleiermacher and Gadamer are about how meaning arrives; feminist and post-colonial hermeneutics are about whose meanings have been licensed and whose suppressed. A reading can do both, but it has to do them deliberately."
+  - "Reception history is part of the text. Aquinas's Aristotle is not Heidegger's Aristotle; King James's Paul is not Schüssler Fiorenza's Paul. If you're reading a text with a long reception chain, name the link you're reading from — pretending you have unmediated access to the urtext is a tell."
+  - "The hermeneutic circle is not a problem to be solved; it is the condition of the work. Don't apologize for it. Do declare which loop you're in (part-to-whole, prejudice-to-revision, suspicion-to-restoration) and what would count as the loop tightening or breaking."
 
 steps:
-  - id: name_the_tradition
-    name: Name the interpretive tradition explicitly
-    description: |
-      Pick the framework and write its name down in
-      workspace/hermeneutics/<text_slug>.md under a "Framework"
-      heading. Candidates include but are not limited to:
-        - Schleiermacher (psychological + grammatical reconstruction)
-        - Dilthey (Verstehen, lived-experience hermeneutics)
-        - Heidegger (existential hermeneutics, Being and Time §31-33)
-        - Gadamer (philosophical hermeneutics, horizon-fusion,
-          Wirkungsgeschichte)
-        - Ricoeur (hermeneutics of suspicion + restoration, narrative
-          identity, surplus of meaning)
-        - Schüssler Fiorenza (feminist hermeneutics of suspicion,
-          remembrance, proclamation, creative actualization)
-        - Sugirtharajah / post-colonial biblical hermeneutics
-        - Queer hermeneutics (Sedgwick's reparative vs paranoid reading;
-          Stone, Goss for biblical applications)
-        - Liberation hermeneutics (Gutiérrez, Boff, preferential option)
-        - Reception-history / Rezeptionsgeschichte (Jauss, Iser)
-        - New Critical / formalist (acknowledge that bracketing
-          context IS a hermeneutic commitment)
-      If you can't name it, you don't have one yet — and the reading
-      will silently default to the AI's training-data average. Call
-      tool_search to confirm the tradition's primary texts are
-      accessible if you'll need to cite them.
+- id: name_the_tradition
+  name: Name the interpretive tradition explicitly
+  description: |
+    Pick the framework and write its name down in
+    workspace/hermeneutics/<text_slug>.md under a "Framework"
+    heading. Candidates include but are not limited to:
+      - Schleiermacher (psychological + grammatical reconstruction)
+      - Dilthey (Verstehen, lived-experience hermeneutics)
+      - Heidegger (existential hermeneutics, Being and Time §31-33)
+      - Gadamer (philosophical hermeneutics, horizon-fusion,
+        Wirkungsgeschichte)
+      - Ricoeur (hermeneutics of suspicion + restoration, narrative
+        identity, surplus of meaning)
+      - Schüssler Fiorenza (feminist hermeneutics of suspicion,
+        remembrance, proclamation, creative actualization)
+      - Sugirtharajah / post-colonial biblical hermeneutics
+      - Queer hermeneutics (Sedgwick's reparative vs paranoid reading;
+        Stone, Goss for biblical applications)
+      - Liberation hermeneutics (Gutiérrez, Boff, preferential option)
+      - Reception-history / Rezeptionsgeschichte (Jauss, Iser)
+      - New Critical / formalist (acknowledge that bracketing
+        context IS a hermeneutic commitment)
+    If you can't name it, you don't have one yet — and the reading
+    will silently default to the AI's training-data average. Call
+    tool_search to confirm the tradition's primary texts are
+    accessible if you'll need to cite them.
 
-  - id: declare_priors
-    name: Declare what the framework commits you to
-    description: |
-      For the framework you named, write three to five sentences on
-      what it rules IN and what it rules OUT. Examples of what
-      belongs here:
-        - Is authorial intention recoverable? Relevant? (Schleiermacher
-          yes; Gadamer largely no; Wimsatt & Beardsley no by stipulation;
-          Hirsch yes by stipulation.)
-        - Does the text have a determinate meaning, or a horizon?
-          (Gadamer: horizon. E. D. Hirsch: meaning vs significance.)
-        - Is the interpreter's social location methodologically
-          central (feminist, post-colonial, queer, liberation) or
-          methodologically bracketed (New Critical, structuralist)?
-        - Is suspicion a phase to pass through (Ricoeur) or a
-          permanent obligation (Schüssler Fiorenza, Daly)?
-        - What counts as a successful reading? Fusion of horizons?
-          Restoration of meaning? Exposure of ideology? Reparative
-          re-attachment (Sedgwick)?
-      Log this with mem_log under tag 'hermeneutic_priors'. Future
-      protocols (close_reading, critical_synthesis) will check this
-      file before generating interpretive moves.
+- id: declare_priors
+  name: Declare what the framework commits you to
+  description: |
+    For the framework you named, write three to five sentences on
+    what it rules IN and what it rules OUT. Examples of what
+    belongs here:
+      - Is authorial intention recoverable? Relevant? (Schleiermacher
+        yes; Gadamer largely no; Wimsatt & Beardsley no by stipulation;
+        Hirsch yes by stipulation.)
+      - Does the text have a determinate meaning, or a horizon?
+        (Gadamer: horizon. E. D. Hirsch: meaning vs significance.)
+      - Is the interpreter's social location methodologically
+        central (feminist, post-colonial, queer, liberation) or
+        methodologically bracketed (New Critical, structuralist)?
+      - Is suspicion a phase to pass through (Ricoeur) or a
+        permanent obligation (Schüssler Fiorenza, Daly)?
+      - What counts as a successful reading? Fusion of horizons?
+        Restoration of meaning? Exposure of ideology? Reparative
+        re-attachment (Sedgwick)?
+    Log this with mem_log under tag 'hermeneutic_priors'. Future
+    protocols (close_reading, critical_synthesis) will check this
+    file before generating interpretive moves.
 
-  - id: locate_self
-    name: Locate the interpreter
-    description: |
-      Write a short positionality paragraph: who is doing this reading,
-      from what social location, with what stakes, against what
-      reception history. This is not a confession or a disclaimer.
-      It is methodological because the framework you picked in step 1
-      probably requires it. (Gadamer: prejudice is the condition of
-      understanding, not its enemy; Schüssler Fiorenza: women's
-      experience as hermeneutical privilege; Sugirtharajah: the
-      reader-as-located-subject.)
-      If you picked a framework that brackets the interpreter (New
-      Critical, structuralist), the paragraph still gets written —
-      to make the bracketing visible as a choice. "I am bracketing
-      my location because X" is honest; silently bracketing it is
-      not. File this in workspace/hermeneutics/<text_slug>.md under
-      "Positionality".
+- id: locate_self
+  name: Locate the interpreter
+  description: |
+    Write a short positionality paragraph: who is doing this reading,
+    from what social location, with what stakes, against what
+    reception history. This is not a confession or a disclaimer.
+    It is methodological because the framework you picked in step 1
+    probably requires it. (Gadamer: prejudice is the condition of
+    understanding, not its enemy; Schüssler Fiorenza: women's
+    experience as hermeneutical privilege; Sugirtharajah: the
+    reader-as-located-subject.)
+    If you picked a framework that brackets the interpreter (New
+    Critical, structuralist), the paragraph still gets written —
+    to make the bracketing visible as a choice. "I am bracketing
+    my location because X" is honest; silently bracketing it is
+    not. File this in workspace/hermeneutics/<text_slug>.md under
+    "Positionality".
 
-  - id: map_reception
-    name: Map the reception chain you're reading from
-    description: |
-      If the text has a reception history (most do — anything older
-      than the interpreter, anything with a translation chain, anything
-      that has been read by anyone with institutional authority), name
-      the link in the chain you're reading from. You are not reading
-      Aristotle; you are reading Aristotle-mediated-by-X. You are not
-      reading Paul; you are reading Paul-as-rendered-by-the-NRSV-and-
-      glossed-by-Sanders-and-pushed-back-on-by-Schüssler-Fiorenza.
-      Use tool_humanities_citation_chain (from archival_research) to
-      scaffold the reception ladder. Three to seven links is usually
-      enough; the goal is to make visible that your urtext access is
-      mediated, not to do a full Rezeptionsgeschichte.
-      For texts without long reception (a 2024 essay, a contemporary
-      film, a clinical interview), the chain is shorter but still
-      present — the reading frame, the prior critical literature,
-      the genre conventions you've internalized all count as
-      mediation.
+- id: map_reception
+  name: Map the reception chain you're reading from
+  description: |
+    If the text has a reception history (most do — anything older
+    than the interpreter, anything with a translation chain, anything
+    that has been read by anyone with institutional authority), name
+    the link in the chain you're reading from. You are not reading
+    Aristotle; you are reading Aristotle-mediated-by-X. You are not
+    reading Paul; you are reading Paul-as-rendered-by-the-NRSV-and-
+    glossed-by-Sanders-and-pushed-back-on-by-Schüssler-Fiorenza.
+    Use tool_humanities_citation_chain (from archival_research) to
+    scaffold the reception ladder. Three to seven links is usually
+    enough; the goal is to make visible that your urtext access is
+    mediated, not to do a full Rezeptionsgeschichte.
+    For texts without long reception (a 2024 essay, a contemporary
+    film, a clinical interview), the chain is shorter but still
+    present — the reading frame, the prior critical literature,
+    the genre conventions you've internalized all count as
+    mediation.
 
-  - id: stake_the_question
-    name: Stake the interpretive question
-    description: |
-      Now — with the framework named, priors declared, location
-      surfaced, reception mapped — write the actual question the
-      reading will answer. Good interpretive questions have a
-      framework-shaped grammar:
-        - Gadamerian: "What horizon does this text open onto that
-          my own horizon must be revised to meet?"
-        - Ricoeurian: "What does suspicion expose in this text that
-          restoration then re-figures?"
-        - Feminist (Schüssler Fiorenza): "Whose voices does this
-          text suppress, and what would remembrance recover?"
-        - Reception-historical: "How has this passage's meaning
-          shifted across its reception, and what does that shift
-          reveal about the readers, not the text?"
-      If the question has no framework-shaped grammar, it's not yet
-      an interpretive question; it's a comprehension check. Iterate
-      on the question until it could only have been asked by someone
-      working from the framework you named in step 1.
+- id: stake_the_question
+  name: Stake the interpretive question
+  description: |
+    Now — with the framework named, priors declared, location
+    surfaced, reception mapped — write the actual question the
+    reading will answer. Good interpretive questions have a
+    framework-shaped grammar:
+      - Gadamerian: "What horizon does this text open onto that
+        my own horizon must be revised to meet?"
+      - Ricoeurian: "What does suspicion expose in this text that
+        restoration then re-figures?"
+      - Feminist (Schüssler Fiorenza): "Whose voices does this
+        text suppress, and what would remembrance recover?"
+      - Reception-historical: "How has this passage's meaning
+        shifted across its reception, and what does that shift
+        reveal about the readers, not the text?"
+    If the question has no framework-shaped grammar, it's not yet
+    an interpretive question; it's a comprehension check. Iterate
+    on the question until it could only have been asked by someone
+    working from the framework you named in step 1.
 
-  - id: declare_failure_conditions
-    name: Declare what would make the reading fail
-    description: |
-      A reading without failure conditions is unfalsifiable, and
-      unfalsifiable readings are decorative. For the framework you
-      picked, write down what would count as the reading failing on
-      its own terms:
-        - Gadamerian: the horizons don't fuse; the text remains alien;
-          your prejudices are confirmed rather than revised.
-        - Ricoeurian: suspicion finds nothing to expose, or
-          restoration finds nothing to re-figure.
-        - Feminist / post-colonial: the reading reinscribes the
-          structures it set out to expose.
-        - Formalist: the reading depends on biographical or contextual
-          claims you smuggled in.
-      File under "Failure conditions" in the hermeneutics workspace.
-      The close_reading and critical_synthesis protocols will check
-      this section before declaring the reading complete.
+- id: declare_failure_conditions
+  name: Declare what would make the reading fail
+  description: |
+    A reading without failure conditions is unfalsifiable, and
+    unfalsifiable readings are decorative. For the framework you
+    picked, write down what would count as the reading failing on
+    its own terms:
+      - Gadamerian: the horizons don't fuse; the text remains alien;
+        your prejudices are confirmed rather than revised.
+      - Ricoeurian: suspicion finds nothing to expose, or
+        restoration finds nothing to re-figure.
+      - Feminist / post-colonial: the reading reinscribes the
+        structures it set out to expose.
+      - Formalist: the reading depends on biographical or contextual
+        claims you smuggled in.
+    File under "Failure conditions" in the hermeneutics workspace.
+    The close_reading and critical_synthesis protocols will check
+    this section before declaring the reading complete.
 
 quality_bar:
   framework_named_by_author: |
@@ -238,10 +212,9 @@ quality_bar:
     not in generic "the reading didn't work" terms.
 
 expected_outputs:
-  - workspace/hermeneutics/<text_slug>.md  # framework + priors +
+- workspace/hermeneutics/<text_slug>.md    # framework + priors +
     # positionality + reception chain + question + failure conditions
-  - mem_log entry tagged 'hermeneutic_priors' for downstream protocols
-    (close_reading, critical_synthesis) to consume
+- mem_log entry tagged 'hermeneutic_priors' for downstream protocols (close_reading, critical_synthesis) to consume
 
 next_protocol: humanities/textual/close_reading
 next_protocol_kind: forward_default
@@ -256,3 +229,18 @@ on_failure: |
   training data averaged to — which is usually a vague
   horizon-fusion-flavored formalism that satisfies no actual
   tradition's standards.
+intent_class: methodology
+sub_intent: method_pick
+triggers:
+- hermeneutic
+- interpretive method
+- what theory of reading
+- gadamer
+- ricoeur
+- schleiermacher
+- horizon of
+summary: Make the theory of interpretation explicit (Schleiermacher / Gadamer / Ricoeur).
+token_estimate: 1500
+decomposition:
+- protocol: humanities/method/hermeneutic_method
+  purpose: Pick + name the hermeneutic framework, then read.

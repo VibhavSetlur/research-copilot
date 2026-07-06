@@ -2,16 +2,16 @@ id: qualitative_research
 tier: 'plan'
 name: Qualitative Research (COREQ / SRQR)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [qualitative]
   audience: [auditor]
   workflow_shape: [interview_study]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/qualitative_pii_redaction  # run BEFORE coding when transcripts carry PII
-  - methodology/qualitative_quality_audit  # COREQ/SRQR enforcement gate after the analysis
-  - methodology/interview_guide_design     # builds the topic guide this protocol fields
+- methodology/qualitative_pii_redaction    # run BEFORE coding when transcripts carry PII
+- methodology/qualitative_quality_audit    # COREQ/SRQR enforcement gate after the analysis
+- methodology/interview_guide_design       # builds the topic guide this protocol fields
 description: |
   Interview / focus-group / ethnographic studies with thematic, framework,
   grounded theory, or content analysis. Enforces COREQ (interviews/focus
@@ -23,155 +23,148 @@ trigger: |
   into inputs/raw_data/.
 
 prerequisites:
-  - "If transcripts contain participant PII (the common case for
-    research interviews / focus groups), `methodology/qualitative_pii_redaction`
-    has run and `inputs/raw_data_redacted/` exists. The router
-    auto-suggests this before the first qualitative_research turn
-    when raw transcripts are present without a redacted counterpart."
-  - "If the corpus is genuinely public (published interview corpora,
-    oral history releases under consent), document the exemption in
-    `inputs/policy/pii_policy.md` and proceed. The quote-level
-    anonymisation audit in qualitative_quality_audit still fires."
+- "If transcripts contain participant PII (the common case for research interviews / focus groups), `methodology/qualitative_pii_redaction` has run and `inputs/raw_data_redacted/` exists. The router auto-suggests this before the first qualitative_research turn when raw transcripts are present without a redacted counterpart."
+- "If the corpus is genuinely public (published interview corpora, oral history releases under consent), document the exemption in `inputs/policy/pii_policy.md` and proceed. The quote-level anonymisation audit in qualitative_quality_audit still fires."
 
 steps:
-  - id: create_step
-    name: Create Qualitative Step
-    description: |
-      sys_path name="qual_<topic>" hypothesis="(qualitative — themes
-      emerge from data)"
+- id: create_step
+  name: Create Qualitative Step
+  description: |
+    tool_plan (operation=create_step) name="qual_<topic>" hypothesis="(qualitative — themes
+    emerge from data)"
 
-      Immediately after creating the step, write
-      `workspace/<step>/step_summary.yaml` with the QUALITATIVE
-      contract so the completeness audit doesn't BLOCK on missing
-      figures:
+    Immediately after creating the step, write
+    `workspace/<step>/step_summary.yaml` with the QUALITATIVE
+    contract so the completeness audit doesn't BLOCK on missing
+    figures:
 
-        step_intent: analyse        # qualitative IS an analyse — but
-                                    # with a custom figure contract.
-        figure_required: false      # qualitative_research's
-                                    # expected_outputs lists no
-                                    # figure. A thematic-map figure is
-                                    # OPTIONAL (see theme_synthesis +
-                                    # report below), not required.
-        table_required: false       # codebooks are markdown reports,
-                                    # not tabular numerics.
-        literature_required: true   # findings (themes) still get
-                                    # grounded; see qualitative_quality_audit.
+      step_intent: analyse        # qualitative IS an analyse — but
+                                  # with a custom figure contract.
+      figure_required: false      # qualitative_research's
+                                  # expected_outputs lists no
+                                  # figure. A thematic-map figure is
+                                  # OPTIONAL (see theme_synthesis +
+                                  # report below), not required.
+      table_required: false       # codebooks are markdown reports,
+                                  # not tabular numerics.
+      literature_required: true   # findings (themes) still get
+                                  # grounded; see qualitative_quality_audit.
 
-      See templates/step_summary.yaml.template for the full schema
-      and analysis_plan.yaml `classify_step_intent` for why this
-      matters (the figure / table / literature gates honour these
-      contracts uniformly across protocols).
+    See templates/step_summary.yaml.template for the full schema
+    and analysis_plan.yaml `classify_step_intent` for why this
+    matters (the figure / table / literature gates honour these
+    contracts uniformly across protocols).
 
-      If a thematic-map figure IS produced (encouraged; see
-      `theme_synthesis` + `report` below), flip
-      `figure_required: true` so the completeness gate enforces a
-      caption + summary sidecar.
+    If a thematic-map figure IS produced (encouraged; see
+    `theme_synthesis` + `report` below), flip
+    `figure_required: true` so the completeness gate enforces a
+    caption + summary sidecar.
 
-  - id: design_protocol
-    name: Document the Interview / Observation Protocol
-    description: |
-      Write outputs/reports/interview_protocol.md covering:
-        - Population + sampling strategy (purposive | snowball | theoretical)
-        - Sample-size justification (data-saturation target or fixed N,
-          justified — not a rule of thumb)
-        - Setting (in-person | video | phone | field)
-        - Interviewer role + reflexivity statement
-        - Topic guide — semi-structured questions sized to the research
-          question and the interview length the design allows
-        - Recording + transcription approach
-        - Member-checking plan, if any
-      Cite the COREQ or SRQR item that each section addresses.
+- id: design_protocol
+  name: Document the Interview / Observation Protocol
+  description: |
+    Write outputs/reports/interview_protocol.md covering:
+      - Population + sampling strategy (purposive | snowball | theoretical)
+      - Sample-size justification (data-saturation target or fixed N,
+        justified — not a rule of thumb)
+      - Setting (in-person | video | phone | field)
+      - Interviewer role + reflexivity statement
+      - Topic guide — semi-structured questions sized to the research
+        question and the interview length the design allows
+      - Recording + transcription approach
+      - Member-checking plan, if any
+    Cite the COREQ or SRQR item that each section addresses.
 
-  - id: ingest_transcripts
-    name: Ingest Transcripts to Step
-    description: |
-      PII PRE-FLIGHT (HARD GATE): if `inputs/raw_data/` contains
-      transcripts AND `inputs/raw_data_redacted/` does NOT exist,
-      STOP and route to `methodology/qualitative_pii_redaction`
-      first. Coding on un-redacted text encodes identifying detail
-      into the codebook (a "participant from the only NICU in
-      Region X" leaks identity without quoting verbatim); the
-      later `qualitative_quality_audit` quote-level check cannot
-      un-see this. HIPAA Safe Harbor / IRB / GDPR all want
-      de-identification at INGEST, not at OUTPUT.
+- id: ingest_transcripts
+  name: Ingest Transcripts to Step
+  description: |
+    PII PRE-FLIGHT (HARD GATE): if `inputs/raw_data/` contains
+    transcripts AND `inputs/raw_data_redacted/` does NOT exist,
+    STOP and route to `methodology/qualitative_pii_redaction`
+    first. Coding on un-redacted text encodes identifying detail
+    into the codebook (a "participant from the only NICU in
+    Region X" leaks identity without quoting verbatim); the
+    later `qualitative_quality_audit` quote-level check cannot
+    un-see this. HIPAA Safe Harbor / IRB / GDPR all want
+    de-identification at INGEST, not at OUTPUT.
 
-      Once `inputs/raw_data_redacted/` exists, prefer it as the
-      ingest source. For each transcript in
-      `inputs/raw_data_redacted/` (or `inputs/raw_data/` for
-      genuinely public corpora; document the exemption in
-      `inputs/policy/pii_policy.md`), copy (or symlink for large corpora —
-      do not move) into workspace/<step>/data/past_step_input/, or reference
-      via data/project_inputs/. If transcripts are .docx,
-      also save a .md copy via sys_file_write so coding can be
-      text-aware.
+    Once `inputs/raw_data_redacted/` exists, prefer it as the
+    ingest source. For each transcript in
+    `inputs/raw_data_redacted/` (or `inputs/raw_data/` for
+    genuinely public corpora; document the exemption in
+    `inputs/policy/pii_policy.md`), copy (or symlink for large corpora —
+    do not move) into workspace/<step>/data/past_step_input/, or reference
+    via data/project_inputs/. If transcripts are .docx,
+    also save a .md copy via sys_file_write so coding can be
+    text-aware.
 
-      Verbatim quotes used in any output (codebook examples,
-      themes.md, paper drafts) MUST cite participant tokens (P01,
-      R03) from the pseudonym map at
-      `inputs/private/pseudonym_map.csv`, never original names.
-      The pseudonym map is gitignored by design — only the AI's
-      ephemeral session can see it during redaction; downstream
-      coding works against the tokens.
+    Verbatim quotes used in any output (codebook examples,
+    themes.md, paper drafts) MUST cite participant tokens (P01,
+    R03) from the pseudonym map at
+    `inputs/private/pseudonym_map.csv`, never original names.
+    The pseudonym map is gitignored by design — only the AI's
+    ephemeral session can see it during redaction; downstream
+    coding works against the tokens.
 
-  - id: coding_pass_1
-    name: Open coding — first pass
-    description: |
-      Produce `outputs/reports/open_codes.md` with one row per code:
-      label, definition, source quote (with transcript + line ref).
-      The number of codes is data-driven, not target-driven — code
-      until the next transcript stops producing new codes. Custom or
-      assisted (LLM-aided) coding is allowed; `mem_log`
-      MUST document which.
+- id: coding_pass_1
+  name: Open coding — first pass
+  description: |
+    Produce `outputs/reports/open_codes.md` with one row per code:
+    label, definition, source quote (with transcript + line ref).
+    The number of codes is data-driven, not target-driven — code
+    until the next transcript stops producing new codes. Custom or
+    assisted (LLM-aided) coding is allowed; `mem_log`
+    MUST document which.
 
-  - id: coding_pass_2
-    name: Axial / focused coding
-    description: |
-      Cluster open codes into categories. Document the codebook in
-      `outputs/reports/codebook.md` with: code, definition, inclusion
-      criteria, exclusion criteria, exemplar quote. The number of
-      categories follows from the data + the analytic tradition
-      (thematic analysis tends to converge to fewer than grounded
-      theory's axial step); cite the methodological source for the
-      tradition being followed.
+- id: coding_pass_2
+  name: Axial / focused coding
+  description: |
+    Cluster open codes into categories. Document the codebook in
+    `outputs/reports/codebook.md` with: code, definition, inclusion
+    criteria, exclusion criteria, exemplar quote. The number of
+    categories follows from the data + the analytic tradition
+    (thematic analysis tends to converge to fewer than grounded
+    theory's axial step); cite the methodological source for the
+    tradition being followed.
 
-  - id: theme_synthesis
-    name: Theme synthesis
-    description: |
-      Distil themes from the categories. The right number is whatever
-      the data supports — three themes can be sufficient for a
-      focused study; a deep ethnography may carry more. Each theme
-      gets a section in `outputs/reports/themes.md`:
-        - Theme name (verb-phrase or descriptive)
-        - One-sentence essence
-        - Constituent codes
-        - Illustrative quotes (with transcript IDs) — enough to
-          demonstrate the theme without flooding the reader
-        - Negative / disconfirming case, if any
+- id: theme_synthesis
+  name: Theme synthesis
+  description: |
+    Distil themes from the categories. The right number is whatever
+    the data supports — three themes can be sufficient for a
+    focused study; a deep ethnography may carry more. Each theme
+    gets a section in `outputs/reports/themes.md`:
+      - Theme name (verb-phrase or descriptive)
+      - One-sentence essence
+      - Constituent codes
+      - Illustrative quotes (with transcript IDs) — enough to
+        demonstrate the theme without flooding the reader
+      - Negative / disconfirming case, if any
 
-  - id: trustworthiness
-    name: Trustworthiness / Quality Strategy
-    description: |
-      In outputs/reports/trustworthiness.md, document at minimum:
-        - Credibility: triangulation, member checks
-        - Transferability: thick description of context
-        - Dependability: audit trail (this protocol IS the audit trail)
-        - Confirmability: reflexivity statement, second-coder reliability
-          (κ or %-agreement) if claimed
-        - Saturation evidence (if claimed)
+- id: trustworthiness
+  name: Trustworthiness / Quality Strategy
+  description: |
+    In outputs/reports/trustworthiness.md, document at minimum:
+      - Credibility: triangulation, member checks
+      - Transferability: thick description of context
+      - Dependability: audit trail (this protocol IS the audit trail)
+      - Confirmability: reflexivity statement, second-coder reliability
+        (κ or %-agreement) if claimed
+      - Saturation evidence (if claimed)
 
-  - id: report
-    name: Per-step Conclusions
-    description: |
-      conclusions.md captures: the themes (however many the data
-      supports — see theme_synthesis), their relationships (consider a
-      thematic map figure), implications for the research question, what
-      surprised you, and where the analysis was thin.
+- id: report
+  name: Per-step Conclusions
+  description: |
+    conclusions.md captures: the themes (however many the data
+    supports — see theme_synthesis), their relationships (consider a
+    thematic map figure), implications for the research question, what
+    surprised you, and where the analysis was thin.
 
 expected_outputs:
-  - workspace/*/outputs/reports/interview_protocol.md
-  - workspace/*/outputs/reports/codebook.md
-  - workspace/*/outputs/reports/themes.md
-  - workspace/*/outputs/reports/trustworthiness.md
+- workspace/*/outputs/reports/interview_protocol.md
+- workspace/*/outputs/reports/codebook.md
+- workspace/*/outputs/reports/themes.md
+- workspace/*/outputs/reports/trustworthiness.md
 
 quality_bar: |
   - Every theme is supported by ≥ 2 quotes from ≥ 2 distinct participants.
@@ -184,3 +177,24 @@ quality_bar: |
 next_protocol: methodology/qualitative_quality_audit
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: qualitative
+triggers:
+- interviews
+- thematic
+- qualitative
+- coreq
+- srqr
+- grounded theory
+- ethnograph
+- focus group
+- open coding
+- axial coding
+- thematic coding
+- qualitative coding
+- phenomenolog
+- discourse analysis
+- content analysis
+- case study
+- narrative inquiry
+summary: COREQ/SRQR interview / focus-group / thematic analysis.

@@ -2,15 +2,15 @@ id: mixed_language_orchestration
 tier: 'plan'
 name: Mixed-Language Orchestration (Python ↔ R ↔ Bash within a step)
 version: '4.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [experiment_pipeline]
 last_reviewed: '2026-06-25'
 see_also:
-  - methodology/pick_tool_stack             # decides "mixed" and writes stack_plan.md
-  - methodology/polyglot_analysis           # choosing + running the right language per task, recorded
+- methodology/pick_tool_stack               # decides "mixed" and writes stack_plan.md
+- methodology/polyglot_analysis             # choosing + running the right language per task, recorded
 description: |
   When `pick_tool_stack` lands on "mixed" — i.e. one analysis step
   legitimately spans multiple languages — this protocol covers HOW to
@@ -47,115 +47,113 @@ trigger: |
       complex types). Prefer separate steps with a Parquet/RDS bridge.
 
 prerequisites:
-  - All needed languages installed in the project env. Verify with
-    `which Rscript`, `which python`, `which julia` before writing code.
-  - The step's `pipeline.yaml` exists (this is a multi-script step by
-    definition).
-  - stack_plan.md was already written by `pick_tool_stack`.
+- All needed languages installed in the project env. Verify with `which Rscript`, `which python`, `which julia` before writing code.
+- The step's `pipeline.yaml` exists (this is a multi-script step by definition).
+- stack_plan.md was already written by `pick_tool_stack`.
 
 steps:
-  - id: declare_handoff_files
-    name: Declare the hand-off files BEFORE writing code
-    description: |
-      In `workspace/<step>/scratch/handoff_plan.md`, name every file
-      that crosses a language boundary:
+- id: declare_handoff_files
+  name: Declare the hand-off files BEFORE writing code
+  description: |
+    In `workspace/<step>/scratch/handoff_plan.md`, name every file
+    that crosses a language boundary:
 
-        ## Hand-off files
-        - data/intermediate/dge_table.tsv
-          producer: scripts/01_run_deseq2.R
-          consumer: scripts/02_pathway_viz.py
-          schema: gene_symbol | log2FC | padj | baseMean
-          format: TSV (tab-delimited), header row, NA as empty string
+      ## Hand-off files
+      - data/intermediate/dge_table.tsv
+        producer: scripts/01_run_deseq2.R
+        consumer: scripts/02_pathway_viz.py
+        schema: gene_symbol | log2FC | padj | baseMean
+        format: TSV (tab-delimited), header row, NA as empty string
 
-      Pin the SCHEMA before writing either script. Schema drift across
-      a language boundary is the #1 reproducibility failure in mixed
-      pipelines — a Python script that reads a TSV with R-style
-      `NA` strings will silently coerce to NaN and downstream stats
-      will diverge.
+    Pin the SCHEMA before writing either script. Schema drift across
+    a language boundary is the #1 reproducibility failure in mixed
+    pipelines — a Python script that reads a TSV with R-style
+    `NA` strings will silently coerce to NaN and downstream stats
+    will diverge.
 
-  - id: pick_serialization_format
-    name: Pick the serialization format per hand-off
-    description: |
-      Decision matrix:
+- id: pick_serialization_format
+  name: Pick the serialization format per hand-off
+  description: |
+    Decision matrix:
 
-        | Hand-off shape | Format |
-        |---|---|
-        | Small dataframe, all numeric / strings | TSV with header |
-        | Dataframe with mixed types, or large enough that text parse/serialise dominates | Parquet (typed, universal) |
-        | Sparse matrix (single-cell counts) | .mtx + barcodes.tsv |
-        | R model object (lm, coxph, deseq2 fit) | RDS — but ONLY if next consumer is also R |
-        | Python sklearn model | joblib pickle — ONLY if next consumer is Python |
-        | Cross-language object (graph, tree) | JSON or GraphML |
-        | Genomic intervals | BED / GFF / VCF |
+      | Hand-off shape | Format |
+      |---|---|
+      | Small dataframe, all numeric / strings | TSV with header |
+      | Dataframe with mixed types, or large enough that text parse/serialise dominates | Parquet (typed, universal) |
+      | Sparse matrix (single-cell counts) | .mtx + barcodes.tsv |
+      | R model object (lm, coxph, deseq2 fit) | RDS — but ONLY if next consumer is also R |
+      | Python sklearn model | joblib pickle — ONLY if next consumer is Python |
+      | Cross-language object (graph, tree) | JSON or GraphML |
+      | Genomic intervals | BED / GFF / VCF |
 
-      RDS and pickle do NOT cross language lines. If a model needs to
-      be consumed in both R and Python, save the model COEFFICIENTS
-      and re-fit a thin wrapper in the consumer language.
+    RDS and pickle do NOT cross language lines. If a model needs to
+    be consumed in both R and Python, save the model COEFFICIENTS
+    and re-fit a thin wrapper in the consumer language.
 
-  - id: write_step_pipeline_yaml
-    name: Write the per-step pipeline.yaml with explicit language tags
-    description: |
-      `workspace/<step>/pipeline.yaml` must declare each script's
-      language + the hand-off contract:
+- id: write_step_pipeline_yaml
+  name: Write the per-step pipeline.yaml with explicit language tags
+  description: |
+    `workspace/<step>/pipeline.yaml` must declare each script's
+    language + the hand-off contract:
 
-        steps:
-          - id: run_deseq2
-            script: scripts/01_run_deseq2.R
-            language: R
-            outputs: [data/intermediate/dge_table.tsv]
-          - id: pathway_viz
-            script: scripts/02_pathway_viz.py
-            language: python
-            requires: [data/intermediate/dge_table.tsv]
-            outputs: [outputs/figures/01_pathway_enrichment.png]
+      steps:
+        - id: run_deseq2
+          script: scripts/01_run_deseq2.R
+          language: R
+          outputs: [data/intermediate/dge_table.tsv]
+        - id: pathway_viz
+          script: scripts/02_pathway_viz.py
+          language: python
+          requires: [data/intermediate/dge_table.tsv]
+          outputs: [outputs/figures/01_pathway_enrichment.png]
 
-      `tool_path_finalize` reads pipeline.yaml to generate tools.md
-      bullets per language + provenance per script.
+    `tool_plan (operation=finalize_step)` reads pipeline.yaml to generate tools.md
+    bullets per language + provenance per script.
 
-  - id: capture_versions_per_language
-    name: Capture env versions per language used
-    description: |
-      sys_env(operation='snapshot', scope='step', step_id='<NN_slug>')
-      Snapshot must include:
-        - environment/requirements.txt (Python: scanpy 1.10.x, …)
-        - environment/DESCRIPTION       (R: DESeq2 1.40.x, …)
-        - environment/Project.toml      (Julia, if used)
-        - environment/cli_versions.txt  (samtools --version, …)
+- id: capture_versions_per_language
+  name: Capture env versions per language used
+  description: |
+    sys_env(operation='snapshot', scope='step', step_id='<NN_slug>')
+    Snapshot must include:
+      - environment/requirements.txt (Python: scanpy 1.10.x, …)
+      - environment/DESCRIPTION       (R: DESeq2 1.40.x, …)
+      - environment/Project.toml      (Julia, if used)
+      - environment/cli_versions.txt  (samtools --version, …)
 
-      No silent drift across reruns. Reviewers reproducing a mixed
-      pipeline will pin the WEAKEST language's version chain first.
+    No silent drift across reruns. Reviewers reproducing a mixed
+    pipeline will pin the WEAKEST language's version chain first.
 
-  - id: validate_handoff
-    name: Validate every hand-off file before declaring step COMPLETE
-    description: |
-      After both scripts run, the consumer script should END with a
-      schema assertion on the hand-off file:
+- id: validate_handoff
+  name: Validate every hand-off file before declaring step COMPLETE
+  description: |
+    After both scripts run, the consumer script should END with a
+    schema assertion on the hand-off file:
 
-        # Python consumer
-        assert set(df.columns) == {"gene_symbol", "log2FC", "padj", "baseMean"}, \
-            f"hand-off schema drift: {df.columns}"
+      # Python consumer
+      assert set(df.columns) == {"gene_symbol", "log2FC", "padj", "baseMean"}, \
+          f"hand-off schema drift: {df.columns}"
 
-        # R consumer
-        stopifnot(all(c("gene_symbol", "log2FC", "padj", "baseMean")
-                      %in% colnames(df)))
+      # R consumer
+      stopifnot(all(c("gene_symbol", "log2FC", "padj", "baseMean")
+                    %in% colnames(df)))
 
-      The assertion is the contract. If it fails, the step is INCOMPLETE.
+    The assertion is the contract. If it fails, the step is INCOMPLETE.
 
-  - id: log_to_tools_md
-    name: Log all languages used to tools.md
-    description: |
-      tool_path_finalize handles this when pipeline.yaml is present and
-      `language:` tags are set per script. Spot-check the tools.md
-      block after finalize — both Python AND R packages should appear
-      under this step's section. If only one shows, the regex missed a
-      language; raise a fix to `tools/actions/state/path.py:_extract_imports`.
+- id: log_to_tools_md
+  name: Log all languages used to tools.md
+  description: |
+    tool_plan (operation=finalize_step) handles this when pipeline.yaml is present and
+    `language:` tags are set per script. Spot-check the tools.md
+    block after finalize — both Python AND R packages should appear
+    under this step's section. If only one shows, the regex missed a
+    language; raise a fix to `tools/actions/state/path.py:_extract_imports`.
 
 expected_outputs:
-  - workspace/<step>/scratch/handoff_plan.md
-  - workspace/<step>/pipeline.yaml (with language: tags per node)
-  - workspace/<step>/data/intermediate/*  (hand-off files)
-  - workspace/<step>/environment/{requirements.txt, DESCRIPTION, Project.toml}
-  - workspace/tools.md (with bullets for every language used)
+- workspace/<step>/scratch/handoff_plan.md
+- workspace/<step>/pipeline.yaml (with language: tags per node)
+- workspace/<step>/data/intermediate/*  (hand-off files)
+- workspace/<step>/environment/{requirements.txt, DESCRIPTION, Project.toml}
+- workspace/tools.md (with bullets for every language used)
 
 quality_bar:
   handoff_schema_pinned_before_code: true
@@ -166,3 +164,17 @@ quality_bar:
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: methodology/pick_tool_stack
+intent_class: methodology
+sub_intent: pick
+triggers:
+- mix languages
+- mixed language
+- python and r
+- r and python
+- subprocess r
+- subprocess rscript
+- polyglot pipeline
+- cross language
+- hand-off between
+- rscript from python
+summary: 'Compose Python ↔ R ↔ bash within one step: hand-off files, serialization format, schema assertions, pipeline.yaml language tags.'

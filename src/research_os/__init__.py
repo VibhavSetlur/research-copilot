@@ -5,4 +5,4 @@ language, and get publication-grade analyses with provenance sidecars,
 plain-English captions, and a self-tested dashboard you can email.
 """
 
-__version__ = "4.4.5"
+__version__ = "4.4.6"

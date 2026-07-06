@@ -2,16 +2,16 @@ id: study_register
 tier: 'plan'
 name: Study Register (spin up a sub-study under the program commons)
 version: '3.12.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai, auditor]
   workflow_shape: [multi_study, study_registration]
 last_reviewed: '2026-06-23'
 see_also:
-  - program/program_setup                        # establishes the commons this study inherits
-  - guidance/analysis_plan                       # the loop the registered study then runs
-  - program/cross_study_synthesis                # the roll-up this study must feed
+- program/program_setup                          # establishes the commons this study inherits
+- guidance/analysis_plan                         # the loop the registered study then runs
+- program/cross_study_synthesis                  # the roll-up this study must feed
 description: |
   The recurring move of a multi_study program: register a new sub-study under
   studies/ so it inherits the program commons (shared codebook, prereg,
@@ -39,92 +39,92 @@ trigger: |
   "add a study", "register a new study", "spin up study N", "start the next
   arm", "new cohort under the program".
 prerequisites:
-  - The program commons exist (shared/codebook.md, shared/preregistration.md, roll_up/README.md) — program_setup created them; run program_setup first if absent
-  - workspace.mode is multi_study (sys_boot reports workspace_mode), OR the researcher is working inside a research program
+- The program commons exist (shared/codebook.md, shared/preregistration.md, roll_up/README.md) — program_setup created them; run program_setup first if absent
+- workspace.mode is multi_study (sys_boot reports workspace_mode), OR the researcher is working inside a research program
 
 steps:
-  - id: orient_program
-    name: Orient on the commons the study must inherit
-    description: |
-      If you haven't called sys_boot this session, do so once — it reports
-      workspace_mode + autonomy. Read the commons before creating anything:
-      shared/codebook.md (the variable definitions this study must code to),
-      shared/preregistration.md (which hypotheses studies test + the pooling
-      plan), roll_up/README.md (the study output contract — the minimum each
-      study must emit), and the existing studies/ to avoid duplicating one.
+- id: orient_program
+  name: Orient on the commons the study must inherit
+  description: |
+    If you haven't called sys_boot this session, do so once — it reports
+    workspace_mode + autonomy. Read the commons before creating anything:
+    shared/codebook.md (the variable definitions this study must code to),
+    shared/preregistration.md (which hypotheses studies test + the pooling
+    plan), roll_up/README.md (the study output contract — the minimum each
+    study must emit), and the existing studies/ to avoid duplicating one.
 
-      The mental model to hold: this study is a child of the program. It is
-      free to run its own analysis, but it is BOUND on the shared variables
-      and OWES the roll-up a commensurable result.
+    The mental model to hold: this study is a child of the program. It is
+    free to run its own analysis, but it is BOUND on the shared variables
+    and OWES the roll-up a commensurable result.
 
-  - id: scope_the_study
-    name: Scope what THIS study contributes to the program
-    description: |
-      State in 1-2 sentences what this study adds that the program needs:
-      which program hypothesis it tests (confirmatory) or which it explores,
-      its population/sample/instrument, and how it differs from the studies
-      already registered. A study that merely repeats an existing one without
-      a reason (replication is a reason; accident is not) should be
-      questioned, not registered.
+- id: scope_the_study
+  name: Scope what THIS study contributes to the program
+  description: |
+    State in 1-2 sentences what this study adds that the program needs:
+    which program hypothesis it tests (confirmatory) or which it explores,
+    its population/sample/instrument, and how it differs from the studies
+    already registered. A study that merely repeats an existing one without
+    a reason (replication is a reason; accident is not) should be
+    questioned, not registered.
 
-  - id: bind_to_codebook
-    name: Bind the study to the shared codebook (and record any deviation)
-    description: |
-      Map this study's variables onto the shared codebook explicitly. For the
-      SHARED constructs (the outcome + key predictors the program pools on),
-      the study MUST use the codebook's operationalisation, units, and value
-      ranges — divergence here is what makes a roll-up meaningless. Where the
-      study legitimately needs to differ (a local covariate, an instrument
-      variant), it documents the deviation INSIDE the study (studies/<slug>/),
-      it does not silently redefine a shared variable.
+- id: bind_to_codebook
+  name: Bind the study to the shared codebook (and record any deviation)
+  description: |
+    Map this study's variables onto the shared codebook explicitly. For the
+    SHARED constructs (the outcome + key predictors the program pools on),
+    the study MUST use the codebook's operationalisation, units, and value
+    ranges — divergence here is what makes a roll-up meaningless. Where the
+    study legitimately needs to differ (a local covariate, an instrument
+    variant), it documents the deviation INSIDE the study (studies/<slug>/),
+    it does not silently redefine a shared variable.
 
-      If the study cannot honour a shared definition, that is a signal the
-      commons may need amending — route to program/codebook_governance rather
-      than quietly diverging.
+    If the study cannot honour a shared definition, that is a signal the
+    commons may need amending — route to program/codebook_governance rather
+    than quietly diverging.
 
-  - id: register_output_contract
-    name: Pin what the study owes the roll-up
-    description: |
-      Make the study's obligation to the roll-up explicit before it runs.
-      From roll_up/README.md's study output contract, record in
-      studies/<slug>/ what THIS study must emit for the roll-up to consume it:
-      the effect + its uncertainty in the shared units, the n, the analysis
-      that produces it, and the coding-deviation note if any. A study that
-      doesn't know what it owes the roll-up tends to produce something the
-      roll-up can't use — pin it now, not at pooling time.
+- id: register_output_contract
+  name: Pin what the study owes the roll-up
+  description: |
+    Make the study's obligation to the roll-up explicit before it runs.
+    From roll_up/README.md's study output contract, record in
+    studies/<slug>/ what THIS study must emit for the roll-up to consume it:
+    the effect + its uncertainty in the shared units, the n, the analysis
+    that produces it, and the coding-deviation note if any. A study that
+    doesn't know what it owes the roll-up tends to produce something the
+    roll-up can't use — pin it now, not at pooling time.
 
-  - id: scaffold_and_handoff
-    name: Scaffold the study folder + hand off to its analysis loop
-    description: |
-      Create the study as a child surface UNDER studies/. A study is NOT a
-      numbered analysis step — do NOT use sys_path (that creates
-      workspace/NN_<slug>/). Instead materialise the study directory directly:
-        sys_file_write filepath="studies/<slug>/README.md" (creates the
-        studies/<slug>/ surface), stating its scope, the program hypothesis it
-        tests, its codebook bindings + any deviation, and its roll-up
-        obligation.
-      Give the study its own working sub-structure as needed
-      (studies/<slug>/workspace/, studies/<slug>/outputs/) via sys_file_write so
-      its steps + outputs don't collide with sibling studies in the shared
-      workspace. mem_log "registered study <slug>: tests <H>, owes roll-up
-      <result shape>".
+- id: scaffold_and_handoff
+  name: Scaffold the study folder + hand off to its analysis loop
+  description: |
+    Create the study as a child surface UNDER studies/. A study is NOT a
+    numbered analysis step — do NOT use sys_state_get (that creates
+    workspace/NN_<slug>/). Instead materialise the study directory directly:
+      sys_file_write filepath="studies/<slug>/README.md" (creates the
+      studies/<slug>/ surface), stating its scope, the program hypothesis it
+      tests, its codebook bindings + any deviation, and its roll-up
+      obligation.
+    Give the study its own working sub-structure as needed
+    (studies/<slug>/workspace/, studies/<slug>/outputs/) via sys_file_write so
+    its steps + outputs don't collide with sibling studies in the shared
+    workspace. mem_log "registered study <slug>: tests <H>, owes roll-up
+    <result shape>".
 
-      Then run the study's analysis loop scoped to studies/<slug>/ (its own
-      steps + outputs live under the study folder) — the program machinery is
-      now out of the way until the study's result feeds the roll-up.
+    Then run the study's analysis loop scoped to studies/<slug>/ (its own
+    steps + outputs live under the study folder) — the program machinery is
+    now out of the way until the study's result feeds the roll-up.
 
-      AUTONOMY GATE:
-        Risk: reversible — scaffolding a study writes structure, not
-        findings; bindings are re-editable before the study runs.
-        proceed (adaptive default, autopilot) → scaffold the study with its bindings +
-          obligation recorded, then enter its analysis loop; log the
-          registration.
-        confirm first (manual / supervised) → present the study scope + codebook
-          bindings + roll-up obligation; confirm before scaffolding.
+    AUTONOMY GATE:
+      Risk: reversible — scaffolding a study writes structure, not
+      findings; bindings are re-editable before the study runs.
+      proceed (adaptive default, autopilot) → scaffold the study with its bindings +
+        obligation recorded, then enter its analysis loop; log the
+        registration.
+      confirm first (manual / supervised) → present the study scope + codebook
+        bindings + roll-up obligation; confirm before scaffolding.
 
 expected_outputs:
-  - studies/<slug>/  (the registered sub-study surface)
-  - studies/<slug>/README.md  (scope, hypothesis, codebook bindings, roll-up obligation)
+- studies/<slug>/  (the registered sub-study surface)
+- studies/<slug>/README.md  (scope, hypothesis, codebook bindings, roll-up obligation)
 
 quality_bar: |
   - The study codes to the shared codebook on the pooled variables; any
@@ -138,3 +138,23 @@ quality_bar: |
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: program/program_setup
+intent_class: plan
+sub_intent: study_register
+triggers:
+- add a study
+- add a sub-study
+- new study in the program
+- register a study
+- start another study
+- next study in the program
+- add a site
+- add a cohort
+summary: 'Register a new sub-study against the program commons: bind it to the shared codebook + program prereg, declare what it contributes to the roll-up, and scaffold it so it harmonizes by construction.'
+token_estimate: 1600
+decomposition:
+- protocol: program/study_register
+  purpose: Bind the study to the codebook + prereg, declare its roll-up contribution, scaffold it harmonized.
+- tool: sys_file_write
+  purpose: Materialise the new sub-study directory + README under studies/<slug>/ (NOT sys_state_get — a study is not a numbered analysis step).
+- tool: mem_log
+  purpose: Record the study registration (bound to commons vX).

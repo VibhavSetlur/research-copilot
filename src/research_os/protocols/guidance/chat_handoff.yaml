@@ -2,15 +2,15 @@ id: chat_handoff
 tier: 'finalize'
 name: Chat / Session Handoff
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:
   domain: [any]
   audience: [naive_ai]
   workflow_shape: [any]
 see_also:
-  - guidance/session_resume          # the protocol that reads this handoff back in
-  - guidance/collaboration_handoff   # distinct: AI-to-AI handoff vs packaging for a human
+- guidance/session_resume            # the protocol that reads this handoff back in
+- guidance/collaboration_handoff     # distinct: AI-to-AI handoff vs packaging for a human
 description: |
   Produce a fully-formed handoff brief so the project can be picked up by
   a different chat, a different AI model, or a different person — without
@@ -21,78 +21,78 @@ trigger: |
   "I'll come back tomorrow", "hand this off", "context is filling up", or
   the AI estimates >80% context utilisation.
 prerequisites:
-  - session_boot has completed this session
+- session_boot has completed this session
 
 steps:
-  - id: snapshot
-    name: Take a State Snapshot
-    description: |
-      In ONE batch:
-        - sys_checkpoint_create description="handoff <iso>"
-        - sys_state_get format="markdown"
-        - sys_protocol_history limit=20
-        - mem_hypothesis_list
-        - tool_task(operation='list')
-      The checkpoint is the rollback safety net. The state + history feed
-      the handoff doc.
+- id: snapshot
+  name: Take a State Snapshot
+  description: |
+    In ONE batch:
+      - tool_git(operation='commit', message="handoff <iso>")
+      - sys_state_get format="markdown"
+      - sys_protocol_get(operation='history', limit=20)
+      - mem_hypothesis (operation=list)
+      - tool_task(operation='list')
+    The checkpoint is the rollback safety net. The state + history feed
+    the handoff doc.
 
-  - id: extract_intent
-    name: Extract Intent + Open Questions
-    description: |
-      Read the last ~120 lines of workspace/analysis.md and the tail of
-      workspace/methods.md. Write into the handoff:
-        - What we set out to do this session (1-3 lines)
-        - What changed our mind, if anything (the *why* behind pivots)
-        - Open questions that the next session needs to answer
-      DO NOT paraphrase from memory — quote directly from the logs.
+- id: extract_intent
+  name: Extract Intent + Open Questions
+  description: |
+    Read the last ~120 lines of workspace/analysis.md and the tail of
+    workspace/methods.md. Write into the handoff:
+      - What we set out to do this session (1-3 lines)
+      - What changed our mind, if anything (the *why* behind pivots)
+      - Open questions that the next session needs to answer
+    DO NOT paraphrase from memory — quote directly from the logs.
 
-  - id: list_open_threads
-    name: List All Open Threads
-    description: |
-      Enumerate:
-        - Hypotheses currently in status=testing
-        - Background tasks not yet finished (tool_task(operation='list'), with PIDs)
-        - Numbered steps without conclusions.md (in-flight work)
-        - Decisions logged with "[pending]" / "[deferred]" tags
-      Each entry includes a one-line "what to do with this" pointer.
+- id: list_open_threads
+  name: List All Open Threads
+  description: |
+    Enumerate:
+      - Hypotheses currently in status=testing
+      - Background tasks not yet finished (tool_task(operation='list'), with PIDs)
+      - Numbered steps without conclusions.md (in-flight work)
+      - Decisions logged with "[pending]" / "[deferred]" tags
+    Each entry includes a one-line "what to do with this" pointer.
 
-  - id: write_handoff
-    name: Write the Handoff Document
-    description: |
-      Call sys_session_handoff (the tool generates a structured markdown
-      under .os_state/handoffs/<iso>.md). Then enrich it with the intent +
-      open threads from previous steps via sys_file_write force=true to
-      the same path.
-      Required sections:
-        # Handoff — <iso>
-        ## What this project is about
-        ## Where we are (one-paragraph status)
-        ## What we did this session (bulleted, with timestamps)
-        ## Open threads (numbered)
-        ## How to resume (3-line recipe with exact tool calls)
-        ## Critical assumptions still untested
-        ## Dead ends and why they failed
-        ## Pointers (key files, citations, external tools)
+- id: write_handoff
+  name: Write the Handoff Document
+  description: |
+    Call tool_session_handoff (the tool generates a structured markdown
+    under .os_state/handoffs/<iso>.md). Then enrich it with the intent +
+    open threads from previous steps via sys_file_write force=true to
+    the same path.
+    Required sections:
+      # Handoff — <iso>
+      ## What this project is about
+      ## Where we are (one-paragraph status)
+      ## What we did this session (bulleted, with timestamps)
+      ## Open threads (numbered)
+      ## How to resume (3-line recipe with exact tool calls)
+      ## Critical assumptions still untested
+      ## Dead ends and why they failed
+      ## Pointers (key files, citations, external tools)
 
-  - id: ai_to_ai_addendum
-    name: AI-to-AI Addendum (optional)
-    description: |
-      If the next session might use a smaller / different model, append:
-        ## Notes for the next AI
-        - "Always read AGENTS.md and run session_resume first."
-        - "Project domain is <X> — load that domain's methodology protocol."
-        - "These three assumptions are LOAD-BEARING for the analysis: ..."
-        - "Avoid these traps that previous iterations fell into: ..."
+- id: ai_to_ai_addendum
+  name: AI-to-AI Addendum (optional)
+  description: |
+    If the next session might use a smaller / different model, append:
+      ## Notes for the next AI
+      - "Always read AGENTS.md and run session_resume first."
+      - "Project domain is <X> — load that domain's methodology protocol."
+      - "These three assumptions are LOAD-BEARING for the analysis: ..."
+      - "Avoid these traps that previous iterations fell into: ..."
 
-  - id: notify_and_close
-    name: Notify + Close
-    description: |
-      sys_notify level="info" message="Session handed off. Resume with
-      'pick up where we left off' or by reading .os_state/handoffs/<iso>.md".
+- id: notify_and_close
+  name: Notify + Close
+  description: |
+    sys_notify level="info" message="Session handed off. Resume with
+    'pick up where we left off' or by reading .os_state/handoffs/<iso>.md".
 
 expected_outputs:
-  - .os_state/handoffs/<iso>.md
-  - .os_state/checkpoints/<id>
+- .os_state/handoffs/<iso>.md
+- .os_state/checkpoints/<id>
 
 quality_bar: |
   - Handoff file is self-contained: a fresh AI with NO conversation history
@@ -101,6 +101,27 @@ quality_bar: |
   - Critical assumptions are spelled out, not buried.
   - Dead ends are recorded (so the next AI doesn't repeat them).
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: session
+sub_intent: handoff
+triggers:
+- wrap up
+- end session
+- handoff
+- hand off
+- switch chat
+- come back tomorrow
+- context filling up
+- different chat
+- going to lunch
+- done for today
+summary: Hand off cleanly to another chat / AI / collaborator.
+shortcut_tool: tool_session_handoff
+token_estimate: 900
+decomposition:
+- tool: tool_git
+  purpose: Snapshot workspace as a rollback target (operation='commit').
+- tool: tool_session_handoff
+  purpose: Write the handoff doc with running tasks, hypotheses, dead-end lessons.

@@ -2,15 +2,15 @@ id: synthesis_grant
 tier: 'synthesize'
 name: Synthesis — Grant Proposal (AI-authored, funder-tailored)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - synthesis/synthesis_lay_summary   # most funders require a lay-summary section
-  - synthesis/synthesis_paper
+- synthesis/synthesis_lay_summary     # most funders require a lay-summary section
+- synthesis/synthesis_paper
 description: |
   Guide the AI to author `synthesis/grant.typ` directly as a grant
   proposal narrative tuned to the target funder (NIH / NSF / Wellcome
@@ -26,17 +26,10 @@ trigger: |
   page"; OR `research_goal.output_types` includes "grant".
 
 prerequisites:
-  - workspace/methods.md + workspace/citations.md exist
-  - ≥1 completed analysis step with substantive findings (for
-    preliminary data section)
-  - inputs/literature_index.yaml or workspace/citations.md carries
-    enough verified prior work to ground every Aim's significance and
-    rigour claims — a thin bibliography reads as an unscoped proposal
-  - "Researcher's `research_goal.output_types`
-    (inputs/researcher_config.yaml) includes `grant`. If it doesn't,
-    tool_synthesis_scaffold returns status=ask — confirm with the
-    researcher before scaffolding. Empty output_types is treated as
-    'open'."
+- workspace/methods.md + workspace/citations.md exist
+- ≥1 completed analysis step with substantive findings (for preliminary data section)
+- inputs/literature_index.yaml or workspace/citations.md carries enough verified prior work to ground every Aim's significance and rigour claims — a thin bibliography reads as an unscoped proposal
+- "Researcher's `research_goal.output_types` (inputs/researcher_config.yaml) includes `grant`. If it doesn't, tool_synthesis_scaffold returns status=ask — confirm with the researcher before scaffolding. Empty output_types is treated as 'open'."
 
 design_principles: |
   - The reviewer reads Specific Aims first and decides whether to
@@ -90,86 +83,96 @@ funder_guidance: |
     Validation / Roadmap / Team / Budget; business framing; APA.
 
 steps:
-  - id: pick_funder
-    name: Pick the funder
-    description: |
-      Read research_goal.target_venue or ask in one line.
+- id: pick_funder
+  name: Pick the funder
+  description: |
+    Read research_goal.target_venue or ask in one line.
 
-  - id: aims_first
-    name: Aims first
-    description: |
-      Author the Specific Aims to the funder's page limit (its
-      one-page summary, where that's the form). Cite only the few
-      high-impact references the page needs. This is the page the
-      reviewer reads first and uses to decide whether to keep reading.
+- id: aims_first
+  name: Aims first
+  description: |
+    Author the Specific Aims to the funder's page limit (its
+    one-page summary, where that's the form). Cite only the few
+    high-impact references the page needs. This is the page the
+    reviewer reads first and uses to decide whether to keep reading.
 
-  - id: preliminary_data
-    name: Gather preliminary data
-    description: |
-      For every completed workspace experiment that supports an Aim,
-      note the headline finding. These become "Preliminary Studies".
+- id: preliminary_data
+  name: Gather preliminary data
+  description: |
+    For every completed workspace experiment that supports an Aim,
+    note the headline finding. These become "Preliminary Studies".
 
-  - id: ground_literature
-    name: Ground in literature
-    description: |
-      tool_research_method (deep) for each Aim. Verified citations
-      only.
+- id: ground_literature
+  name: Ground in literature
+  description: |
+    tool_search (deep) for each Aim. Verified citations
+    only.
 
-  - id: scaffold
-    name: Scaffold grant.typ
-    description: |
-      tool_synthesis_scaffold(kind='paper') then rename to
-      synthesis/grant.typ and adjust section headers to match the
-      funder.
+- id: scaffold
+  name: Scaffold grant.typ
+  description: |
+    tool_synthesis_scaffold(kind='paper') then rename to
+    synthesis/grant.typ and adjust section headers to match the
+    funder.
 
-  - id: author_sections
-    name: Author each funder section
-    description: |
-      Per turn (or autopilot iteration). Apply the funder-guidance
-      word minimums.
+- id: author_sections
+  name: Author each funder section
+  description: |
+    Per turn (or autopilot iteration). Apply the funder-guidance
+    word minimums.
 
-  - id: approach_per_aim
-    name: Draft the Approach section per Aim
-    description: |
-      Per Aim — Premise + Rationale + Experimental Design + Expected
-      Outcomes + Potential Pitfalls + Alternative Approaches. Include
-      preliminary-data figures. Include a timeline.
+- id: approach_per_aim
+  name: Draft the Approach section per Aim
+  description: |
+    Per Aim — Premise + Rationale + Experimental Design + Expected
+    Outcomes + Potential Pitfalls + Alternative Approaches. Include
+    preliminary-data figures. Include a timeline.
 
-  - id: rigour_section
-    name: Rigour and Reproducibility section
-    description: |
-      Always include for NIH; include where applicable elsewhere.
+- id: rigour_section
+  name: Rigour and Reproducibility section
+  description: |
+    Always include for NIH; include where applicable elsewhere.
 
-  - id: bibliography
-    name: Assemble bibliography
-    description: |
-      Citations resolve via the Hayagriva biblio.yml that
-      tool_typst_compile auto-generates from workspace/citations.md.
+- id: bibliography
+  name: Assemble bibliography
+  description: |
+    Citations resolve via the Hayagriva biblio.yml that
+    tool_typst_compile auto-generates from workspace/citations.md.
 
-  - id: audit
-    name: Audit
-    description: |
-      tool_synthesis_check(file='synthesis/grant.typ') catches
-      section-coverage, cliches, and reference resolution issues.
+- id: audit
+  name: Audit
+  description: |
+    tool_synthesis_scaffold (operation=check)(file='synthesis/grant.typ') catches
+    section-coverage, cliches, and reference resolution issues.
 
-  - id: compile
-    name: Compile to PDF
-    description: |
-      tool_typst_compile(source='synthesis/grant.typ') renders
-      synthesis/grant.pdf.
+- id: compile
+  name: Compile to PDF
+  description: |
+    tool_typst_compile(source='synthesis/grant.typ') renders
+    synthesis/grant.pdf.
 
 tools: |
-  - tool_synthesize_plan — what's ready
+  - tool_synthesis_scaffold (operation=plan) — what's ready
   - tool_synthesis_scaffold(kind='paper') — structural base
-  - tool_synthesis_check — substantiveness + structure + cliche audit
-  - tool_research_method — funder-relevant literature sweep
+  - tool_synthesis_scaffold (operation=check) — substantiveness + structure + cliche audit
+  - tool_search — funder-relevant literature sweep
   - tool_typst_compile — render synthesis/grant.pdf
 
 expected_outputs:
-  - synthesis/grant.typ
-  - synthesis/grant.pdf
-  - synthesis/biblio.yml
+- synthesis/grant.typ
+- synthesis/grant.pdf
+- synthesis/biblio.yml
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: synthesize
+sub_intent: grant
+triggers:
+- grant
+- r01
+- nsf proposal
+- wellcome
+- specific aims
+summary: AI authors grant.typ (R01 / NSF / Wellcome / etc.).
+shortcut_tool: tool_synthesis_scaffold (operation=plan)

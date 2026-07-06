@@ -90,44 +90,38 @@ floor needs, so it stays a *declaration* not a DSL):
 `floor` is the adaptive-strictness tier the gate fires at, identical to
 today's `_GATE_FLOOR` semantics (`light` ⊂ `normal` ⊂ `strict`).
 
-## The compiler — `_gate_meta.json` sidecar
+## The compiler — `_protocols.bundle`
 
-A build step (`scripts/build_gate_meta.py`, mirroring how
-`_route_meta.json` is built from `_router_index.yaml`) scans every
-protocol's `enforcement.gates`, validates them, and emits a single
-compiled sidecar:
+After Protocol Unification (P1) there is ONE build step
+(`scripts/build_protocols.py`) that scans every protocol's
+`enforcement.gates`, validates them against the `Protocol` model, and
+folds the compiled gate list into the single msgpack bundle:
 
 ```
-src/research_os/protocols/_gate_meta.json
+src/research_os/protocols/_protocols.bundle   (gates: [...] block)
 ```
 
-Shape:
+Each gate entry:
 
 ```json
-{
-  "schema": 1,
-  "built_from": ["guidance/autopilot"],
-  "gates": [
-    {"key": "...", "tool": "...", "when": {...}, "floor": "...",
-     "reason": "...", "source_protocol": "guidance/autopilot"}
-  ]
-}
+{"key": "...", "tool": "...", "when": {...}, "floor": "...",
+ "reason": "...", "source_protocol": "guidance/autopilot"}
 ```
 
-The engine reads this compiled file — NOT the YAML at runtime (same as
-routing reads `_route_meta.json`, not `_router_index.yaml`). Cheap,
-no YAML parse on the dispatch hot path, deterministic.
+The engine reads the compiled bundle via `ProtocolRegistry.get_gates()`
+— NOT the YAML at runtime, and no separate `_gate_meta.json` sidecar.
+Cheap, no YAML parse on the dispatch hot path, deterministic.
 
 ## Engine refactor — autopilot_gate reads the compiled gates
 
 `server/autopilot_gate.py` keeps its public surface
 (`enforce_autopilot_gate`, `_gate_key`, `_requires_confirmation`,
 `_GATE_FLOOR`) so nothing downstream breaks, but the hand-maintained
-constant tables become *derived* from `_gate_meta.json`:
+constant tables become *derived* from the compiled bundle:
 
-* `_load_gate_meta()` reads the sidecar once (module-level cache), fails
-  SAFE: if the sidecar is missing/garbage, fall back to the built-in
-  legacy tables so the engine never loses its floor.
+* `_load_gate_meta()` reads the gates from `ProtocolRegistry.get_gates()`
+  (bundle-backed, cached), fails SAFE to `[]` if the bundle is
+  missing/garbage.
 * `_gate_key`, `_requires_confirmation`, `_GATE_FLOOR` are computed from
   the loaded gates via the small `when`-predicate evaluator.
 * The synthesis-force-write existence check (needs `root`) stays a
@@ -135,25 +129,23 @@ constant tables become *derived* from `_gate_meta.json`:
 
 Net effect: the 8 floor gates are now declared once, in
 `guidance/autopilot.yaml`, and the engine + daemon enforce exactly what
-the protocol declares. Edit the protocol, rebuild the sidecar, the floor
+the protocol declares. Edit the protocol, rebuild the bundle, the floor
 moves with it. The prose and the floor can no longer disagree, because a
 preflight check asserts the compiled gates match what the engine resolves
 AND that the gate keys referenced in prose exist in the block.
 
 ## Drift guard — preflight
 
-A new preflight check (`scripts/preflight.py`) asserts:
+The preflight checks (`scripts/preflight.py`) assert:
 
-1. `_gate_meta.json` is in sync with the protocol YAMLs (rebuild → no
-   diff), same as the router-index/route-meta freshness check.
-2. Every gate `key` in the compiled set resolves through
-   `autopilot_gate` to the same `floor` (engine ⇆ declaration agree).
-3. The legacy fallback tables (kept for fail-safe) cover the same gate
-   keys as the compiled set (so the safe fallback can't silently enforce
-   a *different* floor than the declaration).
+1. `_protocols.bundle` is in sync with the protocol YAMLs
+   (`check_bundle_fresh`: source-hash match → rebuild leaves no diff).
+2. Every protocol validates against the `Protocol` model
+   (`check_protocols_validate`), so a bad gate floor / check kind can't
+   ship.
 
-Preflight already gates every release; adding these makes prose/code
-drift impossible to merge.
+Preflight already gates every release; these make prose/code drift
+impossible to merge.
 
 ## Why this is the right merge (and not over-reach)
 
@@ -191,7 +183,8 @@ enforced.
 1. This doc.
 2. `enforcement:` schema + the `when`-predicate evaluator (pure stdlib,
    `server/gate_spec.py`, no daemon import — same seam as consent).
-3. `scripts/build_gate_meta.py` compiler + `_gate_meta.json`.
+3. `scripts/build_protocols.py` compiler → the `gates` block in
+   `_protocols.bundle`.
 4. Add `enforcement.gates` to `guidance/autopilot.yaml` declaring all 8
    gates; rebuild; assert the compiled set == today's legacy tables byte
    for byte (the safety proof: zero behaviour change).

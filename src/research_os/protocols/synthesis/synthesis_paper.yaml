@@ -2,24 +2,24 @@ id: synthesis_paper
 tier: 'synthesize'
 name: Synthesis — Paper (IMRAD, AI-authored Typst → PDF)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - synthesis/manuscript_outline      # lock the narrative arc BEFORE drafting
-  - synthesis/journal_selection       # pick the venue the paper formats against
-  - synthesis/synthesis_title_workshop
-  - synthesis/synthesis_cover_letter
-  - synthesis/reviewer_response       # red-team the draft before submission
+- synthesis/manuscript_outline        # lock the narrative arc BEFORE drafting
+- synthesis/journal_selection         # pick the venue the paper formats against
+- synthesis/synthesis_title_workshop
+- synthesis/synthesis_cover_letter
+- synthesis/reviewer_response         # red-team the draft before submission
 description: |
   Guide the AI to author `synthesis/paper.typ` directly, section by
   section, as a publishable manuscript. Research-OS does not generate
-  papers — the AI does. Tools support: tool_synthesize_plan inspects
+  papers — the AI does. Tools support: tool_synthesis_scaffold (operation=plan) inspects
   what's in the workspace, tool_synthesis_scaffold seeds a tiny
-  skeleton, tool_synthesis_check audits the draft, tool_typst_compile
+  skeleton, tool_synthesis_scaffold (operation=check) audits the draft, tool_typst_compile
   renders synthesis/paper.pdf.
 
   **Canonical artefacts.** The paper deliverable is `synthesis/paper.typ`
@@ -58,39 +58,34 @@ description: |
   context window healthy AND forces the AI to deliberate. In
   autopilot mode the AI may proceed automatically through sections,
   but each section is still its own focused authoring pass + its own
-  tool_synthesis_check audit.
+  tool_synthesis_scaffold (operation=check) audit.
 
 trigger: |
   Researcher asks for "the paper" / "draft the manuscript" / "write
   it up" after at least one analysis step is finished.
 
 prerequisites:
-  - workspace/methods.md, workspace/citations.md exist with real content
-  - At least one workspace/<step>/conclusions.md exists with substantive findings
-  - inputs/literature_index.yaml has at least 3 entries (or workspace/citations.md does)
-  - "Researcher's `research_goal.output_types` (in
-    inputs/researcher_config.yaml) includes `paper`. If it doesn't,
-    tool_synthesis_scaffold returns status=ask instead of writing —
-    surface the message to the researcher and only re-call with
-    confirmed=true after they say yes. Empty output_types is treated
-    as 'open' so unfilled projects don't trip the gate."
+- workspace/methods.md, workspace/citations.md exist with real content
+- At least one workspace/<step>/conclusions.md exists with substantive findings
+- inputs/literature_index.yaml has at least 3 entries (or workspace/citations.md does)
+- "Researcher's `research_goal.output_types` (in inputs/researcher_config.yaml) includes `paper`. If it doesn't, tool_synthesis_scaffold returns status=ask instead of writing — surface the message to the researcher and only re-call with confirmed=true after they say yes. Empty output_types is treated as 'open' so unfilled projects don't trip the gate."
 
 # Machine-checkable subset (precondition gate): the foundation files must
 # exist. "Real content" / "substantive" / output_types stay prose — those
 # are the AI's judgement, only existence is hardened.
 requires:
   checks:
-    - kind: file_exists
-      path: workspace/methods.md
-      non_empty: true
-      because: the paper's methods section builds on recorded methods
-    - kind: file_exists
-      path: workspace/citations.md
-      because: the paper grounds claims in gathered citations
-    - kind: glob_min
-      pattern: workspace/**/conclusions.md
-      min: 1
-      because: the paper reports findings from completed steps
+  - kind: file_exists
+    path: workspace/methods.md
+    non_empty: true
+    because: the paper's methods section builds on recorded methods
+  - kind: file_exists
+    path: workspace/citations.md
+    because: the paper grounds claims in gathered citations
+  - kind: glob_min
+    pattern: workspace/**/conclusions.md
+    min: 1
+    because: the paper reports findings from completed steps
 
 # Floor gate (precondition gate tier 2): under a daemon, scaffolding the
 # paper is BLOCKED until the foundations above exist — the most damaging
@@ -99,24 +94,24 @@ requires:
 # No daemon → degrades to the AI's own confirmed=true, exactly as today.
 enforcement:
   gates:
-    - key: tool_synthesis_scaffold:paper_preconditions
-      tool: tool_synthesis_scaffold
-      when:
-        world_state:
-          kind: preconditions_met
-          protocol: synthesis/synthesis_paper
-      floor: normal
-      reason: >-
-        cannot scaffold the paper before its foundations exist (recorded
-        methods, gathered citations, at least one step's conclusions);
-        produce them first or override
+  - key: tool_synthesis_scaffold:paper_preconditions
+    tool: tool_synthesis_scaffold
+    when:
+      world_state:
+        kind: preconditions_met
+        protocol: synthesis/synthesis_paper
+    floor: normal
+    reason: >-
+      cannot scaffold the paper before its foundations exist (recorded
+      methods, gathered citations, at least one step's conclusions);
+      produce them first or override
 
 design_principles: |
   - Every quantitative claim is grounded in a real workspace artefact.
     The reader can audit the path (claim → conclusions.md → script →
     raw data). If a claim has no traceable origin, cut it or qualify it.
   - Citations are verified. Unverifiable citations are dropped, never
-    silently retained. tool_synthesis_check flags hallucinated keys.
+    silently retained. tool_synthesis_scaffold (operation=check) flags hallucinated keys.
   - Figures support the narrative; they don't substitute for it. Each
     figure has a caption that names what to look at AND why it matters.
   - The voice matches the venue. Conferences favour terse claims;
@@ -149,143 +144,176 @@ quality_standards: |
     citation count and any cap come from the venue, not a fixed number.
 
 steps:
-  - id: verify_intent
-    name: Confirm the researcher actually wants a paper
-    description: |
-      Read `inputs/researcher_config.yaml#research_goal.output_types`.
-      - Empty list: the researcher hasn't declared preferences; proceed
-        (and consider asking them to add `paper` to make the intent
-        explicit for future sessions).
-      - List includes `paper`: proceed silently.
-      - List does NOT include `paper`: STOP. Ask the researcher
-        "Your declared output_types is <list>; do you want me to add
-        a paper, or skip and use one of <list>?". Do NOT scaffold
-        until they confirm. A paper is never auto-created for a
-        project that asked only for a dashboard, slides, or a report.
+- id: verify_intent
+  name: Confirm the researcher actually wants a paper
+  description: |
+    Read `inputs/researcher_config.yaml#research_goal.output_types`.
+    - Empty list: the researcher hasn't declared preferences; proceed
+      (and consider asking them to add `paper` to make the intent
+      explicit for future sessions).
+    - List includes `paper`: proceed silently.
+    - List does NOT include `paper`: STOP. Ask the researcher
+      "Your declared output_types is <list>; do you want me to add
+      a paper, or skip and use one of <list>?". Do NOT scaffold
+      until they confirm. A paper is never auto-created for a
+      project that asked only for a dashboard, slides, or a report.
 
-  - id: inspect_workspace
-    name: Inspect what's ready
-    description: |
-      tool_synthesize_plan returns recommended section ordering +
-      per-section source paths + gaps. Read it before authoring
-      anything.
+- id: inspect_workspace
+  name: Inspect what's ready
+  description: |
+    tool_synthesis_scaffold (operation=plan) returns recommended section ordering +
+    per-section source paths + gaps. Read it before authoring
+    anything.
 
-  - id: pick_venue
-    name: Pick the target venue
-    description: |
-      Read writing_preferences.venue_template from researcher_config.yaml
-      (default generic_two_column). Tell the researcher the venue +
-      expected length + format. Confirm before scaffolding.
+- id: pick_venue
+  name: Pick the target venue
+  description: |
+    Read writing_preferences.venue_template from researcher_config.yaml
+    (default generic_two_column). Tell the researcher the venue +
+    expected length + format. Confirm before scaffolding.
 
-  - id: scaffold
-    name: Scaffold paper.typ
-    description: |
-      tool_synthesis_scaffold(kind='paper') writes a <=60-line
-      synthesis/paper.typ with section headers and venue import.
-      Refuses to overwrite an existing file. Idempotent.
+- id: scaffold
+  name: Scaffold paper.typ
+  description: |
+    tool_synthesis_scaffold(kind='paper') writes a <=60-line
+    synthesis/paper.typ with section headers and venue import.
+    Refuses to overwrite an existing file. Idempotent.
 
-  - id: author_sections
-    name: Author each section in its own turn
-    description: |
-      Author inside-out: the sections grounded directly in workspace
-      artefacts (methods, results) before the framing sections
-      (discussion, introduction, abstract) that depend on them. The
-      common default — methods, results, discussion, introduction,
-      abstract — exists because the abstract and introduction can only
-      be written once the contribution is locked; depart from it when
-      the venue or the argument calls for it. Each section is grounded
-      in the workspace artefact the plan named for it. In autopilot
-      mode the AI may proceed through sections automatically; each is
-      still its own focused authoring pass. This protocol authors the
-      whole paper section by section; if a venue needs separately-
-      assembled sections, draft them with the per-section writing/*
-      protocols and stitch them here.
+- id: author_sections
+  name: Author each section in its own turn
+  description: |
+    Author inside-out: the sections grounded directly in workspace
+    artefacts (methods, results) before the framing sections
+    (discussion, introduction, abstract) that depend on them. The
+    common default — methods, results, discussion, introduction,
+    abstract — exists because the abstract and introduction can only
+    be written once the contribution is locked; depart from it when
+    the venue or the argument calls for it. Each section is grounded
+    in the workspace artefact the plan named for it. In autopilot
+    mode the AI may proceed through sections automatically; each is
+    still its own focused authoring pass. This protocol authors the
+    whole paper section by section; if a venue needs separately-
+    assembled sections, draft them with the per-section writing/*
+    protocols and stitch them here.
 
-  - id: per_section_check
-    name: Check after every section
-    description: |
-      tool_synthesis_check(file='synthesis/paper.typ',
-      mode='substantiveness') after every section. Address blockers
-      before continuing. At least once before compiling — and any time a
-      section reports numbers — also run
-      tool_synthesis_check(file='synthesis/paper.typ', mode='grounding')
-      (or mode='all') to catch numeric claims that don't trace to any
-      workspace output while the section is still fresh, instead of
-      discovering them at the ship gate.
+- id: per_section_check
+  name: Check after every section
+  description: |
+    tool_synthesis_scaffold (operation=check)(file='synthesis/paper.typ',
+    mode='substantiveness') after every section. Address blockers
+    before continuing. At least once before compiling — and any time a
+    section reports numbers — also run
+    tool_synthesis_scaffold (operation=check)(file='synthesis/paper.typ', mode='grounding')
+    (or mode='all') to catch numeric claims that don't trace to any
+    workspace output while the section is still fresh, instead of
+    discovering them at the ship gate.
 
-  - id: embed_figures
-    name: Embed figures
-    description: |
-      Inline Typst blocks: #figure(image("figures/figXX.png"),
-      caption: [...]) <fig:slug>. Curate with
-      tool_synthesis_curate_figures so paper + dashboard share names.
+- id: embed_figures
+  name: Embed figures
+  description: |
+    Inline Typst blocks: #figure(image("figures/figXX.png"),
+    caption: [...]) <fig:slug>. Curate with
+    tool_synthesis_scaffold (operation=curate_figures) so paper + dashboard share names.
 
-  - id: title_workshop
-    name: Workshop the title
-    description: |
-      Load synthesis/synthesis_title_workshop. The title is the
-      single most-read sentence in the paper.
+- id: title_workshop
+  name: Workshop the title
+  description: |
+    Load synthesis/synthesis_title_workshop. The title is the
+    single most-read sentence in the paper.
 
-  - id: end_matter
-    name: Build end matter
-    description: |
-      Load writing/writing_data_availability for data / code / CRediT
-      / funding / COI / acknowledgements.
+- id: end_matter
+  name: Build end matter
+  description: |
+    Load writing/writing_data_availability for data / code / CRediT
+    / funding / COI / acknowledgements.
 
-  - id: cover_letter
-    name: Draft the cover letter
-    description: |
-      Load synthesis/synthesis_cover_letter.
+- id: cover_letter
+  name: Draft the cover letter
+  description: |
+    Load synthesis/synthesis_cover_letter.
 
-  - id: compile
-    name: Compile to PDF (mandatory before declaring the paper done)
-    description: |
-      tool_typst_compile produces synthesis/paper.pdf from paper.typ
-      (and the Markdown-intermediate path also compiles paper.md →
-      paper.typ → paper.pdf). Read typst_warnings / typst_errors on
-      failure and iterate on the .typ source.
+- id: compile
+  name: Compile to PDF (mandatory before declaring the paper done)
+  description: |
+    tool_typst_compile produces synthesis/paper.pdf from paper.typ
+    (and the Markdown-intermediate path also compiles paper.md →
+    paper.typ → paper.pdf). Read typst_warnings / typst_errors on
+    failure and iterate on the .typ source.
 
-      The paper deliverable is NOT done until `synthesis/paper.pdf`
-      exists on disk. A `paper.md` or `paper.typ` source with no
-      rendered PDF is a stranded draft, not a deliverable. The
-      pre-submission gate (step `pre_submission`, below) and
-      tool_audit(scope='synthesis', dimension='all') will both flag
-      a missing paper.pdf as a BLOCKER.
+    The paper deliverable is NOT done until `synthesis/paper.pdf`
+    exists on disk. A `paper.md` or `paper.typ` source with no
+    rendered PDF is a stranded draft, not a deliverable. The
+    pre-submission gate (step `pre_submission`, below) and
+    tool_audit(scope='synthesis', dimension='all') will both flag
+    a missing paper.pdf as a BLOCKER.
 
-  - id: pre_submission
-    name: Pre-submission gate
-    description: |
-      Load audit/pre_submission_checklist — it walks every check a journal
-      will run and returns GREEN / YELLOW / RED + a punch list.
+- id: pre_submission
+  name: Pre-submission gate
+  description: |
+    Load audit/pre_submission_checklist — it walks every check a journal
+    will run and returns GREEN / YELLOW / RED + a punch list.
 
-      Then run the HARD ship gate, do not stop at a compiled PDF:
-        tool_finalize_project(operation='check')
-      surfaces every unresolved blocker (ungrounded numbers, fake/missing
-      cited PDFs, stub markers, bare decisions) WITHOUT finalizing. The paper
-      is NOT done while any blocker stands — a clean compile is necessary, not
-      sufficient. Resolve each blocker (or, only on an explicit researcher
-      ask, override with a logged rationale), then
-        tool_finalize_project(operation='finalize')
-      is the true "ship it" gate. This step is reachable even in autopilot:
-      compiling the PDF is the start of finalization, never the end of it.
+    Then run the HARD ship gate, do not stop at a compiled PDF:
+      tool_finalize_project(operation='check')
+    surfaces every unresolved blocker (ungrounded numbers, fake/missing
+    cited PDFs, stub markers, bare decisions) WITHOUT finalizing. The paper
+    is NOT done while any blocker stands — a clean compile is necessary, not
+    sufficient. Resolve each blocker (or, only on an explicit researcher
+    ask, override with a logged rationale), then
+      tool_finalize_project(operation='finalize')
+    is the true "ship it" gate. This step is reachable even in autopilot:
+    compiling the PDF is the start of finalization, never the end of it.
 
 tools: |
-  - tool_synthesize_plan — what's ready in the workspace
+  - tool_synthesis_scaffold (operation=plan) — what's ready in the workspace
   - tool_synthesis_scaffold — seed synthesis/paper.typ (idempotent)
-  - tool_synthesis_check — per-IMRAD-section audit (substantiveness, structure, cliches)
-  - tool_synthesis_curate_figures — copy step focal figures to synthesis/figures/
-  - tool_writing_discussion_from_verdicts — mechanical merge of literature verdicts
-  - tool_discussion_coverage_audit — gate, every DISAGREES/EXTENDS verdict addressed
+  - tool_synthesis_scaffold (operation=check) — per-IMRAD-section audit (substantiveness, structure, cliches)
+  - tool_synthesis_scaffold (operation=curate_figures) — copy step focal figures to synthesis/figures/
+  - tool_reviewer (operation=discussion_from_verdicts) — mechanical merge of literature verdicts
+  - tool_reviewer (operation=coverage_audit) — gate, every DISAGREES/EXTENDS verdict addressed
   - tool_typst_compile — render synthesis/paper.pdf
-  - tool_latex_compile — only when the journal requires .tex submission
+  - tool_typst_compile (or tool_bash_exec with latexmk) — only when the journal requires .tex submission
   - tool_finalize_project — the hard ship gate (operation='check' then 'finalize')
 
 expected_outputs:
-  - synthesis/paper.typ            # AI-authored
-  - synthesis/paper.pdf            # tool_typst_compile output
-  - synthesis/biblio.yml           # Hayagriva citations (auto-generated)
-  - synthesis/figures/fig*_*.png   # curated focal figures
+- synthesis/paper.typ              # AI-authored
+- synthesis/paper.pdf              # tool_typst_compile output
+- synthesis/biblio.yml             # Hayagriva citations (auto-generated)
+- synthesis/figures/fig*_*.png     # curated focal figures
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: synthesize
+sub_intent: paper
+triggers:
+- write the paper
+- draft the paper
+- write a manuscript
+- the manuscript
+- imrad
+- for a journal
+- for the journal
+- help me write this up
+- write this up
+- write it all up
+- write up my results
+- write up the results
+- write up my findings
+- help me write up
+- manuscript draft
+- into a manuscript
+- draft the manuscript
+summary: AI authors IMRAD paper.typ; tool_typst_compile renders PDF.
+shortcut_tool: tool_synthesis_scaffold (operation=plan)
+decomposition:
+- tool: tool_synthesis_scaffold (operation=plan)
+- tool: tool_synthesis_scaffold
+  args:
+    kind: paper
+- tool: tool_synthesis_scaffold (operation=check)
+  args:
+    file: synthesis/paper.typ
+- tool: tool_typst_compile
+  args:
+    source: synthesis/paper.typ

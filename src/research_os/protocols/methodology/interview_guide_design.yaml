@@ -2,15 +2,15 @@ id: interview_guide_design
 tier: 'plan'
 name: Interview / Topic Guide Design (qualitative pre-collection)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [qualitative, humanities]
   audience: [researcher]
   workflow_shape: [interview_study]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/qualitative_research        # the open-coding stage the guide feeds
-  - methodology/coding_scheme_development    # the next protocol after collection
+- methodology/qualitative_research          # the open-coding stage the guide feeds
+- methodology/coding_scheme_development      # the next protocol after collection
 description: |
   Qualitative protocols in Research-OS pick up at open coding. This
   protocol covers the step BEFORE — designing the interview guide
@@ -36,175 +36,160 @@ trigger: |
       for the data-collection instrument.
 
 prerequisites:
-  - The research question is documented (it does not need to be final
-    — qualitative questions evolve, but a starting question is
-    required to design a guide).
-  - The intended sampling frame is sketched (who, how many,
-    purposive / theoretical / convenience).
+- The research question is documented (it does not need to be final — qualitative questions evolve, but a starting question is required to design a guide).
+- The intended sampling frame is sketched (who, how many, purposive / theoretical / convenience).
 
 editorial_voice:
   rules:
-    - "A guide is a SCAFFOLD, not a script. The interviewer follows
-       the participant; the guide ensures coverage. Over-scripted
-       guides yield shallow data."
-    - "Question order matters. Sensitive topics go after rapport is
-       built; demographic questions go last (less context-poisoning,
-       less self-presentation effect)."
-    - "Pilot the guide. Even a couple of pilot interviews surface
-       most of the questions that don't elicit. Pilots count as
-       method work, not analysis — the transcripts inform guide
-       revision, not the findings (unless the pilots were
-       pre-registered as part of the corpus, which is the
-       exception)."
-    - "Match the question form to the epistemology. A phenomenological
-       study uses 'tell me about a time when…'; a grounded theory
-       study uses theoretical-sampling probes; a thematic analysis
-       can use broader prompts. Don't mix paradigms within a guide."
+  - "A guide is a SCAFFOLD, not a script. The interviewer follows the participant; the guide ensures coverage. Over-scripted guides yield shallow data."
+  - "Question order matters. Sensitive topics go after rapport is built; demographic questions go last (less context-poisoning, less self-presentation effect)."
+  - "Pilot the guide. Even a couple of pilot interviews surface most of the questions that don't elicit. Pilots count as method work, not analysis — the transcripts inform guide revision, not the findings (unless the pilots were pre-registered as part of the corpus, which is the exception)."
+  - "Match the question form to the epistemology. A phenomenological study uses 'tell me about a time when…'; a grounded theory study uses theoretical-sampling probes; a thematic analysis can use broader prompts. Don't mix paradigms within a guide."
 
 steps:
-  - id: clarify_paradigm
-    name: Clarify the qualitative paradigm
-    description: |
-      Confirm (ask the researcher if ambiguous) which qualitative
-      tradition the study sits in. The choice constrains question
-      form:
+- id: clarify_paradigm
+  name: Clarify the qualitative paradigm
+  description: |
+    Confirm (ask the researcher if ambiguous) which qualitative
+    tradition the study sits in. The choice constrains question
+    form:
 
-        - Thematic analysis (Braun & Clarke): broad open prompts,
-          probes for examples + meaning.
-        - Grounded theory (Charmaz / Strauss-Corbin): theoretical
-          sampling, evolving guide that adapts as theory emerges.
-        - Phenomenology (IPA, Husserlian, hermeneutic): focus on
-          lived experience; "tell me about the time when…".
-        - Ethnography: observation + informal conversation; the
-          guide is lighter, more contextual.
-        - Discourse / narrative: focus on HOW participants speak;
-          questions that elicit extended narrative.
-        - Case study: question set tailored to the case logic
-          (within-case + cross-case comparison).
+      - Thematic analysis (Braun & Clarke): broad open prompts,
+        probes for examples + meaning.
+      - Grounded theory (Charmaz / Strauss-Corbin): theoretical
+        sampling, evolving guide that adapts as theory emerges.
+      - Phenomenology (IPA, Husserlian, hermeneutic): focus on
+        lived experience; "tell me about the time when…".
+      - Ethnography: observation + informal conversation; the
+        guide is lighter, more contextual.
+      - Discourse / narrative: focus on HOW participants speak;
+        questions that elicit extended narrative.
+      - Case study: question set tailored to the case logic
+        (within-case + cross-case comparison).
 
-      tool_research_method query="<paradigm> interview guide best
-                           practice" when the field convention is
-      not obvious.
+    tool_search query="<paradigm> interview guide best
+                         practice" when the field convention is
+    not obvious.
 
-      Write workspace/.qualitative/paradigm_choice.md with the
-      tradition + a citation justifying its fit to the question.
+    Write workspace/.qualitative/paradigm_choice.md with the
+    tradition + a citation justifying its fit to the question.
 
-  - id: map_research_question_to_topics
-    name: Map the research question to interview topics
-    description: |
-      Decompose the research question into the handful of topic
-      areas the guide will cover — enough to give the question full
-      coverage, few enough to go deep within the interview's time
-      budget. For each topic:
-        - what aspect of the RQ does it inform?
-        - what depth is needed (brief mention vs deep narrative)?
-        - what kind of question form fits (open, scenario, hypothetical,
-          historical)?
+- id: map_research_question_to_topics
+  name: Map the research question to interview topics
+  description: |
+    Decompose the research question into the handful of topic
+    areas the guide will cover — enough to give the question full
+    coverage, few enough to go deep within the interview's time
+    budget. For each topic:
+      - what aspect of the RQ does it inform?
+      - what depth is needed (brief mention vs deep narrative)?
+      - what kind of question form fits (open, scenario, hypothetical,
+        historical)?
 
-      Write workspace/.qualitative/topic_map.md as a table.
+    Write workspace/.qualitative/topic_map.md as a table.
 
-  - id: draft_questions
-    name: Draft the questions per topic
-    description: |
-      For each topic, draft:
-        - a MAIN question (one open-ended prompt that opens the
-          topic)
-        - a few PROBES (follow-ups when the main question doesn't
-          elicit enough — "tell me more about that", "what was that
-          like?", "can you give an example?")
-        - a TRANSITION (a sentence that moves to the next topic
-          without breaking the participant's train of thought)
+- id: draft_questions
+  name: Draft the questions per topic
+  description: |
+    For each topic, draft:
+      - a MAIN question (one open-ended prompt that opens the
+        topic)
+      - a few PROBES (follow-ups when the main question doesn't
+        elicit enough — "tell me more about that", "what was that
+        like?", "can you give an example?")
+      - a TRANSITION (a sentence that moves to the next topic
+        without breaking the participant's train of thought)
 
-      Avoid:
-        - leading questions ("don't you think…", "would you agree…")
-        - double-barrelled questions (asking two things at once)
-        - jargon the participant won't share
-        - yes/no questions in the main prompt (probes can be yes/no)
-        - question stacks (asking three in a row without letting them
-          answer the first)
+    Avoid:
+      - leading questions ("don't you think…", "would you agree…")
+      - double-barrelled questions (asking two things at once)
+      - jargon the participant won't share
+      - yes/no questions in the main prompt (probes can be yes/no)
+      - question stacks (asking three in a row without letting them
+        answer the first)
 
-      For sensitive topics, add a transition sentence that warns
-      gently and reminds the participant they can decline.
+    For sensitive topics, add a transition sentence that warns
+    gently and reminds the participant they can decline.
 
-  - id: order_for_rapport_and_safety
-    name: Order the guide for rapport, safety, and flow
-    description: |
-      Default opening: a low-stakes "tell me about your role / how
-      you got here" question. Demographic + sensitive questions go
-      at the END (after rapport, less self-presentation contamination).
+- id: order_for_rapport_and_safety
+  name: Order the guide for rapport, safety, and flow
+  description: |
+    Default opening: a low-stakes "tell me about your role / how
+    you got here" question. Demographic + sensitive questions go
+    at the END (after rapport, less self-presentation contamination).
 
-      Within the body, group related topics; transitions matter more
-      than a fixed sequence. Note where the interviewer can REORDER
-      based on what the participant raises naturally.
+    Within the body, group related topics; transitions matter more
+    than a fixed sequence. Note where the interviewer can REORDER
+    based on what the participant raises naturally.
 
-      Closing: an open "is there anything I haven't asked that you'd
-      want me to know?" — often surfaces the highest-value data.
+    Closing: an open "is there anything I haven't asked that you'd
+    want me to know?" — often surfaces the highest-value data.
 
-  - id: pilot_design
-    name: Plan the pilot + revision triggers
-    description: |
-      Pilot interviews surface:
-        - questions that don't elicit (rephrase)
-        - questions that confuse (clarify or split)
-        - missing topics the participant brought up unprompted
-          (consider adding)
-        - timing (the guide has to fit the interview's time slot
-          with room to follow the participant; over-stuffing the
-          question list forces you to cut depth)
+- id: pilot_design
+  name: Plan the pilot + revision triggers
+  description: |
+    Pilot interviews surface:
+      - questions that don't elicit (rephrase)
+      - questions that confuse (clarify or split)
+      - missing topics the participant brought up unprompted
+        (consider adding)
+      - timing (the guide has to fit the interview's time slot
+        with room to follow the participant; over-stuffing the
+        question list forces you to cut depth)
 
-      Pre-specify the revision triggers: what would cause a question
-      to be cut, added, or reworded? Document the pilot debrief
-      template (interviewer + 1 reader independently review the
-      transcript + propose changes; consensus or PI tiebreak).
+    Pre-specify the revision triggers: what would cause a question
+    to be cut, added, or reworded? Document the pilot debrief
+    template (interviewer + 1 reader independently review the
+    transcript + propose changes; consensus or PI tiebreak).
 
-      Pilots are NORMALLY excluded from the analysis corpus (they
-      were collected against a draft guide). State this explicitly
-      in the methods + the IRB protocol. If pilots will be INCLUDED,
-      the IRB approval must cover that and the guide revision must
-      be minor.
+    Pilots are NORMALLY excluded from the analysis corpus (they
+    were collected against a draft guide). State this explicitly
+    in the methods + the IRB protocol. If pilots will be INCLUDED,
+    the IRB approval must cover that and the guide revision must
+    be minor.
 
-  - id: irb_and_consent_alignment
-    name: Align with IRB approval + consent script
-    description: |
-      The interview guide is typically an IRB appendix. Cross-check
-      that:
-        - the topics map to what the IRB approved (any new topic
-          requires an amendment),
-        - the consent script's data-use statement covers what the
-          guide elicits,
-        - the participant has a copy of the consent + can decline
-          any question without penalty,
-        - sensitive topics have a safety plan (referral list, debrief
-          contact) where the topic warrants it.
+- id: irb_and_consent_alignment
+  name: Align with IRB approval + consent script
+  description: |
+    The interview guide is typically an IRB appendix. Cross-check
+    that:
+      - the topics map to what the IRB approved (any new topic
+        requires an amendment),
+      - the consent script's data-use statement covers what the
+        guide elicits,
+      - the participant has a copy of the consent + can decline
+        any question without penalty,
+      - sensitive topics have a safety plan (referral list, debrief
+        contact) where the topic warrants it.
 
-      Surface mismatches as BLOCKERS — running interviews under
-      an IRB protocol whose appendix doesn't match the guide is
-      a real compliance risk.
+    Surface mismatches as BLOCKERS — running interviews under
+    an IRB protocol whose appendix doesn't match the guide is
+    a real compliance risk.
 
-  - id: finalize_and_log
-    name: Finalize the guide + log the method
-    description: |
-      Write workspace/.qualitative/interview_guide_v<n>.md with:
-        - paradigm + citation
-        - topic map
-        - full guide (opening, body topics with main + probes +
-          transitions, closing)
-        - pilot debrief template
-        - IRB protocol reference + amendment status
+- id: finalize_and_log
+  name: Finalize the guide + log the method
+  description: |
+    Write workspace/.qualitative/interview_guide_v<n>.md with:
+      - paradigm + citation
+      - topic map
+      - full guide (opening, body topics with main + probes +
+        transitions, closing)
+      - pilot debrief template
+      - IRB protocol reference + amendment status
 
-      mem_log method="semi-structured interviews" with
-      the guide's content-hash so the audit trail is intact.
+    mem_log method="semi-structured interviews" with
+    the guide's content-hash so the audit trail is intact.
 
-      The guide is a LIVING document for grounded theory and
-      ethnography (it evolves with the data); for thematic analysis
-      and IPA it is typically frozen after pilots. Mark which mode
-      applies + how revisions will be versioned.
+    The guide is a LIVING document for grounded theory and
+    ethnography (it evolves with the data); for thematic analysis
+    and IPA it is typically frozen after pilots. Mark which mode
+    applies + how revisions will be versioned.
 
 expected_outputs:
-  - workspace/.qualitative/paradigm_choice.md
-  - workspace/.qualitative/topic_map.md
-  - workspace/.qualitative/interview_guide_v<n>.md
-  - workspace/.qualitative/pilot_debrief_template.md
+- workspace/.qualitative/paradigm_choice.md
+- workspace/.qualitative/topic_map.md
+- workspace/.qualitative/interview_guide_v<n>.md
+- workspace/.qualitative/pilot_debrief_template.md
 
 quality_bar:
   paradigm_named_with_citation: true
@@ -218,3 +203,14 @@ quality_bar:
 next_protocol: methodology/coding_scheme_development
 next_protocol_kind: forward_default
 on_failure: guidance/scope_clarification
+intent_class: methodology
+sub_intent: qual_design
+triggers:
+- interview guide
+- topic guide
+- discussion guide
+- interview script
+- questions to ask participants
+- interview protocol
+- focus group guide
+summary: Design the interview / topic guide before qualitative data collection.

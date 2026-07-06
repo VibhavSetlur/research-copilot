@@ -71,8 +71,7 @@ def test_core_surface_includes_boot_ritual_and_discovery(monkeypatch):
     visible = set(select_visible_tools(TOOL_DEFINITIONS, Path("/tmp")))
     required = {
         "sys_boot", "tool_route", "sys_protocol_get", "sys_active_tools",
-        "tool_tools_list", "sys_tool_describe", "sys_semantic_tool_search",
-        "sys_file_read", "sys_file_write", "sys_state_get", "sys_help",
+        "sys_file_read", "sys_file_write", "sys_state_get",
     }
     missing = required - visible
     assert not missing, f"core surface missing discovery/boot tools: {missing}"

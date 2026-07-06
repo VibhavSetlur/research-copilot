@@ -1,7 +1,7 @@
 id: thematic_analysis_braun_clarke
 name: Thematic Analysis (Braun & Clarke 2006 + reflexive update)
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [qualitative]
   audience: [auditor]
@@ -39,42 +39,17 @@ trigger: |
   across the transcripts", "six-phase analysis".
 
 prerequisites:
-  - workspace/transcripts/ has a fully segmented + de-identified corpus
-    (typically 6-20 interviews for reflexive TA; smaller is fine if
-    justified, larger usually signals codebook-TA territory).
-  - workspace/memos/positionality_statement.md exists — at minimum a
-    one-page statement of the researcher's relationship to the topic,
-    written BEFORE phase 1 familiarisation begins.
-  - Research question stated as a single sentence in
-    workspace/research_question.md (TA scales badly to multi-headed
-    questions; split the project if needed).
+- workspace/transcripts/ has a fully segmented + de-identified corpus (typically 6-20 interviews for reflexive TA; smaller is fine if justified, larger usually signals codebook-TA territory).
+- workspace/memos/positionality_statement.md exists — at minimum a one-page statement of the researcher's relationship to the topic, written BEFORE phase 1 familiarisation begins.
+- Research question stated as a single sentence in workspace/research_question.md (TA scales badly to multi-headed questions; split the project if needed).
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Themes are CONSTRUCTED, not discovered. Drop any language
-       like 'themes emerged from the data' — Braun & Clarke (2019)
-       call this the 'emergent themes' fallacy and it misrepresents
-       what the researcher actually did. Write 'I developed the
-       theme X' or 'I constructed the theme X'."
-    - "Reflexive TA is not codebook coding. Do NOT compute
-       inter-rater κ as a validity claim in a reflexive TA report —
-       it imports a positivist quality criterion into an
-       interpretivist frame and reviewers who know the literature
-       will catch it. Use trustworthiness criteria (Lincoln & Guba
-       1985) instead: credibility, transferability, dependability,
-       confirmability."
-    - "A theme is a pattern of shared MEANING organised around a
-       central concept, not a topic summary or a domain summary.
-       'Participants talked about stigma' is a topic. 'Stigma as a
-       moving target that participants reposition themselves
-       against' is a theme. If the theme name could double as a
-       chapter heading in a textbook, it's a topic — keep working."
-    - "Reflexivity is logged, not performed. Every phase memo names
-       at least one moment where the researcher's position shaped
-       the analysis (which codes they noticed first, which they
-       resisted, which transcripts they avoided). 'I tried to remain
-       neutral' is not reflexivity; it is a refusal of it."
+  - "Themes are CONSTRUCTED, not discovered. Drop any language like 'themes emerged from the data' — Braun & Clarke (2019) call this the 'emergent themes' fallacy and it misrepresents what the researcher actually did. Write 'I developed the theme X' or 'I constructed the theme X'."
+  - "Reflexive TA is not codebook coding. Do NOT compute inter-rater κ as a validity claim in a reflexive TA report — it imports a positivist quality criterion into an interpretivist frame and reviewers who know the literature will catch it. Use trustworthiness criteria (Lincoln & Guba 1985) instead: credibility, transferability, dependability, confirmability."
+  - "A theme is a pattern of shared MEANING organised around a central concept, not a topic summary or a domain summary. 'Participants talked about stigma' is a topic. 'Stigma as a moving target that participants reposition themselves against' is a theme. If the theme name could double as a chapter heading in a textbook, it's a topic — keep working."
+  - "Reflexivity is logged, not performed. Every phase memo names at least one moment where the researcher's position shaped the analysis (which codes they noticed first, which they resisted, which transcripts they avoided). 'I tried to remain neutral' is not reflexivity; it is a refusal of it."
 
 quality_bar:
   minimum_familiarisation_passes: 2          # full re-reads before coding
@@ -86,151 +61,165 @@ quality_bar:
   positionality_statement_predates_phase_1: true
 
 steps:
-  - id: phase_1_familiarisation
-    name: Phase 1 — Familiarisation with the data
-    description: |
-      Read every transcript end-to-end at least twice BEFORE any
-      coding. Take observational notes (not codes yet) into
-      workspace/memos/familiarisation_<transcript_id>.md: first
-      impressions, recurring images, things that surprised you,
-      things that bored you (boredom is data — what is the corpus
-      asking you to ignore?).
+- id: phase_1_familiarisation
+  name: Phase 1 — Familiarisation with the data
+  description: |
+    Read every transcript end-to-end at least twice BEFORE any
+    coding. Take observational notes (not codes yet) into
+    workspace/memos/familiarisation_<transcript_id>.md: first
+    impressions, recurring images, things that surprised you,
+    things that bored you (boredom is data — what is the corpus
+    asking you to ignore?).
 
-      Call `tool_search` over workspace/transcripts/ to confirm the
-      corpus is loaded. Use `mem_log` to record total reading time
-      per pass — reflexive TA assumes deep familiarity and reviewers
-      sometimes ask for evidence.
+    Call `tool_search` over workspace/transcripts/ to confirm the
+    corpus is loaded. Use `mem_log` to record total reading time
+    per pass — reflexive TA assumes deep familiarity and reviewers
+    sometimes ask for evidence.
 
-      Do NOT skip this phase by relying on transcription notes from
-      whoever else processed the recordings. If you didn't read it,
-      you don't know it.
+    Do NOT skip this phase by relying on transcription notes from
+    whoever else processed the recordings. If you didn't read it,
+    you don't know it.
 
-  - id: phase_2_initial_codes
-    name: Phase 2 — Generating initial codes across the full corpus
-    description: |
-      Code systematically across the entire dataset, giving full
-      attention to each item. Codes are short labels (1-5 words) for
-      features of the data that look interesting to the analytic
-      question. Two coding orientations are both valid: SEMANTIC
-      (what participants explicitly said) and LATENT (underlying
-      assumptions, ideologies). Pick one as primary; mixing without
-      flagging which is which will confuse phase 3.
+- id: phase_2_initial_codes
+  name: Phase 2 — Generating initial codes across the full corpus
+  description: |
+    Code systematically across the entire dataset, giving full
+    attention to each item. Codes are short labels (1-5 words) for
+    features of the data that look interesting to the analytic
+    question. Two coding orientations are both valid: SEMANTIC
+    (what participants explicitly said) and LATENT (underlying
+    assumptions, ideologies). Pick one as primary; mixing without
+    flagging which is which will confuse phase 3.
 
-      Output codes + supporting extracts to
-      workspace/coding/initial_codes.yaml. Expect 50-200 codes for a
-      typical 8-15 transcript corpus. Fewer than ~40 usually means
-      you're coding at theme-level prematurely; more than ~250 means
-      you're paraphrasing instead of coding.
+    Output codes + supporting extracts to
+    workspace/coding/initial_codes.yaml. Expect 50-200 codes for a
+    typical 8-15 transcript corpus. Fewer than ~40 usually means
+    you're coding at theme-level prematurely; more than ~250 means
+    you're paraphrasing instead of coding.
 
-      Use `tool_search` to pull code occurrences across transcripts
-      as you go — this is where weak codes (single-extract codes
-      that never recur) start to declare themselves.
+    Use `tool_search` to pull code occurrences across transcripts
+    as you go — this is where weak codes (single-extract codes
+    that never recur) start to declare themselves.
 
-  - id: phase_3_searching_themes
-    name: Phase 3 — Searching for themes (with reflexivity gate)
-    description: |
-      Sort codes into candidate themes. A theme is a pattern of
-      shared meaning organised around a CENTRAL ORGANISING CONCEPT
-      (Braun & Clarke 2019). Use a thematic map: nodes = candidate
-      themes, edges = relationships (subordination, contrast,
-      sequence). File the map at
-      workspace/figures/thematic_map_rev1.png plus a written
-      description at workspace/memos/candidate_themes_v1.md.
+- id: phase_3_searching_themes
+  name: Phase 3 — Searching for themes (with reflexivity gate)
+  description: |
+    Sort codes into candidate themes. A theme is a pattern of
+    shared meaning organised around a CENTRAL ORGANISING CONCEPT
+    (Braun & Clarke 2019). Use a thematic map: nodes = candidate
+    themes, edges = relationships (subordination, contrast,
+    sequence). File the map at
+    workspace/figures/thematic_map_rev1.png plus a written
+    description at workspace/memos/candidate_themes_v1.md.
 
-      REFLEXIVITY GATE — before locking this phase, write
-      workspace/memos/reflexivity_phase_3.md answering:
-        - Which codes did I cluster first, and why those?
-        - Which codes resisted clustering, and what did I do with
-          them? (Don't dump them in a 'miscellaneous' theme — that
-          is almost always a sign your map is wrong.)
-        - Whose perspective does the current map centre? Whose does
-          it marginalise?
+    REFLEXIVITY GATE — before locking this phase, write
+    workspace/memos/reflexivity_phase_3.md answering:
+      - Which codes did I cluster first, and why those?
+      - Which codes resisted clustering, and what did I do with
+        them? (Don't dump them in a 'miscellaneous' theme — that
+        is almost always a sign your map is wrong.)
+      - Whose perspective does the current map centre? Whose does
+        it marginalise?
 
-      Aim for 4-12 candidate themes. Fewer = you're collapsing
-      distinctions; more = you haven't done the analytic work yet.
+    Aim for 4-12 candidate themes. Fewer = you're collapsing
+    distinctions; more = you haven't done the analytic work yet.
 
-  - id: phase_4_reviewing_themes
-    name: Phase 4 — Reviewing themes (two-level check)
-    description: |
-      Two passes, Braun & Clarke's level-1 and level-2:
-        - Level 1: re-read every extract assigned to each candidate
-          theme. Does the extract actually fit? If half the extracts
-          feel like a stretch, the theme is wrong, not the extracts.
-        - Level 2: re-read the entire corpus AGAINST the candidate
-          themes. Does the thematic map tell a coherent story of the
-          dataset? Are there patterns in the data the map doesn't
-          account for?
+- id: phase_4_reviewing_themes
+  name: Phase 4 — Reviewing themes (two-level check)
+  description: |
+    Two passes, Braun & Clarke's level-1 and level-2:
+      - Level 1: re-read every extract assigned to each candidate
+        theme. Does the extract actually fit? If half the extracts
+        feel like a stretch, the theme is wrong, not the extracts.
+      - Level 2: re-read the entire corpus AGAINST the candidate
+        themes. Does the thematic map tell a coherent story of the
+        dataset? Are there patterns in the data the map doesn't
+        account for?
 
-      Revise the map: split themes that are doing too much work,
-      merge themes that overlap, demote themes that don't earn their
-      place to subthemes, kill themes that don't survive the level-2
-      pass. File workspace/figures/thematic_map_rev2.png and
-      workspace/memos/review_notes.md documenting every change.
+    Revise the map: split themes that are doing too much work,
+    merge themes that overlap, demote themes that don't earn their
+    place to subthemes, kill themes that don't survive the level-2
+    pass. File workspace/figures/thematic_map_rev2.png and
+    workspace/memos/review_notes.md documenting every change.
 
-      If the map changes a lot here, you may need to loop back to
-      phase 3 — that is normal and expected, not a failure.
+    If the map changes a lot here, you may need to loop back to
+    phase 3 — that is normal and expected, not a failure.
 
-  - id: phase_5_defining_naming
-    name: Phase 5 — Defining and naming themes (with reflexivity gate)
-    description: |
-      For each final theme, write a 100-200 word definition naming:
-        - the central organising concept (one sentence)
-        - what the theme is and what it is NOT (the boundary)
-        - how it relates to the other themes (the architecture)
-        - 2-3 illustrative extracts with participant IDs
+- id: phase_5_defining_naming
+  name: Phase 5 — Defining and naming themes (with reflexivity gate)
+  description: |
+    For each final theme, write a 100-200 word definition naming:
+      - the central organising concept (one sentence)
+      - what the theme is and what it is NOT (the boundary)
+      - how it relates to the other themes (the architecture)
+      - 2-3 illustrative extracts with participant IDs
 
-      Theme names should be evocative + analytic, not bureaucratic.
-      "The hidden cost of disclosure" beats "Disclosure-related
-      concerns". Avoid one-word theme names; they almost always
-      collapse back into topics.
+    Theme names should be evocative + analytic, not bureaucratic.
+    "The hidden cost of disclosure" beats "Disclosure-related
+    concerns". Avoid one-word theme names; they almost always
+    collapse back into topics.
 
-      REFLEXIVITY GATE — workspace/memos/reflexivity_phase_5.md:
-        - What did naming this theme close off that was open before?
-        - If a participant read this name, would they recognise the
-          pattern in their own words?
-        - Which theoretical commitments (often unstated) are doing
-          work in the name you chose?
+    REFLEXIVITY GATE — workspace/memos/reflexivity_phase_5.md:
+      - What did naming this theme close off that was open before?
+      - If a participant read this name, would they recognise the
+        pattern in their own words?
+      - Which theoretical commitments (often unstated) are doing
+        work in the name you chose?
 
-      File final theme definitions at
-      workspace/themes/final_themes.yaml.
+    File final theme definitions at
+    workspace/themes/final_themes.yaml.
 
-  - id: phase_6_producing_report
-    name: Phase 6 — Producing the report
-    description: |
-      The report is part of the analysis, not a transcription of it.
-      Draft the findings section with:
-        - a brief overview of the thematic structure (the map in
-          prose)
-        - one subsection per theme, each weaving extracts with
-          analytic commentary (NOT extract-quote-extract-quote —
-          that's reporting, not analysis)
-        - explicit links back to the research question
-        - acknowledgement of which themes the researcher's
-          positionality made more or less visible
+- id: phase_6_producing_report
+  name: Phase 6 — Producing the report
+  description: |
+    The report is part of the analysis, not a transcription of it.
+    Draft the findings section with:
+      - a brief overview of the thematic structure (the map in
+        prose)
+      - one subsection per theme, each weaving extracts with
+        analytic commentary (NOT extract-quote-extract-quote —
+        that's reporting, not analysis)
+      - explicit links back to the research question
+      - acknowledgement of which themes the researcher's
+        positionality made more or less visible
 
-      File at workspace/outputs/findings_draft.md. Cross-reference
-      against the SRQR (O'Brien et al. 2014, 21 items) or COREQ
-      (Tong et al. 2007, 32 items) checklist depending on the target
-      journal — `sys_file_list` and `tool_search` to find the
-      relevant checklist scaffold under workspace/checklists/.
+    File at workspace/outputs/findings_draft.md. Cross-reference
+    against the SRQR (O'Brien et al. 2014, 21 items) or COREQ
+    (Tong et al. 2007, 32 items) checklist depending on the target
+    journal — `sys_file_list` and `tool_search` to find the
+    relevant checklist scaffold under workspace/checklists/.
 
-      Do NOT report κ in a reflexive TA write-up. If the journal
-      insists, switch protocols to codebook coding and re-do the
-      analysis honestly; don't retrofit reliability statistics onto
-      interpretive work.
+    Do NOT report κ in a reflexive TA write-up. If the journal
+    insists, switch protocols to codebook coding and re-do the
+    analysis honestly; don't retrofit reliability statistics onto
+    interpretive work.
 
 expected_outputs:
-  - workspace/memos/familiarisation_<transcript_id>.md         # phase 1
-  - workspace/coding/initial_codes.yaml                        # phase 2
-  - workspace/figures/thematic_map_rev1.png                    # phase 3
-  - workspace/memos/candidate_themes_v1.md                     # phase 3
-  - workspace/memos/reflexivity_phase_3.md                     # phase 3 gate
-  - workspace/figures/thematic_map_rev2.png                    # phase 4
-  - workspace/memos/review_notes.md                            # phase 4
-  - workspace/themes/final_themes.yaml                         # phase 5
-  - workspace/memos/reflexivity_phase_5.md                     # phase 5 gate
-  - workspace/outputs/findings_draft.md                        # phase 6
+- workspace/memos/familiarisation_<transcript_id>.md           # phase 1
+- workspace/coding/initial_codes.yaml                          # phase 2
+- workspace/figures/thematic_map_rev1.png                      # phase 3
+- workspace/memos/candidate_themes_v1.md                       # phase 3
+- workspace/memos/reflexivity_phase_3.md                       # phase 3 gate
+- workspace/figures/thematic_map_rev2.png                      # phase 4
+- workspace/memos/review_notes.md                              # phase 4
+- workspace/themes/final_themes.yaml                           # phase 5
+- workspace/memos/reflexivity_phase_5.md                       # phase 5 gate
+- workspace/outputs/findings_draft.md                          # phase 6
 
 next_protocol: qualitative/validity/member_checking
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: methodology
+sub_intent: method_pick
+triggers:
+- thematic analysis
+- braun and clarke
+- braun & clarke
+- ta methodology
+- ta protocol
+- reflexive thematic
+summary: 'Six-phase reflexive thematic analysis (Braun & Clarke 2006) of interview / focus-group transcripts: familiarisation, coding, theme generation, review, definition, reporting.'
+token_estimate: 1600
+decomposition:
+- protocol: qualitative/method/thematic_analysis_braun_clarke
+  purpose: Walk the 6 phases with reflexivity gates.

@@ -1,7 +1,7 @@
 id: scholarly_edition
 name: Scholarly Edition — critical edition + apparatus + translation
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [humanities, theory_math]
   audience: [auditor]
@@ -36,190 +36,169 @@ trigger: |
   codicum".
 
 prerequisites:
-  - Witnesses identified by sigla, with transcriptions for each
-    (typically the output of humanities/archival/archival_research).
-  - At least two witnesses if the editor intends recension; a single
-    witness is fine for a best-text edition but say so in the
-    editorial principles.
-  - An editorial method has been chosen OR the editor is willing to
-    let this protocol force the choice up front.
+- Witnesses identified by sigla, with transcriptions for each (typically the output of humanities/archival/archival_research).
+- At least two witnesses if the editor intends recension; a single witness is fine for a best-text edition but say so in the editorial principles.
+- An editorial method has been chosen OR the editor is willing to let this protocol force the choice up front.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Name the editorial method in the preface — best-text (Bédier),
-       Lachmannian recension, copy-text (Greg / Bowers / Tanselle),
-       genetic criticism (Grésillon / Ferrer), or eclectic. Each has
-       a different theory of what 'the text' is; the apparatus
-       follows from the method, not the other way around."
-    - "Every substantive variant gets an entry. Orthographic and
-       purely scribal variants (u/v, i/j, abbreviations expanded
-       silently) belong in the editorial principles, not in the
-       apparatus, but the principles must say so explicitly."
-    - "Conjectural emendations carry the editor's name in the
-       apparatus (e.g. 'scripsi' or 'Setlur'). Borrowed emendations
-       carry their original proposer's name. Never absorb someone
-       else's conjecture without attribution."
-    - "Translation, if included, is a separate scholarly act with
-       its own apparatus of translator's notes. The translation is
-       not a gloss on the edition; it is an interpretation that the
-       edition makes possible. Mark interpretive choices that the
-       Latin / Greek / Hebrew / Old English etc. underdetermines."
-    - "If the base text is reconstructed (eclectic edition), every
-       lemma that does not appear verbatim in any single witness
-       must be flagged in the apparatus. The reader must be able to
-       tell what the editor invented from what the witnesses gave."
+  - "Name the editorial method in the preface — best-text (Bédier), Lachmannian recension, copy-text (Greg / Bowers / Tanselle), genetic criticism (Grésillon / Ferrer), or eclectic. Each has a different theory of what 'the text' is; the apparatus follows from the method, not the other way around."
+  - "Every substantive variant gets an entry. Orthographic and purely scribal variants (u/v, i/j, abbreviations expanded silently) belong in the editorial principles, not in the apparatus, but the principles must say so explicitly."
+  - "Conjectural emendations carry the editor's name in the apparatus (e.g. 'scripsi' or 'Setlur'). Borrowed emendations carry their original proposer's name. Never absorb someone else's conjecture without attribution."
+  - "Translation, if included, is a separate scholarly act with its own apparatus of translator's notes. The translation is not a gloss on the edition; it is an interpretation that the edition makes possible. Mark interpretive choices that the Latin / Greek / Hebrew / Old English etc. underdetermines."
+  - "If the base text is reconstructed (eclectic edition), every lemma that does not appear verbatim in any single witness must be flagged in the apparatus. The reader must be able to tell what the editor invented from what the witnesses gave."
 
 steps:
-  - id: collate_and_stemma
-    name: Collate the witnesses, build a stemma
-    description: |
-      Lay the witnesses side by side and record every variant
-      (substantive + accidental, sorted later). Build the collation
-      table manually in markdown — or, for large editions, write a
-      short collation script (e.g. CollateX via Python, or a custom
-      diff aligner) and invoke it via tool_python_exec. Key the
-      table to a chosen reference text (the eventual base text or
-      one of the witnesses, marked as such). The table goes under
-      workspace/edition/collation_<work_id>.md.
-      For each locus of variation, classify the variants:
-        - shared error (most useful for stemmatics)
-        - polygenetic error (independent corruption; no stemmatic weight)
-        - innovation (a witness has invented a reading)
-        - lectio difficilior (the harder reading; often the older)
-      Then draw the stemma: which witness descends from which, where
-      contamination is suspected, where the archetype sits relative
-      to the surviving witnesses. If the tradition is open
-      (contamination is heavy) say so and explain why a Lachmannian
-      stemma is impossible. Output: workspace/edition/stemma.md
-      with the sigla table at the top and the tree (ASCII or
-      mermaid) below it.
+- id: collate_and_stemma
+  name: Collate the witnesses, build a stemma
+  description: |
+    Lay the witnesses side by side and record every variant
+    (substantive + accidental, sorted later). Build the collation
+    table manually in markdown — or, for large editions, write a
+    short collation script (e.g. CollateX via Python, or a custom
+    diff aligner) and invoke it via tool_python_exec. Key the
+    table to a chosen reference text (the eventual base text or
+    one of the witnesses, marked as such). The table goes under
+    workspace/edition/collation_<work_id>.md.
+    For each locus of variation, classify the variants:
+      - shared error (most useful for stemmatics)
+      - polygenetic error (independent corruption; no stemmatic weight)
+      - innovation (a witness has invented a reading)
+      - lectio difficilior (the harder reading; often the older)
+    Then draw the stemma: which witness descends from which, where
+    contamination is suspected, where the archetype sits relative
+    to the surviving witnesses. If the tradition is open
+    (contamination is heavy) say so and explain why a Lachmannian
+    stemma is impossible. Output: workspace/edition/stemma.md
+    with the sigla table at the top and the tree (ASCII or
+    mermaid) below it.
 
-  - id: establish_base_text
-    name: Establish the base text
-    description: |
-      Pick the base text and justify the pick. The justification
-      depends on the method declared in editorial_voice:
-        - Best-text: name the witness, explain why it is closest to
-          the archetype (or to the author's intentions, or to the
-          version with the strongest reception).
-        - Lachmannian: reconstruct the archetype reading by reading
-          locus by locus, using stemmatic weight from collate_and_stemma.
-        - Copy-text (Greg): name the copy-text and the criteria for
-          accepting substantive readings from other witnesses.
-        - Eclectic: declare the criteria for each lectional choice
-          (usually a mix of stemmatic, palaeographic, and stylistic).
-      Land the base text under workspace/edition/base_text.md with
-      line numbers (or verse numbers, or chapter+verse, depending on
-      the genre). The line numbers will be the anchor for every
-      apparatus entry, so freeze them before writing the apparatus.
+- id: establish_base_text
+  name: Establish the base text
+  description: |
+    Pick the base text and justify the pick. The justification
+    depends on the method declared in editorial_voice:
+      - Best-text: name the witness, explain why it is closest to
+        the archetype (or to the author's intentions, or to the
+        version with the strongest reception).
+      - Lachmannian: reconstruct the archetype reading by reading
+        locus by locus, using stemmatic weight from collate_and_stemma.
+      - Copy-text (Greg): name the copy-text and the criteria for
+        accepting substantive readings from other witnesses.
+      - Eclectic: declare the criteria for each lectional choice
+        (usually a mix of stemmatic, palaeographic, and stylistic).
+    Land the base text under workspace/edition/base_text.md with
+    line numbers (or verse numbers, or chapter+verse, depending on
+    the genre). The line numbers will be the anchor for every
+    apparatus entry, so freeze them before writing the apparatus.
 
-  - id: build_apparatus
-    name: Build the apparatus criticus
-    description: |
-      Compose the apparatus per base-text line by hand in markdown.
-      The default layout is the standard positive apparatus: lemma
-      + ] + variant readings + sigla, with one entry per substantive
-      variant. Negative apparatus (which only
-      records the witnesses that disagree with the lemma) is fine
-      for a stable tradition with many witnesses; say which you are
-      using in the editorial principles.
-      Conventions to declare up front:
-        - sigla scheme (usually uppercase Latin letters for primary
-          witnesses, lowercase for derivatives; ω for archetype, α/β
-          for hyparchetypes; * for editorial conjecture).
-        - bracket conventions ([ ] for editorial insertions, < > for
-          editorial deletions, † † for cruces desperationis).
-        - abbreviation handling in the apparatus itself (om. = omits,
-          add. = adds, transp. = transposes, etc.).
-      Run a closure check at the end: every line in the base text
-      must either have an apparatus entry or be attested by every
-      witness verbatim. Lint by hand (or with a short script via
-      tool_python_exec) — scan the collation table for variants
-      whose base-text line has no corresponding apparatus entry and
-      flag them. Output: workspace/edition/apparatus.md.
+- id: build_apparatus
+  name: Build the apparatus criticus
+  description: |
+    Compose the apparatus per base-text line by hand in markdown.
+    The default layout is the standard positive apparatus: lemma
+    + ] + variant readings + sigla, with one entry per substantive
+    variant. Negative apparatus (which only
+    records the witnesses that disagree with the lemma) is fine
+    for a stable tradition with many witnesses; say which you are
+    using in the editorial principles.
+    Conventions to declare up front:
+      - sigla scheme (usually uppercase Latin letters for primary
+        witnesses, lowercase for derivatives; ω for archetype, α/β
+        for hyparchetypes; * for editorial conjecture).
+      - bracket conventions ([ ] for editorial insertions, < > for
+        editorial deletions, † † for cruces desperationis).
+      - abbreviation handling in the apparatus itself (om. = omits,
+        add. = adds, transp. = transposes, etc.).
+    Run a closure check at the end: every line in the base text
+    must either have an apparatus entry or be attested by every
+    witness verbatim. Lint by hand (or with a short script via
+    tool_python_exec) — scan the collation table for variants
+    whose base-text line has no corresponding apparatus entry and
+    flag them. Output: workspace/edition/apparatus.md.
 
-  - id: editorial_notes
-    name: Write the textual notes
-    description: |
-      The apparatus records WHAT the variants are; the textual notes
-      record WHY the editor chose as they did when the apparatus
-      alone leaves the reasoning underdetermined. A note belongs in
-      the textual notes (not the apparatus) when:
-        - the choice between variants turns on something the
-          apparatus cannot show (palaeography of the manuscript, a
-          parallel passage elsewhere in the work, a known authorial
-          revision pattern, a metrical constraint).
-        - the editor accepted a conjecture from a previous editor
-          and the reader deserves to know which editor and why.
-        - the editor rejected a previously accepted reading and the
-          reader deserves to know why the predecessor was wrong.
-        - the lemma is itself a conjecture (eclectic edition) — the
-          note explains the reconstruction.
-      Notes are keyed to base-text line numbers, same as the
-      apparatus. Output: workspace/edition/notes.md. Call
-      mem_log when the editor makes a decision that contradicts a
-      previous editor by name — the log is the audit trail if the
-      next editor wants to re-litigate.
+- id: editorial_notes
+  name: Write the textual notes
+  description: |
+    The apparatus records WHAT the variants are; the textual notes
+    record WHY the editor chose as they did when the apparatus
+    alone leaves the reasoning underdetermined. A note belongs in
+    the textual notes (not the apparatus) when:
+      - the choice between variants turns on something the
+        apparatus cannot show (palaeography of the manuscript, a
+        parallel passage elsewhere in the work, a known authorial
+        revision pattern, a metrical constraint).
+      - the editor accepted a conjecture from a previous editor
+        and the reader deserves to know which editor and why.
+      - the editor rejected a previously accepted reading and the
+        reader deserves to know why the predecessor was wrong.
+      - the lemma is itself a conjecture (eclectic edition) — the
+        note explains the reconstruction.
+    Notes are keyed to base-text line numbers, same as the
+    apparatus. Output: workspace/edition/notes.md. Call
+    mem_log when the editor makes a decision that contradicts a
+    previous editor by name — the log is the audit trail if the
+    next editor wants to re-litigate.
 
-  - id: translation
-    name: Translation (if applicable)
-    description: |
-      If the edition includes a translation, treat it as a separate
-      scholarly act with its own translator's apparatus. The
-      translation is keyed to the base text (line for line, verse
-      for verse, sentence for sentence — declare the unit).
-      Translator's notes record:
-        - lexical decisions where the source-language word has no
-          single target-language equivalent (the standard 'untranslatable'
-          dossier — Cassin's Vocabulaire des philosophies européennes
-          is the reference work here).
-        - syntactic decisions where the source allows multiple
-          parses (Greek participles, Hebrew construct chains, Latin
-          ablative absolutes that could be temporal / causal / concessive).
-        - interpretive decisions that depend on a reading of the
-          whole work (e.g. translating Heraclitean λόγος as 'discourse'
-          vs 'measure' vs leaving it untranslated).
-        - any place where the translation departs from the base
-          text and follows a different witness (rare; flag loudly).
-      Output: workspace/edition/translation.md (facing-page layout
-      is conventional but a separate file is easier to typeset later).
+- id: translation
+  name: Translation (if applicable)
+  description: |
+    If the edition includes a translation, treat it as a separate
+    scholarly act with its own translator's apparatus. The
+    translation is keyed to the base text (line for line, verse
+    for verse, sentence for sentence — declare the unit).
+    Translator's notes record:
+      - lexical decisions where the source-language word has no
+        single target-language equivalent (the standard 'untranslatable'
+        dossier — Cassin's Vocabulaire des philosophies européennes
+        is the reference work here).
+      - syntactic decisions where the source allows multiple
+        parses (Greek participles, Hebrew construct chains, Latin
+        ablative absolutes that could be temporal / causal / concessive).
+      - interpretive decisions that depend on a reading of the
+        whole work (e.g. translating Heraclitean λόγος as 'discourse'
+        vs 'measure' vs leaving it untranslated).
+      - any place where the translation departs from the base
+        text and follows a different witness (rare; flag loudly).
+    Output: workspace/edition/translation.md (facing-page layout
+    is conventional but a separate file is easier to typeset later).
 
-  - id: front_matter_and_principles
-    name: Compose the editorial principles and front matter
-    description: |
-      Every critical edition opens with a statement of editorial
-      principles dense enough that the next editor can reconstruct
-      every decision rule the current editor used. Cover at minimum:
-        - history of the tradition (when was the work composed, what
-          is known about transmission, what previous editions exist
-          and how they relate).
-        - description of each witness (date, provenance, scribe if
-          known, physical description, current holding + shelfmark).
-        - the stemma and its justification (or the reason no stemma
-          is possible).
-        - the editorial method (named, with citations to the
-          methodological tradition: Maas for Lachmannian, Greg /
-          Bowers / Tanselle for copy-text, Cerquiglini for
-          new-philology critiques, Grésillon for genetic).
-        - apparatus conventions (positive / negative, sigla scheme,
-          bracket conventions, abbreviation glossary).
-        - translation principles (if applicable).
-        - a list of departures from the most recent previous edition,
-          with brief justifications.
-      Output: workspace/edition/front_matter.md. This is the section
-      reviewers read first; the rest of the edition stands or falls
-      on whether the principles are coherent and the editor follows
-      them consistently.
+- id: front_matter_and_principles
+  name: Compose the editorial principles and front matter
+  description: |
+    Every critical edition opens with a statement of editorial
+    principles dense enough that the next editor can reconstruct
+    every decision rule the current editor used. Cover at minimum:
+      - history of the tradition (when was the work composed, what
+        is known about transmission, what previous editions exist
+        and how they relate).
+      - description of each witness (date, provenance, scribe if
+        known, physical description, current holding + shelfmark).
+      - the stemma and its justification (or the reason no stemma
+        is possible).
+      - the editorial method (named, with citations to the
+        methodological tradition: Maas for Lachmannian, Greg /
+        Bowers / Tanselle for copy-text, Cerquiglini for
+        new-philology critiques, Grésillon for genetic).
+      - apparatus conventions (positive / negative, sigla scheme,
+        bracket conventions, abbreviation glossary).
+      - translation principles (if applicable).
+      - a list of departures from the most recent previous edition,
+        with brief justifications.
+    Output: workspace/edition/front_matter.md. This is the section
+    reviewers read first; the rest of the edition stands or falls
+    on whether the principles are coherent and the editor follows
+    them consistently.
 
 expected_outputs:
-  - workspace/edition/collation_<work_id>.md   # one per work edited
-  - workspace/edition/stemma.md
-  - workspace/edition/base_text.md
-  - workspace/edition/apparatus.md
-  - workspace/edition/notes.md
-  - workspace/edition/translation.md           # if applicable
-  - workspace/edition/front_matter.md
+- workspace/edition/collation_<work_id>.md     # one per work edited
+- workspace/edition/stemma.md
+- workspace/edition/base_text.md
+- workspace/edition/apparatus.md
+- workspace/edition/notes.md
+- workspace/edition/translation.md             # if applicable
+- workspace/edition/front_matter.md
 
 quality_bar:
   apparatus_closure:
@@ -246,6 +225,19 @@ quality_bar:
       departs from the most recent predecessor is flagged in the
       notes. Editions do not silently overwrite their predecessors.
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: edition
+triggers:
+- critical edition
+- scholarly edition
+- apparatus criticus
+- diplomatic edition
+- edit the text
+summary: 'Prepare a critical edition: text + apparatus criticus + textual notes + translation.'
+token_estimate: 2000
+decomposition:
+- protocol: humanities/output/scholarly_edition
+  purpose: Stemma → base text → apparatus → notes → translation.

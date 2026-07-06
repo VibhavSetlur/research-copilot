@@ -1,7 +1,7 @@
 id: sample_lineage
 name: Sample Lineage — parent → splits → aliquots → readouts
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [wet_lab, biology]
   audience: [auditor]
@@ -37,63 +37,45 @@ trigger: |
   "export sample provenance", "trace this data point".
 
 prerequisites:
-  - A wet-lab project workspace exists (workspace/samples/ directory
-    is auto-created on first parent registration).
-  - For animal / human work, the relevant IACUC / IRB protocol number
-    is on hand — it gets pinned to the parent node and propagates to
-    every descendant.
+- A wet-lab project workspace exists (workspace/samples/ directory is auto-created on first parent registration).
+- For animal / human work, the relevant IACUC / IRB protocol number is on hand — it gets pinned to the parent node and propagates to every descendant.
 
 editorial_voice:
   mode: prescription
   rules:
-    - "Every sample node has exactly one parent_id (or null if it IS
-       the parent). A node with two parents is a pooled sample and
-       must be modeled as a separate pool node that lists its inputs
-       — silent pooling destroys downstream variance estimates."
-    - "Record the split / aliquot at the bench, not from memory at
-       the end of the day. The lineage tool accepts mem_log entries
-       from a phone; latency between physical event and digital
-       record is the single biggest source of lineage drift."
-    - "An assay readout without a terminal node_id is a fail-the-audit
-       readout. The reproducibility audit
-       (wet_lab/audit/wet_lab_reproducibility_audit) scans every
-       readout file and blocks pre-submission until each one resolves
-       to a parent sample via the lineage chain."
-    - "Freezer location (rack + box + position) is part of the node,
-       not a separate spreadsheet. When the freezer is reorganized
-       the lineage moves with the physical sample, not the rack
-       layout."
-    - "Deleting a node is forbidden after the first downstream split
-       — mark it consumed / lost / contaminated instead. A deleted
-       parent silently orphans every descendant readout."
+  - "Every sample node has exactly one parent_id (or null if it IS the parent). A node with two parents is a pooled sample and must be modeled as a separate pool node that lists its inputs — silent pooling destroys downstream variance estimates."
+  - "Record the split / aliquot at the bench, not from memory at the end of the day. The lineage tool accepts mem_log entries from a phone; latency between physical event and digital record is the single biggest source of lineage drift."
+  - "An assay readout without a terminal node_id is a fail-the-audit readout. The reproducibility audit (wet_lab/audit/wet_lab_reproducibility_audit) scans every readout file and blocks pre-submission until each one resolves to a parent sample via the lineage chain."
+  - "Freezer location (rack + box + position) is part of the node, not a separate spreadsheet. When the freezer is reorganized the lineage moves with the physical sample, not the rack layout."
+  - "Deleting a node is forbidden after the first downstream split — mark it consumed / lost / contaminated instead. A deleted parent silently orphans every descendant readout."
 
 quality_bar:
   required_fields_per_node:
-    - node_id
-    - node_type
-    - parent_id
-    - created_at
-    - created_by
-    - storage_location
+  - node_id
+  - node_type
+  - parent_id
+  - created_at
+  - created_by
+  - storage_location
   required_for_parent:
-    - organism
-    - strain_or_genotype
-    - sex
-    - age_at_collection
-    - iacuc_or_irb_number
+  - organism
+  - strain_or_genotype
+  - sex
+  - age_at_collection
+  - iacuc_or_irb_number
   required_for_split:
-    - tissue_or_compartment
-    - collection_time_point
-    - mass_or_volume
+  - tissue_or_compartment
+  - collection_time_point
+  - mass_or_volume
   required_for_aliquot:
-    - aliquot_index
-    - volume_or_mass
-    - freeze_method
+  - aliquot_index
+  - volume_or_mass
+  - freeze_method
   required_for_readout:
-    - assay_name
-    - assay_date
-    - terminal_node_id
-    - raw_data_path
+  - assay_name
+  - assay_date
+  - terminal_node_id
+  - raw_data_path
   audit_thresholds:
     max_hours_bench_to_log: 24
     rationale_bench_to_log: |
@@ -107,90 +89,106 @@ quality_bar:
       optionality; biobanks typically aim for 4-6.
 
 steps:
-  - id: register_parent
-    name: Register the parent sample
-    description: |
-      Record the parent node (node_type=parent) in the lineage spec.
-      Capture organism + strain/genotype + sex + age + IACUC/IRB
-      number + source (vendor + cohort_id, or clinical site +
-      consent_id). The parent's node_id is the root of every
-      downstream readout — pick a short, human-readable scheme
-      (M2026-014, Pt-COH3-021) and stick with it across the project.
-      Output: workspace/samples/<node_id>.yaml + an entry in the
-      project sample_registry.yaml. mem_log the registration so the
-      timeline shows when the parent entered the workspace.
+- id: register_parent
+  name: Register the parent sample
+  description: |
+    Record the parent node (node_type=parent) in the lineage spec.
+    Capture organism + strain/genotype + sex + age + IACUC/IRB
+    number + source (vendor + cohort_id, or clinical site +
+    consent_id). The parent's node_id is the root of every
+    downstream readout — pick a short, human-readable scheme
+    (M2026-014, Pt-COH3-021) and stick with it across the project.
+    Output: workspace/samples/<node_id>.yaml + an entry in the
+    project sample_registry.yaml. mem_log the registration so the
+    timeline shows when the parent entered the workspace.
 
-  - id: log_splits
-    name: Log every split at collection
-    description: |
-      A split is a physical division of the parent into compartments
-      (tissues) or time points (serial bleeds, longitudinal biopsies).
-      Each split is its own node with parent_id = the parent's node_id.
-      Capture tissue/compartment + collection_time_point + mass/volume
-      + ischemia_time (for fresh tissue) + fixation_method (if applicable).
-      For longitudinal designs the time_point field is the disambiguator,
-      not a free-text note. Write each split node into the lineage spec
-      at the dissection bench; do not batch splits at end-of-day.
+- id: log_splits
+  name: Log every split at collection
+  description: |
+    A split is a physical division of the parent into compartments
+    (tissues) or time points (serial bleeds, longitudinal biopsies).
+    Each split is its own node with parent_id = the parent's node_id.
+    Capture tissue/compartment + collection_time_point + mass/volume
+    + ischemia_time (for fresh tissue) + fixation_method (if applicable).
+    For longitudinal designs the time_point field is the disambiguator,
+    not a free-text note. Write each split node into the lineage spec
+    at the dissection bench; do not batch splits at end-of-day.
 
-  - id: log_aliquots
-    name: Log aliquots at the moment of freeze
-    description: |
-      An aliquot is a storage tube. Each aliquot is a node with
-      parent_id = the split it came from. Capture aliquot_index +
-      volume/mass + freeze_method (LN2 snap vs slow-freeze vs
-      RNAlater vs FFPE) + storage_location (freezer + rack + box +
-      position). The aliquot_index is the local counter within its
-      parent split (A1, A2, A3...) — not a project-wide unique id.
-      The full lineage path (M2026-014 → Liver → T2 → A3) is what
-      makes a tube identifiable across collaborators.
+- id: log_aliquots
+  name: Log aliquots at the moment of freeze
+  description: |
+    An aliquot is a storage tube. Each aliquot is a node with
+    parent_id = the split it came from. Capture aliquot_index +
+    volume/mass + freeze_method (LN2 snap vs slow-freeze vs
+    RNAlater vs FFPE) + storage_location (freezer + rack + box +
+    position). The aliquot_index is the local counter within its
+    parent split (A1, A2, A3...) — not a project-wide unique id.
+    The full lineage path (M2026-014 → Liver → T2 → A3) is what
+    makes a tube identifiable across collaborators.
 
-  - id: record_readouts
-    name: Pin every assay readout to a terminal node
-    description: |
-      When an assay completes, record a readout node
-      (node_type=readout), parent_id = the aliquot that was
-      consumed (or the split, for non-destructive assays). Capture
-      assay_name + assay_date + raw_data_path + analysis_workspace_step.
-      The readout node closes the loop — a figure data point cites
-      a readout node_id, which traces upward through aliquot → split
-      → parent. If the aliquot was sub-aliquoted before the assay
-      (a common pattern for sequencing libraries), the sub-aliquot
-      gets its own node and the readout points to it.
+- id: record_readouts
+  name: Pin every assay readout to a terminal node
+  description: |
+    When an assay completes, record a readout node
+    (node_type=readout), parent_id = the aliquot that was
+    consumed (or the split, for non-destructive assays). Capture
+    assay_name + assay_date + raw_data_path + analysis_workspace_step.
+    The readout node closes the loop — a figure data point cites
+    a readout node_id, which traces upward through aliquot → split
+    → parent. If the aliquot was sub-aliquoted before the assay
+    (a common pattern for sequencing libraries), the sub-aliquot
+    gets its own node and the readout points to it.
 
-  - id: handle_pooling_and_loss
-    name: Handle pooled samples + losses honestly
-    description: |
-      Pooled samples (e.g., combining T-cells from 3 mice for a single
-      scRNA-seq run) are NOT a node with multiple parents — they are
-      a pool node whose pool_inputs field lists the contributing
-      aliquot node_ids with their mixing fractions. Downstream stats
-      that assume independence are wrong on pooled data; the lineage
-      tool flags this and the variance-estimation step in the
-      analysis protocol picks up the flag. Lost / contaminated /
-      consumed-without-readout aliquots are marked with the
-      appropriate node status (not deleted) so the audit can
-      distinguish "lost" from "never existed".
+- id: handle_pooling_and_loss
+  name: Handle pooled samples + losses honestly
+  description: |
+    Pooled samples (e.g., combining T-cells from 3 mice for a single
+    scRNA-seq run) are NOT a node with multiple parents — they are
+    a pool node whose pool_inputs field lists the contributing
+    aliquot node_ids with their mixing fractions. Downstream stats
+    that assume independence are wrong on pooled data; the lineage
+    tool flags this and the variance-estimation step in the
+    analysis protocol picks up the flag. Lost / contaminated /
+    consumed-without-readout aliquots are marked with the
+    appropriate node status (not deleted) so the audit can
+    distinguish "lost" from "never existed".
 
-  - id: export_and_audit
-    name: Export the lineage tree + run the audit
-    description: |
-      Call tool_wet_lab_sample_lineage_export to render the project's
-      lineage as both a Graphviz tree (workspace/samples/lineage.svg)
-      and a flat reproducibility table
-      (workspace/samples/lineage_table.tsv). The audit step
-      (wet_lab/audit/wet_lab_reproducibility_audit) checks: every
-      readout has a terminal_node_id; no aliquots exceed the
-      bench-to-log threshold; no orphan readouts; no deleted nodes
-      with downstream descendants; pooled samples are flagged for
-      variance review. Fix every blocker before submission.
+- id: export_and_audit
+  name: Export the lineage tree + run the audit
+  description: |
+    Call tool_wet_lab_sample_lineage_export to render the project's
+    lineage as both a Graphviz tree (workspace/samples/lineage.svg)
+    and a flat reproducibility table
+    (workspace/samples/lineage_table.tsv). The audit step
+    (wet_lab/audit/wet_lab_reproducibility_audit) checks: every
+    readout has a terminal_node_id; no aliquots exceed the
+    bench-to-log threshold; no orphan readouts; no deleted nodes
+    with downstream descendants; pooled samples are flagged for
+    variance review. Fix every blocker before submission.
 
 expected_outputs:
-  - workspace/samples/<node_id>.yaml (one per node — parent, split, aliquot, readout)
-  - workspace/samples/sample_registry.yaml (project-wide index)
-  - workspace/samples/lineage.svg (rendered tree)
-  - workspace/samples/lineage_table.tsv (flat audit-friendly view)
-  - workspace/samples/lineage_changelog.md (consumed / lost / contaminated events)
+- workspace/samples/<node_id>.yaml (one per node — parent, split, aliquot, readout)
+- workspace/samples/sample_registry.yaml (project-wide index)
+- workspace/samples/lineage.svg (rendered tree)
+- workspace/samples/lineage_table.tsv (flat audit-friendly view)
+- workspace/samples/lineage_changelog.md (consumed / lost / contaminated events)
 
 next_protocol: wet_lab/audit/wet_lab_reproducibility_audit
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: audit_wrap
+sub_intent: provenance
+triggers:
+- sample lineage
+- sample provenance
+- aliquot tracking
+- lineage tree
+- where did this sample come from
+summary: Parent sample → splits → aliquots → readouts. Every readout traces upward through the lineage tree.
+shortcut_tool: tool_wet_lab_sample_lineage_export
+token_estimate: 1400
+decomposition:
+- tool: tool_wet_lab_sample_lineage_export
+  purpose: Render lineage as Mermaid + JSON.
+- protocol: wet_lab/protocol/sample_lineage
+  purpose: Walk parent → splits → readouts.

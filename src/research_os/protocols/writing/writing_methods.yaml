@@ -2,15 +2,15 @@ id: writing_methods
 tier: 'synthesize'
 name: Writing — Methods
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - writing/writing_core               # voice / grounding / number-format rules this section obeys
-  - writing/writing_results            # the section this one's methods produced the numbers for
+- writing/writing_core                 # voice / grounding / number-format rules this section obeys
+- writing/writing_results              # the section this one's methods produced the numbers for
 description: Document the methods used in an experiment in workspace/methods.md (append-only).
 trigger: Whenever a method, library, or parameter is chosen — either inside analysis_plan or as a standalone task.
 
@@ -24,82 +24,90 @@ template: |
   - **Assumptions to test:** {list}
 
 steps:
-  - id: pre_audit_evidence_grid
-    name: Pre-audit the evidence grid (BEFORE prose is appended)
-    description: |
-      MANDATORY first step. Before any methods line is appended to
-      `workspace/methods.md`, run `tool_audit(scope='project', dimension='claims')` against the
-      existing evidence floor that the methods prose will draw from.
+- id: pre_audit_evidence_grid
+  name: Pre-audit the evidence grid (BEFORE prose is appended)
+  description: |
+    MANDATORY first step. Before any methods line is appended to
+    `workspace/methods.md`, run `tool_audit(scope='project', dimension='claims')` against the
+    existing evidence floor that the methods prose will draw from.
 
-      The methods prose references:
-        - dataset names + sha256 hashes from `inputs/intake.md`,
-        - library + version numbers from
-          `workspace/<step>/environment/requirements.txt`,
-        - parameter values from the producing script
-          (`workspace/<step>/scripts/`),
-        - citation keys from `workspace/citations.md`.
+    The methods prose references:
+      - dataset names + sha256 hashes from `inputs/intake.md`,
+      - library + version numbers from
+        `workspace/<step>/environment/requirements.txt`,
+      - parameter values from the producing script
+        (`workspace/<step>/scripts/`),
+      - citation keys from `workspace/citations.md`.
 
-      Call:
-        tool_audit(scope='project', dimension='claims') target="workspace/methods.md"
-          (when a prior version exists)
-        OR
-        tool_audit(scope='project', dimension='claims') target="<the methods-evidence floor>:
-          the conclusions / parameter dumps / citations file the
-          new line will quote".
+    Call:
+      tool_audit(scope='project', dimension='claims') target="workspace/methods.md"
+        (when a prior version exists)
+      OR
+      tool_audit(scope='project', dimension='claims') target="<the methods-evidence floor>:
+        the conclusions / parameter dumps / citations file the
+        new line will quote".
 
-      The auditor flags any number (sample size, parameter, library
-      version, p-value, threshold) that:
-        - does not trace to a producing artefact on disk,
-        - matches an "approx" / "around" / "roughly" hedge instead
-          of a precise on-disk figure,
-        - cites a key not present in `workspace/citations.md`.
+    The auditor flags any number (sample size, parameter, library
+    version, p-value, threshold) that:
+      - does not trace to a producing artefact on disk,
+      - matches an "approx" / "around" / "roughly" hedge instead
+        of a precise on-disk figure,
+      - cites a key not present in `workspace/citations.md`.
 
-      If ungrounded numbers / citations exist, REFUSE TO APPEND.
-      The researcher must either:
-        (a) point the AI at the source on disk (a script line, a
-            requirements.txt entry, a citation key), or
-        (b) drop the claim, or
-        (c) run the step / install the package / add the citation
-            so the source exists.
+    If ungrounded numbers / citations exist, REFUSE TO APPEND.
+    The researcher must either:
+      (a) point the AI at the source on disk (a script line, a
+          requirements.txt entry, a citation key), or
+      (b) drop the claim, or
+      (c) run the step / install the package / add the citation
+          so the source exists.
 
-      Persist the verdict to
-      `workspace/logs/methods_pre_audit.md`. Only after the pre-
-      audit returns a clean grid does the `gather` step proceed.
+    Persist the verdict to
+    `workspace/logs/methods_pre_audit.md`. Only after the pre-
+    audit returns a clean grid does the `gather` step proceed.
 
-  - id: gather
-    name: Gather Information
-    description: |
-      Confirm: dataset, library, version, parameters, justification, and the
-      assumptions you'll test. Source the dataset hash from inputs/intake.md.
+- id: gather
+  name: Gather Information
+  description: |
+    Confirm: dataset, library, version, parameters, justification, and the
+    assumptions you'll test. Source the dataset hash from inputs/intake.md.
 
-  - id: append
-    name: Append to methods.md
-    description: |
-      mem_log
-        method=<method_name>
-        step_number=<NN>
-        step_name=<slug>
-        dataset_name=<name>
-        dataset_hash=<sha256>
-        implementation=<library==version>
-        parameters=<key=value;...>
-        justification=<sentence with citation key>
-        assumptions=[<list>]
+- id: append
+  name: Append to methods.md
+  description: |
+    mem_log
+      method=<method_name>
+      step_number=<NN>
+      step_name=<slug>
+      dataset_name=<name>
+      dataset_hash=<sha256>
+      implementation=<library==version>
+      parameters=<key=value;...>
+      justification=<sentence with citation key>
+      assumptions=[<list>]
 
-  - id: cross_check
-    name: Cross-Check Against Citations
-    description: |
-      Any citation referenced must exist in workspace/citations.md. If not,
-      run mem_citations_generate after updating inputs/literature_index.yaml.
+- id: cross_check
+  name: Cross-Check Against Citations
+  description: |
+    Any citation referenced must exist in workspace/citations.md. If not,
+    run mem_log (operation=citations_generate) after updating inputs/literature_index.yaml.
 
-  - id: validate
-    name: Validate Style
-    description: |
-      sys_file_validate_md filepath="workspace/methods.md" protocol_name="writing_core"
+- id: validate
+  name: Validate Style
+  description: |
+    tool_audit (scope=file, dimension=markdown) filepath="workspace/methods.md" protocol_name="writing_core"
 
 expected_outputs:
-  - workspace/methods.md
+- workspace/methods.md
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: writing
+triggers:
+- document methods
+- log method
+- methods section
+- methods file
+summary: How to document methods in workspace/methods.md.

@@ -2,18 +2,18 @@ id: spec_and_design
 tier: 'plan'
 name: Spec & Design (what the tool must do, and how "done" is judged)
 version: '3.10.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]
   audience: [naive_ai, auditor]
   workflow_shape: [tool_build]
 last_reviewed: '2026-06-16'
 see_also:
-  - build/tool_from_description # the describe→build→improve loop that drives a plain-language request into this spec pass
-  - build/optimal_approach      # after the spec is pinned, brain out HOW before committing to an implementation
-  - build/implement_iteration   # the inner loop that builds against this spec
-  - build/test_strategy         # turns the acceptance criteria here into a test regime
-  - build/method_scouting       # when a design choice should adopt external prior art, scout it before committing
+- build/tool_from_description   # the describe→build→improve loop that drives a plain-language request into this spec pass
+- build/optimal_approach        # after the spec is pinned, brain out HOW before committing to an implementation
+- build/implement_iteration     # the inner loop that builds against this spec
+- build/test_strategy           # turns the acceptance criteria here into a test regime
+- build/method_scouting         # when a design choice should adopt external prior art, scout it before committing
 description: |
   The opening move of a tool_build workspace. Before any code, pin down
   what the tool must do and how its success will be judged — so the build
@@ -34,205 +34,236 @@ description: |
       the design pass that loop executes against.
 trigger: First protocol in tool_build mode, or whenever the researcher says "build a tool", "design this", "spec it out", "what should this do", or starts a new tool/library/service/CLI.
 prerequisites:
-  - workspace.mode is tool_build (sys_boot reports workspace_mode), OR the researcher has explicitly asked to design/build a tool
-  - The governance surface exists (spec/, decisions/, eval/) — the tool_build scaffold seeds it; create it if entering mid-build
+- workspace.mode is tool_build (sys_boot reports workspace_mode), OR the researcher has explicitly asked to design/build a tool
+- The governance surface exists (spec/, decisions/, eval/) — the tool_build scaffold seeds it; create it if entering mid-build
 
 steps:
-  - id: orient
-    name: Orient cheaply on the build state
-    description: |
-      If you haven't called sys_boot this session, do so once — it reports
-      workspace_mode, the active governance surface, and any in-flight
-      plan. In tool_build mode the unit of work is a commit/iteration in
-      the inner repo, and "done" is tests/build/eval passing, not figures.
+- id: orient
+  name: Orient cheaply on the build state
+  description: |
+    If you haven't called sys_boot this session, do so once — it reports
+    workspace_mode, the active governance surface, and any in-flight
+    plan. In tool_build mode the unit of work is a commit/iteration in
+    the inner repo, and "done" is tests/build/eval passing, not figures.
 
-      Read what already exists before proposing anything: spec/requirements.md,
-      spec/design.md, decisions/ ADRs, eval/. A spec pass that ignores the
-      existing spec re-litigates settled decisions and erodes trust.
+    Read what already exists before proposing anything: spec/requirements.md,
+    spec/design.md, decisions/ ADRs, eval/. A spec pass that ignores the
+    existing spec re-litigates settled decisions and erodes trust.
 
-  - id: name_the_consumer
-    name: Name who (or what) consumes the tool
-    description: |
-      A tool's design follows from who calls it and how. Reason about:
-        - The consumer(s): an end user at a CLI? a downstream pipeline
-          importing a library? another service over the network? a human
-          reading output, or a machine parsing it?
-        - The invocation surface that consumer needs (command + flags,
-          function signatures, an HTTP/RPC contract, a config file).
-        - The environment it runs in (laptop, HPC scheduler, container,
-          CI), because that constrains the interface as much as the logic.
+- id: name_the_consumer
+  name: Name who (or what) consumes the tool
+  description: |
+    A tool's design follows from who calls it and how. Reason about:
+      - The consumer(s): an end user at a CLI? a downstream pipeline
+        importing a library? another service over the network? a human
+        reading output, or a machine parsing it?
+      - The invocation surface that consumer needs (command + flags,
+        function signatures, an HTTP/RPC contract, a config file).
+      - The environment it runs in (laptop, HPC scheduler, container,
+        CI), because that constrains the interface as much as the logic.
 
-      The QUESTION is "what does the caller actually need from this?", not
-      "what features could it have". Scope follows the consumer; record the
-      consumer in spec/requirements.md so later scope-creep is visible.
+    The QUESTION is "what does the caller actually need from this?", not
+    "what features could it have". Scope follows the consumer; record the
+    consumer in spec/requirements.md so later scope-creep is visible.
 
-  - id: definition_of_done
-    name: Write the acceptance criteria — the "definition of done"
-    description: |
-      The most load-bearing artefact of a tool_build project: what must be
-      TRUE for the tool to count as working. These become the targets the
-      eval harness (`eval/`) and the inner test suite check against.
+- id: definition_of_done
+  name: Write the acceptance criteria — the "definition of done"
+  description: |
+    The most load-bearing artefact of a tool_build project: what must be
+    TRUE for the tool to count as working. These become the targets the
+    eval harness (`eval/`) and the inner test suite check against.
 
-      Reason about, and write into spec/requirements.md:
-        - Functional acceptance: the observable behaviours that must hold,
-          stated so a test could assert them ("given input X, the tool
-          produces Y", not "the tool handles inputs well").
-        - Non-functional acceptance: the constraints that matter for THIS
-          tool — correctness vs latency vs memory vs portability. Which
-          ones are hard requirements vs nice-to-have is a decision; justify
-          it from the consumer, don't default.
-        - Explicit out-of-scope: what the tool deliberately will NOT do.
-          The unstated non-goal is where scope creep enters.
+    Reason about, and write into spec/requirements.md:
+      - Functional acceptance: the observable behaviours that must hold,
+        stated so a test could assert them ("given input X, the tool
+        produces Y", not "the tool handles inputs well").
+      - Non-functional acceptance: the constraints that matter for THIS
+        tool — correctness vs latency vs memory vs portability. Which
+        ones are hard requirements vs nice-to-have is a decision; justify
+        it from the consumer, don't default.
+      - Explicit out-of-scope: what the tool deliberately will NOT do.
+        The unstated non-goal is where scope creep enters.
 
-      Acceptance criteria that can't be checked aren't acceptance criteria.
-      Each one should map, eventually, to something `build/test_strategy`
-      or `build/benchmark_vs_baseline` can run.
+    Acceptance criteria that can't be checked aren't acceptance criteria.
+    Each one should map, eventually, to something `build/test_strategy`
+    or `build/benchmark_vs_baseline` can run.
 
-  - id: interface_contract
-    name: Specify the public interface / contract
-    description: |
-      Pin the contract the consumer codes against, because changing it
-      later breaks them. Reason about the SHAPE appropriate to this tool —
-      a CLI's flags + exit codes + stdout/stderr discipline; a library's
-      public functions, types, and error model; a service's endpoints,
-      request/response schema, and status codes; a file format's schema
-      and versioning.
+- id: interface_contract
+  name: Specify the public interface / contract
+  description: |
+    Pin the contract the consumer codes against, because changing it
+    later breaks them. Reason about the SHAPE appropriate to this tool —
+    a CLI's flags + exit codes + stdout/stderr discipline; a library's
+    public functions, types, and error model; a service's endpoints,
+    request/response schema, and status codes; a file format's schema
+    and versioning.
 
-      What to record (in spec/design.md):
-        - The surface itself (signatures / endpoints / commands).
-        - The error + failure contract: how the tool reports failure, what
-          it guarantees on bad input, what it promises about partial
-          results. Failure behaviour is part of the contract, not an
-          afterthought.
-        - The stability promise: what callers may rely on vs what is
-          internal and free to change. This is what lets the build move
-          fast inside without breaking consumers outside.
+    What to record (in spec/design.md):
+      - The surface itself (signatures / endpoints / commands).
+      - The error + failure contract: how the tool reports failure, what
+        it guarantees on bad input, what it promises about partial
+        results. Failure behaviour is part of the contract, not an
+        afterthought.
+      - The stability promise: what callers may rely on vs what is
+        internal and free to change. This is what lets the build move
+        fast inside without breaking consumers outside.
 
-  - id: architecture_map
-    name: Map the architecture (make the tool's shape legible)
-    description: |
-      A tool nobody can see the shape of is a tool nobody can safely change.
-      Capture an architecture overview in spec/architecture.md that makes the
-      tool understandable at a glance, with a diagram whose JOB is to answer
-      whichever of these are load-bearing for THIS tool:
-        - the control / data FLOW — what comes in, what transforms it, what
-          comes out (the pipeline / request path);
-        - the MODULE decomposition — the components and the single
-          responsibility each one owns;
-        - the DEPENDENCY edges — between modules, and to external libraries.
-      Name the three questions; demand the diagram answer the ones that matter
-      here. This is a SCAFFOLD: do NOT prescribe boxes, colours, or layout.
+- id: architecture_map
+  name: Map the architecture (make the tool's shape legible)
+  description: |
+    A tool nobody can see the shape of is a tool nobody can safely change.
+    Capture an architecture overview in spec/architecture.md that makes the
+    tool understandable at a glance, with a diagram whose JOB is to answer
+    whichever of these are load-bearing for THIS tool:
+      - the control / data FLOW — what comes in, what transforms it, what
+        comes out (the pipeline / request path);
+      - the MODULE decomposition — the components and the single
+        responsibility each one owns;
+      - the DEPENDENCY edges — between modules, and to external libraries.
+    Name the three questions; demand the diagram answer the ones that matter
+    here. This is a SCAFFOLD: do NOT prescribe boxes, colours, or layout.
 
-      Quality bar: it's legible at a glance, every box has a named
-      responsibility (the diagram + its key ARE the module map), every edge is a
-      real dependency, and the whole thing travels as one file with the repo.
+    Quality bar: it's legible at a glance, every box has a named
+    responsibility (the diagram + its key ARE the module map), every edge is a
+    real dependency, and the whole thing travels as one file with the repo.
 
-      Render tool is your choice — pick whatever travels with the repo and the
-      audience can read. A text-based diagram fenced in markdown is the
-      low-friction default (e.g. mermaid in the README, or graphviz/dot); if you
-      emit mermaid, Research OS already has a mermaid→PNG render path you can
-      reuse rather than inventing one. The point is the picture, not the tool.
+    Render tool is your choice — pick whatever travels with the repo and the
+    audience can read. A text-based diagram fenced in markdown is the
+    low-friction default (e.g. mermaid in the README, or graphviz/dot); if you
+    emit mermaid, Research OS already has a mermaid→PNG render path you can
+    reuse rather than inventing one. The point is the picture, not the tool.
 
-  - id: design_decisions_adrs
-    name: Record the load-bearing design decisions as ADRs
-    description: |
-      A design has a handful of choices that everything else hangs on —
-      language/runtime, the core data model, the concurrency model, the
-      dependency boundary, the storage shape. Identify which choices are
-      LOAD-BEARING (reversing them would ripple) versus incidental.
+- id: design_decisions_adrs
+  name: Record the load-bearing design decisions as ADRs
+  description: |
+    A design has a handful of choices that everything else hangs on —
+    language/runtime, the core data model, the concurrency model, the
+    dependency boundary, the storage shape. Identify which choices are
+    LOAD-BEARING (reversing them would ripple) versus incidental.
 
-      For each load-bearing choice, write an ADR in decisions/ (one file
-      per decision, `NNNN-<slug>.md`): the context/forces, the decision,
-      the alternatives weighed, and the consequences (what gets easier,
-      what gets harder). The point is that a future contributor — or a
-      fresh AI session — understands WHY the tool is shaped this way, not
-      just how.
+    For each load-bearing choice, write an ADR in decisions/ (one file
+    per decision, `NNNN-<slug>.md`): the context/forces, the decision,
+    the alternatives weighed, and the consequences (what gets easier,
+    what gets harder). The point is that a future contributor — or a
+    fresh AI session — understands WHY the tool is shaped this way, not
+    just how.
 
-      Do NOT pre-pick the technology from training memory. Where a choice
-      is non-obvious or contested in the field (which web framework, which
-      serialization format, which build system for this language), GROUND
-      it before committing — see ground_design below — and cite that
-      grounding in the ADR.
+    Do NOT pre-pick the technology from training memory. Where a choice
+    is non-obvious or contested in the field (which web framework, which
+    serialization format, which build system for this language), GROUND
+    it before committing — see ground_design below — and cite that
+    grounding in the ADR.
 
-      AUTONOMY GATE:
-        Risk: irreversible — load-bearing choices ripple through everything
-        built on them, so reversing one later is expensive.
-        proceed (adaptive default, autopilot) → for choices that are genuinely hard to reverse,
-          present the load-bearing decisions + your recommendation and
-          confirm before writing the ADRs as 'accepted'; for a choice that
-          is cheap to revisit, write it and move on. Judge from how far the
-          choice ripples, not from a fixed rule. (Under autopilot, write the
-          ADRs with status 'accepted' and a clear rationale; log them so a
-          later review can challenge any one.)
-        confirm first (manual / supervised) → present the load-bearing decisions + your
-          recommendation; ask the researcher to confirm before writing the
-          ADRs as 'accepted'.
+    AUTONOMY GATE:
+      Risk: irreversible — load-bearing choices ripple through everything
+      built on them, so reversing one later is expensive.
+      proceed (adaptive default, autopilot) → for choices that are genuinely hard to reverse,
+        present the load-bearing decisions + your recommendation and
+        confirm before writing the ADRs as 'accepted'; for a choice that
+        is cheap to revisit, write it and move on. Judge from how far the
+        choice ripples, not from a fixed rule. (Under autopilot, write the
+        ADRs with status 'accepted' and a clear rationale; log them so a
+        later review can challenge any one.)
+      confirm first (manual / supervised) → present the load-bearing decisions + your
+        recommendation; ask the researcher to confirm before writing the
+        ADRs as 'accepted'.
 
-  - id: ground_design
-    name: Ground non-trivial design choices in prior art
-    description: |
-      Building a tool is not exempt from grounding. When a design choice
-      has an established best practice, a known failure mode, or a mature
-      library that would be reckless to reinvent, find it before deciding.
+- id: ground_design
+  name: Ground non-trivial design choices in prior art
+  description: |
+    Building a tool is not exempt from grounding. When a design choice
+    has an established best practice, a known failure mode, or a mature
+    library that would be reckless to reinvent, find it before deciding.
 
-      Use the existing research tools — do not invent new ones:
-        - tool_research_tool task="<concrete capability>" language="<lang|any>"
-          to surface candidate libraries/frameworks for a sub-problem.
-        - tool_research_method / tool_search for the design pattern,
-          algorithm, or protocol the tool implements.
-        - tool_literature_search_and_save when the tool implements a
-          published method/standard and correctness depends on matching it.
+    Use the existing research tools — do not invent new ones:
+      - tool_search task="<concrete capability>" language="<lang|any>"
+        to surface candidate libraries/frameworks for a sub-problem.
+      - tool_search / tool_search for the design pattern,
+        algorithm, or protocol the tool implements.
+      - tool_search (mode=literature) when the tool implements a
+        published method/standard and correctness depends on matching it.
 
-      Anti-pattern: "we'll use <framework> because it's popular." Grounded:
-      "we use <framework> (compared against <alternatives> on <the axes that
-      matter here>) — see decisions/NNNN." Record the grounding in the ADR;
-      mem_log the decision with its rationale + any citation key.
+    Anti-pattern: "we'll use <framework> because it's popular." Grounded:
+    "we use <framework> (compared against <alternatives> on <the axes that
+    matter here>) — see decisions/NNNN." Record the grounding in the ADR;
+    mem_log the decision with its rationale + any citation key.
 
-  - id: failure_premortem
-    name: Pre-mortem — what would make this tool fail
-    description: |
-      Before building, reason about how this tool most plausibly fails:
-      the wrong abstraction that calcifies, the unhandled input class, the
-      dependency that won't be maintained, the performance cliff at real
-      scale, the interface that's painful enough that no one adopts it.
+- id: failure_premortem
+  name: Pre-mortem — what would make this tool fail
+  description: |
+    Before building, reason about how this tool most plausibly fails:
+    the wrong abstraction that calcifies, the unhandled input class, the
+    dependency that won't be maintained, the performance cliff at real
+    scale, the interface that's painful enough that no one adopts it.
 
-      For each material risk, decide whether it changes the spec/design NOW
-      (cheap) or becomes a watch-item for the build loop + eval (recorded).
-      Write the risks into spec/design.md (Open questions / Risks) so the
-      implement loop and the test strategy can target them deliberately.
+    For each material risk, decide whether it changes the spec/design NOW
+    (cheap) or becomes a watch-item for the build loop + eval (recorded).
+    Write the risks into spec/design.md (Open questions / Risks) so the
+    implement loop and the test strategy can target them deliberately.
 
-  - id: handoff_to_loop
-    name: Hand off to the build loop
-    description: |
-      Confirm the governance surface is coherent before building:
-        - spec/requirements.md has acceptance criteria a test could check;
-        - spec/design.md has the interface contract + risks;
-        - decisions/ has an ADR per load-bearing choice;
-        - the first milestone in milestones.md has an acceptance bar.
+- id: handoff_to_loop
+  name: Hand off to the build loop
+  description: |
+    Confirm the governance surface is coherent before building:
+      - spec/requirements.md has acceptance criteria a test could check;
+      - spec/design.md has the interface contract + risks;
+      - decisions/ has an ADR per load-bearing choice;
+      - the first milestone in milestones.md has an acceptance bar.
 
-      Then advance toward the build. When the implementation shape is
-      non-obvious — several genuinely different ways to build this could
-      win — pass through build/optimal_approach first to brain out and
-      justify the approach before committing; when the shape is obvious,
-      advance straight to build/implement_iteration to scope the first
-      shippable increment. mem_log a one-line "spec/design pass complete:
-      <headline>" so the build loop and a later review can trace it.
+    Then advance toward the build. When the implementation shape is
+    non-obvious — several genuinely different ways to build this could
+    win — pass through build/optimal_approach first to brain out and
+    justify the approach before committing; when the shape is obvious,
+    advance straight to build/implement_iteration to scope the first
+    shippable increment. mem_log a one-line "spec/design pass complete:
+    <headline>" so the build loop and a later review can trace it.
 
-      AUTONOMY GATE:
-        Risk: reversible + cheap — entering the build loop commits nothing
-        that can't be unwound; the first increment is itself gated.
-        proceed (adaptive default, autopilot) → proceed to build/implement_iteration on the
-          first milestone; the loop's own gates catch anything weighty.
-        confirm first (manual / supervised) → present the spec summary + proposed first
-          milestone; wait for the researcher before entering the loop.
+    AUTONOMY GATE:
+      Risk: reversible + cheap — entering the build loop commits nothing
+      that can't be unwound; the first increment is itself gated.
+      proceed (adaptive default, autopilot) → proceed to build/implement_iteration on the
+        first milestone; the loop's own gates catch anything weighty.
+      confirm first (manual / supervised) → present the spec summary + proposed first
+        milestone; wait for the researcher before entering the loop.
 
 expected_outputs:
-  - spec/requirements.md
-  - spec/design.md
-  - spec/architecture.md (the architecture overview + diagram)
-  - decisions/NNNN-*.md
-  - milestones.md (first milestone with an acceptance bar)
+- spec/requirements.md
+- spec/design.md
+- spec/architecture.md (the architecture overview + diagram)
+- decisions/NNNN-*.md
+- milestones.md (first milestone with an acceptance bar)
 
 next_protocol: build/implement_iteration
 next_protocol_kind: forward_default
 on_failure: guidance/scope_clarification
+intent_class: execute
+sub_intent: build_spec
+triggers:
+- build a tool
+- build me a tool
+- design this tool
+- design the tool
+- spec it out
+- spec this out
+- write the spec
+- what should this tool do
+- definition of done
+- acceptance criteria
+- design a cli
+- design a library
+- design a service
+- architecture decision
+- write an adr
+- interface contract
+- api contract
+summary: Clarify what a tool must do + how its success is judged; record acceptance criteria, the interface contract, and load-bearing decisions as ADRs.
+token_estimate: 1800
+decomposition:
+- protocol: build/spec_and_design
+  purpose: Name the consumer, write acceptance criteria, pin the interface contract, ground + record load-bearing decisions as ADRs.
+- tool: tool_search
+  purpose: Surface candidate libraries/frameworks for a sub-problem before committing.
+- tool: sys_file_write
+  purpose: Write spec/requirements.md, spec/design.md, decisions/NNNN-*.md.
+- tool: mem_log
+  purpose: Log each load-bearing design decision with its rationale + grounding.

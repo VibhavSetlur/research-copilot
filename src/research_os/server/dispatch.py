@@ -24,6 +24,7 @@ from .aliases import (
 from .autopilot_gate import enforce_autopilot_gate
 from .envelopes import TextContent, _error, _normalize_envelope, _text
 from .errors import RoError, did_you_mean
+from .plugin_registry import plugin_registry
 from .rate_limiter import _rate_limiter
 
 
@@ -173,6 +174,10 @@ def _handle_tool_call(name: str, arguments: dict, root: Path) -> list[TextConten
     from .registry import _HANDLERS
 
     handler = _HANDLERS.get(resolved)
+    if handler is None:
+        spec = plugin_registry().resolve_tool(resolved)
+        if spec is not None:
+            handler = spec.handler
     if handler is None:
         all_handlers = list(_HANDLERS.keys())
         # Namespace-aware lookup with lowered cutoff for short tool names

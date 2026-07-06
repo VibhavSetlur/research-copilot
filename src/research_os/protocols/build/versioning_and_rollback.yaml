@@ -2,17 +2,17 @@ id: versioning_and_rollback
 tier: 'execute'
 name: Versioning & Rollback (mark working versions, go back when an improvement regresses)
 version: '4.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]
   audience: [naive_ai, researcher, auditor]
   workflow_shape: [tool_build, hybrid]
 last_reviewed: '2026-06-25'
 see_also:
-  - build/tool_evaluation_loop     # the eval whose verdict is what makes a version "good"
-  - build/implement_iteration      # the inner loop whose commits are the units this versions + can revert
-  - build/tool_from_description    # the describe→build→improve loop that blesses a version each eval-passing pass
-  - build/release_and_changelog    # the public, consumer-facing release; this is the internal working-version discipline beneath it
+- build/tool_evaluation_loop       # the eval whose verdict is what makes a version "good"
+- build/implement_iteration        # the inner loop whose commits are the units this versions + can revert
+- build/tool_from_description      # the describe→build→improve loop that blesses a version each eval-passing pass
+- build/release_and_changelog      # the public, consumer-facing release; this is the internal working-version discipline beneath it
 description: |
   Version discipline for a research tool under active improvement: mark the
   versions that actually WORK so the build can take risks, and have a clean
@@ -57,175 +57,158 @@ trigger: |
   build/tool_from_description to bless an eval-passing version, and after
   build/tool_evaluation_loop confirms (or breaks) a version's bar.
 prerequisites:
-  - The inner repo exists and is under git (the tool_build scaffold git-inits it; tool_git(operation='init') if entering mid-build) — commits are the states this versions and can return to.
-  - For BLESSING a version, an evaluation verdict exists for the state being marked (from build/tool_evaluation_loop) — "good" must mean "the eval passed", not "it ran once".
-  - For ROLLING BACK, a known-good marker exists to return to (a tag, or an identifiable commit with a recorded eval verdict).
+- The inner repo exists and is under git (the tool_build scaffold git-inits it; tool_git(operation='init') if entering mid-build) — commits are the states this versions and can return to.
+- For BLESSING a version, an evaluation verdict exists for the state being marked (from build/tool_evaluation_loop) — "good" must mean "the eval passed", not "it ran once".
+- For ROLLING BACK, a known-good marker exists to return to (a tag, or an identifiable commit with a recorded eval verdict).
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "A version is 'good' because the EVALUATION said so. The marker is
-       worthless if it just means 'latest' or 'I think this works' — it must
-       carry the eval verdict (conditions, result, date) that earned it, so a
-       later session knows what 'good' meant for this point and can trust it
-       enough to roll back to it."
-    - "Mark a working version BEFORE you risk it, not after you break it. The
-       value of a known-good marker is realised only if it exists when the
-       regression hits. Tag the eval-passing state, THEN start the risky
-       improvement — not the other way around."
-    - "Roll back is a tool, not a defeat. When an improvement regresses the
-       tool, returning to the last good version to start clean is often
-       cheaper and more honest than debugging forward — judge from the cost
-       of forward-fix versus the value of the work that would be reverted
-       past, not from reluctance to 'lose' the change."
-    - "Never lose the reverted work silently. A rollback discards a state
-       someone built; preserve it (a branch, a tag, a recorded SHA) and
-       record WHY it was rolled back, so the idea can be retried and the
-       regression isn't rediscovered from scratch."
-    - "Tie the version to the result, both directions. A blessed version
-       points to the eval that blessed it; an eval result points to the
-       version it judged. That two-way link is what lets 'is this version
-       good?' and 'what version produced this result?' both be answered later."
+  - "A version is 'good' because the EVALUATION said so. The marker is worthless if it just means 'latest' or 'I think this works' — it must carry the eval verdict (conditions, result, date) that earned it, so a later session knows what 'good' meant for this point and can trust it enough to roll back to it."
+  - "Mark a working version BEFORE you risk it, not after you break it. The value of a known-good marker is realised only if it exists when the regression hits. Tag the eval-passing state, THEN start the risky improvement — not the other way around."
+  - "Roll back is a tool, not a defeat. When an improvement regresses the tool, returning to the last good version to start clean is often cheaper and more honest than debugging forward — judge from the cost of forward-fix versus the value of the work that would be reverted past, not from reluctance to 'lose' the change."
+  - "Never lose the reverted work silently. A rollback discards a state someone built; preserve it (a branch, a tag, a recorded SHA) and record WHY it was rolled back, so the idea can be retried and the regression isn't rediscovered from scratch."
+  - "Tie the version to the result, both directions. A blessed version points to the eval that blessed it; an eval result points to the version it judged. That two-way link is what lets 'is this version good?' and 'what version produced this result?' both be answered later."
 
 steps:
-  - id: decide_if_this_point_is_worth_marking
-    name: Decide whether this state is worth marking as a version
-    description: |
-      Not every commit deserves a version marker — over-tagging is as useless
-      as never tagging. Reason about whether THIS state is a meaningful
-      known-good point worth being able to return to: it cleared an
-      evaluation bar (build/tool_evaluation_loop), it completed a milestone,
-      or it is a stable base you are about to take a real risk on top of.
-      The question is "would I want to come back to exactly here if the next
-      changes go wrong?" — if yes, mark it; if it is just routine forward
-      progress, the commit history already covers it.
+- id: decide_if_this_point_is_worth_marking
+  name: Decide whether this state is worth marking as a version
+  description: |
+    Not every commit deserves a version marker — over-tagging is as useless
+    as never tagging. Reason about whether THIS state is a meaningful
+    known-good point worth being able to return to: it cleared an
+    evaluation bar (build/tool_evaluation_loop), it completed a milestone,
+    or it is a stable base you are about to take a real risk on top of.
+    The question is "would I want to come back to exactly here if the next
+    changes go wrong?" — if yes, mark it; if it is just routine forward
+    progress, the commit history already covers it.
 
-      Confirm the state is actually clean and evaluated before blessing it:
-      tool_git(operation='status') (no uncommitted drift — you tag a commit,
-      not a dirty tree) and the eval verdict for this state in hand. Tagging a
-      state you only think works manufactures a false safety net.
+    Confirm the state is actually clean and evaluated before blessing it:
+    tool_git(operation='status') (no uncommitted drift — you tag a commit,
+    not a dirty tree) and the eval verdict for this state in hand. Tagging a
+    state you only think works manufactures a false safety net.
 
-  - id: bless_the_version_with_its_evidence
-    name: Mark the version, carrying the eval verdict that makes it "good"
-    description: |
-      Mark the known-good state in the inner repo so it can be found and
-      returned to later. tool_git(operation='tag', name=..., message=...)
-      places an annotated tag on the commit — choose a name that conveys what
-      this version IS (the scheme is the project's call; an internal
-      working-version marker need not be a public SemVer release — that is
-      build/release_and_changelog's job).
+- id: bless_the_version_with_its_evidence
+  name: Mark the version, carrying the eval verdict that makes it "good"
+  description: |
+    Mark the known-good state in the inner repo so it can be found and
+    returned to later. tool_git(operation='tag', name=..., message=...)
+    places an annotated tag on the commit — choose a name that conveys what
+    this version IS (the scheme is the project's call; an internal
+    working-version marker need not be a public SemVer release — that is
+    build/release_and_changelog's job).
 
-      What makes the marker trustworthy is the EVIDENCE it carries, not the
-      name. Into the tag's annotation (and mem_log) record the link to the
-      eval that blessed it: the conditions the eval ran under, the result
-      against the bar, and the date. "good because eval X on input D passed
-      the bar on <date>" is a version you can stand on; a bare tag is a guess.
-      This is the version→result direction of the two-way link; the eval
-      record (build/tool_evaluation_loop) holds the result→version direction.
+    What makes the marker trustworthy is the EVIDENCE it carries, not the
+    name. Into the tag's annotation (and mem_log) record the link to the
+    eval that blessed it: the conditions the eval ran under, the result
+    against the bar, and the date. "good because eval X on input D passed
+    the bar on <date>" is a version you can stand on; a bare tag is a guess.
+    This is the version→result direction of the two-way link; the eval
+    record (build/tool_evaluation_loop) holds the result→version direction.
 
-      AUTONOMY GATE:
-        Risk: reversible + cheap — a local tag publishes nothing and is
-        re-placeable.
-        proceed (adaptive default, autopilot) → tag the eval-passing state
-          with its verdict recorded and log it; no confirmation needed for a
-          local marker.
-        confirm first (manual / supervised) → present the state + the eval
-          verdict backing it; tag on confirmation.
+    AUTONOMY GATE:
+      Risk: reversible + cheap — a local tag publishes nothing and is
+      re-placeable.
+      proceed (adaptive default, autopilot) → tag the eval-passing state
+        with its verdict recorded and log it; no confirmation needed for a
+        local marker.
+      confirm first (manual / supervised) → present the state + the eval
+        verdict backing it; tag on confirmation.
 
-  - id: recognise_a_regression
-    name: Recognise when an improvement has regressed the tool
-    description: |
-      A rollback decision starts with evidence that a change made the tool
-      WORSE, not a hunch. The signal is the eval: re-running the same
-      fixed-condition evaluation (build/tool_evaluation_loop) after a change
-      shows a use-case-critical dimension moved the wrong way, or a
-      correctness check that used to pass now fails. Compare against the last
-      blessed version under the SAME conditions — that is what the fixed eval
-      protocol exists to make possible.
+- id: recognise_a_regression
+  name: Recognise when an improvement has regressed the tool
+  description: |
+    A rollback decision starts with evidence that a change made the tool
+    WORSE, not a hunch. The signal is the eval: re-running the same
+    fixed-condition evaluation (build/tool_evaluation_loop) after a change
+    shows a use-case-critical dimension moved the wrong way, or a
+    correctness check that used to pass now fails. Compare against the last
+    blessed version under the SAME conditions — that is what the fixed eval
+    protocol exists to make possible.
 
-      Distinguish a real regression (the tool is worse on something that
-      matters) from an acceptable trade (it got slower but much more correct,
-      and correctness dominates here). Only the former is a rollback
-      candidate; the latter may be the intended cost of the improvement,
-      which the eval and the spec's ranked criteria tell you.
+    Distinguish a real regression (the tool is worse on something that
+    matters) from an acceptable trade (it got slower but much more correct,
+    and correctness dominates here). Only the former is a rollback
+    candidate; the latter may be the intended cost of the improvement,
+    which the eval and the spec's ranked criteria tell you.
 
-  - id: decide_roll_back_or_fix_forward
-    name: Decide — roll back to the good version, or fix forward
-    description: |
-      Weigh the two honest responses to a regression:
-        - ROLL BACK → return to the last blessed version when the regression
-          is real, the forward-fix is uncertain or expensive, and the value
-          lost by reverting the change is less than the cost of carrying a
-          broken tool. Rolling back resets to a state the eval already
-          blessed, so you build forward from solid ground.
-        - FIX FORWARD → keep the change and repair the regression when the
-          new work is valuable, the regression is understood, and the fix is
-          cheap and contained.
+- id: decide_roll_back_or_fix_forward
+  name: Decide — roll back to the good version, or fix forward
+  description: |
+    Weigh the two honest responses to a regression:
+      - ROLL BACK → return to the last blessed version when the regression
+        is real, the forward-fix is uncertain or expensive, and the value
+        lost by reverting the change is less than the cost of carrying a
+        broken tool. Rolling back resets to a state the eval already
+        blessed, so you build forward from solid ground.
+      - FIX FORWARD → keep the change and repair the regression when the
+        new work is valuable, the regression is understood, and the fix is
+        cheap and contained.
 
-      Decide from the cost of forward-fix versus the value of the reverted
-      work and the risk of staying broken — not from reluctance to lose the
-      change. When in doubt and the tool is blocking use, rolling back to a
-      known-good version and re-attempting the improvement cleanly is usually
-      the lower-risk path.
+    Decide from the cost of forward-fix versus the value of the reverted
+    work and the risk of staying broken — not from reluctance to lose the
+    change. When in doubt and the tool is blocking use, rolling back to a
+    known-good version and re-attempting the improvement cleanly is usually
+    the lower-risk path.
 
-  - id: roll_back_without_losing_the_work
-    name: Roll back to the known-good version, preserving the reverted work
-    description: |
-      Returning to a marked version uses the inner repo — but PRESERVE the
-      work you are reverting past first, because a rollback discards a state
-      someone built. Before moving back, capture the regressed state so the
-      idea can be retried: keep it on a branch or behind a tag/recorded SHA
-      (tool_git(operation='branch', ...) / tool_git(operation='tag', ...)),
-      and note WHY it was rolled back. sys_checkpoint_create can snapshot the
-      workspace boundary so the whole decision point is recoverable.
+- id: roll_back_without_losing_the_work
+  name: Roll back to the known-good version, preserving the reverted work
+  description: |
+    Returning to a marked version uses the inner repo — but PRESERVE the
+    work you are reverting past first, because a rollback discards a state
+    someone built. Before moving back, capture the regressed state so the
+    idea can be retried: keep it on a branch or behind a tag/recorded SHA
+    (tool_git(operation='branch', ...) / tool_git(operation='tag', ...)),
+    and note WHY it was rolled back. tool_git (operation=commit) can snapshot the
+    workspace boundary so the whole decision point is recoverable.
 
-      Then return the working tree to the blessed version. Use
-      tool_git(operation='restore', name=<the blessed tag/commit>) — it returns
-      the tree to that version WITHOUT moving HEAD or discarding history (the
-      reverted-from SHA is recorded in the response, so the rolled-back work
-      stays fully recoverable). Commit the restored state to make it current.
-      This is non-destructive by construction; only reach for a
-      history-rewriting reset (via tool_bash_exec, with explicit confirmation)
-      in the rare case the researcher truly wants the bad commits gone. After
-      restoring, RE-RUN the eval to confirm the tool is back to the known-good
-      behaviour — a rollback you didn't verify is just another unverified
-      change.
+    Then return the working tree to the blessed version. Use
+    tool_git(operation='restore', name=<the blessed tag/commit>) — it returns
+    the tree to that version WITHOUT moving HEAD or discarding history (the
+    reverted-from SHA is recorded in the response, so the rolled-back work
+    stays fully recoverable). Commit the restored state to make it current.
+    This is non-destructive by construction; only reach for a
+    history-rewriting reset (via tool_bash_exec, with explicit confirmation)
+    in the rare case the researcher truly wants the bad commits gone. After
+    restoring, RE-RUN the eval to confirm the tool is back to the known-good
+    behaviour — a rollback you didn't verify is just another unverified
+    change.
 
-      AUTONOMY GATE:
-        Risk: a destructive return-to-version (hard reset) can discard
-        committed work irrecoverably; a non-destructive one (branch/checkout,
-        revert commit) is reversible.
-        proceed (adaptive default, autopilot) → preserve the reverted state
-          (branch/tag/SHA recorded) and return to the blessed version
-          NON-destructively; do NOT run a history-discarding reset on the
-          inner repo without confirmation, since that can lose work
-          irreversibly. Re-run the eval to confirm the restore.
-        confirm first (manual / supervised) → present the target good version,
-          its eval verdict, and how the reverted work will be preserved;
-          perform the rollback on confirmation.
+    AUTONOMY GATE:
+      Risk: a destructive return-to-version (hard reset) can discard
+      committed work irrecoverably; a non-destructive one (branch/checkout,
+      revert commit) is reversible.
+      proceed (adaptive default, autopilot) → preserve the reverted state
+        (branch/tag/SHA recorded) and return to the blessed version
+        NON-destructively; do NOT run a history-discarding reset on the
+        inner repo without confirmation, since that can lose work
+        irreversibly. Re-run the eval to confirm the restore.
+      confirm first (manual / supervised) → present the target good version,
+        its eval verdict, and how the reverted work will be preserved;
+        perform the rollback on confirmation.
 
-  - id: record_and_resume
-    name: Record the version event and resume the loop
-    description: |
-      Close the loop so the version history is auditable and the reverted
-      idea is not lost:
-        - mem_log the event — what was blessed (with its eval verdict) or what
-          was rolled back (the regression evidence, the target good version,
-          and where the reverted work is preserved).
-        - update milestones.md / CHANGELOG.md (Unreleased) if the version
-          state changed what the build record should reflect.
+- id: record_and_resume
+  name: Record the version event and resume the loop
+  description: |
+    Close the loop so the version history is auditable and the reverted
+    idea is not lost:
+      - mem_log the event — what was blessed (with its eval verdict) or what
+        was rolled back (the regression evidence, the target good version,
+        and where the reverted work is preserved).
+      - update milestones.md / CHANGELOG.md (Unreleased) if the version
+        state changed what the build record should reflect.
 
-      Then resume: a fresh blessing returns to the improve loop
-      (build/tool_from_description / build/implement_iteration) to take the
-      next risk from solid ground; a rollback returns to plan the improvement
-      again — this time aware of the regression it must avoid, so the retry is
-      smarter than the attempt that was reverted.
+    Then resume: a fresh blessing returns to the improve loop
+    (build/tool_from_description / build/implement_iteration) to take the
+    next risk from solid ground; a rollback returns to plan the improvement
+    again — this time aware of the regression it must avoid, so the retry is
+    smarter than the attempt that was reverted.
 
 expected_outputs:
-  - An annotated tag on each blessed known-good version, carrying the eval verdict (conditions + result + date) that makes it "good"
-  - A preserved record of any rolled-back state (branch / tag / recorded SHA) + the reason it was reverted
-  - A re-run eval confirming the tool is back to known-good behaviour after a rollback
-  - mem_log entries forming the two-way version↔result link (blessing) and the rollback record (regression + target + preserved work)
+- An annotated tag on each blessed known-good version, carrying the eval verdict (conditions + result + date) that makes it "good"
+- A preserved record of any rolled-back state (branch / tag / recorded SHA) + the reason it was reverted
+- A re-run eval confirming the tool is back to known-good behaviour after a rollback
+- mem_log entries forming the two-way version↔result link (blessing) and the rollback record (regression + target + preserved work)
 
 quality_bar: |
   - A blessed version is "good" because an EVALUATION verdict backs it — recorded in the tag/log — not because it is the latest commit.
@@ -237,3 +220,32 @@ quality_bar: |
 next_protocol: build/implement_iteration
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: execute
+sub_intent: build_version
+triggers:
+- version this
+- tag this version
+- mark this as working
+- save this as a good version
+- this one works keep it
+- roll back to the working version
+- roll back to the version that worked
+- go back to the version that worked
+- revert to the last good one
+- go back a version
+- this change made it worse
+- the improvement regressed it
+- undo this change it broke things
+- which version was good
+- back to the known good version
+summary: 'Version discipline for a tool under active improvement using the inner repo: mark eval-passing states as known-good versions (blessed because the eval said so), and roll back cleanly to a good version when an improvement regresses — preserving the reverted work.'
+token_estimate: 1700
+decomposition:
+- protocol: build/versioning_and_rollback
+  purpose: Decide if a state is worth marking, bless it with its eval verdict, recognise a regression, decide roll back vs fix forward, roll back without losing work, record + resume.
+- tool: tool_git
+  purpose: "Inner-repo version discipline: tag (bless) an eval-passing state, log/status to read state, and restore (operation='restore', name=<good tag>) to return the working tree to a known-good version non-destructively — HEAD stays put, history preserved, reports rolled_back_from."
+- tool: tool_git (operation=commit)
+  purpose: Snapshot the workspace boundary so the rollback decision point is recoverable.
+- tool: mem_log
+  purpose: Record the version event with the two-way version↔result link, or the rollback (regression + target + preserved work).

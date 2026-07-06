@@ -48,12 +48,9 @@ ROOT = Path(__file__).resolve().parents[1]
 PROTOCOLS_DIR = ROOT / "src" / "research_os" / "protocols"
 EMBEDS_NPZ = PROTOCOLS_DIR / "_embeddings.npz"
 EMBEDS_META = PROTOCOLS_DIR / "_embeddings_meta.json"
-ROUTER_INDEX = PROTOCOLS_DIR / "_router_index.yaml"
-ROUTE_META = PROTOCOLS_DIR / "_route_meta.json"
 
 MODEL_NAME = "BAAI/bge-small-en-v1.5"
 SCHEMA_VERSION = "1"
-ROUTE_META_SCHEMA = "1"
 
 
 # ---------------------------------------------------------------------------
@@ -64,31 +61,32 @@ ROUTE_META_SCHEMA = "1"
 _TRIGGERS_IN_DOC_CAP = 6  # cap triggers per protocol in the embedded doc
 
 
-def _compose_protocol_doc(protocol_id: str, yaml_data: dict, router_entry: dict) -> str:
+def _compose_protocol_doc(protocol_id: str, yaml_data: dict) -> str:
     """Compose the text we embed for a single protocol.
 
     Order: name, summary, capped-trigger list, description, step names.
 
-    Triggers are included but CAPPED — a protocol with 17 triggers in
-    its router-index entry would otherwise dominate the embedding doc
-    and over-score on adjacent prompts. The runtime boost layer still
-    sees the full trigger list for exact-phrase boosting; only the
-    embedded representation is capped.
+    P1: summary + triggers now live IN the protocol body (merged from the
+    old router index), so this reads them straight from ``yaml_data``.
+
+    Triggers are included but CAPPED — a protocol with 17 triggers would
+    otherwise dominate the embedding doc and over-score on adjacent
+    prompts. The runtime boost layer still sees the full trigger list for
+    exact-phrase boosting; only the embedded representation is capped.
     """
     parts: list[str] = []
     parts.append(f"Protocol: {protocol_id}")
     if name := yaml_data.get("name"):
         parts.append(f"Name: {name}")
-    if router_entry:
-        if summary := router_entry.get("summary"):
-            parts.append(f"Summary: {summary}")
-        if triggers := router_entry.get("triggers"):
-            valid = [t for t in triggers if isinstance(t, str)]
-            # Prefer multi-word triggers (more specific signal) when capping.
-            valid.sort(key=lambda t: (-t.count(" "), -len(t)))
-            capped = valid[:_TRIGGERS_IN_DOC_CAP]
-            if capped:
-                parts.append(f"User says: {'; '.join(capped)}")
+    if summary := yaml_data.get("summary"):
+        parts.append(f"Summary: {summary}")
+    if triggers := yaml_data.get("triggers"):
+        valid = [t for t in triggers if isinstance(t, str)]
+        # Prefer multi-word triggers (more specific signal) when capping.
+        valid.sort(key=lambda t: (-t.count(" "), -len(t)))
+        capped = valid[:_TRIGGERS_IN_DOC_CAP]
+        if capped:
+            parts.append(f"User says: {'; '.join(capped)}")
     if desc := yaml_data.get("description"):
         desc_str = str(desc).strip()
         # First paragraph is usually the most semantically dense.
@@ -120,20 +118,12 @@ def _compose_tool_doc(tool_name: str, tool_def: dict) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _load_router_index() -> dict:
-    if not ROUTER_INDEX.exists():
-        return {}
-    data = yaml.safe_load(ROUTER_INDEX.read_text()) or {}
-    return data.get("protocols", {}) or {}
-
-
 def _load_protocols() -> list[tuple[str, str]]:
     """Return [(protocol_id, search_doc), ...] for every non-underscore YAML.
 
     Includes core protocols + every bundled pack's protocols (pack ids
     are prefixed with the pack name, e.g. `humanities/archival/...`).
     """
-    router_index = _load_router_index()
     out: list[tuple[str, str]] = []
     seen: set[str] = set()
 
@@ -143,8 +133,7 @@ def _load_protocols() -> list[tuple[str, str]]:
         except yaml.YAMLError as exc:
             print(f"WARN: skipping {yaml_path}: {exc}", file=sys.stderr)
             return
-        router_entry = router_index.get(protocol_id, {}) or {}
-        doc = _compose_protocol_doc(protocol_id, yaml_data, router_entry)
+        doc = _compose_protocol_doc(protocol_id, yaml_data)
         if protocol_id in seen:
             return
         seen.add(protocol_id)
@@ -191,11 +180,33 @@ def _load_tools() -> list[tuple[str, str]]:
     return out
 
 
+def _bundle_source_hash() -> str:
+    """The compiled _protocols.bundle's source hash (P1 single source of truth).
+
+    Freshness of every protocol-derived artefact keys off this one hash
+    rather than per-file mtimes. Empty string if the bundle is absent.
+    """
+    sys.path.insert(0, str(ROOT / "src"))
+    try:
+        from research_os.tools.actions.protocol import ProtocolRegistry
+
+        return ProtocolRegistry.source_hash()
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 def _source_hash(protocol_docs: list[tuple[str, str]], tool_docs: list[tuple[str, str]]) -> str:
-    """Deterministic hash over the SOURCE documents so we know when to rebuild."""
+    """Deterministic hash over the SOURCE documents so we know when to rebuild.
+
+    Folds in the compiled bundle's ``source_hash`` (P1) so any protocol
+    change — which invalidates the bundle — also invalidates the
+    embeddings, keeping one canonical freshness signal.
+    """
     h = hashlib.sha256()
     h.update(MODEL_NAME.encode())
     h.update(SCHEMA_VERSION.encode())
+    h.update(_bundle_source_hash().encode())
+    h.update(b"\x03")
     for pid, doc in protocol_docs:
         h.update(pid.encode())
         h.update(b"\x00")
@@ -207,91 +218,6 @@ def _source_hash(protocol_docs: list[tuple[str, str]], tool_docs: list[tuple[str
         h.update(doc.encode())
         h.update(b"\x02")
     return h.hexdigest()
-
-
-# ---------------------------------------------------------------------------
-# Compiled routing sidecar (_route_meta.json)
-# ---------------------------------------------------------------------------
-#
-# The router + semantic module read THIS at runtime, not the 104K
-# _router_index.yaml. It mirrors the index's protocols/shortcut_intents/
-# hierarchy as fast-parsing JSON with NO comments, and pre-bakes each
-# protocol's `tier` + `workflow_shape` so the router never opens protocol
-# body YAMLs at route time. _router_index.yaml stays the authoring source
-# (preflight validates it); this file is the runtime artefact.
-
-
-def _read_protocol_body(protocol_id: str) -> dict:
-    path = PROTOCOLS_DIR / f"{protocol_id}.yaml"
-    if not path.exists():
-        return {}
-    try:
-        return yaml.safe_load(path.read_text()) or {}
-    except yaml.YAMLError:
-        return {}
-
-
-def _route_meta_hash(meta: dict) -> str:
-    """Deterministic hash over the routing-relevant payload (excl. the hash)."""
-    h = hashlib.sha256()
-    h.update(ROUTE_META_SCHEMA.encode())
-    h.update(json.dumps(meta.get("protocols", {}), sort_keys=True).encode())
-    h.update(json.dumps(meta.get("shortcut_intents", {}), sort_keys=True).encode())
-    h.update(json.dumps(meta.get("hierarchy", {}), sort_keys=True).encode())
-    return h.hexdigest()
-
-
-def _build_route_meta() -> dict:
-    """Compile the compact runtime routing sidecar from the authoring index."""
-    sys.path.insert(0, str(ROOT / "src"))
-    from research_os.protocols._tiers import infer_tier, is_valid_tier
-
-    raw = yaml.safe_load(ROUTER_INDEX.read_text()) if ROUTER_INDEX.exists() else {}
-    raw = raw or {}
-    protocols = raw.get("protocols", {}) or {}
-    out_protocols: dict[str, dict] = {}
-    for pid, entry in protocols.items():
-        if not isinstance(entry, dict):
-            continue
-        body = _read_protocol_body(pid)
-        # tier: declared on the body, else inferred (the router's own fallback).
-        tier = body.get("tier")
-        if not is_valid_tier(tier):
-            category = pid.split("/")[0] if "/" in pid else None
-            tier = infer_tier(
-                intent_class=entry.get("intent_class"),
-                sub_intent=entry.get("sub_intent"),
-                category=category,
-                protocol_id=pid,
-            )
-        # workflow_shape from the body's scope_tags — always a list (maybe empty).
-        tags = (body.get("scope_tags") or {}).get("workflow_shape") or []
-        if isinstance(tags, str):
-            shape = [tags.strip().lower()]
-        elif isinstance(tags, list):
-            shape = [str(t).strip().lower() for t in tags if t]
-        else:
-            shape = []
-        merged = dict(entry)
-        if is_valid_tier(tier):
-            merged["tier"] = tier
-        merged["workflow_shape"] = shape
-        out_protocols[pid] = merged
-    meta = {
-        "schema_version": ROUTE_META_SCHEMA,
-        "protocols": out_protocols,
-        "shortcut_intents": raw.get("shortcut_intents", {}) or {},
-        "hierarchy": raw.get("hierarchy", {}) or {},
-    }
-    meta["source_hash"] = _route_meta_hash(meta)
-    return meta
-
-
-def _save_route_meta(meta: dict) -> None:
-    # Compact (no whitespace), deterministic (sorted keys) — a generated
-    # artefact like _embeddings.npz: regenerate, don't hand-edit. Compact
-    # form minimises both file size and json.loads time at route boot.
-    ROUTE_META.write_text(json.dumps(meta, separators=(",", ":"), sort_keys=True) + "\n")
 
 
 # ---------------------------------------------------------------------------
@@ -375,24 +301,7 @@ def main() -> int:
         action="store_true",
         help="Record build_at timestamp in the meta file (off by default for reproducible builds).",
     )
-    ap.add_argument(
-        "--route-meta-only",
-        action="store_true",
-        help="Only (re)compile protocols/_route_meta.json — no embeddings, no fastembed needed.",
-    )
     args = ap.parse_args()
-
-    # The compiled routing sidecar is pure YAML→JSON (no fastembed). Build it
-    # first so it's always fresh, and support a fastembed-free fast path.
-    if args.route_meta_only:
-        route_meta = _build_route_meta()
-        _save_route_meta(route_meta)
-        print(
-            f"Wrote {ROUTE_META.relative_to(ROOT)} "
-            f"({len(route_meta['protocols'])} protocols, "
-            f"{ROUTE_META.stat().st_size/1024:.1f} KiB)"
-        )
-        return 0
 
     print(f"Scanning protocols under {PROTOCOLS_DIR.relative_to(ROOT)} …")
     protocol_docs = _load_protocols()
@@ -431,14 +340,6 @@ def main() -> int:
     )
     tool_embeds = _embed([d for _, d in tool_docs]) if tool_docs else np.zeros(
         (0, 384), dtype=np.float32
-    )
-
-    print(f"Writing {ROUTE_META.relative_to(ROOT)} (compiled routing sidecar) …")
-    route_meta = _build_route_meta()
-    _save_route_meta(route_meta)
-    print(
-        f"  → {len(route_meta['protocols'])} protocols, "
-        f"{ROUTE_META.stat().st_size/1024:.1f} KiB"
     )
 
     print(f"Writing {EMBEDS_NPZ.relative_to(ROOT)} + {EMBEDS_META.relative_to(ROOT)} …")

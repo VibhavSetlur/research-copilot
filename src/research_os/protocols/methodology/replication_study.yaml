@@ -2,15 +2,15 @@ id: replication_study
 tier: 'plan'
 name: Replication Study (Direct + Conceptual)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [experiment_pipeline]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/reproduction_attempt   # regenerate the AUTHORS' result; this asks whether the FINDING holds in new data
-  - methodology/preregistration        # freeze the replication criterion before seeing the new estimate
+- methodology/reproduction_attempt     # regenerate the AUTHORS' result; this asks whether the FINDING holds in new data
+- methodology/preregistration          # freeze the replication criterion before seeing the new estimate
 description: |
   Re-execute a previously published analysis with explicit comparison to
   the original outcome. Distinguishes direct replication (same data + same
@@ -28,92 +28,86 @@ trigger: |
 editorial_voice:
   mode: guidance
   rules:
-    - "The replication criterion is declared BEFORE the new estimate
-       is seen. Moving the criterion after seeing the result is the
-       biggest failure mode in replication studies."
-    - "Failed replications are findings, not embarrassments. Frame
-       them as 'did not replicate in this sample under this
-       specification' rather than 'the original was wrong'."
-    - "Document the translation work explicitly when the replication
-       is done in a different runtime than the original — every
-       translation decision is a potential source of divergence."
+  - "The replication criterion is declared BEFORE the new estimate is seen. Moving the criterion after seeing the result is the biggest failure mode in replication studies."
+  - "Failed replications are findings, not embarrassments. Frame them as 'did not replicate in this sample under this specification' rather than 'the original was wrong'."
+  - "Document the translation work explicitly when the replication is done in a different runtime than the original — every translation decision is a potential source of divergence."
 
 steps:
-  - id: classify_replication_type
-    name: Classify Replication Type
-    description: |
-      Write outputs/reports/replication_design.md stating:
-        - direct (same data) | direct (new data) | conceptual (same theory,
-          new data + new operationalisation)
-        - What constitutes "same enough" — variables, sample inclusion,
-          analytic specification
-        - The pre-specified replication criterion: e.g. effect-size CI
-          overlaps original, or sign + significance match, or |estimate −
-          original| within some fraction of original SE
+- id: classify_replication_type
+  name: Classify Replication Type
+  description: |
+    Write outputs/reports/replication_design.md stating:
+      - direct (same data) | direct (new data) | conceptual (same theory,
+        new data + new operationalisation)
+      - What constitutes "same enough" — variables, sample inclusion,
+        analytic specification
+      - The pre-specified replication criterion: e.g. effect-size CI
+        overlaps original, or sign + significance match, or |estimate −
+        original| within some fraction of original SE
 
-  - id: extract_original_analysis
-    name: Extract Original Analysis Specification
-    description: |
-      Read the source paper (sys_file_read on PDF if extractable, else
-      tool_web_scrape on a public version). Capture into
-      outputs/reports/original_spec.md:
-        - Sample size, inclusion/exclusion criteria
-        - Variable definitions (with exact wording / units)
-        - Statistical model + software + version (where stated)
-        - Reported headline estimate, SE, CI, p-value
+- id: extract_original_analysis
+  name: Extract Original Analysis Specification
+  description: |
+    Read the source paper (sys_file_read on PDF if extractable, else
+    tool_search (mode=scrape) on a public version). Capture into
+    outputs/reports/original_spec.md:
+      - Sample size, inclusion/exclusion criteria
+      - Variable definitions (with exact wording / units)
+      - Statistical model + software + version (where stated)
+      - Reported headline estimate, SE, CI, p-value
 
-  - id: data_pipeline
-    name: Build Replication Data Pipeline
-    description: |
-      sys_path name="repl_<short_paper_id>". Re-do the inclusion /
-      exclusion in a script (don't trust manual filtering). If using
-      different data than original, document the swap in
-      methods.md with mem_log justification="replication with
-      new cohort".
+- id: data_pipeline
+  name: Build Replication Data Pipeline
+  description: |
+    tool_plan (operation=create_step) name="repl_<short_paper_id>". Re-do the inclusion /
+    exclusion in a script (don't trust manual filtering). If using
+    different data than original, document the swap in
+    methods.md with mem_log justification="replication with
+    new cohort".
 
-  - id: rerun_analysis
-    name: Re-run Analytic Model
-    description: |
-      Implement the exact original specification first. If the original
-      ran in a different runtime than the replication, document every
-      translation decision via mem_log context="replication translation"
-      — each one is a potential source of divergence. Save fitted model
-      + standard errors to outputs/data/.
+- id: rerun_analysis
+  name: Re-run Analytic Model
+  description: |
+    Implement the exact original specification first. If the original
+    ran in a different runtime than the replication, document every
+    translation decision via mem_log context="replication translation"
+    — each one is a potential source of divergence. Save fitted model
+    + standard errors to outputs/data/.
 
-  - id: compare_to_original
-    name: Compare to Original
-    description: |
-      Build outputs/reports/comparison.md:
-        | Quantity | Original | Replication | Δ | Within criterion? |
-      Use the pre-specified criterion to decide replicated / failed /
-      ambiguous. Plot original vs replication CI overlap.
+- id: compare_to_original
+  name: Compare to Original
+  description: |
+    Build outputs/reports/comparison.md:
+      | Quantity | Original | Replication | Δ | Within criterion? |
+    Use the pre-specified criterion to decide replicated / failed /
+    ambiguous. Plot original vs replication CI overlap.
 
-  - id: sensitivity
-    name: Sensitivity Around Original Specification
-    description: |
-      Probe whether the verdict survives reasonable perturbations of the
-      original specification. The dimensions worth perturbing for a
-      replication are the ones that could plausibly flip the conclusion —
-      typically the inclusion/exclusion boundary, the analytic
-      specification (covariate set, link, functional form), and the
-      estimator (SE family, alternative estimator). Pre-specify which
-      perturbations you'll run and WHY each one matters for this finding,
-      rather than running a fixed quota. Show whether the conclusion is
-      fragile. Save to outputs/reports/sensitivity.md.
+- id: sensitivity
+  name: Sensitivity Around Original Specification
+  description: |
+    Probe whether the verdict survives reasonable perturbations of the
+    original specification. The dimensions worth perturbing for a
+    replication are the ones that could plausibly flip the conclusion —
+    typically the inclusion/exclusion boundary, the analytic
+    specification (covariate set, link, functional form), and the
+    estimator (SE family, alternative estimator). Pre-specify which
+    perturbations you'll run and WHY each one matters for this finding,
+    rather than running a fixed quota. Show whether the conclusion is
+    fragile. Save to outputs/reports/sensitivity.md.
 
-  - id: report
-    name: Per-step Conclusions
-    description: |
-      conclusions.md states the replication verdict, why it succeeded or
-      failed, and whether the original finding generalises. Avoid
-      "the original was wrong" framing unless the evidence is overwhelming —
-      prefer "did not replicate in this sample under this specification".
+- id: report
+  name: Per-step Conclusions
+  description: |
+    conclusions.md states the replication verdict, why it succeeded or
+    failed, and whether the original finding generalises. Avoid
+    "the original was wrong" framing unless the evidence is overwhelming —
+    prefer "did not replicate in this sample under this specification".
 
 expected_outputs:
-  - workspace/*/outputs/reports/replication_design.md
-  - workspace/*/outputs/reports/original_spec.md
-  - workspace/*/outputs/reports/comparison.md
-  - workspace/*/outputs/reports/sensitivity.md
+- workspace/*/outputs/reports/replication_design.md
+- workspace/*/outputs/reports/original_spec.md
+- workspace/*/outputs/reports/comparison.md
+- workspace/*/outputs/reports/sensitivity.md
 
 quality_bar: |
   - Replication criterion is declared BEFORE looking at the new estimate.
@@ -124,3 +118,14 @@ quality_bar: |
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: replication
+triggers:
+- replicate
+- replication
+- reproduce paper
+- does x hold
+- does the result hold
+- result hold on my data
+- does the original result hold
+summary: Direct or conceptual replication of a published analysis.

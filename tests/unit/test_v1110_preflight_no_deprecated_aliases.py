@@ -66,7 +66,7 @@ def test_planted_deprecated_ref_is_caught(tmp_path, monkeypatch):
                 "steps": [
                     {
                         "id": "search",
-                        "description": "Call tool_failure_check before retry.",
+                        "description": "Call tool_web_scrape before retry.",
                     }
                 ],
             }
@@ -75,7 +75,7 @@ def test_planted_deprecated_ref_is_caught(tmp_path, monkeypatch):
     monkeypatch.setattr(mod, "PROTOCOLS_DIR", tmp_path)
     ok, msg = mod.check_no_deprecated_aliases_in_protocols()
     assert not ok
-    assert "tool_failure_check" in msg
+    assert "tool_web_scrape" in msg
     assert "literature/bad" in msg
 
 

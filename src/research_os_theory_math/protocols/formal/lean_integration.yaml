@@ -1,7 +1,7 @@
 id: lean_integration
 name: Lean 4 + Mathlib Integration
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [theory_math]
   audience: [naive_ai]
@@ -38,32 +38,17 @@ trigger: |
   build is failing", "Mathlib upgrade broke my proof".
 
 prerequisites:
-  - "Informal proof has passed `theory_math/proof/proof_verification_workflow`
-    through at least the independent-review phase. Drafts with known
-    gaps should not enter Lean."
-  - "Lean toolchain installed via `elan` (not a system package). Run
-    `elan --version` to confirm; if missing, install before continuing."
-  - "Project directory exists at `workspace/formal/<slug>/` or the
-    researcher accepts that this protocol will create one."
+- "Informal proof has passed `theory_math/proof/proof_verification_workflow` through at least the independent-review phase. Drafts with known gaps should not enter Lean."
+- "Lean toolchain installed via `elan` (not a system package). Run `elan --version` to confirm; if missing, install before continuing."
+- "Project directory exists at `workspace/formal/<slug>/` or the researcher accepts that this protocol will create one."
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Lean is a proof assistant, not a proof oracle. If you do not
-       understand the informal argument well enough to explain each
-       step on a whiteboard, do not start formalising — the type
-       errors will be incomprehensible and you will tactic-spam."
-    - "Pin the Mathlib revision in `lake-manifest.json` and commit it.
-       A floating Mathlib dependency means every `lake update` is a
-       potential proof-break; pinning makes the build reproducible
-       and the upgrade an explicit decision."
-    - "When `simp` works, prefer it over hand-written rewrites. When
-       `simp` does not work, do not chase it with more `simp` lemmas
-       — switch to `rw` + explicit lemma names. `simp` loops are
-       almost always a sign the goal needs a different decomposition."
-    - "Budget formalisation effort up front. If a proof passes the
-       4x-informal-length threshold without nearing completion,
-       trigger the cost-checkpoint step rather than pushing through."
+  - "Lean is a proof assistant, not a proof oracle. If you do not understand the informal argument well enough to explain each step on a whiteboard, do not start formalising — the type errors will be incomprehensible and you will tactic-spam."
+  - "Pin the Mathlib revision in `lake-manifest.json` and commit it. A floating Mathlib dependency means every `lake update` is a potential proof-break; pinning makes the build reproducible and the upgrade an explicit decision."
+  - "When `simp` works, prefer it over hand-written rewrites. When `simp` does not work, do not chase it with more `simp` lemmas — switch to `rw` + explicit lemma names. `simp` loops are almost always a sign the goal needs a different decomposition."
+  - "Budget formalisation effort up front. If a proof passes the 4x-informal-length threshold without nearing completion, trigger the cost-checkpoint step rather than pushing through."
 
 quality_bar:
   informal_to_formal_length_ratio_warning: 4
@@ -82,121 +67,137 @@ quality_bar:
     impossible.
 
 steps:
-  - id: scaffold_lean_file
-    name: Scaffold the .lean file from the informal draft
-    description: |
-      Read the informal proof from `workspace/proofs/<slug>.md`. Create
-      `workspace/formal/<slug>/<Slug>.lean` (CamelCase module name).
-      For each `## Claim`, write a `theorem <slug> : <statement> := by`
-      block. For each numbered step in the informal `## Proof`, leave
-      a `-- step N: <one-line summary>` comment followed by `sorry`.
-      Do not attempt tactics yet. The goal of this step is to produce
-      a file that elaborates (with `sorry` warnings) so you can confirm
-      the type signatures parse before touching the proof body.
-      Call `mem_log` with the scaffolded file path and the step-count
-      for the cost-checkpoint baseline.
+- id: scaffold_lean_file
+  name: Scaffold the .lean file from the informal draft
+  description: |
+    Read the informal proof from `workspace/proofs/<slug>.md`. Create
+    `workspace/formal/<slug>/<Slug>.lean` (CamelCase module name).
+    For each `## Claim`, write a `theorem <slug> : <statement> := by`
+    block. For each numbered step in the informal `## Proof`, leave
+    a `-- step N: <one-line summary>` comment followed by `sorry`.
+    Do not attempt tactics yet. The goal of this step is to produce
+    a file that elaborates (with `sorry` warnings) so you can confirm
+    the type signatures parse before touching the proof body.
+    Call `mem_log` with the scaffolded file path and the step-count
+    for the cost-checkpoint baseline.
 
-  - id: configure_lakefile
-    name: Configure lakefile + pin Mathlib
-    description: |
-      Create `workspace/formal/<slug>/lakefile.lean` with a `require
-      mathlib from git "https://github.com/leanprover-community/mathlib4"
-      @ "<commit-sha>"` clause. Use a specific commit, never `main`.
-      Pull the current Mathlib commit from
-      https://github.com/leanprover-community/mathlib4/commits/master
-      or pin to the revision matching the researcher's Lean toolchain
-      (check `lean-toolchain` in the Mathlib repo at that commit).
-      Run `lake update && lake build` once to cache Mathlib's oleans
-      (15-30 minutes the first time; subsequent builds are fast).
-      Commit `lakefile.lean` + `lake-manifest.json` + `lean-toolchain`
-      together — these three files define the reproducible build.
+- id: configure_lakefile
+  name: Configure lakefile + pin Mathlib
+  description: |
+    Create `workspace/formal/<slug>/lakefile.lean` with a `require
+    mathlib from git "https://github.com/leanprover-community/mathlib4"
+    @ "<commit-sha>"` clause. Use a specific commit, never `main`.
+    Pull the current Mathlib commit from
+    https://github.com/leanprover-community/mathlib4/commits/master
+    or pin to the revision matching the researcher's Lean toolchain
+    (check `lean-toolchain` in the Mathlib repo at that commit).
+    Run `lake update && lake build` once to cache Mathlib's oleans
+    (15-30 minutes the first time; subsequent builds are fast).
+    Commit `lakefile.lean` + `lake-manifest.json` + `lean-toolchain`
+    together — these three files define the reproducible build.
 
-  - id: search_mathlib_for_lemmas
-    name: Search Mathlib for the lemmas you need
-    description: |
-      For each informal citation in the proof, find the Mathlib
-      equivalent before writing tactics. Use `tool_search` against
-      the Mathlib docs (`leanprover-community.github.io/mathlib4_docs/`)
-      or `loogle.lean-lang.org` for type-directed search. Record the
-      mapping in `workspace/formal/<slug>/lemma_map.md` as a two-column
-      table (informal name → Mathlib lemma + namespace). If a needed
-      lemma is missing from Mathlib, flag it now — you have three
-      options: prove it as a private lemma, restate the argument to
-      avoid it, or contribute it upstream (separate workflow). Do not
-      discover this gap halfway through a 200-line proof.
+- id: search_mathlib_for_lemmas
+  name: Search Mathlib for the lemmas you need
+  description: |
+    For each informal citation in the proof, find the Mathlib
+    equivalent before writing tactics. Use `tool_search` against
+    the Mathlib docs (`leanprover-community.github.io/mathlib4_docs/`)
+    or `loogle.lean-lang.org` for type-directed search. Record the
+    mapping in `workspace/formal/<slug>/lemma_map.md` as a two-column
+    table (informal name → Mathlib lemma + namespace). If a needed
+    lemma is missing from Mathlib, flag it now — you have three
+    options: prove it as a private lemma, restate the argument to
+    avoid it, or contribute it upstream (separate workflow). Do not
+    discover this gap halfway through a 200-line proof.
 
-  - id: iterate_tactics_per_step
-    name: Iterate tactics, one informal step at a time
-    description: |
-      Replace one `sorry` at a time. Start with the step you understand
-      best, not the first one — momentum matters. For each `sorry`:
-      try `exact`/`apply` with the mapped Mathlib lemma; if that fails,
-      try `simp only [<lemmas>]` with explicit lemma names (never bare
-      `simp` in committed proofs — it breaks on Mathlib updates);
-      if that fails, drop to `rw` chains. Call
-      `tool_theory_math_lean_check` after each successful step to
-      confirm the file still builds. If a step takes more than 30
-      minutes, leave the `sorry` and move on — sometimes the next
-      step's elaboration reveals what the stuck step really needs.
+- id: iterate_tactics_per_step
+  name: Iterate tactics, one informal step at a time
+  description: |
+    Replace one `sorry` at a time. Start with the step you understand
+    best, not the first one — momentum matters. For each `sorry`:
+    try `exact`/`apply` with the mapped Mathlib lemma; if that fails,
+    try `simp only [<lemmas>]` with explicit lemma names (never bare
+    `simp` in committed proofs — it breaks on Mathlib updates);
+    if that fails, drop to `rw` chains. Call
+    `tool_theory_math_lean_check` after each successful step to
+    confirm the file still builds. If a step takes more than 30
+    minutes, leave the `sorry` and move on — sometimes the next
+    step's elaboration reveals what the stuck step really needs.
 
-  - id: debug_error_patterns
-    name: Debug Lean error patterns
-    description: |
-      When Lean reports an error, read it from the bottom up.
-      Common patterns and entry points:
-      - "failed to unify" with metavariables (`?m.123`) → the goal has
-        an underdetermined type; add a type ascription or use `@` to
-        supply implicit arguments explicitly.
-      - "whnf" / "definitional equality" failures → an unfolding is
-        stuck behind an irreducible definition; try `unfold` or
-        `show <explicit-form>` to force the rewrite.
-      - "failed to synthesize instance" → typeclass resolution gave
-        up; check `set_option trace.Meta.synthInstance true in` before
-        the offending tactic to see why.
-      - `simp` made no progress → switch to `simp?` to get a suggested
-        lemma list, then commit the explicit list (not `simp` itself).
-      - "deterministic timeout" → raise `set_option maxHeartbeats
-        400000` locally, but treat it as a smell: usually the proof
-        wants decomposition into a helper lemma, not more heartbeats.
+- id: debug_error_patterns
+  name: Debug Lean error patterns
+  description: |
+    When Lean reports an error, read it from the bottom up.
+    Common patterns and entry points:
+    - "failed to unify" with metavariables (`?m.123`) → the goal has
+      an underdetermined type; add a type ascription or use `@` to
+      supply implicit arguments explicitly.
+    - "whnf" / "definitional equality" failures → an unfolding is
+      stuck behind an irreducible definition; try `unfold` or
+      `show <explicit-form>` to force the rewrite.
+    - "failed to synthesize instance" → typeclass resolution gave
+      up; check `set_option trace.Meta.synthInstance true in` before
+      the offending tactic to see why.
+    - `simp` made no progress → switch to `simp?` to get a suggested
+      lemma list, then commit the explicit list (not `simp` itself).
+    - "deterministic timeout" → raise `set_option maxHeartbeats
+      400000` locally, but treat it as a smell: usually the proof
+      wants decomposition into a helper lemma, not more heartbeats.
 
-  - id: cost_checkpoint
-    name: Cost checkpoint — continue or abandon
-    description: |
-      After each work session, compute the length ratio: current
-      `.lean` line count divided by informal `.md` line count. If
-      below `informal_to_formal_length_ratio_warning` (4x), keep
-      going. If between 4x and 10x, write a one-paragraph
-      continuation rationale in `workspace/formal/<slug>/cost_log.md`
-      — what is the blocker, what is the projected remaining work,
-      is the formalisation still cheaper than alternative validation.
-      If above 10x, default to abandoning unless the proof is on the
-      formal_check_required_when list from `proof_verification_workflow`'s
-      quality_bar. Abandonment is not failure; document the rationale
-      in `cost_log.md` and emit a `## Formal-check waiver` block back
-      into `workspace/proofs/<slug>.md`.
+- id: cost_checkpoint
+  name: Cost checkpoint — continue or abandon
+  description: |
+    After each work session, compute the length ratio: current
+    `.lean` line count divided by informal `.md` line count. If
+    below `informal_to_formal_length_ratio_warning` (4x), keep
+    going. If between 4x and 10x, write a one-paragraph
+    continuation rationale in `workspace/formal/<slug>/cost_log.md`
+    — what is the blocker, what is the projected remaining work,
+    is the formalisation still cheaper than alternative validation.
+    If above 10x, default to abandoning unless the proof is on the
+    formal_check_required_when list from `proof_verification_workflow`'s
+    quality_bar. Abandonment is not failure; document the rationale
+    in `cost_log.md` and emit a `## Formal-check waiver` block back
+    into `workspace/proofs/<slug>.md`.
 
-  - id: finalize_and_handoff
-    name: Finalize the formalisation + handoff to publication
-    description: |
-      Confirm zero `sorry` remain (`grep -c sorry <Slug>.lean` should
-      be 0; `axiom` declarations should be empty unless the proof
-      genuinely relies on a new axiom, which requires its own
-      justification). Run `lake build` clean. Add a top-of-file
-      docstring citing the informal proof location and the Mathlib
-      revision used. Update `workspace/proofs/<slug>.md` to link the
-      `.lean` file under a `## Formal verification` heading. Call
-      `sys_path` to register the formal artifact for the next protocol
-      in the pipeline.
+- id: finalize_and_handoff
+  name: Finalize the formalisation + handoff to publication
+  description: |
+    Confirm zero `sorry` remain (`grep -c sorry <Slug>.lean` should
+    be 0; `axiom` declarations should be empty unless the proof
+    genuinely relies on a new axiom, which requires its own
+    justification). Run `lake build` clean. Add a top-of-file
+    docstring citing the informal proof location and the Mathlib
+    revision used. Update `workspace/proofs/<slug>.md` to link the
+    `.lean` file under a `## Formal verification` heading. Call
+    `sys_path` to register the formal artifact for the next protocol
+    in the pipeline.
 
 expected_outputs:
-  - workspace/formal/<slug>/<Slug>.lean
-  - workspace/formal/<slug>/lakefile.lean
-  - workspace/formal/<slug>/lake-manifest.json
-  - workspace/formal/<slug>/lean-toolchain
-  - workspace/formal/<slug>/lemma_map.md
-  - workspace/formal/<slug>/cost_log.md
-  - "workspace/proofs/<slug>.md updated with `## Formal verification` block (or `## Formal-check waiver` on abandonment)"
+- workspace/formal/<slug>/<Slug>.lean
+- workspace/formal/<slug>/lakefile.lean
+- workspace/formal/<slug>/lake-manifest.json
+- workspace/formal/<slug>/lean-toolchain
+- workspace/formal/<slug>/lemma_map.md
+- workspace/formal/<slug>/cost_log.md
+- "workspace/proofs/<slug>.md updated with `## Formal verification` block (or `## Formal-check waiver` on abandonment)"
 
 next_protocol: theory_math/proof/proof_verification_workflow
 next_protocol_kind: forward_default
 on_failure: theory_math/proof/proof_verification_workflow
+intent_class: execute
+sub_intent: new_experiment
+triggers:
+- lean proof
+- lean 4
+- mathlib
+- formalise in lean
+- lean integration
+summary: 'Lean 4 + Mathlib bridge: draft → .lean file → lean --make → interpret errors.'
+shortcut_tool: tool_theory_math_lean_check
+token_estimate: 1600
+decomposition:
+- protocol: theory_math/formal/lean_integration
+  purpose: Scaffold the .lean file from informal draft.
+- tool: tool_theory_math_lean_check
+  purpose: Run lean --make + parse errors.

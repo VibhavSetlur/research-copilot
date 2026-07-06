@@ -1,7 +1,7 @@
 id: digital_humanities_workflow
 name: Digital Humanities Workflow — hybrid distant + close reading
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [humanities]
   audience: [auditor]
@@ -39,161 +39,145 @@ trigger: |
   reading".
 
 prerequisites:
-  - A corpus is assembled with at least basic metadata per text
-    (author, date, genre) — call inputs/corpus/corpus_manifest.csv.
-  - Texts are in plain-text or TEI-XML form. OCR has been spot-checked
-    on a random sample; OCR error rate is logged in the manifest.
+- A corpus is assembled with at least basic metadata per text (author, date, genre) — call inputs/corpus/corpus_manifest.csv.
+- Texts are in plain-text or TEI-XML form. OCR has been spot-checked on a random sample; OCR error rate is logged in the manifest.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Distant reading is hypothesis-generating, not hypothesis-
-       confirming. Every quantitative claim is provisional until
-       close reading has visited the cluster. Name the tradition you
-       are working in (Moretti, Underwood, Jockers, Piper) and
-       acknowledge the methodological debates it carries."
-    - "Topic clusters are NOT themes. A cluster is a statistical
-       artifact of word co-occurrence; promoting it to a theme is an
-       interpretive act that must be argued, not assumed from the
-       top-10 word list."
-    - "Sample size for close-reading verification is 3+ texts per
-       cluster, deliberately sampled (one near the centroid, one at
-       the periphery, one anomalous). Random sampling within a
-       cluster is acceptable only when the cluster has fewer than 10
-       members."
-    - "Every visualization in the paper is paired with a sentence
-       naming what the visualization cannot show. Networks hide
-       chronology; topic models hide syntax; stylometry hides
-       semantics. Say so."
+  - "Distant reading is hypothesis-generating, not hypothesis- confirming. Every quantitative claim is provisional until close reading has visited the cluster. Name the tradition you are working in (Moretti, Underwood, Jockers, Piper) and acknowledge the methodological debates it carries."
+  - "Topic clusters are NOT themes. A cluster is a statistical artifact of word co-occurrence; promoting it to a theme is an interpretive act that must be argued, not assumed from the top-10 word list."
+  - "Sample size for close-reading verification is 3+ texts per cluster, deliberately sampled (one near the centroid, one at the periphery, one anomalous). Random sampling within a cluster is acceptable only when the cluster has fewer than 10 members."
+  - "Every visualization in the paper is paired with a sentence naming what the visualization cannot show. Networks hide chronology; topic models hide syntax; stylometry hides semantics. Say so."
 
 steps:
-  - id: corpus_audit
-    name: Audit the corpus before any computation
-    description: |
-      Before running a single model, document what is and is not in
-      the corpus. Selection bias is the first reviewer question.
-      Call tool_search to scan inputs/corpus/corpus_manifest.csv and
-      emit a corpus profile: date distribution, author distribution,
-      genre distribution, language distribution, OCR confidence
-      histogram if available.
-      Log known absences explicitly: "no pre-1650 texts because the
-      Project Gutenberg pool starts there", "women authors are 8%
-      of the corpus because the source canon is what it is". A
-      finding that the corpus skews male is not interesting; a
-      finding that survives the skew is.
-      Output: workspace/dh/corpus_audit.md with the profile + an
-      absences register. Run mem_log on the audit so later steps can
-      cite the bias profile when interpreting results.
+- id: corpus_audit
+  name: Audit the corpus before any computation
+  description: |
+    Before running a single model, document what is and is not in
+    the corpus. Selection bias is the first reviewer question.
+    Call tool_search to scan inputs/corpus/corpus_manifest.csv and
+    emit a corpus profile: date distribution, author distribution,
+    genre distribution, language distribution, OCR confidence
+    histogram if available.
+    Log known absences explicitly: "no pre-1650 texts because the
+    Project Gutenberg pool starts there", "women authors are 8%
+    of the corpus because the source canon is what it is". A
+    finding that the corpus skews male is not interesting; a
+    finding that survives the skew is.
+    Output: workspace/dh/corpus_audit.md with the profile + an
+    absences register. Run mem_log on the audit so later steps can
+    cite the bias profile when interpreting results.
 
-  - id: distant_pass
-    name: Run the distant-reading pass
-    description: |
-      Pick the technique the question wants, not the technique you
-      know best. Topic modeling (LDA, BERTopic, top2vec) answers
-      "what is the corpus about"; stylometry (Burrows's Delta,
-      function-word PCA) answers "who wrote this / who writes
-      similarly"; network analysis answers "who connects to whom".
-      Do not run all three because you can — each one buys a
-      different epistemic claim.
-      For v1.9.3 the distant-reading techniques are not yet wired as
-      first-class tools — run them by writing a short script in your
-      tool of choice (Python, R) and invoking it via tool_python_exec.
-      Topic modeling: gensim/scikit-learn LDA, BERTopic, or top2vec.
-      Stylometry: stylo (R) or pydelta for Burrows's Delta and
-      function-word PCA. Network analysis: networkx + python-igraph.
-      Capture the run configuration in
-      workspace/dh/runs/<technique>_<timestamp>.md: hyperparameters,
-      random seed, software version, preprocessing steps
-      (lowercasing, stopword list, lemmatization choices).
-      Reproducibility here is a non-negotiable. A topic model with no
-      seed is not a result.
+- id: distant_pass
+  name: Run the distant-reading pass
+  description: |
+    Pick the technique the question wants, not the technique you
+    know best. Topic modeling (LDA, BERTopic, top2vec) answers
+    "what is the corpus about"; stylometry (Burrows's Delta,
+    function-word PCA) answers "who wrote this / who writes
+    similarly"; network analysis answers "who connects to whom".
+    Do not run all three because you can — each one buys a
+    different epistemic claim.
+    For v1.9.3 the distant-reading techniques are not yet wired as
+    first-class tools — run them by writing a short script in your
+    tool of choice (Python, R) and invoking it via tool_python_exec.
+    Topic modeling: gensim/scikit-learn LDA, BERTopic, or top2vec.
+    Stylometry: stylo (R) or pydelta for Burrows's Delta and
+    function-word PCA. Network analysis: networkx + python-igraph.
+    Capture the run configuration in
+    workspace/dh/runs/<technique>_<timestamp>.md: hyperparameters,
+    random seed, software version, preprocessing steps
+    (lowercasing, stopword list, lemmatization choices).
+    Reproducibility here is a non-negotiable. A topic model with no
+    seed is not a result.
 
-  - id: cluster_inspection
-    name: Inspect clusters before naming them
-    description: |
-      For each cluster the distant pass produces, write a
-      pre-interpretive summary in workspace/dh/clusters/<id>.md with:
-      top-N words, top-N texts ranked by membership weight, size of
-      cluster, coherence score if the technique reports one.
-      Do NOT name the cluster yet. Naming a cluster from its top-10
-      word list is the central failure mode this protocol prevents.
-      Tag the cluster with a neutral identifier (cluster_07) and
-      leave the name field blank until close reading has run.
-      Flag clusters that look suspicious: very high coherence (likely
-      capturing a stopword artifact or an OCR pattern), very low
-      coherence (likely garbage), single-author dominance (likely a
-      stylistic fingerprint masquerading as a topic).
+- id: cluster_inspection
+  name: Inspect clusters before naming them
+  description: |
+    For each cluster the distant pass produces, write a
+    pre-interpretive summary in workspace/dh/clusters/<id>.md with:
+    top-N words, top-N texts ranked by membership weight, size of
+    cluster, coherence score if the technique reports one.
+    Do NOT name the cluster yet. Naming a cluster from its top-10
+    word list is the central failure mode this protocol prevents.
+    Tag the cluster with a neutral identifier (cluster_07) and
+    leave the name field blank until close reading has run.
+    Flag clusters that look suspicious: very high coherence (likely
+    capturing a stopword artifact or an OCR pattern), very low
+    coherence (likely garbage), single-author dominance (likely a
+    stylistic fingerprint masquerading as a topic).
 
-  - id: close_reading_sample
-    name: Sample texts per cluster for close reading
-    description: |
-      For each cluster, select 3+ texts using a deliberate sampling
-      frame:
-        - one representative (highest membership weight, near centroid)
-        - one peripheral (low-but-nonzero membership, tests boundary)
-        - one anomalous (high weight but unexpected metadata —
-          wrong genre / date / author for the cluster's profile)
-      Perform the close reading manually per sampled text and capture
-      it in markdown — there is no automated close-reading tool. The
-      close reading is not a re-summary; it is a hermeneutic
-      engagement with what the cluster's word list actually does in
-      context.
-      The reader looking at the cluster's word "voyage" needs to
-      know: is it literal travel, is it metaphor for spiritual
-      transformation, is it commercial / colonial discourse? The
-      model cannot tell you. Close reading can.
-      Output: workspace/dh/close_readings/<cluster_id>/<text_id>.md.
+- id: close_reading_sample
+  name: Sample texts per cluster for close reading
+  description: |
+    For each cluster, select 3+ texts using a deliberate sampling
+    frame:
+      - one representative (highest membership weight, near centroid)
+      - one peripheral (low-but-nonzero membership, tests boundary)
+      - one anomalous (high weight but unexpected metadata —
+        wrong genre / date / author for the cluster's profile)
+    Perform the close reading manually per sampled text and capture
+    it in markdown — there is no automated close-reading tool. The
+    close reading is not a re-summary; it is a hermeneutic
+    engagement with what the cluster's word list actually does in
+    context.
+    The reader looking at the cluster's word "voyage" needs to
+    know: is it literal travel, is it metaphor for spiritual
+    transformation, is it commercial / colonial discourse? The
+    model cannot tell you. Close reading can.
+    Output: workspace/dh/close_readings/<cluster_id>/<text_id>.md.
 
-  - id: interpret_or_reject
-    name: Promote, reject, or refine the cluster
-    description: |
-      After close reading, decide each cluster's fate explicitly:
-        - PROMOTE: the cluster captures a real interpretive pattern;
-          name it, characterize it, cite the close-reading evidence.
-        - REJECT: the cluster is a statistical artifact (stopword
-          residue, OCR garbage, single-author fingerprint, era-bias).
-          Document why and move on; do not bury rejected clusters in
-          a footnote.
-        - REFINE: the cluster is partly real, partly noise. Re-run
-          the distant pass with adjusted preprocessing (different
-          stopword list, different N for topic count) and re-enter
-          this protocol at the cluster_inspection step.
-      Log every decision in workspace/dh/cluster_decisions.md with a
-      one-paragraph rationale. The decisions log is the
-      methodological appendix the paper will cite.
+- id: interpret_or_reject
+  name: Promote, reject, or refine the cluster
+  description: |
+    After close reading, decide each cluster's fate explicitly:
+      - PROMOTE: the cluster captures a real interpretive pattern;
+        name it, characterize it, cite the close-reading evidence.
+      - REJECT: the cluster is a statistical artifact (stopword
+        residue, OCR garbage, single-author fingerprint, era-bias).
+        Document why and move on; do not bury rejected clusters in
+        a footnote.
+      - REFINE: the cluster is partly real, partly noise. Re-run
+        the distant pass with adjusted preprocessing (different
+        stopword list, different N for topic count) and re-enter
+        this protocol at the cluster_inspection step.
+    Log every decision in workspace/dh/cluster_decisions.md with a
+    one-paragraph rationale. The decisions log is the
+    methodological appendix the paper will cite.
 
-  - id: visualize_with_caveats
-    name: Build visualizations that respect their own limits
-    description: |
-      For each finding the cluster decisions promoted, build a
-      visualization by writing a short plotting script (matplotlib /
-      ggplot / networkx draw / pyvis) and invoking it via
-      tool_python_exec; write its caveat sentence in the same file.
-      A topic-over-time chart hides the fact that
-      the underlying topic was constructed by a model with N
-      hyperparameters; say so. A network graph hides chronology;
-      either add a time slider or say the graph collapses 200 years.
-      Pair every figure with its underlying data file in
-      synthesis/figures/dh/<figure_id>/{figure.png, data.csv,
-      caveat.md, regenerate.sh}. The regenerate script must rebuild
-      the figure from the data file with no manual steps. A
-      visualization that cannot be regenerated is a visualization
-      that cannot be peer-reviewed.
+- id: visualize_with_caveats
+  name: Build visualizations that respect their own limits
+  description: |
+    For each finding the cluster decisions promoted, build a
+    visualization by writing a short plotting script (matplotlib /
+    ggplot / networkx draw / pyvis) and invoking it via
+    tool_python_exec; write its caveat sentence in the same file.
+    A topic-over-time chart hides the fact that
+    the underlying topic was constructed by a model with N
+    hyperparameters; say so. A network graph hides chronology;
+    either add a time slider or say the graph collapses 200 years.
+    Pair every figure with its underlying data file in
+    synthesis/figures/dh/<figure_id>/{figure.png, data.csv,
+    caveat.md, regenerate.sh}. The regenerate script must rebuild
+    the figure from the data file with no manual steps. A
+    visualization that cannot be regenerated is a visualization
+    that cannot be peer-reviewed.
 
-  - id: write_methods_section
-    name: Draft the methods section
-    description: |
-      Digital humanities papers fail peer review most often on
-      methodological vagueness. Pre-emptively draft the methods
-      section now, while the runs are fresh. Cover: corpus
-      composition + known biases (from corpus_audit), techniques
-      chosen + why (from distant_pass), cluster decisions (promoted /
-      rejected / refined with counts), close-reading sampling frame,
-      software versions + random seeds.
-      Cite Underwood, Moretti, Piper, or whatever methodological
-      tradition you sit in — do not pretend digital humanities is
-      one undifferentiated field. Output:
-      synthesis/dh/methods_section.md.
+- id: write_methods_section
+  name: Draft the methods section
+  description: |
+    Digital humanities papers fail peer review most often on
+    methodological vagueness. Pre-emptively draft the methods
+    section now, while the runs are fresh. Cover: corpus
+    composition + known biases (from corpus_audit), techniques
+    chosen + why (from distant_pass), cluster decisions (promoted /
+    rejected / refined with counts), close-reading sampling frame,
+    software versions + random seeds.
+    Cite Underwood, Moretti, Piper, or whatever methodological
+    tradition you sit in — do not pretend digital humanities is
+    one undifferentiated field. Output:
+    synthesis/dh/methods_section.md.
 
 quality_bar:
   cluster_coverage: |
@@ -217,14 +201,27 @@ quality_bar:
     visualization cannot show, and a regenerate.sh that rebuilds it.
 
 expected_outputs:
-  - workspace/dh/corpus_audit.md
-  - workspace/dh/runs/<technique>_<timestamp>.md   # one per distant pass
-  - workspace/dh/clusters/<id>.md                  # one per cluster
-  - workspace/dh/close_readings/<cluster_id>/<text_id>.md  # 3+ per promoted cluster
-  - workspace/dh/cluster_decisions.md
-  - synthesis/figures/dh/<figure_id>/{figure.png, data.csv, caveat.md, regenerate.sh}
-  - synthesis/dh/methods_section.md
+- workspace/dh/corpus_audit.md
+- workspace/dh/runs/<technique>_<timestamp>.md     # one per distant pass
+- workspace/dh/clusters/<id>.md                    # one per cluster
+- workspace/dh/close_readings/<cluster_id>/<text_id>.md    # 3+ per promoted cluster
+- workspace/dh/cluster_decisions.md
+- synthesis/figures/dh/<figure_id>/{figure.png, data.csv, caveat.md, regenerate.sh}
+- synthesis/dh/methods_section.md
 
 next_protocol: humanities/output/scholarly_edition
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: methodology
+sub_intent: method_pick
+triggers:
+- digital humanities
+- dh project
+- computational humanities
+- mixed reading
+- scale and close-read
+summary: Hybrid distant + close reading. Includes the 'computers don't read meaning' caveat.
+token_estimate: 1700
+decomposition:
+- protocol: humanities/method/digital_humanities_workflow
+  purpose: Distant scan + close-read sampling + interpretation.

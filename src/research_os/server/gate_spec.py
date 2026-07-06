@@ -22,39 +22,25 @@ protocol until the sidecar is rebuilt.
 """
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
-# The compiled sidecar ships next to the protocols, exactly like
-# _route_meta.json sits next to _router_index.yaml.
-_GATE_META_PATH = (
-    Path(__file__).resolve().parent.parent / "protocols" / "_gate_meta.json"
-)
-
-_GATE_META_SCHEMA = 1
-
 
 def _load_gate_meta(path: Path | None = None) -> list[dict[str, Any]]:
-    """Read the compiled gate list from the sidecar. Fail SAFE to [].
+    """Read the declared gate list from ``_protocols.bundle``. Fail SAFE to [].
 
-    A missing, unreadable, malformed, or wrong-schema sidecar yields an
+    P1: gates are compiled into the single bundle and served by
+    ProtocolRegistry.get_gates(). An unreadable/empty bundle yields an
     empty list; the caller then relies on its built-in legacy tables so
-    the floor never silently drops. Only a well-formed, current-schema
-    file contributes declared gates.
+    the floor never silently drops. The ``path`` arg is accepted for
+    back-compat but ignored (the bundle is the sole source).
     """
-    p = path or _GATE_META_PATH
     try:
-        if not p.exists():
-            return []
-        data = json.loads(p.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+        from research_os.tools.actions.protocol import ProtocolRegistry
+
+        gates = ProtocolRegistry.get_gates()
+    except Exception:  # noqa: BLE001
         return []
-    if not isinstance(data, dict):
-        return []
-    if data.get("schema") != _GATE_META_SCHEMA:
-        return []
-    gates = data.get("gates")
     if not isinstance(gates, list):
         return []
     out: list[dict[str, Any]] = []

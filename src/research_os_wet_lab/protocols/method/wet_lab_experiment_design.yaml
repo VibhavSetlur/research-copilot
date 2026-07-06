@@ -1,7 +1,7 @@
 id: wet_lab_experiment_design
 name: Wet-Lab Experiment Design
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [wet_lab, biology]
   audience: [auditor]
@@ -43,210 +43,203 @@ trigger: |
   replicate", "plate layout for n=X", "before I start the experiment".
 
 prerequisites:
-  - A workspace exists with the project's research question stated in
-    workspace/design/research_question.md (one sentence; specifies the
-    population, the intervention, the comparator, the outcome).
-  - The assay's measurement variability is either known from a pilot
-    or explicitly flagged as unknown (drives the n justification).
+- A workspace exists with the project's research question stated in workspace/design/research_question.md (one sentence; specifies the population, the intervention, the comparator, the outcome).
+- The assay's measurement variability is either known from a pilot or explicitly flagged as unknown (drives the n justification).
 
 editorial_voice:
   mode: scaffold
   rules:
-    - "Biological replicates are independent realisations of the
-       biological process under study. Technical replicates are repeat
-       measurements of the same biological sample. Counting technical
-       replicates as n is the most common — and most expensive —
-       statistical error in wet-lab biology. The design must state n
-       in biological-replicate units and justify it."
-    - "Every control answers a specific failure mode. 'Positive
-       control' without 'what would fail if this control gave the wrong
-       reading' is decoration. Each control entry in the design names
-       its failure mode in plain language."
-    - "Randomization is not optional and is not the same as
-       arbitrary placement. A randomization scheme that the experimenter
-       cannot reproduce from a logged seed is not a randomization
-       scheme; it is a story told after the fact."
-    - "Blinding is staged: blinding during assignment, during
-       execution, and during scoring/quantification are three separate
-       commitments. State which stages are blinded, which are not, and
-       why the un-blinded stages are acceptable for this assay."
-    - "Power calculations are scaffolds for thinking, not certificates.
-       An 80% power calc that assumes effect sizes from a different
-       species, assay, or readout is a number with no epistemic
-       content. Cite the source of the effect-size estimate or
-       explicitly mark it as a pilot-grade guess."
+  - "Biological replicates are independent realisations of the biological process under study. Technical replicates are repeat measurements of the same biological sample. Counting technical replicates as n is the most common — and most expensive — statistical error in wet-lab biology. The design must state n in biological-replicate units and justify it."
+  - "Every control answers a specific failure mode. 'Positive control' without 'what would fail if this control gave the wrong reading' is decoration. Each control entry in the design names its failure mode in plain language."
+  - "Randomization is not optional and is not the same as arbitrary placement. A randomization scheme that the experimenter cannot reproduce from a logged seed is not a randomization scheme; it is a story told after the fact."
+  - "Blinding is staged: blinding during assignment, during execution, and during scoring/quantification are three separate commitments. State which stages are blinded, which are not, and why the un-blinded stages are acceptable for this assay."
+  - "Power calculations are scaffolds for thinking, not certificates. An 80% power calc that assumes effect sizes from a different species, assay, or readout is a number with no epistemic content. Cite the source of the effect-size estimate or explicitly mark it as a pilot-grade guess."
 
 quality_bar:
   required_fields_in_study_design:
-    - research_question
-    - biological_replicates_n
-    - biological_replicates_n_justification
-    - technical_replicates_n
-    - controls
-    - randomization_scheme
-    - randomization_seed
-    - blinding_stages
-    - effect_size_source
+  - research_question
+  - biological_replicates_n
+  - biological_replicates_n_justification
+  - technical_replicates_n
+  - controls
+  - randomization_scheme
+  - randomization_seed
+  - blinding_stages
+  - effect_size_source
   controls_required_per_entry:
-    - kind            # positive / negative / vehicle / sham / isotype
-    - failure_mode_it_detects
-    - source          # supplier + catalog, or in-lab derivation
+  - kind              # positive / negative / vehicle / sham / isotype
+  - failure_mode_it_detects
+  - source            # supplier + catalog, or in-lab derivation
   randomization_must_specify:
-    - unit            # animal, well, slide, cage, litter
-    - strata          # what is balanced across arms (sex, age, batch)
-    - method          # named PRNG + seed, or block-randomization recipe
+  - unit              # animal, well, slide, cage, litter
+  - strata            # what is balanced across arms (sex, age, batch)
+  - method            # named PRNG + seed, or block-randomization recipe
   blinding_must_specify:
-    - assignment_stage
-    - execution_stage
-    - scoring_stage
-    - any_unblinded_stage_with_justification
+  - assignment_stage
+  - execution_stage
+  - scoring_stage
+  - any_unblinded_stage_with_justification
 
 steps:
-  - id: state_question_and_inference_target
-    name: State the research question and the inference target
-    description: |
-      Before any n calculation, write the question in one sentence and
-      name what is being inferred: a population-level mean difference,
-      a within-subject change, a dose-response slope, a survival
-      hazard, a categorical proportion. The inference target
-      determines the appropriate replicate unit and the appropriate
-      effect-size metric.
-      Use tool_research_method to surface the field's current best
-      practice for the inference target on this assay class — do not
-      pick from training memory. Cite the source in
-      workspace/design/inference_target.md.
-      Failure mode this prevents: designing for a t-test when the
-      question is actually a mixed-effects question, then re-deriving
-      n after the fact and finding it is half what was needed.
+- id: state_question_and_inference_target
+  name: State the research question and the inference target
+  description: |
+    Before any n calculation, write the question in one sentence and
+    name what is being inferred: a population-level mean difference,
+    a within-subject change, a dose-response slope, a survival
+    hazard, a categorical proportion. The inference target
+    determines the appropriate replicate unit and the appropriate
+    effect-size metric.
+    Use tool_research_method to surface the field's current best
+    practice for the inference target on this assay class — do not
+    pick from training memory. Cite the source in
+    workspace/design/inference_target.md.
+    Failure mode this prevents: designing for a t-test when the
+    question is actually a mixed-effects question, then re-deriving
+    n after the fact and finding it is half what was needed.
 
-  - id: disambiguate_biological_from_technical
-    name: Disambiguate biological from technical replicates
-    description: |
-      For this assay, write down what counts as one biological
-      replicate and what counts as one technical replicate. A
-      biological replicate is an independent realisation of the
-      biological unit the question is about — a separate animal, a
-      separate culture passaged from a separate vial, a separate
-      patient, a separate slice from a separate animal. A technical
-      replicate is a repeat measurement of the same biological sample.
-      The boundary is field- and assay-specific: for snRNA-seq, two
-      nuclei from the same animal are technical; for behavioural
-      assays, two trials from the same animal may be biological or
-      technical depending on whether trial-to-trial variability is
-      part of the construct.
-      Record the disambiguation in workspace/design/replicate_units.md
-      with a worked example. The downstream analysis protocol
-      (wet_lab/analysis/*) reads this file to set its mixed-effects
-      grouping variable.
+- id: disambiguate_biological_from_technical
+  name: Disambiguate biological from technical replicates
+  description: |
+    For this assay, write down what counts as one biological
+    replicate and what counts as one technical replicate. A
+    biological replicate is an independent realisation of the
+    biological unit the question is about — a separate animal, a
+    separate culture passaged from a separate vial, a separate
+    patient, a separate slice from a separate animal. A technical
+    replicate is a repeat measurement of the same biological sample.
+    The boundary is field- and assay-specific: for snRNA-seq, two
+    nuclei from the same animal are technical; for behavioural
+    assays, two trials from the same animal may be biological or
+    technical depending on whether trial-to-trial variability is
+    part of the construct.
+    Record the disambiguation in workspace/design/replicate_units.md
+    with a worked example. The downstream analysis protocol
+    (wet_lab/analysis/*) reads this file to set its mixed-effects
+    grouping variable.
 
-  - id: justify_n_per_condition
-    name: Justify n per condition from variability + effect size
-    description: |
-      The n per condition is justified — not declared. The
-      justification has three parts: (a) the expected effect size and
-      its source (pilot data, prior publication on this exact assay,
-      explicitly flagged guess), (b) the expected within-group
-      variability from pilot or published assay-level data, (c) the
-      tolerated false-positive and false-negative rates given the
-      downstream decision the study informs.
-      Run a power calculation appropriate to the inference target
-      (not always a two-sample t-test; for hierarchical designs, use
-      simulation-based power). Record the calc, its assumptions, and
-      its inputs in workspace/design/power_analysis.md. If the
-      assay's variability is unknown, run a pilot first or explicitly
-      mark the study as exploratory + adjust the multiple-testing
-      stance accordingly.
-      Failure mode this prevents: n=3 because n=3 is what the lab
-      always does, with no link to the effect size the study can
-      actually detect.
+- id: justify_n_per_condition
+  name: Justify n per condition from variability + effect size
+  description: |
+    The n per condition is justified — not declared. The
+    justification has three parts: (a) the expected effect size and
+    its source (pilot data, prior publication on this exact assay,
+    explicitly flagged guess), (b) the expected within-group
+    variability from pilot or published assay-level data, (c) the
+    tolerated false-positive and false-negative rates given the
+    downstream decision the study informs.
+    Run a power calculation appropriate to the inference target
+    (not always a two-sample t-test; for hierarchical designs, use
+    simulation-based power). Record the calc, its assumptions, and
+    its inputs in workspace/design/power_analysis.md. If the
+    assay's variability is unknown, run a pilot first or explicitly
+    mark the study as exploratory + adjust the multiple-testing
+    stance accordingly.
+    Failure mode this prevents: n=3 because n=3 is what the lab
+    always does, with no link to the effect size the study can
+    actually detect.
 
-  - id: design_controls_by_failure_mode
-    name: Design controls by the failure mode each one detects
-    description: |
-      Enumerate the failure modes the assay is vulnerable to and
-      assign each one a control: positive (the assay can detect the
-      signal it is supposed to), negative (the signal is absent when
-      it should be), vehicle (the delivery method itself is inert),
-      sham (the procedure minus the intervention), isotype (the
-      antibody framework binds nothing on its own), loading (the
-      input was equal across lanes), batch (within-batch reference
-      anchors cross-batch comparisons).
-      Not every assay needs every control. The design names which
-      controls are included and, for each excluded control, why its
-      failure mode is acceptable or covered by another control.
-      Record in workspace/design/controls.yaml with each entry
-      carrying its failure_mode_it_detects field.
+- id: design_controls_by_failure_mode
+  name: Design controls by the failure mode each one detects
+  description: |
+    Enumerate the failure modes the assay is vulnerable to and
+    assign each one a control: positive (the assay can detect the
+    signal it is supposed to), negative (the signal is absent when
+    it should be), vehicle (the delivery method itself is inert),
+    sham (the procedure minus the intervention), isotype (the
+    antibody framework binds nothing on its own), loading (the
+    input was equal across lanes), batch (within-batch reference
+    anchors cross-batch comparisons).
+    Not every assay needs every control. The design names which
+    controls are included and, for each excluded control, why its
+    failure mode is acceptable or covered by another control.
+    Record in workspace/design/controls.yaml with each entry
+    carrying its failure_mode_it_detects field.
 
-  - id: design_randomization_and_log_seed
-    name: Design the randomization scheme + log the seed
-    description: |
-      Randomization protects against confounding the effect of
-      interest with the order, the position, the cage, the operator,
-      the day. Name the unit being randomized (animal, well, slide),
-      the strata being balanced (sex, age, litter, batch), and the
-      mechanism (block randomization, stratified randomization, simple
-      random with seed). For plate-based assays, randomize position
-      within plate AND across plates — edge wells, corner wells, and
-      the well closest to the door of the incubator have
-      systematically different microenvironments.
-      Use numpy.random with an explicit logged seed to generate
-      the assignment. Save the assignment
-      table AND the seed AND the script to
-      workspace/design/randomization.{csv,seed,py}. The seed is what
-      makes the scheme reproducible by audit.
+- id: design_randomization_and_log_seed
+  name: Design the randomization scheme + log the seed
+  description: |
+    Randomization protects against confounding the effect of
+    interest with the order, the position, the cage, the operator,
+    the day. Name the unit being randomized (animal, well, slide),
+    the strata being balanced (sex, age, litter, batch), and the
+    mechanism (block randomization, stratified randomization, simple
+    random with seed). For plate-based assays, randomize position
+    within plate AND across plates — edge wells, corner wells, and
+    the well closest to the door of the incubator have
+    systematically different microenvironments.
+    Use numpy.random with an explicit logged seed to generate
+    the assignment. Save the assignment
+    table AND the seed AND the script to
+    workspace/design/randomization.{csv,seed,py}. The seed is what
+    makes the scheme reproducible by audit.
 
-  - id: design_blinding_by_stage
-    name: Specify blinding at assignment, execution, and scoring
-    description: |
-      Blinding has three stages and the design names each one.
-      Assignment-stage blinding: the person assigning samples to
-      conditions does not know the predicted outcome. Execution-stage
-      blinding: the person performing the assay does not know which
-      sample is in which condition (often achieved by coded sample
-      IDs). Scoring-stage blinding: the person quantifying the
-      readout does not know the condition.
-      For automated readouts (plate reader, sequencer), execution and
-      scoring blinding are partly enforced by the instrument. For
-      manual scoring (histology, behaviour, image counting), un-blinded
-      scoring is the single largest source of bias in the literature.
-      If any stage cannot be blinded (e.g., the treated animals are
-      visibly different from controls), state why and name the
-      mitigation (independent second scorer, pre-registered scoring
-      rubric, automated quantification of a subset).
-      Record in workspace/design/blinding.yaml.
+- id: design_blinding_by_stage
+  name: Specify blinding at assignment, execution, and scoring
+  description: |
+    Blinding has three stages and the design names each one.
+    Assignment-stage blinding: the person assigning samples to
+    conditions does not know the predicted outcome. Execution-stage
+    blinding: the person performing the assay does not know which
+    sample is in which condition (often achieved by coded sample
+    IDs). Scoring-stage blinding: the person quantifying the
+    readout does not know the condition.
+    For automated readouts (plate reader, sequencer), execution and
+    scoring blinding are partly enforced by the instrument. For
+    manual scoring (histology, behaviour, image counting), un-blinded
+    scoring is the single largest source of bias in the literature.
+    If any stage cannot be blinded (e.g., the treated animals are
+    visibly different from controls), state why and name the
+    mitigation (independent second scorer, pre-registered scoring
+    rubric, automated quantification of a subset).
+    Record in workspace/design/blinding.yaml.
 
-  - id: write_design_contract_and_log
-    name: Write the design contract + log via mem_log
-    description: |
-      Assemble all of the above into workspace/design/study_design.yaml
-      with every quality_bar.required_field present. This is the
-      contract the executing experimenter, the downstream analyst,
-      and the audit gate (wet_lab/audit/wet_lab_reproducibility_audit)
-      all read.
-      Log the design decision via mem_log with a short rationale and
-      links to the inputs (research_question.md, inference_target.md,
-      power_analysis.md, controls.yaml, randomization.csv,
-      blinding.yaml). Use sys_path to confirm every referenced file
-      exists before logging — the audit gate will fail on a dangling
-      reference.
-      When the executed experiment later diverges from the design
-      (drop-out, contamination, instrument failure), log the
-      divergence as a new mem_log entry rather than editing the
-      original design. The contract is what was committed-to; the
-      execution log is what actually happened.
+- id: write_design_contract_and_log
+  name: Write the design contract + log via mem_log
+  description: |
+    Assemble all of the above into workspace/design/study_design.yaml
+    with every quality_bar.required_field present. This is the
+    contract the executing experimenter, the downstream analyst,
+    and the audit gate (wet_lab/audit/wet_lab_reproducibility_audit)
+    all read.
+    Log the design decision via mem_log with a short rationale and
+    links to the inputs (research_question.md, inference_target.md,
+    power_analysis.md, controls.yaml, randomization.csv,
+    blinding.yaml). Use sys_path to confirm every referenced file
+    exists before logging — the audit gate will fail on a dangling
+    reference.
+    When the executed experiment later diverges from the design
+    (drop-out, contamination, instrument failure), log the
+    divergence as a new mem_log entry rather than editing the
+    original design. The contract is what was committed-to; the
+    execution log is what actually happened.
 
 expected_outputs:
-  - workspace/design/research_question.md
-  - workspace/design/inference_target.md
-  - workspace/design/replicate_units.md
-  - workspace/design/power_analysis.md
-  - workspace/design/controls.yaml
-  - workspace/design/randomization.csv
-  - workspace/design/randomization.seed
-  - workspace/design/randomization.py
-  - workspace/design/blinding.yaml
-  - workspace/design/study_design.yaml
+- workspace/design/research_question.md
+- workspace/design/inference_target.md
+- workspace/design/replicate_units.md
+- workspace/design/power_analysis.md
+- workspace/design/controls.yaml
+- workspace/design/randomization.csv
+- workspace/design/randomization.seed
+- workspace/design/randomization.py
+- workspace/design/blinding.yaml
+- workspace/design/study_design.yaml
 
 next_protocol: wet_lab/protocol/plate_map_provenance
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: methodology
+sub_intent: method_pick
+triggers:
+- wet lab experiment
+- design a wet-lab experiment
+- n per condition
+- controls and replicates
+- biological replicate
+- technical replicate
+summary: n / condition justified, controls explicit (positive / negative / vehicle), randomization, blinding, technical-vs-biological replicate disambiguation.
+token_estimate: 1600
+decomposition:
+- protocol: wet_lab/method/wet_lab_experiment_design
+  purpose: Walk power → controls → randomization → blinding.

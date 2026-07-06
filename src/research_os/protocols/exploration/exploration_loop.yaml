@@ -2,16 +2,16 @@ id: exploration_loop
 tier: 'execute'
 name: Exploration Loop (probe → observe → decide)
 version: '3.8.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai]
   workflow_shape: [exploration, probe_observe_decide]
 last_reviewed: '2026-06-16'
 see_also:
-  - exploration/exploration_promote            # where a probe that earns it graduates
-  - guidance/casual_exploration                # the conversational lightweight sibling
-  - guidance/analysis_plan                      # the rigorous loop a promoted probe enters
+- exploration/exploration_promote              # where a probe that earns it graduates
+- guidance/casual_exploration                  # the conversational lightweight sibling
+- guidance/analysis_plan                        # the rigorous loop a promoted probe enters
 description: |
   The core loop of an exploration-mode workspace: a tight, cheap
   probe → observe → decide cycle that runs in workspace/scratch with the
@@ -41,117 +41,117 @@ trigger: |
   "let me see what's here", or a workspace with workspace.mode=exploration
   starts a fresh probe.
 prerequisites:
-  - workspace.mode is exploration (sys_boot reports workspace_mode), OR the researcher has explicitly asked for a quick throw-away probe
-  - workspace/scratch exists (the exploration scaffold seeds it)
+- workspace.mode is exploration (sys_boot reports workspace_mode), OR the researcher has explicitly asked for a quick throw-away probe
+- workspace/scratch exists (the exploration scaffold seeds it)
 
 steps:
-  - id: orient_cheap
-    name: Orient cheaply — what are we even looking for?
-    description: |
-      If you haven't called sys_boot this session, do so once — it reports
-      workspace_mode + autonomy. In exploration mode the unit of work is a
-      PROBE in workspace/scratch, not a numbered step, and gates are light
-      by design.
+- id: orient_cheap
+  name: Orient cheaply — what are we even looking for?
+  description: |
+    If you haven't called sys_boot this session, do so once — it reports
+    workspace_mode + autonomy. In exploration mode the unit of work is a
+    PROBE in workspace/scratch, not a numbered step, and gates are light
+    by design.
 
-      Read what's already here before probing: a glance at
-      inputs/raw_data/ (shape, columns, size) and any prior probe notes in
-      workspace/scratch/. The whole value of this mode is cheap looking;
-      don't re-run a probe someone already ran this session.
+    Read what's already here before probing: a glance at
+    inputs/raw_data/ (shape, columns, size) and any prior probe notes in
+    workspace/scratch/. The whole value of this mode is cheap looking;
+    don't re-run a probe someone already ran this session.
 
-  - id: frame_the_question
-    name: Frame the question cheaply (one sentence)
-    description: |
-      State, in ONE sentence, the specific thing this probe is trying to
-      find out — phrased so the observation could come back "no". Good
-      framings are falsifiable and small:
-        - "Is there any monotonic relationship between <x> and <y>?"
-        - "Does <group A> even differ from <group B> on <metric>?"
-        - "Is this column usable, or is it 90% missing?"
+- id: frame_the_question
+  name: Frame the question cheaply (one sentence)
+  description: |
+    State, in ONE sentence, the specific thing this probe is trying to
+    find out — phrased so the observation could come back "no". Good
+    framings are falsifiable and small:
+      - "Is there any monotonic relationship between <x> and <y>?"
+      - "Does <group A> even differ from <group B> on <metric>?"
+      - "Is this column usable, or is it 90% missing?"
 
-      Anti-pattern: "explore the data" (not a question — nothing can
-      answer it). A probe with no question can't have an observation, only
-      a vibe. If the ask is genuinely "show me what's here", the question
-      is "what are the salient features of this dataset?" — and the
-      observation is the concrete list you find, not a feeling that it's
-      interesting.
+    Anti-pattern: "explore the data" (not a question — nothing can
+    answer it). A probe with no question can't have an observation, only
+    a vibe. If the ask is genuinely "show me what's here", the question
+    is "what are the salient features of this dataset?" — and the
+    observation is the concrete list you find, not a feeling that it's
+    interesting.
 
-  - id: run_probe
-    name: Run a scratch probe (cheap, throw-away)
-    description: |
-      Write the smallest piece of code that could answer the question and
-      run it in the sandbox:
-        tool_scratch(operation='write', ...)  then
-        tool_scratch(operation='run', ...)
+- id: run_probe
+  name: Run a scratch probe (cheap, throw-away)
+  description: |
+    Write the smallest piece of code that could answer the question and
+    run it in the sandbox:
+      tool_scratch(operation='write', ...)  then
+      tool_scratch(operation='run', ...)
 
-      Keep it cheap: a sample of the data over the whole thing, one chart
-      over a suite, a quick correlation over a fitted model. The probe does
-      NOT have to be rigorous — that's the point of doing it in scratch.
-      Save a figure into outputs/figures/ ONLY if it's worth eyeballing;
-      otherwise let it be ephemeral.
+    Keep it cheap: a sample of the data over the whole thing, one chart
+    over a suite, a quick correlation over a fitted model. The probe does
+    NOT have to be rigorous — that's the point of doing it in scratch.
+    Save a figure into outputs/figures/ ONLY if it's worth eyeballing;
+    otherwise let it be ephemeral.
 
-      What makes a probe trustworthy even when it's throw-away: numbers
-      come from data you actually read or computed THIS turn, seeds are
-      set if there's randomness, and you don't extrapolate past what the
-      sample shows. A casual number is still a number; don't invent one.
+    What makes a probe trustworthy even when it's throw-away: numbers
+    come from data you actually read or computed THIS turn, seeds are
+    set if there's randomness, and you don't extrapolate past what the
+    sample shows. A casual number is still a number; don't invent one.
 
-  - id: record_observation
-    name: Record the observation (before deciding)
-    description: |
-      Write down what you ACTUALLY observed, in one or two lines, BEFORE
-      you decide what it means. This ordering is the load-bearing
-      discipline of exploration mode: deciding first and observing second
-      is how a probe becomes confirmation bias.
+- id: record_observation
+  name: Record the observation (before deciding)
+  description: |
+    Write down what you ACTUALLY observed, in one or two lines, BEFORE
+    you decide what it means. This ordering is the load-bearing
+    discipline of exploration mode: deciding first and observing second
+    is how a probe becomes confirmation bias.
 
-      Append to workspace/scratch/probe_log.md a single entry:
-        ## <question, one line>
-        Probe: <what you ran, one line>
-        Observed: <what came back — the number / shape / pattern, or
-                   "nothing / too noisy to tell">
-        (figure: outputs/figures/<name>.png  — only if you saved one)
+    Append to workspace/scratch/probe_log.md a single entry:
+      ## <question, one line>
+      Probe: <what you ran, one line>
+      Observed: <what came back — the number / shape / pattern, or
+                 "nothing / too noisy to tell">
+      (figure: outputs/figures/<name>.png  — only if you saved one)
 
-      "Observed: nothing" is a perfectly valid and useful result — it's the
-      cheap "no" that exploration mode exists to buy. Record it honestly
-      rather than torturing the probe until it says yes.
+    "Observed: nothing" is a perfectly valid and useful result — it's the
+    cheap "no" that exploration mode exists to buy. Record it honestly
+    rather than torturing the probe until it says yes.
 
-  - id: decide
-    name: Decide — promote, drop, or iterate
-    description: |
-      Given the recorded observation, choose exactly one and act:
+- id: decide
+  name: Decide — promote, drop, or iterate
+  description: |
+    Given the recorded observation, choose exactly one and act:
 
-        PROMOTE → the probe found something worth a real experiment.
-          Load exploration/exploration_promote to graduate it into a
-          proper numbered step (where gates, provenance, literature
-          grounding, and synthesis kick in). Nothing in scratch is lost;
-          the promote protocol back-fills the method + hypothesis.
+      PROMOTE → the probe found something worth a real experiment.
+        Load exploration/exploration_promote to graduate it into a
+        proper numbered step (where gates, provenance, literature
+        grounding, and synthesis kick in). Nothing in scratch is lost;
+        the promote protocol back-fills the method + hypothesis.
 
-        DROP → the observation was "no" / "nothing there" / "data won't
-          support this". Note the drop in probe_log.md (one line: why)
-          and move on. A recorded dead-end is cheap insurance against
-          re-probing the same thing later.
+      DROP → the observation was "no" / "nothing there" / "data won't
+        support this". Note the drop in probe_log.md (one line: why)
+        and move on. A recorded dead-end is cheap insurance against
+        re-probing the same thing later.
 
-        ITERATE → the probe was inconclusive but the question is still
-          live (too noisy, wrong slice, needs a different cut). Return to
-          frame_the_question with a sharper version. Cap yourself: if the
-          same question survives ~3 iterations without an observation,
-          that itself is an observation (the data can't answer it cheaply)
-          — drop it or promote it to a real step that can.
+      ITERATE → the probe was inconclusive but the question is still
+        live (too noisy, wrong slice, needs a different cut). Return to
+        frame_the_question with a sharper version. Cap yourself: if the
+        same question survives ~3 iterations without an observation,
+        that itself is an observation (the data can't answer it cheaply)
+        — drop it or promote it to a real step that can.
 
-      AUTONOMY GATE:
-        Risk: reversible + cheap — every probe lives in scratch and a
-        promote/drop/iterate call commits nothing that can't be redone.
-        proceed (adaptive default, autopilot) → act on the decision; if promoting, say so and
-          load exploration_promote in the same turn.
-        confirm first (manual / supervised) → present the observation + your recommended
-          decision (promote / drop / iterate) and the next probe if
-          iterating; wait for the researcher.
+    AUTONOMY GATE:
+      Risk: reversible + cheap — every probe lives in scratch and a
+      promote/drop/iterate call commits nothing that can't be redone.
+      proceed (adaptive default, autopilot) → act on the decision; if promoting, say so and
+        load exploration_promote in the same turn.
+      confirm first (manual / supervised) → present the observation + your recommended
+        decision (promote / drop / iterate) and the next probe if
+        iterating; wait for the researcher.
 
-      Log nothing heavyweight here. mem_log is reserved for a genuinely
-      surprising finding the researcher wants kept — in exploration mode
-      the probe_log.md IS the record.
+    Log nothing heavyweight here. mem_log is reserved for a genuinely
+    surprising finding the researcher wants kept — in exploration mode
+    the probe_log.md IS the record.
 
 expected_outputs:
-  - workspace/scratch/probe_log.md
-  - outputs/figures/*.png (only when a probe produced a figure worth keeping)
+- workspace/scratch/probe_log.md
+- outputs/figures/*.png (only when a probe produced a figure worth keeping)
 
 quality_bar: |
   - The question was framed BEFORE the probe ran, and could have come
@@ -163,6 +163,30 @@ quality_bar: |
   - "Nothing there" is recorded honestly when that's the result, not
     massaged into a false positive.
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/casual_exploration
+intent_class: execute
+sub_intent: explore_probe
+triggers:
+- poke at the data
+- poke at this
+- just explore
+- explore the data
+- quick probe
+- is there any signal
+- is there signal
+- let me see what's here
+- see what's in the data
+- throwaway probe
+- scratch probe
+- exploration loop
+summary: 'The exploration-mode home loop: frame a question cheaply → run a scratch probe → record the observation → decide promote / drop / iterate.'
+token_estimate: 1300
+decomposition:
+- protocol: exploration/exploration_loop
+  purpose: Frame the question, probe in scratch, record the observation, decide promote / drop / iterate.
+- tool: tool_scratch
+  purpose: Write + run the cheap throw-away probe in the sandbox.
+- tool: sys_file_write
+  purpose: Append the question + observation to workspace/scratch/probe_log.md.

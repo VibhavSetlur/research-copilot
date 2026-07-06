@@ -2,18 +2,18 @@ id: implement_iteration
 tier: 'execute'
 name: Implement Iteration (the inner build loop)
 version: '3.9.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]
   audience: [naive_ai, auditor]
   workflow_shape: [tool_build]
 last_reviewed: '2026-06-16'
 see_also:
-  - build/spec_and_design        # the design pass this loop executes against
-  - build/optimal_approach       # when the next increment's approach is genuinely contested, brain it out before building
-  - build/test_strategy          # the tool-wide testing regime each increment inherits
-  - build/versioning_and_rollback # mark an eval-passing increment good; roll back when an improvement regresses
-  - build/release_and_changelog  # closes an increment set into a release
+- build/spec_and_design          # the design pass this loop executes against
+- build/optimal_approach         # when the next increment's approach is genuinely contested, brain it out before building
+- build/test_strategy            # the tool-wide testing regime each increment inherits
+- build/versioning_and_rollback   # mark an eval-passing increment good; roll back when an improvement regresses
+- build/release_and_changelog    # closes an increment set into a release
 description: |
   The core build loop for tool_build mode — the analog of
   guidance/analysis_plan's per-step loop, but the unit of work is a
@@ -34,207 +34,246 @@ description: |
   gate is "does it build and do the checks pass".
 trigger: After build/spec_and_design, or whenever the researcher asks to "implement", "add a feature", "build the next increment", "fix this", "refactor", or "make it work".
 prerequisites:
-  - spec/requirements.md exists with at least one acceptance criterion
-  - The inner repo exists and is a git repository (the tool_build scaffold git-inits it; if entering mid-build, tool_git(operation='init'))
+- spec/requirements.md exists with at least one acceptance criterion
+- The inner repo exists and is a git repository (the tool_build scaffold git-inits it; if entering mid-build, tool_git(operation='init'))
 
 steps:
-  - id: orient_loop
-    name: Orient before the increment
-    description: |
-      Cheap orientation, every pass:
-        - sys_boot once per session for workspace_mode + state.
-        - Read the current state of the inner repo: what's the working
-          tree, what's the last commit, are there uncommitted changes.
-          tool_git(operation='status') + tool_git(operation='log') report
-          this from the inner repo; never assume the tree is clean.
-        - Re-read the acceptance criterion this increment targets in
-          spec/requirements.md and the relevant milestone in milestones.md.
+- id: orient_loop
+  name: Orient before the increment
+  description: |
+    Cheap orientation, every pass:
+      - sys_boot once per session for workspace_mode + state.
+      - Read the current state of the inner repo: what's the working
+        tree, what's the last commit, are there uncommitted changes.
+        tool_git(operation='status') + tool_git(operation='log') report
+        this from the inner repo; never assume the tree is clean.
+      - Re-read the acceptance criterion this increment targets in
+        spec/requirements.md and the relevant milestone in milestones.md.
 
-      Optionally pull lessons from prior increments:
-        tool_lessons tags=[<component>, <language>, build]
-      Cheap; use when the next increment is non-trivial, skip when rote.
+    Optionally pull lessons from prior increments:
+      tool_lessons tags=[<component>, <language>, build]
+    Cheap; use when the next increment is non-trivial, skip when rote.
 
-  - id: scope_increment
-    name: Scope the smallest shippable increment (≤2 sentences)
-    description: |
-      State, in 1-2 sentences, the ONE increment this pass delivers — the
-      smallest change that leaves the tool better and still buildable.
-      Examples (illustrative, not a menu):
-        - "Add the --output flag and route writes through it."
-        - "Implement the streaming parser for the happy path; errors next."
-        - "Extract the retry logic into a module so it can be unit-tested."
+- id: scope_increment
+  name: Scope the smallest shippable increment (≤2 sentences)
+  description: |
+    State, in 1-2 sentences, the ONE increment this pass delivers — the
+    smallest change that leaves the tool better and still buildable.
+    Examples (illustrative, not a menu):
+      - "Add the --output flag and route writes through it."
+      - "Implement the streaming parser for the happy path; errors next."
+      - "Extract the retry logic into a module so it can be unit-tested."
 
-      Identify:
-        - Which acceptance criterion / milestone this advances (by id).
-        - What is explicitly NOT in this increment (the next pass's job).
+    Identify:
+      - Which acceptance criterion / milestone this advances (by id).
+      - What is explicitly NOT in this increment (the next pass's job).
 
-      The failure mode this guards against is the mega-commit: a 600-line
-      change that does five things, can't be reviewed, and can't be
-      reverted cleanly. Smaller increments are almost always better; a long
-      increment is fine only when it's ONE coherent thing.
+    The failure mode this guards against is the mega-commit: a 600-line
+    change that does five things, can't be reviewed, and can't be
+    reverted cleanly. Smaller increments are almost always better; a long
+    increment is fine only when it's ONE coherent thing.
 
-      AUTONOMY GATE:
-        Risk: reversible + cheap — scoping an increment writes no code yet.
-        proceed (adaptive default, autopilot) → state the increment scope and proceed to
-          implement; nothing here needs confirmation.
-        confirm first (manual / supervised) → present the increment scope; confirm before
-          writing code.
+    AUTONOMY GATE:
+      Risk: reversible + cheap — scoping an increment writes no code yet.
+      proceed (adaptive default, autopilot) → state the increment scope and proceed to
+        implement; nothing here needs confirmation.
+      confirm first (manual / supervised) → present the increment scope; confirm before
+        writing code.
 
-  - id: implement
-    name: Implement the increment in the inner repo
-    description: |
-      Write the code in the INNER project repo (not the governance
-      workspace — that holds spec/decisions/eval, not the tool). Use the
-      exec tool that matches the tool's language:
-        Python (.py)     → tool_python_exec
-        R (.R)           → tool_r_exec
-        Julia (.jl)      → tool_julia_exec
-        Shell (.sh)      → tool_bash_exec
-        Notebook (.ipynb)→ tool_notebook_exec
-      and tool_bash_exec for build/compile steps, package managers, and
-      git itself. Install dependencies you introduce via tool_package_install
-      (Python) or the language's manager through tool_bash_exec, so the
-      build env stays reproducible.
+- id: implement
+  name: Implement the increment in the inner repo
+  description: |
+    Write the code in the INNER project repo (not the governance
+    workspace — that holds spec/decisions/eval, not the tool). Use the
+    exec tool that matches the tool's language:
+      Python (.py)     → tool_python_exec
+      R (.R)           → tool_bash_exec
+      Julia (.jl)      → tool_bash_exec
+      Shell (.sh)      → tool_bash_exec
+      Notebook (.ipynb)→ tool_notebook_exec
+    and tool_bash_exec for build/compile steps, package managers, and
+    git itself. Install dependencies you introduce via tool_package_install
+    (Python) or the language's manager through tool_bash_exec, so the
+    build env stays reproducible.
 
-      LONG-RUNNING builds/compiles (estimated > the configured threshold,
-      or on a shared server): run them via tool_task(operation='run') and
-      poll tool_task(operation='status') instead of blocking.
+    LONG-RUNNING builds/compiles (estimated > the configured threshold,
+    or on a shared server): run them via tool_task(operation='run') and
+    poll tool_task(operation='status') instead of blocking.
 
-      Keep the change matched to the scoped increment. If implementing
-      surfaces a design choice the spec didn't settle, STOP and resolve it
-      (a quick ADR in decisions/, or a note back to build/spec_and_design)
-      rather than silently inventing a contract.
+    Keep the change matched to the scoped increment. If implementing
+    surfaces a design choice the spec didn't settle, STOP and resolve it
+    (a quick ADR in decisions/, or a note back to build/spec_and_design)
+    rather than silently inventing a contract.
 
-  - id: prove_with_test
-    name: Write the test that proves the increment
-    description: |
-      An increment isn't done because it runs once — it's done when a test
-      proves it does what it should and will keep doing it. Before (or
-      alongside) the implementation, decide what test demonstrates THIS
-      increment's behaviour and add it to the inner repo's suite.
+- id: prove_with_test
+  name: Write the test that proves the increment
+  description: |
+    An increment isn't done because it runs once — it's done when a test
+    proves it does what it should and will keep doing it. Before (or
+    alongside) the implementation, decide what test demonstrates THIS
+    increment's behaviour and add it to the inner repo's suite.
 
-      Reason about what KIND of check actually proves this increment — a
-      unit test for a pure function, an integration test for a wired path,
-      a golden/snapshot test for output formatting, a property test for an
-      invariant. The right kind is increment-specific; do not default to
-      "a unit test" reflexively. build/test_strategy governs the regime
-      across the whole tool — consult it when the testing approach for the
-      tool as a whole is unsettled, not for every small increment.
+    Reason about what KIND of check actually proves this increment — a
+    unit test for a pure function, an integration test for a wired path,
+    a golden/snapshot test for output formatting, a property test for an
+    invariant. The right kind is increment-specific; do not default to
+    "a unit test" reflexively. build/test_strategy governs the regime
+    across the whole tool — consult it when the testing approach for the
+    tool as a whole is unsettled, not for every small increment.
 
-      Then RUN the suite and read the result. tool_build(operation='test')
-      runs the test command you declared in workspace.commands.test; for a
-      one-off invocation or a language the command doesn't cover, use the
-      matching exec tool. A green run you didn't actually execute is not
-      evidence — and tool_audit(scope='tool', dimension='tests') will block a
-      suite that ran zero tests, so make sure the new test actually executes.
+    Then RUN the suite and read the result. tool_build(operation='test')
+    runs the test command you declared in workspace.commands.test; for a
+    one-off invocation or a language the command doesn't cover, use the
+    matching exec tool. A green run you didn't actually execute is not
+    evidence — and tool_audit(scope='tool', dimension='tests') will block a
+    suite that ran zero tests, so make sure the new test actually executes.
 
-  - id: run_checks
-    name: Run the checks — build, tests, linters
-    description: |
-      Run the gate that defines "done" for this increment. tool_build runs
-      the commands you declared in workspace.commands:
-        - tool_build(operation='build') — the build/compile succeeds (for
-          compiled or packaged tools);
-        - tool_build(operation='test') — the test suite passes (the new test
-          AND the existing ones — guard against regressions);
-        - tool_build(operation='lint') — the static checks (linters, type
-          checks) are clean.
-      For the gate verdict in one call, tool_audit(scope='tool',
-      dimension='tests') runs the suite and blocks on failure or a zero-test
-      run; tool_audit(scope='tool', dimension='build') does the same for the
-      build. (Anything workspace.commands doesn't cover: the language exec
-      tools / tool_bash_exec.)
+- id: run_checks
+  name: Run the checks — build, tests, linters
+  description: |
+    Run the gate that defines "done" for this increment. tool_build runs
+    the commands you declared in workspace.commands:
+      - tool_build(operation='build') — the build/compile succeeds (for
+        compiled or packaged tools);
+      - tool_build(operation='test') — the test suite passes (the new test
+        AND the existing ones — guard against regressions);
+      - tool_build(operation='lint') — the static checks (linters, type
+        checks) are clean.
+    For the gate verdict in one call, tool_audit(scope='tool',
+    dimension='tests') runs the suite and blocks on failure or a zero-test
+    run; tool_audit(scope='tool', dimension='build') does the same for the
+    build. (Anything workspace.commands doesn't cover: the language exec
+    tools / tool_bash_exec.)
 
-      If anything fails, fix it within this increment before committing —
-      do NOT commit a red tree and "fix it next". A broken main is the
-      analog of the un-snapshotted analysis: it costs future-you more than
-      it saved now.
+    If anything fails, fix it within this increment before committing —
+    do NOT commit a red tree and "fix it next". A broken main is the
+    analog of the un-snapshotted analysis: it costs future-you more than
+    it saved now.
 
-      The relevant eval/ acceptance check (from build/spec_and_design) may
-      also run here when the increment completes a milestone; full
-      baseline comparison lives in build/benchmark_vs_baseline.
+    The relevant eval/ acceptance check (from build/spec_and_design) may
+    also run here when the increment completes a milestone; full
+    baseline comparison lives in build/benchmark_vs_baseline.
 
-  - id: commit
-    name: Commit the increment against its objective
-    description: |
-      Commit in the inner repo via tool_git(operation='commit', message=...).
-      Pass step_id= so the commit carries a Research-OS-Step trailer linking
-      it back to the RO unit of work (provenance). The commit is the unit of
-      work and the unit of record, so the message must carry meaning a future
-      reader (or `build/release_and_changelog`) can use:
-        - WHAT changed, in the imperative;
-        - WHY — link to the acceptance criterion / milestone / ADR / issue
-          this increment advances, so the history is traceable to intent;
-        - any caveat a reviewer needs (known-limitation, follow-up).
+- id: commit
+  name: Commit the increment against its objective
+  description: |
+    Commit in the inner repo via tool_git(operation='commit', message=...).
+    Pass step_id= so the commit carries a Research-OS-Step trailer linking
+    it back to the RO unit of work (provenance). The commit is the unit of
+    work and the unit of record, so the message must carry meaning a future
+    reader (or `build/release_and_changelog`) can use:
+      - WHAT changed, in the imperative;
+      - WHY — link to the acceptance criterion / milestone / ADR / issue
+        this increment advances, so the history is traceable to intent;
+      - any caveat a reviewer needs (known-limitation, follow-up).
 
-      One increment, one commit (or a tight, coherent set). Do not bundle
-      unrelated changes — it defeats clean revert and review. Record the
-      commit in mem_log (entry="<increment> committed: <sha-or-summary>")
-      and, when it advances a milestone, tick it in milestones.md.
+    One increment, one commit (or a tight, coherent set). Do not bundle
+    unrelated changes — it defeats clean revert and review. Record the
+    commit in mem_log (entry="<increment> committed: <sha-or-summary>")
+    and, when it advances a milestone, tick it in milestones.md.
 
-      AUTONOMY GATE:
-        Risk: reversible — a local commit is undoable (amend, revert, reset)
-        and pushes nothing on its own.
-        proceed (adaptive default, autopilot) → commit with a well-formed message and log it;
-          no confirmation needed for a local commit.
-        confirm first (manual / supervised) → show the diff summary + proposed commit
-          message; commit on confirmation.
+    AUTONOMY GATE:
+      Risk: reversible — a local commit is undoable (amend, revert, reset)
+      and pushes nothing on its own.
+      proceed (adaptive default, autopilot) → commit with a well-formed message and log it;
+        no confirmation needed for a local commit.
+      confirm first (manual / supervised) → show the diff summary + proposed commit
+        message; commit on confirmation.
 
-  - id: record_and_decide
-    name: Record the change + decide the next increment
-    description: |
-      Update the lightweight build record:
-        - milestones.md: tick / annotate the milestone if this increment
-          advanced it.
-        - CHANGELOG.md (Unreleased): add a user-facing line when the
-          increment changes observable behaviour. (The full changelog
-          assembly is build/release_and_changelog's job; this just keeps
-          Unreleased honest as you go.)
-        - tool_lessons when the increment taught something reusable
-          (a gotcha, a pattern that worked) so the next pass benefits.
+- id: record_and_decide
+  name: Record the change + decide the next increment
+  description: |
+    Update the lightweight build record:
+      - milestones.md: tick / annotate the milestone if this increment
+        advanced it.
+      - CHANGELOG.md (Unreleased): add a user-facing line when the
+        increment changes observable behaviour. (The full changelog
+        assembly is build/release_and_changelog's job; this just keeps
+        Unreleased honest as you go.)
+      - tool_lessons when the increment taught something reusable
+        (a gotcha, a pattern that worked) so the next pass benefits.
 
-      Then decide, with the researcher, what the next increment is:
-        - Continue → loop back to scope_increment for the next increment.
-        - Test regime unsettled → build/test_strategy.
-        - The next increment's approach is genuinely contested (several
-          different ways could win) → build/optimal_approach to brain it
-          out before building.
-        - Performance/quality claim to substantiate → build/benchmark_vs_baseline.
-        - A capability gap that prior work plausibly solves → build/method_scouting (scout it, spike it, then integrate) rather than reinventing it.
-        - This increment cleared an eval bar or is a stable base for a risky
-          change → build/versioning_and_rollback to mark it a known-good
-          version before the next change can regress it.
-        - Increment set is release-worthy → build/release_and_changelog.
+    Then decide, with the researcher, what the next increment is:
+      - Continue → loop back to scope_increment for the next increment.
+      - Test regime unsettled → build/test_strategy.
+      - The next increment's approach is genuinely contested (several
+        different ways could win) → build/optimal_approach to brain it
+        out before building.
+      - Performance/quality claim to substantiate → build/benchmark_vs_baseline.
+      - A capability gap that prior work plausibly solves → build/method_scouting (scout it, spike it, then integrate) rather than reinventing it.
+      - This increment cleared an eval bar or is a stable base for a risky
+        change → build/versioning_and_rollback to mark it a known-good
+        version before the next change can regress it.
+      - Increment set is release-worthy → build/release_and_changelog.
 
-      MANDATORY PAUSE (anti-one-shot): after a committed increment, present
-      status to the researcher before scaffolding the next one. AI agents
-      tend to sprint through a build, filling context and losing oversight;
-      a pause between increments is where the researcher redirects.
+    MANDATORY PAUSE (anti-one-shot): after a committed increment, present
+    status to the researcher before scaffolding the next one. AI agents
+    tend to sprint through a build, filling context and losing oversight;
+    a pause between increments is where the researcher redirects.
 
-      AUTONOMY GATE:
-        Risk: reversible + cheap — looping to the next increment is just
-        more gated build work; the weight sits in the gates it re-enters.
-        proceed (adaptive default, autopilot) → if the build is green and no risk flag fired,
-          loop back to scope_increment for the next increment in the SAME
-          turn; if a risk flag fired or the build is red, pause and present.
-        confirm first (manual / supervised) → present the increment summary + the candidate
-          next increments; wait for the choice.
+    AUTONOMY GATE:
+      Risk: reversible + cheap — looping to the next increment is just
+      more gated build work; the weight sits in the gates it re-enters.
+      proceed (adaptive default, autopilot) → if the build is green and no risk flag fired,
+        loop back to scope_increment for the next increment in the SAME
+        turn; if a risk flag fired or the build is red, pause and present.
+      confirm first (manual / supervised) → present the increment summary + the candidate
+        next increments; wait for the choice.
 
-  - id: handoff_when_long
-    name: Hand off when the build context gets long
-    description: |
-      Many increments deep, context degrades and the AI starts one-shotting.
-      When several increments have landed this session, suggest
-      sys_session_handoff + a fresh chat before the next increment — the
-      handoff doc + the inner repo's git log let the next session resume
-      cleanly. The git history IS the durable state here; lean on it.
+- id: handoff_when_long
+  name: Hand off when the build context gets long
+  description: |
+    Many increments deep, context degrades and the AI starts one-shotting.
+    When several increments have landed this session, suggest
+    tool_session_handoff + a fresh chat before the next increment — the
+    handoff doc + the inner repo's git log let the next session resume
+    cleanly. The git history IS the durable state here; lean on it.
 
 expected_outputs:
-  - Commits in the inner repo (the primary artefact)
-  - Tests added/extended in the inner repo's suite
-  - milestones.md (updated)
-  - CHANGELOG.md (Unreleased entries kept current)
+- Commits in the inner repo (the primary artefact)
+- Tests added/extended in the inner repo's suite
+- milestones.md (updated)
+- CHANGELOG.md (Unreleased entries kept current)
 
 next_protocol: build/implement_iteration
 next_protocol_kind: iterate_back
 on_failure: guidance/dead_end_routing
+intent_class: execute
+sub_intent: build_implement
+triggers:
+- implement feature
+- implement this
+- implement the next
+- add a feature
+- add a cli
+- add a flag
+- build the next increment
+- next increment
+- make it work
+- write the code
+- code this up
+- refactor
+- refactor this
+- extract this into
+- fix this bug
+- fix the bug
+- fix a bug
+- fix the bugs
+- squash the bug
+- patch the bug
+- commit this
+- build loop
+- iterate on the tool
+summary: The inner build loop — scope one increment, implement it in the inner repo, prove it with a test, run the checks, commit against the objective. Loops per increment.
+token_estimate: 2100
+decomposition:
+- tool: tool_bash_exec
+  purpose: git status / git log in the inner repo to read the working tree before the increment.
+- tool: sys_file_write
+  purpose: Implement the scoped increment in the inner repo.
+- tool: tool_python_exec
+  purpose: Run the test that proves the increment (or tool_bash_exec / tool_bash_exec / tool_bash_exec per language).
+- tool: tool_bash_exec
+  purpose: Run the build + full test suite + linters; then git add + git commit with a message linked to the objective.
+- tool: mem_log
+  purpose: Record the committed increment + tick the milestone.

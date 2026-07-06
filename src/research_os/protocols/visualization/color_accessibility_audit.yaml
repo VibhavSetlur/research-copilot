@@ -2,15 +2,15 @@ id: color_accessibility_audit
 tier: 'synthesize'
 name: Color + Accessibility Audit (figures + dashboards)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - visualization/figure_guidelines   # the CVD-safe palette references the fixes route to
-  - visualization/figure_critique     # broader single-figure critique
+- visualization/figure_guidelines     # the CVD-safe palette references the fixes route to
+- visualization/figure_critique       # broader single-figure critique
 description: |
   Audit one or more figures (or a dashboard's CSS palette) for
   color-blindness safety, contrast adequacy, and WCAG-aligned
@@ -30,220 +30,209 @@ trigger: |
   readers", "deuteranopia check", "tritanopia check".
 
 prerequisites:
-  - At least one figure (PNG/SVG) on disk OR a dashboard HTML on disk.
+- At least one figure (PNG/SVG) on disk OR a dashboard HTML on disk.
 
 editorial_voice:
   mode: prescription
   rules:
-    - "Colour-blindness is not edge-case — ~8% of men of European
-       descent have a form of red-green colour deficiency. A figure
-       that fails for them is a figure that fails for a meaningful
-       fraction of readers, including reviewers."
-    - "Colour should NOT carry the only signal. If two series are
-       distinguishable only by hue, they need a second channel
-       (linetype, marker shape, position, label)."
-    - "Contrast matters in print, on dim screens, on cheap
-       projectors, and through grayscale photocopy / fax. The
-       Okabe-Ito / viridis palettes survive all four; many lab
-       brand palettes do not."
-    - "WCAG 2.1 AA contrast ratios (≥4.5:1 for text, ≥3:1 for
-       large text + non-text content) are the floor for dashboards;
-       AAA (≥7:1 text, ≥4.5:1 large) is the bar for public-facing
-       deliverables."
+  - "Colour-blindness is not edge-case — ~8% of men of European descent have a form of red-green colour deficiency. A figure that fails for them is a figure that fails for a meaningful fraction of readers, including reviewers."
+  - "Colour should NOT carry the only signal. If two series are distinguishable only by hue, they need a second channel (linetype, marker shape, position, label)."
+  - "Contrast matters in print, on dim screens, on cheap projectors, and through grayscale photocopy / fax. The Okabe-Ito / viridis palettes survive all four; many lab brand palettes do not."
+  - "WCAG 2.1 AA contrast ratios (≥4.5:1 for text, ≥3:1 for large text + non-text content) are the floor for dashboards; AAA (≥7:1 text, ≥4.5:1 large) is the bar for public-facing deliverables."
 
 steps:
-  - id: scope_the_audit
-    name: Scope the audit
-    description: |
-      Confirm:
-        - which artefacts — a single figure / a figure deck / a
-          poster / a dashboard
-        - the destination — paper / talk / poster / dashboard /
-          public (drives WCAG bar)
-        - whether the source data is available (allows REBUILDING
-          with a corrected palette) or only the rendered output
-          (allows only critique)
+- id: scope_the_audit
+  name: Scope the audit
+  description: |
+    Confirm:
+      - which artefacts — a single figure / a figure deck / a
+        poster / a dashboard
+      - the destination — paper / talk / poster / dashboard /
+        public (drives WCAG bar)
+      - whether the source data is available (allows REBUILDING
+        with a corrected palette) or only the rendered output
+        (allows only critique)
 
-  - id: extract_palette_from_artefact
-    name: Extract the palette in use
-    description: |
-      For PNG / SVG figures:
-        - use a simple python pillow / numpy script to extract the
-          dominant N colours via k-means on the image array, then
-          map to hex
-        - for SVG, parse the fill / stroke attributes via xml
-          parsing — more reliable
-        - record the result to
-          workspace/<step>/outputs/reports/palette_inventory.md
+- id: extract_palette_from_artefact
+  name: Extract the palette in use
+  description: |
+    For PNG / SVG figures:
+      - use a simple python pillow / numpy script to extract the
+        dominant N colours via k-means on the image array, then
+        map to hex
+      - for SVG, parse the fill / stroke attributes via xml
+        parsing — more reliable
+      - record the result to
+        workspace/<step>/outputs/reports/palette_inventory.md
 
-      For dashboard HTML:
-        - parse the inline <style> + linked stylesheets
-        - extract CSS variables (--primary, --text, --background, …)
-          plus any hardcoded hex values in `style=` attributes
+    For dashboard HTML:
+      - parse the inline <style> + linked stylesheets
+      - extract CSS variables (--primary, --text, --background, …)
+        plus any hardcoded hex values in `style=` attributes
 
-      The palette inventory is the input to all downstream checks.
+    The palette inventory is the input to all downstream checks.
 
-  - id: simulate_color_blindness
-    name: Simulate colour-blindness (3 types)
-    description: |
-      Apply a colour-blindness simulator (the standard
-      transformations are well-known matrices on RGB):
-        - deuteranopia (red-green; ~6% of men)
-        - protanopia   (red-green; ~2% of men)
-        - tritanopia   (blue-yellow; rarer, ~0.01%)
+- id: simulate_color_blindness
+  name: Simulate colour-blindness (3 types)
+  description: |
+    Apply a colour-blindness simulator (the standard
+    transformations are well-known matrices on RGB):
+      - deuteranopia (red-green; ~6% of men)
+      - protanopia   (red-green; ~2% of men)
+      - tritanopia   (blue-yellow; rarer, ~0.01%)
 
-      For each, EITHER:
-        (a) regenerate the figure with the simulated palette via
-            an AI-authored script (when source data is available), OR
-        (b) apply the simulation matrix to the existing PNG/SVG
-            and save the simulated image alongside the original
-            (when source data is not available)
+    For each, EITHER:
+      (a) regenerate the figure with the simulated palette via
+          an AI-authored script (when source data is available), OR
+      (b) apply the simulation matrix to the existing PNG/SVG
+          and save the simulated image alongside the original
+          (when source data is not available)
 
-      Save simulated outputs to
-      workspace/<step>/outputs/figures/_a11y/<name>_<type>.png.
+    Save simulated outputs to
+    workspace/<step>/outputs/figures/_a11y/<name>_<type>.png.
 
-      Read each simulated image:
-        - do any two series collapse to indistinguishable hues?
-        - does a sequential colour scale collapse to non-monotonic?
-        - does the highlighted "important" colour vanish into the
-          background?
+    Read each simulated image:
+      - do any two series collapse to indistinguishable hues?
+      - does a sequential colour scale collapse to non-monotonic?
+      - does the highlighted "important" colour vanish into the
+        background?
 
-      Flag each failure mode to the palette inventory report.
+    Flag each failure mode to the palette inventory report.
 
-  - id: contrast_ratio_check
-    name: Contrast ratio (WCAG 2.1)
-    description: |
-      For dashboards / posters / slides — wherever text overlays
-      background or coloured elements appear next to each other:
-        - for each text-on-background pair, compute the WCAG
-          contrast ratio (the standard formula on relative
-          luminance)
-        - for each adjacent non-text colour pair (e.g. two series
-          in a stacked bar), compute the same
+- id: contrast_ratio_check
+  name: Contrast ratio (WCAG 2.1)
+  description: |
+    For dashboards / posters / slides — wherever text overlays
+    background or coloured elements appear next to each other:
+      - for each text-on-background pair, compute the WCAG
+        contrast ratio (the standard formula on relative
+        luminance)
+      - for each adjacent non-text colour pair (e.g. two series
+        in a stacked bar), compute the same
 
-      Verdict per pair:
-        ≥7:1   → WCAG AAA (good for public)
-        ≥4.5:1 → WCAG AA  (floor for dashboards)
-        ≥3:1   → AA for large text / non-text
-        <3:1   → BLOCKER for dashboards; warning for paper figures
+    Verdict per pair:
+      ≥7:1   → WCAG AAA (good for public)
+      ≥4.5:1 → WCAG AA  (floor for dashboards)
+      ≥3:1   → AA for large text / non-text
+      <3:1   → BLOCKER for dashboards; warning for paper figures
 
-      Save the contrast report to
-      workspace/<step>/outputs/reports/contrast_report.md.
+    Save the contrast report to
+    workspace/<step>/outputs/reports/contrast_report.md.
 
-  - id: grayscale_check
-    name: Grayscale survivability check
-    description: |
-      Convert each figure to grayscale and inspect:
-        - do series remain distinguishable by lightness alone?
-        - do categorical colours collapse to indistinguishable
-          grays?
-        - does the sequential scale still read as monotonic?
+- id: grayscale_check
+  name: Grayscale survivability check
+  description: |
+    Convert each figure to grayscale and inspect:
+      - do series remain distinguishable by lightness alone?
+      - do categorical colours collapse to indistinguishable
+        grays?
+      - does the sequential scale still read as monotonic?
 
-      Save grayscale versions to
-      workspace/<step>/outputs/figures/_a11y/<name>_grayscale.png.
+    Save grayscale versions to
+    workspace/<step>/outputs/figures/_a11y/<name>_grayscale.png.
 
-      Grayscale survivability matters because:
-        - many journals print figures in greyscale by default
-        - photocopies / faxes / cheap printouts are common in
-          clinical / policy contexts
-        - it's the cheapest proxy for "does the encoding work
-          without colour"
+    Grayscale survivability matters because:
+      - many journals print figures in greyscale by default
+      - photocopies / faxes / cheap printouts are common in
+        clinical / policy contexts
+      - it's the cheapest proxy for "does the encoding work
+        without colour"
 
-  - id: redundant_encoding_check
-    name: Redundant-encoding check (colour + shape / linetype / label)
-    description: |
-      For each figure with categorical groups distinguished by
-      colour, verify a SECOND channel disambiguates:
-        - line plots → linetype (solid / dashed / dotted) OR
-                       marker shape
-        - scatter → marker shape (circle / triangle / square)
-        - bar     → texture OR direct label
-        - heatmap → annotation values inside cells (or a labelled
-                    diverging scale)
+- id: redundant_encoding_check
+  name: Redundant-encoding check (colour + shape / linetype / label)
+  description: |
+    For each figure with categorical groups distinguished by
+    colour, verify a SECOND channel disambiguates:
+      - line plots → linetype (solid / dashed / dotted) OR
+                     marker shape
+      - scatter → marker shape (circle / triangle / square)
+      - bar     → texture OR direct label
+      - heatmap → annotation values inside cells (or a labelled
+                  diverging scale)
 
-      Colour-only categorical encoding is acceptable only when:
-        - the figure is purely sequential (one variable encoded by
-          a single colour scale)
-        - the alternative channel would clutter the figure beyond
-          benefit (rare — flag the trade-off)
+    Colour-only categorical encoding is acceptable only when:
+      - the figure is purely sequential (one variable encoded by
+        a single colour scale)
+      - the alternative channel would clutter the figure beyond
+        benefit (rare — flag the trade-off)
 
-      Save the redundant-encoding check to the same report.
+    Save the redundant-encoding check to the same report.
 
-  - id: alt_text_and_summary_check
-    name: Alt-text + plain-English summary
-    description: |
-      For paper / dashboard / poster:
-        - confirm each figure has BOTH sidecars (.caption.md +
-          .summary.md)
-        - confirm the summary.md is non-trivial — it explains what
-          the figure shows and how to read it, not a one-line
-          restatement of the title
-        - for dashboards, confirm the HTML carries alt="..."
-          attributes on <img> tags (semantic alt-text, not just
-          the filename)
+- id: alt_text_and_summary_check
+  name: Alt-text + plain-English summary
+  description: |
+    For paper / dashboard / poster:
+      - confirm each figure has BOTH sidecars (.caption.md +
+        .summary.md)
+      - confirm the summary.md is non-trivial — it explains what
+        the figure shows and how to read it, not a one-line
+        restatement of the title
+      - for dashboards, confirm the HTML carries alt="..."
+        attributes on <img> tags (semantic alt-text, not just
+        the filename)
 
-      Screen-reader users rely on alt-text + summary; figures
-      without them are functionally invisible to them.
+    Screen-reader users rely on alt-text + summary; figures
+    without them are functionally invisible to them.
 
-  - id: propose_fixes
-    name: Propose fixes per failure
-    description: |
-      For each flagged failure, write a specific fix:
-        - palette → switch to a CVD-safe palette matched to the data
-          type (Okabe-Ito / viridis / PuOr are the common
-          references); name which one and why it fits this figure
-        - contrast → name the specific pair + the target
-          contrast ratio for the WCAG bar in force
-        - colour-only encoding → add the second channel (specify
-          which: linetype, marker, label)
-        - grayscale → switch to a palette that stays monotonic /
-          distinguishable in grayscale (perceptually-uniform
-          sequential maps survive; rainbow maps like jet do not)
-        - missing alt-text → write the alt-text inline
+- id: propose_fixes
+  name: Propose fixes per failure
+  description: |
+    For each flagged failure, write a specific fix:
+      - palette → switch to a CVD-safe palette matched to the data
+        type (Okabe-Ito / viridis / PuOr are the common
+        references); name which one and why it fits this figure
+      - contrast → name the specific pair + the target
+        contrast ratio for the WCAG bar in force
+      - colour-only encoding → add the second channel (specify
+        which: linetype, marker, label)
+      - grayscale → switch to a palette that stays monotonic /
+        distinguishable in grayscale (perceptually-uniform
+        sequential maps survive; rainbow maps like jet do not)
+      - missing alt-text → write the alt-text inline
 
-      Where the source data is available, route to
-      `visualization/visualization_workflow` to rebuild with the
-      fix applied. Where it isn't, the recommendations go in the
-      report for the original author.
+    Where the source data is available, route to
+    `visualization/visualization_workflow` to rebuild with the
+    fix applied. Where it isn't, the recommendations go in the
+    report for the original author.
 
-  - id: write_audit_report
-    name: Write the accessibility audit report
-    description: |
-      sys_file_write filepath="workspace/<step>/outputs/reports/accessibility_audit.md":
+- id: write_audit_report
+  name: Write the accessibility audit report
+  description: |
+    sys_file_write filepath="workspace/<step>/outputs/reports/accessibility_audit.md":
 
-        # Accessibility audit: <artefact list>
-        **Destination**: <destination>
-        **WCAG bar applied**: AA (default) | AAA (public)
+      # Accessibility audit: <artefact list>
+      **Destination**: <destination>
+      **WCAG bar applied**: AA (default) | AAA (public)
 
-        ## Verdict
-          - PASSES — no blockers
-          - PASSES WITH WARNINGS — recommendations to apply
-          - FAILS — at least one blocker (must fix before
-                    publication / deployment)
+      ## Verdict
+        - PASSES — no blockers
+        - PASSES WITH WARNINGS — recommendations to apply
+        - FAILS — at least one blocker (must fix before
+                  publication / deployment)
 
-        ## Palette
-          <inventory + the 3 simulated palettes>
+      ## Palette
+        <inventory + the 3 simulated palettes>
 
-        ## Contrast
-          <per-pair contrast ratios + verdicts>
+      ## Contrast
+        <per-pair contrast ratios + verdicts>
 
-        ## Grayscale
-          <pass / fail per figure>
+      ## Grayscale
+        <pass / fail per figure>
 
-        ## Redundant encoding
-          <pass / fail per figure with categorical colour>
+      ## Redundant encoding
+        <pass / fail per figure with categorical colour>
 
-        ## Alt-text + summary
-          <pass / fail per figure>
+      ## Alt-text + summary
+        <pass / fail per figure>
 
-        ## Recommended fixes
-          <prioritised list — blockers first>
+      ## Recommended fixes
+        <prioritised list — blockers first>
 
 expected_outputs:
-  - workspace/<step>/outputs/reports/palette_inventory.md
-  - workspace/<step>/outputs/reports/contrast_report.md
-  - workspace/<step>/outputs/reports/accessibility_audit.md
-  - workspace/<step>/outputs/figures/_a11y/                    (simulated)
+- workspace/<step>/outputs/reports/palette_inventory.md
+- workspace/<step>/outputs/reports/contrast_report.md
+- workspace/<step>/outputs/reports/accessibility_audit.md
+- workspace/<step>/outputs/figures/_a11y/                    (simulated)
 
 quality_bar:
   three_color_blindness_types_simulated: true
@@ -253,6 +242,26 @@ quality_bar:
   alt_text_present_per_figure: true
   every_blocker_has_a_proposed_fix: true
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: synthesize
+sub_intent: a11y
+triggers:
+- is this figure colour-blind safe
+- is this figure color-blind safe
+- check colour accessibility
+- check color accessibility
+- wcag check
+- contrast check on the dashboard
+- audit my palette
+- is this readable for colour-blind readers
+- deuteranopia check
+- tritanopia check
+- a11y audit
+- accessibility audit
+summary: Color-blind simulation (3 types) + WCAG contrast + grayscale + redundant-encoding audit.
+token_estimate: 1500
+decomposition:
+- protocol: visualization/color_accessibility_audit
+  purpose: Extract palette, simulate, contrast, grayscale, redundant-encoding, fix.

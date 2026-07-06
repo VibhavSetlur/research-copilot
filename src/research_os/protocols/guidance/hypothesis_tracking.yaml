@@ -2,7 +2,7 @@ id: hypothesis_tracking
 tier: 'plan'
 name: Hypothesis Tracking
 version: '3.8.0'
-schema_version: '2.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:
   domain: [any]
@@ -11,41 +11,58 @@ scope_tags:
 description: Maintain a clear ledger of active, supported, and refuted hypotheses across the project.
 trigger: Whenever a step generates evidence that confirms / disconfirms / refines a hypothesis.
 see_also:
-  - guidance/analysis_plan
-  - domain/research_design
-  - synthesis/synthesis_paper
+- guidance/analysis_plan
+- domain/research_design
+- synthesis/synthesis_paper
 
 steps:
-  - id: record_hypothesis
-    name: Record / Update Hypothesis
-    description: |
-      State the hypothesis as a single declarative sentence with predicted
-      direction and a magnitude the study can actually detect (e.g.
-      "PM2.5 exposure is positively associated with ER visits"). When you
-      commit to a target effect size, source it from prior literature or a
-      power analysis — not a round number — and cite it. Append or update via:
-        mem_log entry="HYPOTHESIS <id>: <statement> | status=<testing|supported|refuted|inconclusive> | evidence=<step:finding>"
-      One hypothesis per line — easy to grep.
+- id: record_hypothesis
+  name: Record / Update Hypothesis
+  description: |
+    State the hypothesis as a single declarative sentence with predicted
+    direction and a magnitude the study can actually detect (e.g.
+    "PM2.5 exposure is positively associated with ER visits"). When you
+    commit to a target effect size, source it from prior literature or a
+    power analysis — not a round number — and cite it. Append or update via:
+      mem_log entry="HYPOTHESIS <id>: <statement> | status=<testing|supported|refuted|inconclusive> | evidence=<step:finding>"
+    One hypothesis per line — easy to grep.
 
-  - id: assess_evidence
-    name: Tag with Current Status
-    description: |
-      For every hypothesis update, pick one status and justify it in one line:
-        testing      — being investigated, not enough evidence
-        supported    — primary evidence points toward it
-        refuted      — primary evidence rules it out
-        inconclusive — evidence is mixed; need more data / power
-      Cite the specific experiment step(s) that drove the change.
+- id: assess_evidence
+  name: Tag with Current Status
+  description: |
+    For every hypothesis update, pick one status and justify it in one line:
+      testing      — being investigated, not enough evidence
+      supported    — primary evidence points toward it
+      refuted      — primary evidence rules it out
+      inconclusive — evidence is mixed; need more data / power
+    Cite the specific experiment step(s) that drove the change.
 
-  - id: propagate_to_writing
-    name: Propagate to Methods + Conclusions
-    description: |
-      Make sure workspace/methods.md and the current experiment's conclusions.md
-      reference the hypothesis ID. This makes the paper's "What we tested" and
-      "What we found" sections trivially auditable.
+- id: propagate_to_writing
+  name: Propagate to Methods + Conclusions
+  description: |
+    Make sure workspace/methods.md and the current experiment's conclusions.md
+    reference the hypothesis ID. This makes the paper's "What we tested" and
+    "What we found" sections trivially auditable.
 
 expected_outputs: []
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: memory
+sub_intent: hypothesis
+triggers:
+- add hypothesis
+- register hypothesis
+- new hypothesis
+- update hypothesis
+- list hypotheses
+- hypothesis status
+summary: Add / update / list hypotheses (registry across steps).
+decomposition:
+- tool: mem_hypothesis
+  args:
+    operation: add
+- tool: mem_hypothesis
+  args:
+    operation: list

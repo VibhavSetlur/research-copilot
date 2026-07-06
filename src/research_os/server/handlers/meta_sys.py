@@ -308,16 +308,6 @@ def _handle_tool_adapters_run_all(name, arguments, root):
 
 HANDLERS = {
     "sys_notify": _handle_sys_notify,
-    "sys_session_handoff": _handle_sys_session_handoff,
-    "mem_citations_generate": _handle_mem_citations_generate,
-    "mem_intake_regenerate": _handle_mem_intake_regenerate,
-    "sys_dep_inventory": _handle_sys_dep_inventory,
-    "sys_config": _handle_sys_config,
+    "tool_session_handoff": _handle_sys_session_handoff,
     "sys_env": _handle_sys_env,
-    "tool_deprecations_summary": _handle_tool_deprecations_summary,
-    "sys_packs_installed": _handle_sys_packs_installed,
-    "sys_adapters_installed": _handle_sys_adapters_installed,
-    "tool_adapter_extract": _handle_tool_adapter_extract,
-    "tool_adapters_list": _handle_tool_adapters_list,
-    "tool_adapters_run_all": _handle_tool_adapters_run_all,
 }

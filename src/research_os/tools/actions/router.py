@@ -13,8 +13,9 @@ Goal: keep token cost per turn flat as the protocol + tool surface grows.
   out instead of the ~2-5K an AI would burn loading + scoring protocols
   itself.
 
-* The router index lives at ``protocols/_router_index.yaml`` — a single
-  source of truth for trigger phrases, decompositions, and intent classes.
+* Routing data is served by ``ProtocolRegistry`` from the compiled
+  ``protocols/_protocols.bundle`` (P1): trigger phrases, decompositions,
+  and intent classes now live in the protocol bodies themselves.
 """
 
 from __future__ import annotations
@@ -34,13 +35,9 @@ from research_os.utils.common import save_json_atomic
 logger = logging.getLogger("research_os.tools.router")
 
 # router.py lives at src/research_os/tools/actions/router.py
-# protocols/ live at src/research_os/protocols/
-_INDEX_PATH = Path(__file__).parent.parent.parent / "protocols" / "_router_index.yaml"
-# Compiled runtime routing sidecar — fast JSON, no comments, with pre-baked
-# tier + workflow_shape. Routing loads THIS, never the 104K _router_index.yaml
-# (which stays the authoring source preflight validates). Built by
-# scripts/build_embeddings.py. The YAML remains a graceful dev fallback.
-_ROUTE_META_PATH = Path(__file__).parent.parent.parent / "protocols" / "_route_meta.json"
+# protocols/ live at src/research_os/protocols/. Routing data comes from the
+# compiled _protocols.bundle via ProtocolRegistry (P1) — no direct YAML/JSON
+# index parsing here anymore.
 _PROTOCOLS_DIR = Path(__file__).parent.parent.parent / "protocols"
 _ACTIVE_PLAN_FILE = "active_plan.json"
 
@@ -398,46 +395,25 @@ def _clear_tier_cache() -> None:
 # ---------------------------------------------------------------------------
 
 
-_INDEX_CACHE: dict | None = None
-
-
 def _load_index() -> dict:
-    global _INDEX_CACHE
-    if _INDEX_CACHE is None:
-        data: dict | None = None
-        # Prefer the compiled JSON sidecar (fast parse, no 104K YAML, with
-        # pre-baked tier + workflow_shape). The big _router_index.yaml is
-        # authoring-only and is NOT loaded at runtime when the sidecar exists.
-        if _ROUTE_META_PATH.exists():
-            try:
-                data = json.loads(_ROUTE_META_PATH.read_text())
-            except Exception as exc:
-                logging.getLogger("research_os.router").debug(
-                    "route_meta load failed; falling back to YAML: %s", exc
-                )
-                data = None
-        if data is None:
-            # Graceful fallback for dev trees without a rebuilt sidecar.
-            with open(_INDEX_PATH) as f:
-                data = yaml.safe_load(f) or {}
-        # Merge pack-contributed entries.
-        try:
-            from research_os.plugins.loader import pack_router_entries
-            pack_entries = pack_router_entries()
-            if pack_entries:
-                data.setdefault("protocols", {}).update(pack_entries)
-        except Exception as exc:
-            logging.getLogger("research_os.router").debug(
-                "pack router-entries merge skipped: %s", exc
-            )
-        _INDEX_CACHE = data
-    return _INDEX_CACHE
+    """Routing index in the legacy shape, sourced from the bundle.
+
+    P1: the router no longer parses YAML or a JSON sidecar — it reads the
+    compiled ``_protocols.bundle`` via :class:`ProtocolRegistry`, which also
+    folds in pack-contributed routing entries. The returned shape
+    (``{protocols, shortcut_intents, hierarchy}``) is unchanged so the rest
+    of the resolver is untouched.
+    """
+    from research_os.tools.actions.protocol import ProtocolRegistry
+
+    return ProtocolRegistry.get_index()
 
 
 def reload_index() -> None:
     """Force-reload the index (test hook)."""
-    global _INDEX_CACHE
-    _INDEX_CACHE = None
+    from research_os.tools.actions.protocol import ProtocolRegistry
+
+    ProtocolRegistry.reload()
 
 
 # ---------------------------------------------------------------------------
@@ -1486,13 +1462,10 @@ _ESSENTIAL_TOOLS = (
     "tool_route",
     "tool_plan",
     "sys_protocol_get",
-    "sys_protocol_list",
-    "sys_protocol_log",
     "sys_state_get",
     "sys_file_read",
     "sys_file_list",
     "sys_notify",
-    "sys_tool_describe",
     "sys_active_tools",
     "mem_log",
 )
@@ -1548,7 +1521,7 @@ def active_tools_for_protocol(protocol_name: str) -> dict[str, Any]:
             "active_tools_count": len(tools),
             "advice": (
                 "Prefer these tools while executing the protocol. Other "
-                "tools remain reachable via sys_tool_describe, but stay "
+                "tools remain reachable via sys_active_tools, but stay "
                 "in this scope unless a step explicitly calls something "
                 "outside it."
             ),
@@ -2623,16 +2596,13 @@ _TURN_BUDGET = {
 # Typst deliverables. A test guard enforces the no-drift invariant.
 DELIVERABLE_TOOLS = frozenset({
     "tool_typst_compile",
-    "tool_latex_compile",
     "tool_synthesis_scaffold",
 })
 
 _HEAVY_TOOLS = {
     "tool_typst_compile": 3,
-    "tool_audit_reproducibility": 3,
-    "tool_audit_synthesis": 2,
-    "tool_literature_search_and_save": 2,
-    "tool_research_method": 2,
+    "tool_audit": 3,
+    "tool_search": 2,
     "tool_synthesis_scaffold": 2,
 }
 

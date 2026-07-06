@@ -2,17 +2,17 @@ id: analysis_paths
 tier: 'execute'
 name: Analysis Paths (Branching, Comparing, Merging)
 version: '4.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-25'
 scope_tags:
   domain: [any]
   audience: [naive_ai, researcher]
   workflow_shape: [experiment_pipeline, proof]
 see_also:
-  - guidance/roadmap_execution             # the loop that decides a fork should open; this protocol runs the fork
-  - methodology/deep_planning              # where branch points are first marked in the roadmap
-  - guidance/analysis_plan                 # the per-step loop each live path re-enters
-  - guidance/dead_end_routing              # where an abandoned path routes
+- guidance/roadmap_execution               # the loop that decides a fork should open; this protocol runs the fork
+- methodology/deep_planning                # where branch points are first marked in the roadmap
+- guidance/analysis_plan                   # the per-step loop each live path re-enters
+- guidance/dead_end_routing                # where an abandoned path routes
 description: >
   How to keep a multi-path exploration LEGIBLE: when a question genuinely
   warrants branching into parallel analysis paths, how to name and compare
@@ -26,137 +26,137 @@ trigger: >
   opens two rival next moves worth pursuing in parallel.
 
 steps:
-  - id: decide_whether_to_branch
-    name: Decide Whether to Branch at All (the bar)
-    description: |
-      Branching is not free — every live path is something the researcher must
-      hold in their head. Open a new path only when staying single-track would
-      LOSE information. The cases that clear the bar:
-        - two methods / framings are genuine RIVALS and the comparison is itself
-          a finding the researcher will want to report
-        - you cannot yet tell which approach is right and the evidence — not
-          argument — should decide
-        - a sub-population, specification, or assumption split would
-          contaminate the main analysis if mixed into one step
+- id: decide_whether_to_branch
+  name: Decide Whether to Branch at All (the bar)
+  description: |
+    Branching is not free — every live path is something the researcher must
+    hold in their head. Open a new path only when staying single-track would
+    LOSE information. The cases that clear the bar:
+      - two methods / framings are genuine RIVALS and the comparison is itself
+        a finding the researcher will want to report
+      - you cannot yet tell which approach is right and the evidence — not
+        argument — should decide
+      - a sub-population, specification, or assumption split would
+        contaminate the main analysis if mixed into one step
 
-      The cases that do NOT clear the bar (extend the current step instead):
-        - a minor parameter tweak (version-bump the script: tool_step iterate)
-        - a curiosity with no decision riding on it
-        - you already know which way you'll go — then just go that way
+    The cases that do NOT clear the bar (extend the current step instead):
+      -       a minor parameter tweak (version-bump the script: tool_plan (operation='iterate'))
+      - a curiosity with no decision riding on it
+      - you already know which way you'll go — then just go that way
 
-      When two options both have merit but you're unsure branching is worth it,
-      tool_branch_recommendation reason="<short>" returns whether to fork a
-      parallel path or finish the current one first. Use it as a tie-breaker,
-      not a substitute for the judgement above.
+    When two options both have merit but you're unsure branching is worth it,
+    tool_plan (operation='branch_recommendation', reason="<short>") returns whether to fork a
+    parallel path or finish the current one first. Use it as a tie-breaker,
+    not a substitute for the judgement above.
 
-      AUTONOMY GATE:
-        Risk: reversible — creating a path is cheap and undoable; the cost is
-        cognitive load, which the researcher may want to weigh.
-        proceed (adaptive default, autopilot) → open the branch when it clears
-          the bar above and say so in one line; for a borderline fork on a
-          hands-off run, note the call and proceed. Do NOT proliferate paths —
-          prefer the fewest that capture the real rivalry.
-        confirm first (manual / supervised) → propose the branch + its sibling
-          and confirm before creating it.
+    AUTONOMY GATE:
+      Risk: reversible — creating a path is cheap and undoable; the cost is
+      cognitive load, which the researcher may want to weigh.
+      proceed (adaptive default, autopilot) → open the branch when it clears
+        the bar above and say so in one line; for a borderline fork on a
+        hands-off run, note the call and proceed. Do NOT proliferate paths —
+        prefer the fewest that capture the real rivalry.
+      confirm first (manual / supervised) → propose the branch + its sibling
+        and confirm before creating it.
 
-  - id: name_the_branches
-    name: Name the Branches So a Stranger Could Tell Them Apart
-    description: |
-      A path's name is how it stays legible across a long exploration. Name each
-      branch by WHAT DISTINGUISHES IT from its siblings — the axis of the fork —
-      not by a bare counter. The slug follows the analysis_plan naming rules
-      (lowercase, underscore-joined, ≤40 chars, mention the method/sub-population),
-      with a suffix that marks it as a branch and ties siblings together.
+- id: name_the_branches
+  name: Name the Branches So a Stranger Could Tell Them Apart
+  description: |
+    A path's name is how it stays legible across a long exploration. Name each
+    branch by WHAT DISTINGUISHES IT from its siblings — the axis of the fork —
+    not by a bare counter. The slug follows the analysis_plan naming rules
+    (lowercase, underscore-joined, ≤40 chars, mention the method/sub-population),
+    with a suffix that marks it as a branch and ties siblings together.
 
-      Examples (illustrative — derive from THIS fork, do not copy):
-        cox_ph_complete_case   vs  cox_ph_imputed         # the fork is the missing-data handling
-        ridge_full_features    vs  ridge_pruned_features  # the fork is the feature set
-        did_policy_alt_a       vs  did_policy_alt_b        # rival identification strategies
+    Examples (illustrative — derive from THIS fork, do not copy):
+      cox_ph_complete_case   vs  cox_ph_imputed         # the fork is the missing-data handling
+      ridge_full_features    vs  ridge_pruned_features  # the fork is the feature set
+      did_policy_alt_a       vs  did_policy_alt_b        # rival identification strategies
 
-      Create the path so the workspace records the lineage:
-        sys_path operation='create' name="<slug>" hypothesis="<H: text>" branch_of="<parent_step>"
-      branch_of is what links siblings and the parent — it is what makes the
-      fork visible in sys_path operation='list' and reconstructable by a fresh
-      AI. Record in each path's plan.md: the fork question, what this branch
-      pursues, and what observation would make it the winner.
+    Create the path so the workspace records the lineage:
+      sys_file_write / tool_plan (operation='create_step', name="<slug>", hypothesis="<H: text>", branch_of="<parent_step>")
+    branch_of is what links siblings and the parent — it is what makes the
+    fork visible in sys_state_get and reconstructable by a fresh
+    AI. Record in each path's plan.md: the fork question, what this branch
+    pursues, and what observation would make it the winner.
 
-  - id: hold_branches_comparable
-    name: Hold the Branches Comparable (fair-fight discipline)
-    description: |
-      A branch comparison is only a finding if the branches were run on equal
-      footing. State up front the COMMON GROUND the rivals share — the same
-      input data, the same evaluation question, the same success metric framed
-      the same way — and the ONE axis on which they differ. If more than one
-      thing differs between two paths, the comparison can't attribute the
-      difference; split the confound into its own fork or hold it fixed.
+- id: hold_branches_comparable
+  name: Hold the Branches Comparable (fair-fight discipline)
+  description: |
+    A branch comparison is only a finding if the branches were run on equal
+    footing. State up front the COMMON GROUND the rivals share — the same
+    input data, the same evaluation question, the same success metric framed
+    the same way — and the ONE axis on which they differ. If more than one
+    thing differs between two paths, the comparison can't attribute the
+    difference; split the confound into its own fork or hold it fixed.
 
-      Decide the comparison criterion BEFORE seeing each branch's result, so the
-      winner isn't chosen post-hoc to fit a preference. The criterion is
-      field-specific — name it and ground it in the literature, don't default to
-      a familiar metric. tool_alternative_path_propose can seed a rival path
-      with cited comparative evidence when the fork is method-vs-method.
+    Decide the comparison criterion BEFORE seeing each branch's result, so the
+    winner isn't chosen post-hoc to fit a preference. The criterion is
+    field-specific — name it and ground it in the literature, don't default to
+    a familiar metric.     tool_plan (operation='alternative_path') can seed a rival path
+    with cited comparative evidence when the fork is method-vs-method.
 
-  - id: compare_and_decide
-    name: Compare the Branches + Decide the Outcome
-    description: |
-      When the rival paths have each produced their result, compare them on the
-      pre-declared criterion and reach ONE of three outcomes:
-        - MERGE the winner: it answers the fork question; carry it forward as
-          the project's path and fold its result into the roadmap.
-        - ABANDON a loser: it lost the comparison OR hit a dead end. Preserve it
-          (never delete) — a ruled-out path is evidence.
-        - KEEP BOTH: the comparison is itself the finding (e.g. the result is
-          robust to specification, or the paths answer different sub-questions).
-          Then both merge, reported together.
+- id: compare_and_decide
+  name: Compare the Branches + Decide the Outcome
+  description: |
+    When the rival paths have each produced their result, compare them on the
+    pre-declared criterion and reach ONE of three outcomes:
+      - MERGE the winner: it answers the fork question; carry it forward as
+        the project's path and fold its result into the roadmap.
+      - ABANDON a loser: it lost the comparison OR hit a dead end. Preserve it
+        (never delete) — a ruled-out path is evidence.
+      - KEEP BOTH: the comparison is itself the finding (e.g. the result is
+        robust to specification, or the paths answer different sub-questions).
+        Then both merge, reported together.
 
-      Write the verdict where it stays legible: a short comparison record (the
-      criterion, each branch's result, the decision + why) in the parent step's
-      conclusions.md or a dedicated path-comparison report. mem_log the
-      decision and update any hypotheses the comparison resolved.
+    Write the verdict where it stays legible: a short comparison record (the
+    criterion, each branch's result, the decision + why) in the parent step's
+    conclusions.md or a dedicated path-comparison report. mem_log the
+    decision and update any hypotheses the comparison resolved.
 
-  - id: merge_winner
-    name: Merge the Winning Path Back into the Thread
-    description: |
-      Merging is not a file operation — it is committing the project's forward
-      direction to the winning branch and making the roadmap reflect it. After
-      a merge:
-        - the winning path's result becomes the input the next milestone builds on
-        - inputs/research_plan.md records which branch won and why (append to the
-          iteration log — never overwrite the plan's history)
-        - the decision point the fork resolved is closed in the roadmap
+- id: merge_winner
+  name: Merge the Winning Path Back into the Thread
+  description: |
+    Merging is not a file operation — it is committing the project's forward
+    direction to the winning branch and making the roadmap reflect it. After
+    a merge:
+      - the winning path's result becomes the input the next milestone builds on
+      - inputs/research_plan.md records which branch won and why (append to the
+        iteration log — never overwrite the plan's history)
+      - the decision point the fork resolved is closed in the roadmap
 
-      If this protocol was entered from guidance/roadmap_execution, hand control
-      back to that loop so it can pick the next milestone with the fork resolved.
+    If this protocol was entered from guidance/roadmap_execution, hand control
+    back to that loop so it can pick the next milestone with the fork resolved.
 
-  - id: abandon_loser
-    name: Abandon a Losing or Dead Path (preserve it)
-    description: |
-      For a path that lost the comparison or proved unworkable, route the close:
-        sys_path operation='abandon' path_name="<slug>" rationale="<why, + what it ruled out>"
-      This preserves the folder (renamed __DEAD_END), records the status, and
-      removes it from the active list. Capture the LESSON — what this path ruled
-      out applies to the surviving paths and to future forks
-      (tool_lessons operation='dead_end' where it helps).
+- id: abandon_loser
+  name: Abandon a Losing or Dead Path (preserve it)
+  description: |
+    For a path that lost the comparison or proved unworkable, route the close:
+      tool_plan (operation='abandon_step', path_name="<slug>", rationale="<why, + what it ruled out>")
+    This preserves the folder (renamed __DEAD_END), records the status, and
+    removes it from the active list. Capture the LESSON — what this path ruled
+    out applies to the surviving paths and to future forks
+    (tool_lessons operation='dead_end' where it helps).
 
-      Abandoning a path is the loud, semantically-irreversible move in this
-      protocol.
+    Abandoning a path is the loud, semantically-irreversible move in this
+    protocol.
 
-      AUTONOMY GATE:
-        Risk: irreversible-in-spirit — a dead-end declaration is loud and
-        downstream readers treat it as final, though the files survive. This is
-        a floor gate (mirrors guidance/autopilot's sys_path:abandon floor).
-        proceed (adaptive default, autopilot) → abandon once the comparison is
-          decided + recorded, but PAUSE before abandoning a path the researcher
-          invested in or one whose loss is close. (Under autopilot this stays a
-          floor: page before abandoning even on autopilot — abandons are loud.)
-        confirm first (manual / supervised) → confirm with the researcher
-          before abandoning.
+    AUTONOMY GATE:
+      Risk: irreversible-in-spirit — a dead-end declaration is loud and
+      downstream readers treat it as final, though the files survive. This is
+      a floor gate (mirrors guidance/autopilot's dead_end_abandon floor).
+      proceed (adaptive default, autopilot) → abandon once the comparison is
+        decided + recorded, but PAUSE before abandoning a path the researcher
+        invested in or one whose loss is close. (Under autopilot this stays a
+        floor: page before abandoning even on autopilot — abandons are loud.)
+      confirm first (manual / supervised) → confirm with the researcher
+        before abandoning.
 
-      For the full re-routing after an abandon, see guidance/dead_end_routing.
+    For the full re-routing after an abandon, see guidance/dead_end_routing.
 
 expected_outputs:
-  - workspace/<parent_step>/ path-comparison record (criterion + branch results + verdict)
-  - inputs/research_plan.md (iteration log notes which branch won / was abandoned and why)
+- workspace/<parent_step>/ path-comparison record (criterion + branch results + verdict)
+- inputs/research_plan.md (iteration log notes which branch won / was abandoned and why)
 
 quality_bar: |
   - A path was opened only because staying single-track would lose information.
@@ -168,3 +168,41 @@ quality_bar: |
 next_protocol: guidance/roadmap_execution
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: execute
+sub_intent: branch
+triggers:
+- branch the analysis
+- branch this
+- explore this two ways
+- fork an alternative approach
+- fork this into an alternative approach
+- fork into an alternative
+- fork the analysis
+- compare these paths
+- compare the branches
+- which branch should we keep
+- merge the winning path
+- merge the branch
+- parallel paths
+- explore in parallel
+- try two approaches
+- try both approaches
+- compare these two models
+- compare two models
+- compare the two approaches
+- explore these in parallel
+- fork this analysis
+- branch this analysis
+summary: 'Keep a multi-path exploration legible: when to branch, how to name + compare branches on equal footing, when to merge the winner or abandon a loser.'
+token_estimate: 1500
+decomposition:
+- tool: tool_plan
+  args:
+    operation: branch_recommendation
+  purpose: Tie-break whether to fork a parallel path or finish the current one first.
+- tool: tool_plan
+  args:
+    operation: create_step
+  purpose: Create the branch path with branch_of recording the lineage.
+- protocol: guidance/analysis_paths
+  purpose: Hold branches comparable, compare on a pre-declared criterion, merge or abandon.

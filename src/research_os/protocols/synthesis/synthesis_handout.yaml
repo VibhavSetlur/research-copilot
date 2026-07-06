@@ -2,7 +2,7 @@ id: synthesis_handout
 tier: 'synthesize'
 name: Synthesis — Printable Handout / One-Pager (redirect)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
@@ -19,3 +19,20 @@ description: |
 redirect_to: synthesis/printable
 redirect_params:
   format: handout
+intent_class: synthesize
+sub_intent: handout
+triggers:
+- make a one-pager
+- one pager
+- make a handout
+- printable handout
+- handout for the poster session
+- one-page summary
+- for the audience to take away
+- leave-behind for the meeting
+- leave behind for the meeting
+summary: Single-page printable handout / one-pager (5 audience profiles, QR code mandatory). Redirects to synthesis/printable(format=handout).
+token_estimate: 1500
+decomposition:
+- protocol: synthesis/printable
+  purpose: 'Loaded via redirect from synthesis_handout: format=handout.'

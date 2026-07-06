@@ -1,7 +1,7 @@
 id: close_reading
 name: Close Reading — annotation-based textual analysis
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [humanities, theory_math]
   audience: [auditor]
@@ -35,174 +35,155 @@ trigger: |
   "what's happening in these lines", "read this chapter slowly".
 
 prerequisites:
-  - A primary text in a stable edition (call out the edition by
-    publisher + year + editor — Norton, Arden, Loeb, OCT, Pléiade,
-    etc.). For manuscripts, the archival_research protocol should
-    have already produced a transcription with editorial conventions
-    declared.
-  - A passage chosen — close reading is not a survey method. Pick a
-    unit (a sonnet, a chapter section, a scene, a paragraph) small
-    enough that line-by-line attention is honest.
+- A primary text in a stable edition (call out the edition by publisher + year + editor — Norton, Arden, Loeb, OCT, Pléiade, etc.). For manuscripts, the archival_research protocol should have already produced a transcription with editorial conventions declared.
+- A passage chosen — close reading is not a survey method. Pick a unit (a sonnet, a chapter section, a scene, a paragraph) small enough that line-by-line attention is honest.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Every interpretive claim cites a line / folio / page anchor.
-       'The text suggests X' without a locator is a hunch, not a
-       reading."
-    - "Name the interpretive tradition the reading sits inside (New
-       Critical, deconstructive, historicist, queer-theoretical,
-       postcolonial, ecocritical, philological). Faking neutrality
-       hides the assumptions that determine what counts as
-       evidence."
-    - "Doubtful readings, variant editions, and translation choices
-       are part of the apparatus, not footnotes you can skip.
-       Bracket what is editorially contested; don't smooth it over."
-    - "Show the text. Block-quote the passage at the top of the
-       annotation file; do not make the reader trust your
-       paraphrase."
-    - "Distinguish what the text says, what the text does, and what
-       it might mean. Conflating the three is how undergraduate
-       essays read; keeping them separate is how the apparatus stays
-       honest."
+  - "Every interpretive claim cites a line / folio / page anchor. 'The text suggests X' without a locator is a hunch, not a reading."
+  - "Name the interpretive tradition the reading sits inside (New Critical, deconstructive, historicist, queer-theoretical, postcolonial, ecocritical, philological). Faking neutrality hides the assumptions that determine what counts as evidence."
+  - "Doubtful readings, variant editions, and translation choices are part of the apparatus, not footnotes you can skip. Bracket what is editorially contested; don't smooth it over."
+  - "Show the text. Block-quote the passage at the top of the annotation file; do not make the reader trust your paraphrase."
+  - "Distinguish what the text says, what the text does, and what it might mean. Conflating the three is how undergraduate essays read; keeping them separate is how the apparatus stays honest."
 
 steps:
-  - id: declare_step_contract
-    name: Declare the step contract (close_reading IS an apparatus step)
-    description: |
-      Write `workspace/<step>/step_summary.yaml` with the close-reading
-      contract so the empirical / quantitative audits don't BLOCK on
-      missing figures, tables, or DOI-only literature:
+- id: declare_step_contract
+  name: Declare the step contract (close_reading IS an apparatus step)
+  description: |
+    Write `workspace/<step>/step_summary.yaml` with the close-reading
+    contract so the empirical / quantitative audits don't BLOCK on
+    missing figures, tables, or DOI-only literature:
 
-        step_intent: apparatus      # the unit of work is an
-                                    # interpretive apparatus, not a
-                                    # figure or numeric finding.
-        figure_required: false      # close reading produces prose
-                                    # apparatus; figures are rare and
-                                    # never required.
-        table_required: false
-        literature_required: true   # the citation_chains protocol +
-                                    # the secondary-criticism ledger
-                                    # still ground the reading in
-                                    # prior scholarship.
+      step_intent: apparatus      # the unit of work is an
+                                  # interpretive apparatus, not a
+                                  # figure or numeric finding.
+      figure_required: false      # close reading produces prose
+                                  # apparatus; figures are rare and
+                                  # never required.
+      table_required: false
+      literature_required: true   # the citation_chains protocol +
+                                  # the secondary-criticism ledger
+                                  # still ground the reading in
+                                  # prior scholarship.
 
-      See templates/step_summary.yaml.template for the full schema
-      and analysis_plan.yaml `classify_step_intent` for why
-      `apparatus` auto-waives the figure-gate (consistent with `plan`,
-      `ground`, `proof`).
+    See templates/step_summary.yaml.template for the full schema
+    and analysis_plan.yaml `classify_step_intent` for why
+    `apparatus` auto-waives the figure-gate (consistent with `plan`,
+    `ground`, `proof`).
 
-      If a close-reading-aware apparatus audit ships in a future
-      release, it will replace the generic
-      completeness gate with a check for: presence of
-      line/folio/page anchors, tradition header, counter-instance
-      section, and secondary-criticism ledger (per this protocol's
-      quality_bar below). Until that ships, the apparatus contract +
-      manual review against quality_bar is the path.
+    If a close-reading-aware apparatus audit ships in a future
+    release, it will replace the generic
+    completeness gate with a check for: presence of
+    line/folio/page anchors, tradition header, counter-instance
+    section, and secondary-criticism ledger (per this protocol's
+    quality_bar below). Until that ships, the apparatus contract +
+    manual review against quality_bar is the path.
 
-  - id: scope_passage
-    name: Scope the passage and declare the edition
-    description: |
-      Identify the unit you will close read and pin the edition.
-      Open inputs/textual/passages/<slug>.md and record:
-        - work title + author + date of composition
-        - edition cited (publisher, year, editor, page or line range)
-        - translation status (if not in the original language,
-          name the translator + date; flag whether you can also
-          consult the source language)
-        - the block-quoted passage itself, with line numbers
-          preserved
-      If the passage exists in multiple authoritative editions (Q1
-      vs F1 Lear, the Cornell vs Norton Dickinson, Pléiade vs
-      Folio Proust), name the editorial choice and the reason. Call
-      tool_search to surface known variant-edition disputes before
-      committing to one.
+- id: scope_passage
+  name: Scope the passage and declare the edition
+  description: |
+    Identify the unit you will close read and pin the edition.
+    Open inputs/textual/passages/<slug>.md and record:
+      - work title + author + date of composition
+      - edition cited (publisher, year, editor, page or line range)
+      - translation status (if not in the original language,
+        name the translator + date; flag whether you can also
+        consult the source language)
+      - the block-quoted passage itself, with line numbers
+        preserved
+    If the passage exists in multiple authoritative editions (Q1
+    vs F1 Lear, the Cornell vs Norton Dickinson, Pléiade vs
+    Folio Proust), name the editorial choice and the reason. Call
+    tool_search to surface known variant-edition disputes before
+    committing to one.
 
-  - id: declare_tradition
-    name: Declare the interpretive tradition
-    description: |
-      Name the reading practice you are sitting inside. This is not
-      a confession of bias; it is a statement of what counts as
-      evidence in your apparatus. Options include (non-exhaustive):
-        - New Critical / formalist (verbal texture, ambiguity,
-          paradox, irony — Brooks, Empson, Wimsatt & Beardsley)
-        - philological (etymology, source criticism, manuscript
-          witness — Auerbach, Curtius)
-        - deconstructive (aporias, undecidables — de Man, Derrida)
-        - historicist / new-historicist (the text's circulation in
-          its moment — Greenblatt, McGann)
-        - feminist / queer / postcolonial (the politics of the
-          verbal artifact — Sedgwick, Spivak, Said)
-        - ecocritical / animal-studies / disability-studies
-        - reader-response (Iser, Fish — the reading is the event)
-      You may braid traditions; name the braid. Log the declaration
-      with mem_log so the synthesis protocol can carry it forward
-      into the eventual paper's methods note.
+- id: declare_tradition
+  name: Declare the interpretive tradition
+  description: |
+    Name the reading practice you are sitting inside. This is not
+    a confession of bias; it is a statement of what counts as
+    evidence in your apparatus. Options include (non-exhaustive):
+      - New Critical / formalist (verbal texture, ambiguity,
+        paradox, irony — Brooks, Empson, Wimsatt & Beardsley)
+      - philological (etymology, source criticism, manuscript
+        witness — Auerbach, Curtius)
+      - deconstructive (aporias, undecidables — de Man, Derrida)
+      - historicist / new-historicist (the text's circulation in
+        its moment — Greenblatt, McGann)
+      - feminist / queer / postcolonial (the politics of the
+        verbal artifact — Sedgwick, Spivak, Said)
+      - ecocritical / animal-studies / disability-studies
+      - reader-response (Iser, Fish — the reading is the event)
+    You may braid traditions; name the braid. Log the declaration
+    with mem_log so the synthesis protocol can carry it forward
+    into the eventual paper's methods note.
 
-  - id: annotate_line_by_line
-    name: Annotate line-by-line
-    description: |
-      Work through the passage at the granularity the passage
-      rewards (line in a lyric, sentence in prose, half-line in
-      Old English alliterative verse). For each annotation, open
-      workspace/close_readings/<slug>.md and record:
-        - the line / folio / page anchor
-        - the verbal feature noticed (diction, meter, syntax,
-          figure, sound, lineation, white space, punctuation,
-          tense, deixis, register shift, intertext)
-        - what the feature does (the verb matters: enacts, stages,
-          undoes, performs, withholds, ironizes)
-        - what it might mean — kept separate from what it does
-      Resist the urge to settle every annotation immediately.
-      Empson's seventh type of ambiguity exists because some verbal
-      events resist resolution; mark the irresolvable rather than
-      forcing a verdict.
+- id: annotate_line_by_line
+  name: Annotate line-by-line
+  description: |
+    Work through the passage at the granularity the passage
+    rewards (line in a lyric, sentence in prose, half-line in
+    Old English alliterative verse). For each annotation, open
+    workspace/close_readings/<slug>.md and record:
+      - the line / folio / page anchor
+      - the verbal feature noticed (diction, meter, syntax,
+        figure, sound, lineation, white space, punctuation,
+        tense, deixis, register shift, intertext)
+      - what the feature does (the verb matters: enacts, stages,
+        undoes, performs, withholds, ironizes)
+      - what it might mean — kept separate from what it does
+    Resist the urge to settle every annotation immediately.
+    Empson's seventh type of ambiguity exists because some verbal
+    events resist resolution; mark the irresolvable rather than
+    forcing a verdict.
 
-  - id: pattern_and_counter
-    name: Find the pattern, then the counter-pattern
-    description: |
-      Aggregate annotations into the pattern the passage is
-      building (a tonal arc, a recurring figure, a syntactic
-      contraction, a metrical shift). State the pattern in one
-      sentence. Then — this is the load-bearing move — find the
-      line or moment that resists the pattern. Every honest close
-      reading has a counter-instance; readings that don't are
-      reading the critic's expectation, not the text.
-      If the passage truly has no counter-pattern, say so
-      explicitly and explain why; the absence is itself an
-      interpretive datum (cf. Jakobson's "set toward the message").
+- id: pattern_and_counter
+  name: Find the pattern, then the counter-pattern
+  description: |
+    Aggregate annotations into the pattern the passage is
+    building (a tonal arc, a recurring figure, a syntactic
+    contraction, a metrical shift). State the pattern in one
+    sentence. Then — this is the load-bearing move — find the
+    line or moment that resists the pattern. Every honest close
+    reading has a counter-instance; readings that don't are
+    reading the critic's expectation, not the text.
+    If the passage truly has no counter-pattern, say so
+    explicitly and explain why; the absence is itself an
+    interpretive datum (cf. Jakobson's "set toward the message").
 
-  - id: situate
-    name: Situate the reading
-    description: |
-      Place the reading against three contexts (some may be empty,
-      but check each):
-        1. The work as a whole — does the passage's pattern echo
-           or invert patterns elsewhere in the work?
-        2. The author's other work and historical moment — call
-           tool_search for genre conventions and contemporary
-           reception if relevant.
-        3. The critical conversation — has this passage been
-           closely read before? By whom? Where do you agree and
-           where do you depart? Use citation_chains to verify any
-           secondary readings you invoke.
-      A close reading that ignores prior readings of the same
-      passage isn't original; it's uninformed.
+- id: situate
+  name: Situate the reading
+  description: |
+    Place the reading against three contexts (some may be empty,
+    but check each):
+      1. The work as a whole — does the passage's pattern echo
+         or invert patterns elsewhere in the work?
+      2. The author's other work and historical moment — call
+         tool_search for genre conventions and contemporary
+         reception if relevant.
+      3. The critical conversation — has this passage been
+         closely read before? By whom? Where do you agree and
+         where do you depart? Use citation_chains to verify any
+         secondary readings you invoke.
+    A close reading that ignores prior readings of the same
+    passage isn't original; it's uninformed.
 
-  - id: write_apparatus
-    name: Write the interpretive apparatus
-    description: |
-      Convert the annotation file into a synthesis-ready apparatus
-      under workspace/close_readings/<slug>_apparatus.md with:
-        - the block-quoted passage at the top
-        - a numbered claim list, each claim with its line anchor(s),
-          the verbal evidence, and the interpretive move
-        - the counter-instance(s) and how the reading absorbs or
-          declines to absorb them
-        - the tradition declaration and the secondary-criticism
-          ledger
-      This is the artifact the synthesis/output protocols consume;
-      it should be readable on its own as a critical note, not just
-      as scaffolding for a longer paper.
+- id: write_apparatus
+  name: Write the interpretive apparatus
+  description: |
+    Convert the annotation file into a synthesis-ready apparatus
+    under workspace/close_readings/<slug>_apparatus.md with:
+      - the block-quoted passage at the top
+      - a numbered claim list, each claim with its line anchor(s),
+        the verbal evidence, and the interpretive move
+      - the counter-instance(s) and how the reading absorbs or
+        declines to absorb them
+      - the tradition declaration and the secondary-criticism
+        ledger
+    This is the artifact the synthesis/output protocols consume;
+    it should be readable on its own as a critical note, not just
+    as scaffolding for a longer paper.
 
 quality_bar:
   anchor_density: |
@@ -228,10 +209,23 @@ quality_bar:
     the citation_chains protocol.
 
 expected_outputs:
-  - inputs/textual/passages/<slug>.md           # one per passage
-  - workspace/close_readings/<slug>.md          # annotation file
-  - workspace/close_readings/<slug>_apparatus.md  # synthesis-ready apparatus
+- inputs/textual/passages/<slug>.md             # one per passage
+- workspace/close_readings/<slug>.md            # annotation file
+- workspace/close_readings/<slug>_apparatus.md    # synthesis-ready apparatus
 
 next_protocol: humanities/citation/citation_chains
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: methodology
+sub_intent: method_pick
+triggers:
+- close reading
+- annotate a passage
+- explication de texte
+- line-by-line reading
+- marginalia
+summary: Annotation-based textual analysis with provenance per claim.
+token_estimate: 1500
+decomposition:
+- protocol: humanities/textual/close_reading
+  purpose: Walk the annotate → claim → ground loop.

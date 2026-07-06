@@ -2,16 +2,16 @@ id: audit_and_validation
 tier: 'review'
 name: Audit & Validation
 version: '3.6.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - audit/provenance_completeness   # supplies the .prov.json ground truth this audit rolls up
-  - reproducibility/reproducibility # the re-run + hash baseline this audit assumes ran
-  - audit/pre_submission_checklist  # the final ready-to-submit gate downstream of this pass
+- audit/provenance_completeness     # supplies the .prov.json ground truth this audit rolls up
+- reproducibility/reproducibility   # the re-run + hash baseline this audit assumes ran
+- audit/pre_submission_checklist    # the final ready-to-submit gate downstream of this pass
 description: |
   Validate citations, statistical assumptions, figure quality,
   per-step completeness, causal language, and code style across the
@@ -31,174 +31,174 @@ description: |
   cost for the verdicts that gate submission, not every line.
 trigger: After every experiment completes and reproducibility has been recorded. Re-run before synthesis.
 prerequisites:
-  - At least one workspace/<step>/conclusions.md exists
-  - workspace/citations.md exists
+- At least one workspace/<step>/conclusions.md exists
+- workspace/citations.md exists
 
 # Machine-checkable subset (precondition gate), surfaced on protocol load.
 requires:
   checks:
-    - kind: glob_min
-      pattern: workspace/**/conclusions.md
-      min: 1
-      because: the audit validates recorded step conclusions
-    - kind: file_exists
-      path: workspace/citations.md
-      because: the audit checks claims against gathered citations
+  - kind: glob_min
+    pattern: workspace/**/conclusions.md
+    min: 1
+    because: the audit validates recorded step conclusions
+  - kind: file_exists
+    path: workspace/citations.md
+    because: the audit checks claims against gathered citations
 
 steps:
-  - id: audit_master
-    name: Master Quality Audit — one call, every gate (PREFERRED)
-    description: |
-      tool_audit_quality_full
-      Runs the complete audit chain and aggregates the blockers:
-        - step_completeness — focal figure + caption + summary +
-          provenance + non-stub conclusions per step;
-        - code_quality — ruff + AST complexity + smells + docstrings;
-        - prose_quality — hedging + vague quantifiers + passive +
-          reading level + causal language + reporting-standard sections;
-        - claims — every number in synthesis/paper.{typ,md} traces to a
-          workspace output (catches AI hallucination);
-        - preregistration_diff — deviations from the frozen SAP if any;
-        - tool_verify — every decision record in
-          workspace/decisions/ resolves to a registered grounding source
-          (catches ungrounded synthesis claims).
-      Writes workspace/logs/audit_master.md. tool_synthesis_check
-      calls this as its first gate when validating a synthesis file.
+- id: audit_master
+  name: Master Quality Audit — one call, every gate (PREFERRED)
+  description: |
+    tool_audit (scope='project', dimension='all')
+    Runs the complete audit chain and aggregates the blockers:
+      - step_completeness — focal figure + caption + summary +
+        provenance + non-stub conclusions per step;
+      - code_quality — ruff + AST complexity + smells + docstrings;
+      - prose_quality — hedging + vague quantifiers + passive +
+        reading level + causal language + reporting-standard sections;
+      - claims — every number in synthesis/paper.{typ,md} traces to a
+        workspace output (catches AI hallucination);
+      - preregistration_diff — deviations from the frozen SAP if any;
+      - tool_verify — every decision record in
+        workspace/decisions/ resolves to a registered grounding source
+        (catches ungrounded synthesis claims).
+    Writes workspace/logs/audit_master.md. tool_synthesis_scaffold (operation='check')
+    calls this as its first gate when validating a synthesis file.
 
-      For per-step debugging, the components are also exposed
-      individually: tool_audit(scope='step', dimension='completeness'), tool_audit(scope='step', dimension='code_quality'),
-      tool_audit(scope='project', dimension='prose'), tool_audit(scope='project', dimension='claims'), tool_preregister(operation='diff'),
-      tool_ground (grounding verification surface).
+    For per-step debugging, the components are also exposed
+    individually: tool_audit(scope='step', dimension='completeness'), tool_audit(scope='step', dimension='code_quality'),
+    tool_audit(scope='project', dimension='prose'), tool_audit(scope='project', dimension='claims'), tool_preregister(operation='diff'),
+    tool_ground (grounding verification surface).
 
-  - id: audit_citations
-    name: Audit Citations
-    description: |
-      tool_audit(scope='project', dimension='citations')
-      Reads workspace/citations.md, queries Crossref / Semantic Scholar for each
-      entry, flags those that don't resolve. Writes report to the current step's
-      outputs/reports/citation_audit.md (or workspace/logs/ if no active step).
+- id: audit_citations
+  name: Audit Citations
+  description: |
+    tool_audit(scope='project', dimension='citations')
+    Reads workspace/citations.md, queries Crossref / Semantic Scholar for each
+    entry, flags those that don't resolve. Writes report to the current step's
+    outputs/reports/citation_audit.md (or workspace/logs/ if no active step).
 
-  - id: audit_assumptions
-    name: Verify Recorded Assumption Diagnostics
-    description: |
-      The model assumptions are YOUR science to run — Research-OS does not run
-      Shapiro / Levene / Breusch-Pagan / Durbin-Watson / VIF / Cook's for you.
-      In your own analysis code, run the diagnostics the model actually
-      requires, and write them into a diagnostics record
-      (e.g. workspace/<step>/outputs/reports/assumptions.md): name each check,
-      record its statistic and your interpretation, and — for any assumption
-      you found VIOLATED — record what you did about it (robust SEs, a
-      different test, a transform, etc.).
+- id: audit_assumptions
+  name: Verify Recorded Assumption Diagnostics
+  description: |
+    The model assumptions are YOUR science to run — Research-OS does not run
+    Shapiro / Levene / Breusch-Pagan / Durbin-Watson / VIF / Cook's for you.
+    In your own analysis code, run the diagnostics the model actually
+    requires, and write them into a diagnostics record
+    (e.g. workspace/<step>/outputs/reports/assumptions.md): name each check,
+    record its statistic and your interpretation, and — for any assumption
+    you found VIOLATED — record what you did about it (robust SEs, a
+    different test, a transform, etc.).
 
-      Then call the gate to confirm the record is complete:
-        tool_audit(scope='step', dimension='assumptions') filepath=<that file>
-      It verifies you named the checks, interpreted each one, and responded to
-      any violation — it does NOT compute a p-value or decide the verdict.
-      Append any unresolved violations to the step's conclusions.md under
-      "## Limitations".
+    Then call the gate to confirm the record is complete:
+      tool_audit(scope='step', dimension='assumptions') filepath=<that file>
+    It verifies you named the checks, interpreted each one, and responded to
+    any violation — it does NOT compute a p-value or decide the verdict.
+    Append any unresolved violations to the step's conclusions.md under
+    "## Limitations".
 
-      Model-specific routing — if the step's methods.md or scripts indicate
-      a particular model family, ALSO run the family-specific diagnostic
-      protocol so you know WHICH checks to run before recording them:
+    Model-specific routing — if the step's methods.md or scripts indicate
+    a particular model family, ALSO run the family-specific diagnostic
+    protocol so you know WHICH checks to run before recording them:
 
-        If Cox PH model detected (lifelines `CoxPHFitter`,
-        survival::coxph, statsmodels PHReg, sksurv
-        `CoxPHSurvivalAnalysis`, Stata `stcox`, SAS `PROC PHREG`):
-          → also run protocol methodology/cox_ph_diagnostics
-            (Schoenfeld residual test + log-log plot + per-covariate
-            p-value table + fallback strategy if violated).
+      If Cox PH model detected (lifelines `CoxPHFitter`,
+      survival::coxph, statsmodels PHReg, sksurv
+      `CoxPHSurvivalAnalysis`, Stata `stcox`, SAS `PROC PHREG`):
+        → also run protocol methodology/cox_ph_diagnostics
+          (Schoenfeld residual test + log-log plot + per-covariate
+          p-value table + fallback strategy if violated).
 
-        If missing-data handling is detected in the residuals pipeline
-        (any `dropna` / `na.omit` / `IterativeImputer` / `mice`):
-          → also run protocol methodology/missing_data_strategy.
+      If missing-data handling is detected in the residuals pipeline
+      (any `dropna` / `na.omit` / `IterativeImputer` / `mice`):
+        → also run protocol methodology/missing_data_strategy.
 
-        If the step is qualitative (themes.md / codebook.md exists):
-          → also run protocol methodology/qualitative_quality_audit.
+      If the step is qualitative (themes.md / codebook.md exists):
+        → also run protocol methodology/qualitative_quality_audit.
 
-  - id: audit_figures
-    name: Audit Figure Quality
-    description: |
-      For every PNG in workspace/<step>/outputs/figures/, call:
-        tool_audit(scope='step', dimension='figure_full') filepath=<png>
-      Checks DPI, dimensions, caption + summary sidecars, SVG companion,
-      time-series aspect-ratio sanity. Use `tool_audit(scope='step', dimension='figure')` for a
-      lighter DPI-only spot check during intra-step iteration.
+- id: audit_figures
+  name: Audit Figure Quality
+  description: |
+    For every PNG in workspace/<step>/outputs/figures/, call:
+      tool_audit(scope='step', dimension='figure_full') filepath=<png>
+    Checks DPI, dimensions, caption + summary sidecars, SVG companion,
+    time-series aspect-ratio sanity. Use `tool_audit(scope='step', dimension='figure')` for a
+    lighter DPI-only spot check during intra-step iteration.
 
-      Aggregate warnings into workspace/logs/figure_audit_summary.md.
-      Any figure WITHOUT a sibling .caption.md AND .summary.md is a
-      blocker — the deliverables embed both.
+    Aggregate warnings into workspace/logs/figure_audit_summary.md.
+    Any figure WITHOUT a sibling .caption.md AND .summary.md is a
+    blocker — the deliverables embed both.
 
-  - id: audit_step_readmes
-    name: Audit Step READMEs (finalize gate)
-    description: |
-      For each numbered step, confirm:
-        - README.md does NOT contain any stub markers
-          ("*(list inputs used)*", "*(list methods/models)*",
-          "*(the single most important result", etc.).
-        - environment/, literature/, context/, data/ all carry a
-          non-trivial README (≥1 paragraph; not just the create-time stub).
-      For every step that fails, run tool_path_finalize and re-check.
-      Persistently empty step folders after finalize indicate the step
-      had no environment/literature/data activity at all — fine, the
-      finalize note already explains that.
+- id: audit_step_readmes
+  name: Audit Step READMEs (finalize gate)
+  description: |
+    For each numbered step, confirm:
+      - README.md does NOT contain any stub markers
+        ("*(list inputs used)*", "*(list methods/models)*",
+        "*(the single most important result", etc.).
+      - environment/, literature/, context/, data/ all carry a
+        non-trivial README (≥1 paragraph; not just the create-time stub).
+    For every step that fails, run tool_plan (operation='finalize_step') and re-check.
+    Persistently empty step folders after finalize indicate the step
+    had no environment/literature/data activity at all — fine, the
+    finalize note already explains that.
 
-  - id: audit_causal_language
-    name: Scan for Causal Over-Reach
-    description: |
-      Only if the study design is NOT causal (no RCT / IV / RDD / DiD), grep the
-      drafts for: "causes", "leads to", "results in", "impacts".
-      For each hit, propose an associational rewrite ("is associated with",
-      "is correlated with"). Append a list of findings + suggested fixes to
-      workspace/logs/causal_language_audit.md.
+- id: audit_causal_language
+  name: Scan for Causal Over-Reach
+  description: |
+    Only if the study design is NOT causal (no RCT / IV / RDD / DiD), grep the
+    drafts for: "causes", "leads to", "results in", "impacts".
+    For each hit, propose an associational rewrite ("is associated with",
+    "is correlated with"). Append a list of findings + suggested fixes to
+    workspace/logs/causal_language_audit.md.
 
-  - id: audit_code_style
-    name: Lint Code (optional)
-    description: |
-      If ruff or pylint is available in the env, run on workspace/*/scripts/.
-      Otherwise skip. Save warnings to workspace/logs/code_lint.md.
+- id: audit_code_style
+  name: Lint Code (optional)
+  description: |
+    If ruff or pylint is available in the env, run on workspace/*/scripts/.
+    Otherwise skip. Save warnings to workspace/logs/code_lint.md.
 
-  - id: audit_coherence
-    name: Cross-step coherence audit
-    description: |
-      tool_audit(scope='project', dimension='coherence')
-      Catches the failure mode where the Discussion / Results carries
-      paragraphs from a prior chat about a step that was later
-      abandoned, or where the AI invented prose during synthesis
-      without grounding it in any step's conclusions.md. Per-paragraph
-      Jaccard-overlap against every step's conclusions.md; flags
-      paragraphs scoring < 0.05. Writes
-      workspace/logs/coherence_audit.md.
+- id: audit_coherence
+  name: Cross-step coherence audit
+  description: |
+    tool_audit(scope='project', dimension='coherence')
+    Catches the failure mode where the Discussion / Results carries
+    paragraphs from a prior chat about a step that was later
+    abandoned, or where the AI invented prose during synthesis
+    without grounding it in any step's conclusions.md. Per-paragraph
+    Jaccard-overlap against every step's conclusions.md; flags
+    paragraphs scoring < 0.05. Writes
+    workspace/logs/coherence_audit.md.
 
-  - id: audit_discussion_coverage
-    name: Verdict-coverage gate for the Discussion
-    description: |
-      tool_discussion_coverage_audit
-      Every non-AGREES verdict in any step's
-      `findings_vs_literature.md` must have a corresponding paragraph
-      in `synthesis/discussion.md`. BLOCKs assembly if any verdict is
-      uncovered. The companion writer is
-      `tool_writing_discussion_from_verdicts` (also runnable
-      standalone) — re-running idempotently replaces the
-      auto-generated block without touching researcher's hand-written
-      prose outside the markers.
+- id: audit_discussion_coverage
+  name: Verdict-coverage gate for the Discussion
+  description: |
+    tool_reviewer (operation='coverage_audit')
+    Every non-AGREES verdict in any step's
+    `findings_vs_literature.md` must have a corresponding paragraph
+    in `synthesis/discussion.md`. BLOCKs assembly if any verdict is
+    uncovered. The companion writer is
+    `tool_reviewer (operation='discussion_from_verdicts')` (also runnable
+    standalone) — re-running idempotently replaces the
+    auto-generated block without touching researcher's hand-written
+    prose outside the markers.
 
-  - id: write_audit_summary
-    name: Aggregate Audit Report
-    description: |
-      Write workspace/logs/audit_report.md combining all findings + counts.
-      One section per audit. Mark blocking issues with "BLOCKER:" prefix.
-      The step-completeness section is mandatory — surface every BLOCKER
-      from tool_audit(scope='step', dimension='completeness') at the top.
+- id: write_audit_summary
+  name: Aggregate Audit Report
+  description: |
+    Write workspace/logs/audit_report.md combining all findings + counts.
+    One section per audit. Mark blocking issues with "BLOCKER:" prefix.
+    The step-completeness section is mandatory — surface every BLOCKER
+    from tool_audit(scope='step', dimension='completeness') at the top.
 
-      Include the reliability summary at the bottom by calling
-        tool_reliability(operation='report')
-      so the report carries a redacted count of gate fires / tool errors
-      this session. The researcher can paste this into a bug filing if
-      a regression is suspected — it contains no project content.
+    Include the reliability summary at the bottom by calling
+      tool_reliability(operation='report')
+    so the report carries a redacted count of gate fires / tool errors
+    this session. The researcher can paste this into a bug filing if
+    a regression is suspected — it contains no project content.
 
 expected_outputs:
-  - workspace/logs/audit_report.md
-  - workspace/logs/step_completeness.md
+- workspace/logs/audit_report.md
+- workspace/logs/step_completeness.md
 
 # AUTONOMY + OUTPUT_TYPES GATE on next_protocol:
 #   - autopilot AND `paper` ∈ research_goal.output_types → auto-chain.
@@ -212,3 +212,22 @@ expected_outputs:
 next_protocol: synthesis/synthesis_paper
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: audit_wrap
+sub_intent: audit
+triggers:
+- audit
+- validate
+- check the paper
+- is this ready
+- is this paper ready
+- ready to submit
+- ready for submission
+- is this paper ready to submit
+summary: Full audit pass on a synthesis output.
+decomposition:
+- tool: tool_audit
+  purpose: Full synthesis audit pass (scope='synthesis', dimension='all').
+- tool: tool_audit
+  purpose: Verify citations resolve / are not hallucinated (scope='project', dimension='citations').
+- tool: tool_audit
+  purpose: Audit each figure (scope='step', dimension='figure').

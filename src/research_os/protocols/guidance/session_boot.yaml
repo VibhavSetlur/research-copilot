@@ -2,15 +2,15 @@ id: session_boot
 tier: 'intake'
 name: Session Boot
 version: '3.1.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [naive_ai]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - guidance/session_resume        # branch here on a paused / handed-off session
-  - guidance/scope_clarification   # branch here when the first message is too vague to route
+- guidance/session_resume          # branch here on a paused / handed-off session
+- guidance/scope_clarification     # branch here when the first message is too vague to route
 description: |
   Mandatory boot sequence on the FIRST TURN of every session. Every
   turn is triggered by a researcher message — the AI never acts before
@@ -26,152 +26,152 @@ description: |
 trigger: First message of every chat / IDE session.
 prerequisites: []
 inputs:
-  - inputs/researcher_config.yaml
-  - .os_state/state_ledger.json
+- inputs/researcher_config.yaml
+- .os_state/state_ledger.json
 
 steps:
-  - id: boot
-    name: One-Call Bootstrap (your FIRST MCP call on the first turn)
-    description: |
-      The researcher's first message has arrived (turns always start
-      that way). Before you do anything else this session, call
-      `sys_boot` — nothing else, no parallel sister calls.
+- id: boot
+  name: One-Call Bootstrap (your FIRST MCP call on the first turn)
+  description: |
+    The researcher's first message has arrived (turns always start
+    that way). Before you do anything else this session, call
+    `sys_boot` — nothing else, no parallel sister calls.
 
-      The single response contains:
-        - project_name, pipeline_stage, current_path, domain
-        - autonomy + expertise + model_profile + shared_server
-        - active_hypotheses + history_tail + last_protocol_entry
-        - pause_classification (fresh_session | mid_step | completed_step
-                                | dead_end | ctx_exhaustion | long_running_job)
-        - next_protocol (pipeline-recommended) + dep_inventory
-        - active_plan (any in-flight decomposition from a previous turn)
-        - freshness (is_stale + signals + prompt_for_ai from
-                     tool_state_freshness_check; surface to researcher
-                     when freshness.is_stale is true)
-        - daemon_notes (if a daemon is running: its background self-check —
-                     structure/provenance/mode-health/stalled-job/abandoned-
-                     protocol findings; address BLOCK items before building,
-                     and keep watching for a daemon_flagged_issue mid-session)
-        - recommended_skills (on a fresh project: the domain/mode skills worth
-                     loading up front — pull them via skills_list/skill_view
-                     rather than re-deriving the method from memory)
-        - advice — one-line guidance for what to do next
+    The single response contains:
+      - project_name, pipeline_stage, current_path, domain
+      - autonomy + expertise + model_profile + shared_server
+      - active_hypotheses + history_tail + last_protocol_entry
+      - pause_classification (fresh_session | mid_step | completed_step
+                              | dead_end | ctx_exhaustion | long_running_job)
+      - next_protocol (pipeline-recommended) + dep_inventory
+      - active_plan (any in-flight decomposition from a previous turn)
+      - freshness (is_stale + signals + prompt_for_ai from
+                   tool_audit (operation=state_freshness); surface to researcher
+                   when freshness.is_stale is true)
+      - daemon_notes (if a daemon is running: its background self-check —
+                   structure/provenance/mode-health/stalled-job/abandoned-
+                   protocol findings; address BLOCK items before building,
+                   and keep watching for a daemon_flagged_issue mid-session)
+      - recommended_skills (on a fresh project: the domain/mode skills worth
+                   loading up front — pull them via skills_list/skill_view
+                   rather than re-deriving the method from memory)
+      - advice — one-line guidance for what to do next
 
-      Do NOT call sys_state_get / sys_config(operation='get') / sys_protocol_history /
-      sys_dep_inventory / sys_protocol_next / tool_state_freshness_check
-      separately. They are all in sys_boot's payload. Sequential or
-      parallel — doesn't matter — they cost ~5× more tokens than
-      necessary.
+    Do NOT call sys_state_get / sys_boot(operation='config_get') / sys_protocol_get(operation='history') /
+    sys_env(operation='inventory') / sys_protocol_get(operation='next') / tool_audit(operation='state_freshness')
+    separately. They are all in sys_boot's payload. Sequential or
+    parallel — doesn't matter — they cost ~5× more tokens than
+    necessary.
 
-  - id: apply_defaults
-    name: Apply Defaults for Blank Config Fields
-    description: |
-      Read sys_boot's payload. For any blank field, silently apply:
-        autonomy            blank → "supervised"
-        expertise           blank → "intermediate"
-        model_profile       blank → "medium"
-        shared_server       unset → false
-        long_running_threshold unset → 60s
-      Do NOT pester the researcher about blanks — defaults are by design.
+- id: apply_defaults
+  name: Apply Defaults for Blank Config Fields
+  description: |
+    Read sys_boot's payload. For any blank field, silently apply:
+      autonomy            blank → "supervised"
+      expertise           blank → "intermediate"
+      model_profile       blank → "medium"
+      shared_server       unset → false
+      long_running_threshold unset → 60s
+    Do NOT pester the researcher about blanks — defaults are by design.
 
-  - id: branch_on_pause
-    name: Branch on Pause Classification
-    description: |
-      pause_classification drives routing:
-        fresh_session       → continue to `route_first_message` step
-        completed_step      → continue to `route_first_message`
-        mid_step            → load guidance/session_resume (cheap, lean)
-        long_running_job    → load guidance/session_resume
-        ctx_exhaustion      → load guidance/session_resume — read the
-                              latest handoff doc under .os_state/handoffs/
-        dead_end            → load guidance/dead_end_routing
-        unknown             → ask researcher one line: "Last action looked
-                              incomplete — resume, or start fresh?"
+- id: branch_on_pause
+  name: Branch on Pause Classification
+  description: |
+    pause_classification drives routing:
+      fresh_session       → continue to `route_first_message` step
+      completed_step      → continue to `route_first_message`
+      mid_step            → load guidance/session_resume (cheap, lean)
+      long_running_job    → load guidance/session_resume
+      ctx_exhaustion      → load guidance/session_resume — read the
+                            latest handoff doc under .os_state/handoffs/
+      dead_end            → load guidance/dead_end_routing
+      unknown             → ask researcher one line: "Last action looked
+                            incomplete — resume, or start fresh?"
 
-      If sys_boot returned active_plan in status "in_progress", honour it
-      BEFORE accepting a new ask — tool_plan walks the planned
-      sequence; only call tool_plan if the researcher pivots.
+    If sys_boot returned active_plan in status "in_progress", honour it
+    BEFORE accepting a new ask — tool_plan walks the planned
+    sequence; only call tool_plan if the researcher pivots.
 
-  - id: route_first_message
-    name: Route the First Message Through tool_route (your SECOND MCP call)
-    description: |
-      You already have the researcher's verbatim message in your
-      context — it's what triggered this turn. Immediately after the
-      boot summary above, your second MCP call is:
-        tool_route(prompt="<their verbatim message>")
+- id: route_first_message
+  name: Route the First Message Through tool_route (your SECOND MCP call)
+  description: |
+    You already have the researcher's verbatim message in your
+    context — it's what triggered this turn. Immediately after the
+    boot summary above, your second MCP call is:
+      tool_route(prompt="<their verbatim message>")
 
-      Do NOT pre-load any protocol before calling tool_route. The
-      response tells you which protocol fits — loading the wrong one
-      first wastes ~2K tokens.
+    Do NOT pre-load any protocol before calling tool_route. The
+    response tells you which protocol fits — loading the wrong one
+    first wastes ~2K tokens.
 
-      The response is a HIERARCHICAL routing decision:
-        resolved_level       0 | 1 | 2 | 3 — how deep we resolved.
-                             3 = specific protocol picked; safe to execute.
-                             2 = L1 + L2 chosen; ask_user disambiguates L3.
-                             1 = L1 chosen only; ask_user picks L2.
-                             0 = no match at all; ask_user picks L1.
-        intent_class         L1: session | discover | plan | execute |
-                             methodology | literature | synthesize |
-                             audit_wrap | memory | review
-        sub_intent           L2: narrower bucket within the class
-        primary_protocol     L3: specific protocol (when resolved_level=3)
-        shortcut_tool        Single tool you may call directly if obvious.
-        decomposition        Planned tool sequence (when L3 resolved).
-        complexity           "low" (one-shot OK) or "high" (DO NOT one-shot;
-                             tool_route persisted a plan, walk it with
-                             tool_plan).
-        ask_user             1-sentence question when ambiguous. ASK IT —
-                             don't guess. Re-call tool_route with the
-                             answer.
-        alternatives         Second / third-choice protocols.
-        advice               One-line guidance to follow next.
+    The response is a HIERARCHICAL routing decision:
+      resolved_level       0 | 1 | 2 | 3 — how deep we resolved.
+                           3 = specific protocol picked; safe to execute.
+                           2 = L1 + L2 chosen; ask_user disambiguates L3.
+                           1 = L1 chosen only; ask_user picks L2.
+                           0 = no match at all; ask_user picks L1.
+      intent_class         L1: session | discover | plan | execute |
+                           methodology | literature | synthesize |
+                           audit_wrap | memory | review
+      sub_intent           L2: narrower bucket within the class
+      primary_protocol     L3: specific protocol (when resolved_level=3)
+      shortcut_tool        Single tool you may call directly if obvious.
+      decomposition        Planned tool sequence (when L3 resolved).
+      complexity           "low" (one-shot OK) or "high" (DO NOT one-shot;
+                           tool_route persisted a plan, walk it with
+                           tool_plan).
+      ask_user             1-sentence question when ambiguous. ASK IT —
+                           don't guess. Re-call tool_route with the
+                           answer.
+      alternatives         Second / third-choice protocols.
+      advice               One-line guidance to follow next.
 
-      Then:
-        - If ask_user is non-null → ask the researcher, then re-route.
-        - If shortcut_tool fits the prompt unambiguously → call it directly.
-        - Else load the primary protocol via
-          sys_protocol_get name=<primary> format="summary"
-          (returns step headings only — ~300 tokens).
-        - Drill into one step with format="step" + step_id=<id> when ready
-          to execute.
-        - For format="full" loads, charge yourself the ~2K token cost —
-          only when you genuinely need every step at once.
+    Then:
+      - If ask_user is non-null → ask the researcher, then re-route.
+      - If shortcut_tool fits the prompt unambiguously → call it directly.
+      - Else load the primary protocol via
+        sys_protocol_get name=<primary> format="summary"
+        (returns step headings only — ~300 tokens).
+      - Drill into one step with format="step" + step_id=<id> when ready
+        to execute.
+      - For format="full" loads, charge yourself the ~2K token cost —
+        only when you genuinely need every step at once.
 
-      If `resolved_level == 0` AND the researcher's ask is genuinely
-      open-ended / cross-disciplinary ("help me figure out where to
-      start", "this might be X or Y"), prefer
-      `guidance/scope_clarification` over guessing — it classifies the
-      ambiguity in five buckets, asks ONE narrowing question, and hands
-      control back to `tool_route` with a workable prompt.
+    If `resolved_level == 0` AND the researcher's ask is genuinely
+    open-ended / cross-disciplinary ("help me figure out where to
+    start", "this might be X or Y"), prefer
+    `guidance/scope_clarification` over guessing — it classifies the
+    ambiguity in five buckets, asks ONE narrowing question, and hands
+    control back to `tool_route` with a workable prompt.
 
-  - id: batch_per_turn
-    name: Batch Per Turn (model-profile aware)
-    description: |
-      When tool_route returned complexity="high" AND resolved_level=3, it
-      persisted an active_plan to .os_state/active_plan.json.
+- id: batch_per_turn
+  name: Batch Per Turn (model-profile aware)
+  description: |
+    When tool_route returned complexity="high" AND resolved_level=3, it
+    persisted an active_plan to .os_state/active_plan.json.
 
-      Before executing, call:
-        tool_plan
+    Before executing, call:
+      tool_plan
 
-      It returns:
-        this_turn               — tools to call THIS turn
-        next_turn               — queued for later
-        model_profile           — small | medium | large (drives batch size)
-        turn_budget             — 1 (small), 3 (medium), 6 (large) steps
-        chat_split_recommended  — true when the plan is too long for one
-                                  chat; suggest a handoff + fresh chat after
-                                  this batch.
+    It returns:
+      this_turn               — tools to call THIS turn
+      next_turn               — queued for later
+      model_profile           — small | medium | large (drives batch size)
+      turn_budget             — 1 (small), 3 (medium), 6 (large) steps
+      chat_split_recommended  — true when the plan is too long for one
+                                chat; suggest a handoff + fresh chat after
+                                this batch.
 
-      Execute every entry in `this_turn` IN ORDER. After each entry, call
-      tool_plan. When this_turn finishes, call tool_plan
-      again for the next batch — OR, if chat_split_recommended is true,
-      call sys_session_handoff and tell the researcher to start a fresh
-      chat with "pick up where we left off".
+    Execute every entry in `this_turn` IN ORDER. After each entry, call
+    tool_plan. When this_turn finishes, call tool_plan
+    again for the next batch — OR, if chat_split_recommended is true,
+    call tool_session_handoff and tell the researcher to start a fresh
+    chat with "pick up where we left off".
 
 expected_outputs:
-  - .os_state/protocol_execution_log.jsonl
+- .os_state/protocol_execution_log.jsonl
 
-next_protocol: null    # routing drives the next step, not a hardcoded link
+next_protocol:         # routing drives the next step, not a hardcoded link
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
 
@@ -184,3 +184,21 @@ quality_bar: |
   - sys_protocol_get defaults to format="summary"; full loads are deliberate.
   - Complex prompts trigger an active_plan; the AI walks it with
     tool_plan instead of one-shotting.
+intent_class: session
+sub_intent: boot
+triggers:
+- hi
+- hello
+- start session
+- boot up
+- let's begin
+- good morning
+- start a session
+summary: First protocol of every session. Loads state + config + sets behaviour.
+shortcut_tool: sys_boot
+token_estimate: 1500
+decomposition:
+- tool: sys_boot
+  purpose: Load state + config + history + dep inventory + next protocol in one call.
+- decision: If pause_classification != 'fresh_session', route to session_resume.
+- decision: Else greet researcher and wait for their first ask.

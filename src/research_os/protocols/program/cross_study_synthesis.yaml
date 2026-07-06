@@ -2,16 +2,16 @@ id: cross_study_synthesis
 tier: 'synthesize'
 name: Cross-Study Synthesis (roll the studies up into one program claim)
 version: '3.12.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai, auditor]
   workflow_shape: [multi_study, roll_up]
 last_reviewed: '2026-06-23'
 see_also:
-  - program/program_setup                        # froze the pooling plan this executes
-  - methodology/meta_analysis                     # the rigorous pooling method this applies
-  - synthesis/synthesis_from_inputs               # builds the program-level deliverable
+- program/program_setup                          # froze the pooling plan this executes
+- methodology/meta_analysis                       # the rigorous pooling method this applies
+- synthesis/synthesis_from_inputs                 # builds the program-level deliverable
 description: |
   The terminal move of a multi_study program: read across the completed
   studies and synthesise them into the single cross-study claim the program
@@ -39,93 +39,93 @@ trigger: |
   due, or the researcher says "roll up the studies", "combine the results",
   "run the meta-analysis", "what does the program show", "cross-study result".
 prerequisites:
-  - Two or more studies under studies/ have produced results meeting the roll_up/README.md study output contract
-  - shared/preregistration.md records the pre-committed pooling plan (program_setup); if absent, the roll-up is exploratory — say so
+- Two or more studies under studies/ have produced results meeting the roll_up/README.md study output contract
+- shared/preregistration.md records the pre-committed pooling plan (program_setup); if absent, the roll-up is exploratory — say so
 
 steps:
-  - id: assemble_study_outputs
-    name: Assemble each study's contracted output
-    description: |
-      If you haven't called sys_boot this session, do so once. Then collect,
-      from each study under studies/, exactly what the study output contract
-      (roll_up/README.md) requires: the effect + its uncertainty in the
-      SHARED units, the n, the analysis that produced it, and any recorded
-      coding deviation. Read the studies' actual recorded results — do not
-      reconstruct a study's number from memory or re-run it here.
+- id: assemble_study_outputs
+  name: Assemble each study's contracted output
+  description: |
+    If you haven't called sys_boot this session, do so once. Then collect,
+    from each study under studies/, exactly what the study output contract
+    (roll_up/README.md) requires: the effect + its uncertainty in the
+    SHARED units, the n, the analysis that produced it, and any recorded
+    coding deviation. Read the studies' actual recorded results — do not
+    reconstruct a study's number from memory or re-run it here.
 
-      An honest assembly includes EVERY completed study, including the null
-      and the inconvenient ones. Silently dropping a study that didn't fit is
-      the cardinal roll-up sin (it manufactures the program's conclusion).
+    An honest assembly includes EVERY completed study, including the null
+    and the inconvenient ones. Silently dropping a study that didn't fit is
+    the cardinal roll-up sin (it manufactures the program's conclusion).
 
-  - id: check_poolability
-    name: Check the studies are actually poolable
-    description: |
-      Before pooling, confront whether these results SHOULD be combined.
-      Reason about:
-        - Commensurability: did the studies measure the shared constructs the
-          same way (per the codebook), in the same units? A study with a
-          documented deviation on a pooled variable may not be poolable on it.
-        - Heterogeneity sources anticipated at setup (population, instrument,
-          timing) — did they materialise, and do they make a single pooled
-          estimate misleading?
-        - Whether a fixed-effect, random-effects, or no-pooling answer is
-          honest given the spread — pulling the choice from the frozen plan,
-          and flagging if reality violates the plan's assumptions.
-      If the studies are not poolable, the honest roll-up is a structured
-      comparison, not a forced average — say so rather than averaging anyway.
+- id: check_poolability
+  name: Check the studies are actually poolable
+  description: |
+    Before pooling, confront whether these results SHOULD be combined.
+    Reason about:
+      - Commensurability: did the studies measure the shared constructs the
+        same way (per the codebook), in the same units? A study with a
+        documented deviation on a pooled variable may not be poolable on it.
+      - Heterogeneity sources anticipated at setup (population, instrument,
+        timing) — did they materialise, and do they make a single pooled
+        estimate misleading?
+      - Whether a fixed-effect, random-effects, or no-pooling answer is
+        honest given the spread — pulling the choice from the frozen plan,
+        and flagging if reality violates the plan's assumptions.
+    If the studies are not poolable, the honest roll-up is a structured
+    comparison, not a forced average — say so rather than averaging anyway.
 
-  - id: execute_pooling
-    name: Execute the pre-committed pooling (ground the method)
-    description: |
-      Apply the pooling plan frozen in shared/preregistration.md, grounding
-      the statistics in methodology/meta_analysis (fixed vs random effects and
-      WHY, heterogeneity statistics, pre-specified moderators). Write the
-      analysis as a real, seeded, versioned script under roll_up/ that reads
-      the assembled study outputs — the roll-up's numbers are reproducible and
-      provenance-tracked like any analysis step, not hand-assembled.
+- id: execute_pooling
+  name: Execute the pre-committed pooling (ground the method)
+  description: |
+    Apply the pooling plan frozen in shared/preregistration.md, grounding
+    the statistics in methodology/meta_analysis (fixed vs random effects and
+    WHY, heterogeneity statistics, pre-specified moderators). Write the
+    analysis as a real, seeded, versioned script under roll_up/ that reads
+    the assembled study outputs — the roll-up's numbers are reproducible and
+    provenance-tracked like any analysis step, not hand-assembled.
 
-      Any departure from the frozen plan (a moderator you didn't pre-specify,
-      a model the data forced) is labelled EXPLORATORY in the result, not
-      passed off as confirmatory. Pre-committing the plan is what stops the
-      roll-up becoming a garden of forking paths across studies; honour it.
+    Any departure from the frozen plan (a moderator you didn't pre-specify,
+    a model the data forced) is labelled EXPLORATORY in the result, not
+    passed off as confirmatory. Pre-committing the plan is what stops the
+    roll-up becoming a garden of forking paths across studies; honour it.
 
-  - id: characterize_and_qualify
-    name: Characterise heterogeneity + qualify the program claim
-    description: |
-      A pooled point estimate without its heterogeneity story is a half-truth.
-      Report what varies across studies and why, the uncertainty around the
-      pooled estimate, and the threats the program faces as a body (small-study
-      / publication-bias signals where assessable, the studies' shared
-      limitations that don't average away). State the program claim at the
-      strength the evidence supports — no stronger because there are several
-      studies. N studies pointing the same biased way is still biased.
+- id: characterize_and_qualify
+  name: Characterise heterogeneity + qualify the program claim
+  description: |
+    A pooled point estimate without its heterogeneity story is a half-truth.
+    Report what varies across studies and why, the uncertainty around the
+    pooled estimate, and the threats the program faces as a body (small-study
+    / publication-bias signals where assessable, the studies' shared
+    limitations that don't average away). State the program claim at the
+    strength the evidence supports — no stronger because there are several
+    studies. N studies pointing the same biased way is still biased.
 
-  - id: build_program_deliverable
-    name: Build the program-level deliverable
-    description: |
-      Turn the qualified roll-up into the deliverable the researcher asked for
-      (research_goal.output_types) — a meta-analytic paper, a program report,
-      a cross-study dashboard — via the matching synthesis surface
-      (synthesis/synthesis_from_inputs and the synthesis_* family), feeding the
-      pooled result + heterogeneity story + per-study contributions as inputs.
-      Build only the requested deliverable; trace every number to a study
-      output or the roll-up script. mem_log "program roll-up: <claim> across
-      <N> studies, <pooling method>, I^2/heterogeneity <...>".
+- id: build_program_deliverable
+  name: Build the program-level deliverable
+  description: |
+    Turn the qualified roll-up into the deliverable the researcher asked for
+    (research_goal.output_types) — a meta-analytic paper, a program report,
+    a cross-study dashboard — via the matching synthesis surface
+    (synthesis/synthesis_from_inputs and the synthesis_* family), feeding the
+    pooled result + heterogeneity story + per-study contributions as inputs.
+    Build only the requested deliverable; trace every number to a study
+    output or the roll-up script. mem_log "program roll-up: <claim> across
+    <N> studies, <pooling method>, I^2/heterogeneity <...>".
 
-      AUTONOMY GATE:
-        Risk: reversible to draft, but the program CLAIM is load-bearing —
-        getting poolability or the pooling model wrong misstates the whole
-        program.
-        proceed (adaptive default, autopilot) → execute the frozen pooling plan and draft the
-          deliverable; surface any poolability violation or plan departure
-          prominently for review rather than burying it.
-        confirm first (manual / supervised) → present the poolability assessment + chosen
-          pooling model + any plan departures; confirm before producing the
-          program claim.
+    AUTONOMY GATE:
+      Risk: reversible to draft, but the program CLAIM is load-bearing —
+      getting poolability or the pooling model wrong misstates the whole
+      program.
+      proceed (adaptive default, autopilot) → execute the frozen pooling plan and draft the
+        deliverable; surface any poolability violation or plan departure
+        prominently for review rather than burying it.
+      confirm first (manual / supervised) → present the poolability assessment + chosen
+        pooling model + any plan departures; confirm before producing the
+        program claim.
 
 expected_outputs:
-  - roll_up/  (the versioned pooling analysis + its outputs)
-  - the program-level deliverable (synthesis/ per output_types)
+- roll_up/  (the versioned pooling analysis + its outputs)
+- the program-level deliverable (synthesis/ per output_types)
 
 quality_bar: |
   - Every completed study is included; none silently dropped for not fitting.
@@ -136,6 +136,24 @@ quality_bar: |
     stronger than the evidence supports; every number traces to a study or the
     roll-up script.
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: program/program_setup
+intent_class: synthesize
+sub_intent: cross_study_synthesis
+triggers:
+- combine the studies
+- roll up the studies
+- pool the studies
+- meta-analyze the studies
+- meta-analyse the studies
+- cross-study synthesis
+- what do the studies say together
+- program-level finding
+summary: "Roll the completed studies up into one program-level claim: confirm they're commensurable, choose pooling vs narrative honestly, examine heterogeneity as a finding, and qualify the synthesis to the evidence."
+token_estimate: 1800
+decomposition:
+- protocol: program/cross_study_synthesis
+  purpose: Check commensurability, choose pool vs narrative, treat heterogeneity as signal, qualify the claim.
+- tool: mem_log
+  purpose: Record the program-level synthesis (method + heterogeneity + claim strength).

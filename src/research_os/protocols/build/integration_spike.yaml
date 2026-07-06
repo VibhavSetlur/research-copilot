@@ -2,16 +2,16 @@ id: integration_spike
 tier: 'execute'
 name: Integration Spike (prove a candidate works before you build on it)
 version: '3.12.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]
   audience: [naive_ai, auditor]
   workflow_shape: [tool_build, hybrid]
 last_reviewed: '2026-06-23'
 see_also:
-  - build/method_scouting        # the scout that surfaced the candidate this spike tests
-  - build/dependency_integration # where a SURVIVING spike gets promoted into the real build
-  - exploration/exploration_loop # the analysis-mode analog: a throwaway probe in scratch
+- build/method_scouting          # the scout that surfaced the candidate this spike tests
+- build/dependency_integration   # where a SURVIVING spike gets promoted into the real build
+- exploration/exploration_loop   # the analysis-mode analog: a throwaway probe in scratch
 description: |
   The decisive middle step of the "borrow it or build it" arc: before a
   scouted method/library/paper-result is allowed anywhere near the real
@@ -46,134 +46,164 @@ description: |
       you have invested in making it finished.
 trigger: After build/method_scouting names a candidate, or whenever the researcher says "try X first", "spike it", "see if this library/method actually works", "prototype this before we commit", or proposes adopting an external dependency for a build.
 prerequisites:
-  - A specific candidate to test (from build/method_scouting or named by the researcher), with a source and a claim to falsify
-  - workspace.mode is tool_build or hybrid, OR the researcher has explicitly asked to prototype/test an external approach
-  - A scratch surface exists (the tool_build/hybrid scaffold provides one; tool_scratch will create it if entering mid-build)
+- A specific candidate to test (from build/method_scouting or named by the researcher), with a source and a claim to falsify
+- workspace.mode is tool_build or hybrid, OR the researcher has explicitly asked to prototype/test an external approach
+- A scratch surface exists (the tool_build/hybrid scaffold provides one; tool_scratch will create it if entering mid-build)
 
 steps:
-  - id: state_the_falsifiable_bet
-    name: State what would make the candidate FAIL the spike
-    description: |
-      A spike is only useful if it can come back negative. Before testing,
-      write down the pass/fail bar in advance — the specific, observable
-      result that would make you ADOPT the candidate, and the result that
-      would make you REJECT it. State it against your gap, not the
-      candidate's marketing: "on our representative input it must produce
-      <correct/expected behaviour> within <the envelope that matters>".
+- id: state_the_falsifiable_bet
+  name: State what would make the candidate FAIL the spike
+  description: |
+    A spike is only useful if it can come back negative. Before testing,
+    write down the pass/fail bar in advance — the specific, observable
+    result that would make you ADOPT the candidate, and the result that
+    would make you REJECT it. State it against your gap, not the
+    candidate's marketing: "on our representative input it must produce
+    <correct/expected behaviour> within <the envelope that matters>".
 
-      Pre-committing the bar is what stops the spike from rationalising a
-      weak result into a "yes". Record it (a line in scratch, or
-      mem_log) so the verdict later is judged against it.
+    Pre-committing the bar is what stops the spike from rationalising a
+    weak result into a "yes". Record it (a line in scratch, or
+    mem_log) so the verdict later is judged against it.
 
-  - id: pin_and_snapshot
-    name: Pin the exact candidate and snapshot the spike environment
-    description: |
-      Reproducibility starts here, because the thing you test MUST be the
-      thing you later integrate. Pin the candidate to an exact version:
-        - a library → install the EXACT version (name==X.Y.Z, or the pinned
-          commit SHA for a from-source/repo candidate), via
-          tool_package_install or the language manager through tool_bash_exec;
-        - a method/paper reimplementation → record the source revision (DOI,
-          commit, or paper version) the spike implements.
+- id: pin_and_snapshot
+  name: Pin the exact candidate and snapshot the spike environment
+  description: |
+    Reproducibility starts here, because the thing you test MUST be the
+    thing you later integrate. Pin the candidate to an exact version:
+      - a library → install the EXACT version (name==X.Y.Z, or the pinned
+        commit SHA for a from-source/repo candidate), via
+        tool_package_install or the language manager through tool_bash_exec;
+      - a method/paper reimplementation → record the source revision (DOI,
+        commit, or paper version) the spike implements.
 
-      Then capture the environment so the result is re-runnable:
-        - sys_env (operation='snapshot') to record the interpreter +
-          dependency versions the spike ran under;
-        - note the pinned candidate version + source in the spike's scratch
-          note, so a future reader knows precisely what was tested.
+    Then capture the environment so the result is re-runnable:
+      - sys_env (operation='snapshot') to record the interpreter +
+        dependency versions the spike ran under;
+      - note the pinned candidate version + source in the spike's scratch
+        note, so a future reader knows precisely what was tested.
 
-      A spike whose versions drift is not evidence — it is a one-time
-      anecdote. Pinning is what makes it a checkpoint you can stand on.
+    A spike whose versions drift is not evidence — it is a one-time
+    anecdote. Pinning is what makes it a checkpoint you can stand on.
 
-  - id: build_the_spike
-    name: Build the throwaway spike in scratch
-    description: |
-      Write the smallest possible program that exercises the candidate on a
-      REAL, representative input — not a toy the candidate is guaranteed to
-      pass. Keep it in the scratch surface, never in the tool's real source
-      tree:
-        - tool_scratch (operation='write') to author the spike file(s);
-        - tool_scratch (operation='run') (or the matching language exec
-          tool) to execute it;
-        - tool_scratch (operation='list' / operation='clear') to manage the
-          surface.
+- id: build_the_spike
+  name: Build the throwaway spike in scratch
+  description: |
+    Write the smallest possible program that exercises the candidate on a
+    REAL, representative input — not a toy the candidate is guaranteed to
+    pass. Keep it in the scratch surface, never in the tool's real source
+    tree:
+      - tool_scratch (operation='write') to author the spike file(s);
+      - tool_scratch (operation='run') (or the matching language exec
+        tool) to execute it;
+      - tool_scratch (operation='list' / operation='clear') to manage the
+        surface.
 
-      Record the INPUT you tested against by hash, so "we tested it on X" is
-      verifiable and the same input can be re-fed later: hash the input file
-      (e.g. tool_bash_exec running sha256sum, or file-level hashing) and
-      write the digest into the spike note alongside the pinned version. The
-      pair (input hash + candidate version) is the spike's identity.
+    Record the INPUT you tested against by hash, so "we tested it on X" is
+    verifiable and the same input can be re-fed later: hash the input file
+    (e.g. tool_bash_exec running sha256sum, or file-level hashing) and
+    write the digest into the spike note alongside the pinned version. The
+    pair (input hash + candidate version) is the spike's identity.
 
-      Keep it small. The spike is meant to be read, run, and thrown away —
-      not to grow into the feature. If it is getting large, that is a signal
-      the candidate is high-integration-cost, which is itself a finding.
+    Keep it small. The spike is meant to be read, run, and thrown away —
+    not to grow into the feature. If it is getting large, that is a signal
+    the candidate is high-integration-cost, which is itself a finding.
 
-  - id: run_and_judge
-    name: Run the spike and judge it against the pre-committed bar
-    description: |
-      Execute the spike and read the actual result — do not infer success
-      from "it ran without error". Compare what it produced against the
-      pass/fail bar you set in state_the_falsifiable_bet:
-        - Did it produce the correct/expected behaviour on the real input?
-        - Did it hold inside the envelope that matters (correctness first;
-          then whatever non-functional constraint is load-bearing here)?
-        - Did anything surface that the scout's claim glossed over —
-          edge-case failures, silent wrong answers, hidden dependencies,
-          licence/runtime surprises?
+- id: run_and_judge
+  name: Run the spike and judge it against the pre-committed bar
+  description: |
+    Execute the spike and read the actual result — do not infer success
+    from "it ran without error". Compare what it produced against the
+    pass/fail bar you set in state_the_falsifiable_bet:
+      - Did it produce the correct/expected behaviour on the real input?
+      - Did it hold inside the envelope that matters (correctness first;
+        then whatever non-functional constraint is load-bearing here)?
+      - Did anything surface that the scout's claim glossed over —
+        edge-case failures, silent wrong answers, hidden dependencies,
+        licence/runtime surprises?
 
-      Be willing to come back NEGATIVE. A spike that kills a bad candidate
-      cheaply is a success, not a failure of the spike.
+    Be willing to come back NEGATIVE. A spike that kills a bad candidate
+    cheaply is a success, not a failure of the spike.
 
-  - id: checkpoint_the_verdict
-    name: Checkpoint the spike state and record the verdict
-    description: |
-      Whatever the verdict, preserve the evidence so the decision is durable
-      and reversible:
-        - sys_checkpoint_create to snapshot the spike + its environment at
-          the moment of decision, so a later session (or
-          build/dependency_integration) can return to exactly the state that
-          produced the verdict. sys_checkpoint_list shows prior checkpoints;
-          sys_checkpoint_rollback returns to one if a later step goes wrong.
-        - mem_log the verdict: candidate + pinned version, the input
-          hash tested, the pass/fail bar, the actual result, and the
-          ADOPT / REJECT / NEEDS-MORE call with its reason.
+- id: checkpoint_the_verdict
+  name: Checkpoint the spike state and record the verdict
+  description: |
+    Whatever the verdict, preserve the evidence so the decision is durable
+    and reversible:
+      - tool_git (operation=commit) to snapshot the spike + its environment at
+        the moment of decision, so a later session (or
+        build/dependency_integration) can return to exactly the state that
+        produced the verdict. tool_git (operation=log) shows prior commits;
+        tool_git (operation=rollback) returns to one if a later step goes wrong.
+      - mem_log the verdict: candidate + pinned version, the input
+        hash tested, the pass/fail bar, the actual result, and the
+        ADOPT / REJECT / NEEDS-MORE call with its reason.
 
-      The checkpoint + the logged (version, input-hash, verdict) triple are
-      what let the integration that follows trust the spike instead of
-      re-running it from scratch.
+    The checkpoint + the logged (version, input-hash, verdict) triple are
+    what let the integration that follows trust the spike instead of
+    re-running it from scratch.
 
-  - id: decide_next
-    name: Decide the candidate's fate
-    description: |
-      Route on the verdict — and do not pretend a weak result is a pass:
-        - ADOPT (cleared the bar) → build/dependency_integration to promote
-          the proven candidate into the real build, carrying the pinned
-          version + input hash forward as provenance.
-        - REJECT → discard the spike (tool_scratch operation='clear'), record the
-          rejection reason, and go back to build/method_scouting for the
-          next candidate, or to build/implement_iteration to build in-house.
-        - NEEDS MORE EVIDENCE → tighten the bar or test a harder input and
-          loop back; a spike that is "sort of working" is not yet a yes.
+- id: decide_next
+  name: Decide the candidate's fate
+  description: |
+    Route on the verdict — and do not pretend a weak result is a pass:
+      - ADOPT (cleared the bar) → build/dependency_integration to promote
+        the proven candidate into the real build, carrying the pinned
+        version + input hash forward as provenance.
+      - REJECT → discard the spike (tool_scratch operation='clear'), record the
+        rejection reason, and go back to build/method_scouting for the
+        next candidate, or to build/implement_iteration to build in-house.
+      - NEEDS MORE EVIDENCE → tighten the bar or test a harder input and
+        loop back; a spike that is "sort of working" is not yet a yes.
 
-      AUTONOMY GATE:
-        Risk: adopting a dependency is hard to reverse once the tool is
-        built on it — the spike is the cheap moment to be wrong, the
-        integration is not.
-        proceed (adaptive default, autopilot) → if the spike cleanly cleared
-          a pre-committed bar on a representative input, proceed to
-          build/dependency_integration and carry the provenance forward; if
-          it failed or was marginal, reject/loop and say why. Do NOT promote
-          a marginal result silently.
-        confirm first (manual / supervised) → present the spike result, the
-          bar, and the ADOPT/REJECT recommendation; let the researcher make
-          the adoption call before anything is wired into the tool.
+    AUTONOMY GATE:
+      Risk: adopting a dependency is hard to reverse once the tool is
+      built on it — the spike is the cheap moment to be wrong, the
+      integration is not.
+      proceed (adaptive default, autopilot) → if the spike cleanly cleared
+        a pre-committed bar on a representative input, proceed to
+        build/dependency_integration and carry the provenance forward; if
+        it failed or was marginal, reject/loop and say why. Do NOT promote
+        a marginal result silently.
+      confirm first (manual / supervised) → present the spike result, the
+        bar, and the ADOPT/REJECT recommendation; let the researcher make
+        the adoption call before anything is wired into the tool.
 
 expected_outputs:
-  - A throwaway spike in scratch (deleted on reject, preserved as a checkpoint on adopt)
-  - A sys_env snapshot of the spike environment + the pinned candidate version and input hash
-  - A sys_checkpoint_create snapshot capturing the decision state
-  - mem_log entry with the (version, input-hash, bar, result, verdict) record
+- A throwaway spike in scratch (deleted on reject, preserved as a checkpoint on adopt)
+- A sys_env snapshot of the spike environment + the pinned candidate version and input hash
+- A tool_git (operation=commit) snapshot capturing the decision state
+- mem_log entry with the (version, input-hash, bar, result, verdict) record
 
 next_protocol: build/dependency_integration
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: execute
+sub_intent: build_spike
+triggers:
+- spike it
+- spike this
+- try it first
+- try x first
+- prototype this
+- prototype it first
+- see if it actually works
+- see if this works
+- test the library
+- test this approach
+- throwaway test
+- proof of concept
+- validate the approach
+- kick the tires
+summary: 'Prove a scouted candidate works before building on it: set a falsifiable pass/fail bar, pin the exact version + snapshot the env, run a throwaway spike on a real input (hashed), judge against the bar, checkpoint the verdict, and route adopt / reject / needs-more.'
+token_estimate: 1700
+decomposition:
+- protocol: build/integration_spike
+  purpose: Set the falsifiable bar, pin + snapshot, build a throwaway spike on a real (hashed) input, judge, checkpoint the verdict, decide its fate.
+- tool: sys_env
+  purpose: Capture the interpreter + dependency versions the spike ran under.
+- tool: tool_scratch
+  purpose: Run the throwaway spike in the scratch surface, never in the real tree.
+- tool: tool_git (operation=commit)
+  purpose: Snapshot the spike + env at the decision moment so it's re-runnable / reversible.
+- tool: mem_log
+  purpose: Record (version, input-hash, bar, result, verdict).

@@ -18,25 +18,22 @@ import json
 from pathlib import Path
 from typing import Any
 
-_PRECONDITION_META_PATH = (
-    Path(__file__).resolve().parent.parent / "protocols" / "_precondition_meta.json"
-)
-_SCHEMA = 1
 _PROTOCOL_LOG = "protocol_execution_log.jsonl"
 
 
 def _load_meta(path: Path | None = None) -> dict[str, list[dict]]:
-    """Load protocol_id -> [checks] from the sidecar. Fail-safe to {}."""
-    p = path or _PRECONDITION_META_PATH
+    """Load protocol_id -> [checks] from ``_protocols.bundle``. Fail-safe to {}.
+
+    P1: preconditions are compiled into the single bundle and served by
+    ProtocolRegistry.get_preconditions(). The ``path`` arg is accepted for
+    back-compat but ignored.
+    """
     try:
-        if not p.exists():
-            return {}
-        data = json.loads(p.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+        from research_os.tools.actions.protocol import ProtocolRegistry
+
+        protos = ProtocolRegistry.get_preconditions()
+    except Exception:  # noqa: BLE001
         return {}
-    if not isinstance(data, dict) or data.get("schema") != _SCHEMA:
-        return {}
-    protos = data.get("protocols")
     if not isinstance(protos, dict):
         return {}
     out: dict[str, list[dict]] = {}

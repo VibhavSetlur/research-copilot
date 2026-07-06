@@ -2,15 +2,15 @@ id: missing_data_strategy
 tier: 'plan'
 name: Missing-Data Strategy (MCAR/MAR/MNAR → handling → sensitivity)
 version: '3.5.1'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [experiment_pipeline]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/preregistration             # freeze the mechanism + handling before fitting
-  - methodology/multiple_comparisons        # both shape the analysis plan
+- methodology/preregistration               # freeze the mechanism + handling before fitting
+- methodology/multiple_comparisons          # both shape the analysis plan
 description: |
   Missing data is not a nuisance to be silently dropped — it is a
   modelling choice that affects every downstream estimate. This
@@ -39,7 +39,7 @@ description: |
        fit.
 
   The protocol is GUIDANCE — the AI writes the imputation + sensitivity
-  scripts via `tool_python_exec` (or `tool_r_exec`) and reads the
+  scripts via `tool_python_exec` (or `tool_bash_exec`) and reads the
   resulting reports; Research OS does not impute on its own.
 
 trigger: |
@@ -55,247 +55,229 @@ trigger: |
       that lacks a justification + sensitivity.
 
 prerequisites:
-  - Dataset is staged in `workspace/<step>/data/past_step_input/`.
-  - The analysis question + which variables are PRIMARY vs. AUXILIARY
-    is documented.
-  - A `tool_data(operation='profile')` run exists for the staged dataset (so the
-    missingness numbers are not guessed).
+- Dataset is staged in `workspace/<step>/data/past_step_input/`.
+- The analysis question + which variables are PRIMARY vs. AUXILIARY is documented.
+- A `tool_data(operation='profile')` run exists for the staged dataset (so the missingness numbers are not guessed).
 
 editorial_voice:
   mode: guidance
   rules:
-    - "Quantify before reasoning. A missingness PERCENTAGE per column,
-       per stratum, per time-point is non-negotiable. Hand-waving
-       ('only a few rows') is not allowed."
-    - "MCAR is a strong claim — most observational data is at best MAR
-       and often MNAR. Require evidence (Little's MCAR test, missingness
-       predictors) before assuming MCAR."
-    - "Complete-case analysis is sometimes the RIGHT answer (low
-       missingness + plausible MCAR + the missingness is unrelated to
-       the outcome). It is also sometimes the WRONG answer (the dropped
-       rows differ systematically from the kept rows). The protocol
-       does not pick for you — it forces you to JUSTIFY."
-    - "Multiple imputation generates m datasets, fits the analysis on
-       each, and pools via Rubin's rules. Single imputation
-       (mean / median / mode / KNN-fill, regression-fill) UNDERSTATES
-       uncertainty and is forbidden for confirmatory inference."
-    - "Sensitivity analysis is mandatory. The primary handling makes an
-       assumption; the sensitivity analysis breaks it. If primary and
-       sensitivity agree, the result is robust; if they disagree,
-       that's a finding."
-    - "Pre-register confirmatory analyses BEFORE running the
-       imputation. The imputation model is a researcher degree of
-       freedom; freeze it."
+  - "Quantify before reasoning. A missingness PERCENTAGE per column, per stratum, per time-point is non-negotiable. Hand-waving ('only a few rows') is not allowed."
+  - "MCAR is a strong claim — most observational data is at best MAR and often MNAR. Require evidence (Little's MCAR test, missingness predictors) before assuming MCAR."
+  - "Complete-case analysis is sometimes the RIGHT answer (low missingness + plausible MCAR + the missingness is unrelated to the outcome). It is also sometimes the WRONG answer (the dropped rows differ systematically from the kept rows). The protocol does not pick for you — it forces you to JUSTIFY."
+  - "Multiple imputation generates m datasets, fits the analysis on each, and pools via Rubin's rules. Single imputation (mean / median / mode / KNN-fill, regression-fill) UNDERSTATES uncertainty and is forbidden for confirmatory inference."
+  - "Sensitivity analysis is mandatory. The primary handling makes an assumption; the sensitivity analysis breaks it. If primary and sensitivity agree, the result is robust; if they disagree, that's a finding."
+  - "Pre-register confirmatory analyses BEFORE running the imputation. The imputation model is a researcher degree of freedom; freeze it."
 
 steps:
-  - id: quantify_missingness
-    name: Quantify missingness (per column, row, stratum, time-point)
-    description: |
-      Build the missingness profile via `tool_data(operation='profile')` (already in
-      prerequisites) OR write a `tool_python_exec` script that produces
-      `outputs/reports/missingness_profile.md` with:
+- id: quantify_missingness
+  name: Quantify missingness (per column, row, stratum, time-point)
+  description: |
+    Build the missingness profile via `tool_data(operation='profile')` (already in
+    prerequisites) OR write a `tool_python_exec` script that produces
+    `outputs/reports/missingness_profile.md` with:
 
-        - Per-column missing count + percent (sorted descending).
-        - Per-row missing count distribution (histogram or summary).
-        - Per-stratum missingness for every grouping variable the
-          analysis will condition on (treatment arm, site, year).
-        - Per-time-point missingness for longitudinal data (drop-out
-          curve).
-        - A binary missingness-pattern matrix (which COMBINATIONS of
-          variables are missing together) — `missingno.matrix` or
-          `naniar::vis_miss` in R. Save as
-          `outputs/figures/missingness_pattern.png` with both
-          caption sidecars + .prov.json.
+      - Per-column missing count + percent (sorted descending).
+      - Per-row missing count distribution (histogram or summary).
+      - Per-stratum missingness for every grouping variable the
+        analysis will condition on (treatment arm, site, year).
+      - Per-time-point missingness for longitudinal data (drop-out
+        curve).
+      - A binary missingness-pattern matrix (which COMBINATIONS of
+        variables are missing together) — `missingno.matrix` or
+        `naniar::vis_miss` in R. Save as
+        `outputs/figures/missingness_pattern.png` with both
+        caption sidecars + .prov.json.
 
-  - id: reason_about_mechanism
-    name: Reason about the mechanism (MCAR / MAR / MNAR)
-    description: |
-      Write `outputs/reports/missingness_mechanism.md` with an
-      EXPLICIT verdict per primary variable:
+- id: reason_about_mechanism
+  name: Reason about the mechanism (MCAR / MAR / MNAR)
+  description: |
+    Write `outputs/reports/missingness_mechanism.md` with an
+    EXPLICIT verdict per primary variable:
 
-        MCAR — Missing Completely At Random. The missingness depends
-          on NOTHING in the data. Test:
-            * Little's MCAR test (statsmodels does not have it
-              natively; use `pyampute` or R `naniar::mcar_test`).
-            * Logistic regression of "is-missing" on observed
-              covariates: ALL coefficients should be non-significant.
-          MCAR is rare; require evidence to claim it.
+      MCAR — Missing Completely At Random. The missingness depends
+        on NOTHING in the data. Test:
+          * Little's MCAR test (statsmodels does not have it
+            natively; use `pyampute` or R `naniar::mcar_test`).
+          * Logistic regression of "is-missing" on observed
+            covariates: ALL coefficients should be non-significant.
+        MCAR is rare; require evidence to claim it.
 
-        MAR — Missing At Random. Missingness depends on OBSERVED data
-          but not on the missing value itself. Test:
-            * Logistic regression of "is-missing" on observed
-              covariates: SIGNIFICANT predictors are expected; their
-              presence supports MAR over MCAR.
-            * The auxiliary variables that predict missingness MUST
-              be included in the imputation model.
+      MAR — Missing At Random. Missingness depends on OBSERVED data
+        but not on the missing value itself. Test:
+          * Logistic regression of "is-missing" on observed
+            covariates: SIGNIFICANT predictors are expected; their
+            presence supports MAR over MCAR.
+          * The auxiliary variables that predict missingness MUST
+            be included in the imputation model.
 
-        MNAR — Missing Not At Random. Missingness depends on the
-          missing value itself. Untestable from the observed data
-          alone; argued from domain knowledge (e.g. income surveys
-          where high earners refuse; medical drop-out tied to
-          deterioration). When MNAR is plausible, pattern-mixture
-          or selection models (Heckman, Diggle-Kenward) are required.
+      MNAR — Missing Not At Random. Missingness depends on the
+        missing value itself. Untestable from the observed data
+        alone; argued from domain knowledge (e.g. income surveys
+        where high earners refuse; medical drop-out tied to
+        deterioration). When MNAR is plausible, pattern-mixture
+        or selection models (Heckman, Diggle-Kenward) are required.
 
-      Cite the source for the mechanism claim (a domain paper, a
-      prior cohort, or the data generation process documentation).
-      `tool_research_method query="missing data mechanism <domain>"`
-      when the source is not obvious.
+    Cite the source for the mechanism claim (a domain paper, a
+    prior cohort, or the data generation process documentation).
+    `tool_search query="missing data mechanism <domain>"`
+    when the source is not obvious.
 
-  - id: pick_primary_handling
-    name: Pick the primary handling strategy + justify
-    description: |
-      Decide ONE primary strategy and document it in
-      `outputs/reports/missing_data_plan.md`:
+- id: pick_primary_handling
+  name: Pick the primary handling strategy + justify
+  description: |
+    Decide ONE primary strategy and document it in
+    `outputs/reports/missing_data_plan.md`:
 
-        STRATEGY 1 — COMPLETE CASE (CC).
-          Drop rows with ANY missingness in the analysis variables.
-          Defensible when missingness is low, MCAR is plausible, and
-          the analysis is descriptive or the inferential bias is
-          bounded by sensitivity. "Low" is a judgement call grounded
-          in the dropped-row profile and the field's convention —
-          cite it, don't pick a round number. Report N_complete vs
-          N_total and whether the dropped subset differs on
-          observables.
+      STRATEGY 1 — COMPLETE CASE (CC).
+        Drop rows with ANY missingness in the analysis variables.
+        Defensible when missingness is low, MCAR is plausible, and
+        the analysis is descriptive or the inferential bias is
+        bounded by sensitivity. "Low" is a judgement call grounded
+        in the dropped-row profile and the field's convention —
+        cite it, don't pick a round number. Report N_complete vs
+        N_total and whether the dropped subset differs on
+        observables.
 
-        STRATEGY 2 — MULTIPLE IMPUTATION (MI / MICE).
-          The principled choice for confirmatory work under MAR.
-          A fully-conditional / chained-equations implementation
-          exists in every major stats ecosystem; pick a maintained
-          one and document the conditional model used per column
-          (matched to that column's type). Key decisions that are
-          NOT defaults:
-            - INCLUDE the auxiliary variables identified in step 2
-              as predictors.
-            - INCLUDE the outcome in the imputation model
-              (von Hippel 2007) — the most common mistake is to
-              omit it.
-            - Choose the NUMBER OF IMPUTATIONS so Rubin pooling is
-              stable at this missingness level; the MI literature
-              gives rules of thumb scaled to the fraction of
-              missing information — cite the one you adopt.
-          Pool estimates via Rubin's rules; report the pooled point
-          + 95% CI + fraction of missing information (FMI).
+      STRATEGY 2 — MULTIPLE IMPUTATION (MI / MICE).
+        The principled choice for confirmatory work under MAR.
+        A fully-conditional / chained-equations implementation
+        exists in every major stats ecosystem; pick a maintained
+        one and document the conditional model used per column
+        (matched to that column's type). Key decisions that are
+        NOT defaults:
+          - INCLUDE the auxiliary variables identified in step 2
+            as predictors.
+          - INCLUDE the outcome in the imputation model
+            (von Hippel 2007) — the most common mistake is to
+            omit it.
+          - Choose the NUMBER OF IMPUTATIONS so Rubin pooling is
+            stable at this missingness level; the MI literature
+            gives rules of thumb scaled to the fraction of
+            missing information — cite the one you adopt.
+        Pool estimates via Rubin's rules; report the pooled point
+        + 95% CI + fraction of missing information (FMI).
 
-        STRATEGY 3 — INVERSE PROBABILITY WEIGHTING (IPW).
-          Estimate the probability of being observed; weight the
-          complete cases by 1/p. Easier to explain than MI for
-          some audiences; less efficient. Document the weighting
-          model.
+      STRATEGY 3 — INVERSE PROBABILITY WEIGHTING (IPW).
+        Estimate the probability of being observed; weight the
+        complete cases by 1/p. Easier to explain than MI for
+        some audiences; less efficient. Document the weighting
+        model.
 
-        STRATEGY 4 — JOINT MODELLING (MVN / FCS via Stan / brms).
-          For complex hierarchies. Heavy machinery; only when
-          1-3 are inadequate.
+      STRATEGY 4 — JOINT MODELLING (MVN / FCS via Stan / brms).
+        For complex hierarchies. Heavy machinery; only when
+        1-3 are inadequate.
 
-        STRATEGY 5 — INADEQUATE FOR CONFIRMATORY: mean / median /
-          mode / KNN / single regression imputation. Allowed for
-          DESCRIPTIVE EDA only; the audit MUST flag if these appear
-          in the primary inferential pipeline. The protocol refuses
-          to advance if the researcher picks one of these for a
-          confirmatory analysis.
+      STRATEGY 5 — INADEQUATE FOR CONFIRMATORY: mean / median /
+        mode / KNN / single regression imputation. Allowed for
+        DESCRIPTIVE EDA only; the audit MUST flag if these appear
+        in the primary inferential pipeline. The protocol refuses
+        to advance if the researcher picks one of these for a
+        confirmatory analysis.
 
-      For each candidate strategy, document: assumption it requires,
-      software, parameters, cited justification.
+    For each candidate strategy, document: assumption it requires,
+    software, parameters, cited justification.
 
-  - id: route_to_preregistration_if_confirmatory
-    name: Pre-register the plan if the analysis is confirmatory
-    description: |
-      If the analysis_plan is CONFIRMATORY (hypothesis-driven, not
-      EDA), route to `methodology/preregistration` BEFORE running
-      the imputation. The pre-registration freezes:
-        - the mechanism claim + evidence,
-        - the primary handling + parameters,
-        - the auxiliary variable set in the imputation model,
-        - the pre-specified sensitivity analysis (next step).
-      Skip this routing only when the analysis is explicitly
-      EXPLORATORY (logged in research_overview.md).
+- id: route_to_preregistration_if_confirmatory
+  name: Pre-register the plan if the analysis is confirmatory
+  description: |
+    If the analysis_plan is CONFIRMATORY (hypothesis-driven, not
+    EDA), route to `methodology/preregistration` BEFORE running
+    the imputation. The pre-registration freezes:
+      - the mechanism claim + evidence,
+      - the primary handling + parameters,
+      - the auxiliary variable set in the imputation model,
+      - the pre-specified sensitivity analysis (next step).
+    Skip this routing only when the analysis is explicitly
+    EXPLORATORY (logged in research_overview.md).
 
-  - id: run_primary_handling
-    name: Run the primary handling + analysis
-    description: |
-      Write `workspace/<step>/scripts/<NN>_impute_v1.py` (or `.R`).
-      The script must:
-        - load the staged data,
-        - apply the chosen handling (CC drop OR fit + apply MI),
-        - for MI: persist the m imputed datasets to
-          `data/next_step_output/imputations/imp_{i}.parquet` for the audit
-          to inspect, AND
-        - re-fit the planned analysis on each imputation, pool via
-          Rubin's rules (`statsmodels.imputation.mice.MICEData` /
-          `mice::pool()` in R), report the pooled estimate + CI +
-          FMI in `outputs/reports/primary_imputed_analysis.md`,
-        - save the m × p matrix of imputed values for the most
-          missing variable to `outputs/figures/imputed_distribution.png`
-          (compare imputed vs observed densities visually) — both
-          sidecars + .prov.json.
+- id: run_primary_handling
+  name: Run the primary handling + analysis
+  description: |
+    Write `workspace/<step>/scripts/<NN>_impute_v1.py` (or `.R`).
+    The script must:
+      - load the staged data,
+      - apply the chosen handling (CC drop OR fit + apply MI),
+      - for MI: persist the m imputed datasets to
+        `data/next_step_output/imputations/imp_{i}.parquet` for the audit
+        to inspect, AND
+      - re-fit the planned analysis on each imputation, pool via
+        Rubin's rules (`statsmodels.imputation.mice.MICEData` /
+        `mice::pool()` in R), report the pooled estimate + CI +
+        FMI in `outputs/reports/primary_imputed_analysis.md`,
+      - save the m × p matrix of imputed values for the most
+        missing variable to `outputs/figures/imputed_distribution.png`
+        (compare imputed vs observed densities visually) — both
+        sidecars + .prov.json.
 
-  - id: run_sensitivity_under_different_mechanism
-    name: Run ≥1 sensitivity analysis under a DIFFERENT mechanism
-    description: |
-      Mandatory. Pick at least one:
+- id: run_sensitivity_under_different_mechanism
+  name: Run ≥1 sensitivity analysis under a DIFFERENT mechanism
+  description: |
+    Mandatory. Pick at least one:
 
-        SENSITIVITY A — Complete-case re-fit (when primary is MI).
-          Shows whether the imputation moved the estimate.
+      SENSITIVITY A — Complete-case re-fit (when primary is MI).
+        Shows whether the imputation moved the estimate.
 
-        SENSITIVITY B — MI with DIFFERENT auxiliary set (drop the
-          most predictive auxiliary). Shows imputation-model
-          sensitivity.
+      SENSITIVITY B — MI with DIFFERENT auxiliary set (drop the
+        most predictive auxiliary). Shows imputation-model
+        sensitivity.
 
-        SENSITIVITY C — PATTERN-MIXTURE MODELS (PMM) — assume the
-          MNAR mean shift δ in the imputed values
-          (`mice::mice` with `pred[ , "Y"]` adjusted; or manual
-          δ-adjustment). Tipping-point analysis: how large must
-          δ be to overturn the conclusion?
+      SENSITIVITY C — PATTERN-MIXTURE MODELS (PMM) — assume the
+        MNAR mean shift δ in the imputed values
+        (`mice::mice` with `pred[ , "Y"]` adjusted; or manual
+        δ-adjustment). Tipping-point analysis: how large must
+        δ be to overturn the conclusion?
 
-        SENSITIVITY D — HECKMAN selection model when the
-          selection mechanism is identifiable
-          (`statsmodels` Heckman two-step or `sampleSelection` in R).
+      SENSITIVITY D — HECKMAN selection model when the
+        selection mechanism is identifiable
+        (`statsmodels` Heckman two-step or `sampleSelection` in R).
 
-        SENSITIVITY E — Best-case / worst-case extreme imputation
-          for binary outcomes (all missing = event vs all missing =
-          no event); only for sanity-bound, not as a primary.
+      SENSITIVITY E — Best-case / worst-case extreme imputation
+        for binary outcomes (all missing = event vs all missing =
+        no event); only for sanity-bound, not as a primary.
 
-      Use `tool_sensitivity(operation='define')` to register the sensitivity
-      spec and `tool_sensitivity(operation='run')` to execute. Write the
-      sensitivity report to
-      `outputs/reports/missing_data_sensitivity.md` — primary +
-      each sensitivity estimate side-by-side, with the verdict
-      "ROBUST" / "DIRECTION-PRESERVED" / "SENSITIVE".
+    Use `tool_sensitivity(operation='define')` to register the sensitivity
+    spec and `tool_sensitivity(operation='run')` to execute. Write the
+    sensitivity report to
+    `outputs/reports/missing_data_sensitivity.md` — primary +
+    each sensitivity estimate side-by-side, with the verdict
+    "ROBUST" / "DIRECTION-PRESERVED" / "SENSITIVE".
 
-  - id: append_to_methods_and_conclusions
-    name: Append to methods.md + conclusions.md
-    description: |
-      mem_log:
-        method="<primary handling, e.g. multiple imputation by chained
-                 equations — name the imputation model>"
-        parameters="m=<number of imputations, justified from the FMI per
-                     the cited rule>; auxiliaries=[<list>];
-                     <other params, each with its justification>"
-        justification="<mechanism claim with cited evidence>"
-        assumptions=["MAR conditional on <auxiliary set>"]
+- id: append_to_methods_and_conclusions
+  name: Append to methods.md + conclusions.md
+  description: |
+    mem_log:
+      method="<primary handling, e.g. multiple imputation by chained
+               equations — name the imputation model>"
+      parameters="m=<number of imputations, justified from the FMI per
+                   the cited rule>; auxiliaries=[<list>];
+                   <other params, each with its justification>"
+      justification="<mechanism claim with cited evidence>"
+      assumptions=["MAR conditional on <auxiliary set>"]
 
-      And conclusions.md > ## Limitations should include the
-      sensitivity verdict + the FMI per primary estimate.
+    And conclusions.md > ## Limitations should include the
+    sensitivity verdict + the FMI per primary estimate.
 
-  - id: cross_check_with_audit
-    name: Cross-check with audit_and_validation
-    description: |
-      `audit/audit_and_validation` step 3 verifies that:
-        - missingness profile exists,
-        - mechanism is justified,
-        - primary handling is documented,
-        - ≥1 sensitivity exists,
-        - pre-registration logged if confirmatory.
-      Return control so the master audit can record the missing-
-      data assumption as satisfied.
+- id: cross_check_with_audit
+  name: Cross-check with audit_and_validation
+  description: |
+    `audit/audit_and_validation` step 3 verifies that:
+      - missingness profile exists,
+      - mechanism is justified,
+      - primary handling is documented,
+      - ≥1 sensitivity exists,
+      - pre-registration logged if confirmatory.
+    Return control so the master audit can record the missing-
+    data assumption as satisfied.
 
 expected_outputs:
-  - workspace/<step>/outputs/reports/missingness_profile.md
-  - workspace/<step>/outputs/figures/missingness_pattern.png
-  - workspace/<step>/outputs/reports/missingness_mechanism.md
-  - workspace/<step>/outputs/reports/missing_data_plan.md
-  - workspace/<step>/outputs/reports/primary_imputed_analysis.md
-  - workspace/<step>/outputs/reports/missing_data_sensitivity.md
-  - workspace/<step>/data/next_step_output/imputations/imp_*.parquet
+- workspace/<step>/outputs/reports/missingness_profile.md
+- workspace/<step>/outputs/figures/missingness_pattern.png
+- workspace/<step>/outputs/reports/missingness_mechanism.md
+- workspace/<step>/outputs/reports/missing_data_plan.md
+- workspace/<step>/outputs/reports/primary_imputed_analysis.md
+- workspace/<step>/outputs/reports/missing_data_sensitivity.md
+- workspace/<step>/data/next_step_output/imputations/imp_*.parquet
 
 quality_bar:
   missingness_percent_per_column_reported: true
@@ -316,3 +298,37 @@ quality_bar:
 next_protocol: audit/audit_and_validation
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: pick
+triggers:
+- missing data
+- missingness
+- drop na
+- dropna
+- complete case
+- complete-case analysis
+- imputation
+- impute
+- mice
+- multiple imputation
+- iterative imputer
+- iterativeimputer
+- missforest
+- fill na
+- fillna
+- mcar
+- mar
+- mnar
+- pattern mixture
+- heckman
+summary: Missing-data strategy — MCAR/MAR/MNAR reasoning, primary handling (complete-case or multiple imputation via MICE), mandatory sensitivity under a different mechanism.
+token_estimate: 1700
+decomposition:
+- protocol: methodology/missing_data_strategy
+  purpose: Quantify missingness, justify mechanism, pick handling, run primary + sensitivity, pre-register if confirmatory.
+- tool: tool_data
+  purpose: Profile missingness per column / row / stratum.
+- tool: tool_python_exec
+  purpose: Run MICE / IPW / pattern-mixture scripts.
+- tool: tool_sensitivity
+  purpose: Register the sensitivity spec under a different missingness mechanism (operation='define') then execute (operation='run').

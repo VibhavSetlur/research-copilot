@@ -2,7 +2,7 @@ id: writing_core
 tier: 'synthesize'
 name: Writing — Core Rules
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher, auditor]
@@ -31,54 +31,38 @@ editorial_voice:
   default_tense: past for what was done, present for what the evidence supports
   mode: prescription
   rules:
-    - "Every quantitative claim must trace to a workspace artefact or a
-       verified citation. 'It is well known' is not grounding."
-    - "Use supportive, professional research voice in any deliverable
-       reviewing prior work — 'would benefit from', 'consider', 'the
-       alternative interpretation is'."
-    - "No first-person voice in deliverables. Methods + Results in
-       past tense; Discussion in present tense; Future Work in future."
-    - "If workspace/.style/voice_profile.md exists (writing/voice_calibration
-       built it), apply the researcher's captured voice in the discretionary
-       space — sentence rhythm, diction, stance, signposting — UNDER these
-       hard rules and the venue's. Voice shapes HOW a thing is said, never
-       WHETHER a claim is grounded; the rules above win on any conflict."
+  - "Every quantitative claim must trace to a workspace artefact or a verified citation. 'It is well known' is not grounding."
+  - "Use supportive, professional research voice in any deliverable reviewing prior work — 'would benefit from', 'consider', 'the alternative interpretation is'."
+  - "No first-person voice in deliverables. Methods + Results in past tense; Discussion in present tense; Future Work in future."
+  - "If workspace/.style/voice_profile.md exists (writing/voice_calibration built it), apply the researcher's captured voice in the discretionary space — sentence rhythm, diction, stance, signposting — UNDER these hard rules and the venue's. Voice shapes HOW a thing is said, never WHETHER a claim is grounded; the rules above win on any conflict."
 
 rules:
   voice_and_tense:
-    methods: "past tense; either active ('We fit a model') or passive
-              ('Models were fit') — be consistent within a section."
-    results: "past tense; no causal language unless the design warrants
-              it (RCT / IV / RDD / DiD / mathematical proof)."
-    discussion: "present tense for what the evidence supports; past
-                 tense for what was done."
-    conclusion: "present + future ('These results suggest', 'Future work
-                 should')."
+    methods: "past tense; either active ('We fit a model') or passive ('Models were fit') — be consistent within a section."
+    results: "past tense; no causal language unless the design warrants it (RCT / IV / RDD / DiD / mathematical proof)."
+    discussion: "present tense for what the evidence supports; past tense for what was done."
+    conclusion: "present + future ('These results suggest', 'Future work should')."
   claim_grounding:
-    - "Every number, comparison, and method choice must be traceable
-       to a specific row in workspace/methods.md, an output in
-       workspace/<step>/outputs/, or a verified citation."
-    - "No vague-evidence phrasing ('many studies have shown', 'most
-       researchers agree'); cite explicitly."
-    - "tool_audit(scope='project', dimension='claims') and tool_verify enforce this at
-       synthesis time."
+  - "Every number, comparison, and method choice must be traceable to a specific row in workspace/methods.md, an output in workspace/<step>/outputs/, or a verified citation."
+  - "No vague-evidence phrasing ('many studies have shown', 'most researchers agree'); cite explicitly."
+  - "tool_audit(scope='project', dimension='claims') and tool_verify enforce this at synthesis time."
   banned_phrases:
-    - "it is important to note that"
-    - "interestingly,"
-    - "it is well known"
-    - "obviously"
-    - "naively"
-    - "trivially"
-    - "intuitively"
-    - "as a language model"
-    - "needless to say"
-    - "in order to"
-    - "due to the fact that"
-    - "novel approach"
-    - "many studies have shown"
-    - "most researchers"
-    - "perfectly"
-    - "100% accurate"
+  - "it is important to note that"
+  - "interestingly,"
+  - "it is well known"
+  - "obviously"
+  - "naively"
+  - "trivially"
+  - "intuitively"
+  - "as a language model"
+  - "needless to say"
+  - "in order to"
+  - "due to the fact that"
+  - "novel approach"
+  - "many studies have shown"
+  - "most researchers"
+  - "perfectly"
+  - "100% accurate"
   vague_quantifier_audit:
     rule: |
       Replace vague quantifiers with the SPECIFIC count or fraction
@@ -86,29 +70,29 @@ rules:
       number is uncertain, and as carelessness when the number is
       known but unstated.
     replacements:
-      - "'a few'        → '<n>'"
-      - "'several'      → '<n>'"
-      - "'many'         → '<n>' or '<percentage>%'"
-      - "'most'         → '<percentage>%'"
-      - "'some'         → '<n>' or '<percentage>%'"
-      - "'a number of'  → '<n>'"
-      - "'a significant amount of' → '<exact quantity>'"
-      - "'considerable' → '<the measured amount>'"
-      - "'substantial'  → '<the measured amount>'"
+    - "'a few'        → '<n>'"
+    - "'several'      → '<n>'"
+    - "'many'         → '<n>' or '<percentage>%'"
+    - "'most'         → '<percentage>%'"
+    - "'some'         → '<n>' or '<percentage>%'"
+    - "'a number of'  → '<n>'"
+    - "'a significant amount of' → '<exact quantity>'"
+    - "'considerable' → '<the measured amount>'"
+    - "'substantial'  → '<the measured amount>'"
   anti_bullshit_signals:
     rule: |
       Watch for sentences that PERFORM rigour without delivering
       it. Each pattern is a smell; rewrite when it appears.
     patterns:
-      - 'sentences like `X demonstrates Y` without naming the comparison X was demonstrated against'
-      - 'sentences like `X significantly Y` with no statistical test cited'
-      - '`robust` / `robustly` without naming the robustness check'
-      - '`principled` without naming the principle'
-      - '`we leverage` / `we harness` instead of `we use`'
-      - '`rich` / `deep` / `powerful` used as method adjectives rather than measured properties'
-      - '`extensive experiments` without enumeration in Methods'
-      - '`we observe` used to soft-pedal a quantitative claim that should be stated with its statistic'
-      - 'claim sentences ending with `(Figure N)` when the figure does not actually support the claim'
+    - 'sentences like `X demonstrates Y` without naming the comparison X was demonstrated against'
+    - 'sentences like `X significantly Y` with no statistical test cited'
+    - '`robust` / `robustly` without naming the robustness check'
+    - '`principled` without naming the principle'
+    - '`we leverage` / `we harness` instead of `we use`'
+    - '`rich` / `deep` / `powerful` used as method adjectives rather than measured properties'
+    - '`extensive experiments` without enumeration in Methods'
+    - '`we observe` used to soft-pedal a quantitative claim that should be stated with its statistic'
+    - 'claim sentences ending with `(Figure N)` when the figure does not actually support the claim'
   numbered_claim_grounding:
     rule: |
       For high-stakes drafts (papers, grants, dashboards), assign
@@ -136,140 +120,131 @@ rules:
       6. The ledger persists; it documents grounding for future
          audits, peer review, and reproductions.
   causal_language:
-    permitted_when: ["RCT", "instrumental variable", "regression discontinuity",
-                     "difference-in-differences", "mathematical proof"]
-    permitted_terms_when_warranted:
-      ["causes", "leads to", "results in", "impacts", "proves"]
-    observational_alternatives:
-      ["is associated with", "is correlated with", "suggests",
-       "is consistent with", "would be expected under"]
+    permitted_when: ["RCT", "instrumental variable", "regression discontinuity", "difference-in-differences", "mathematical proof"]
+    permitted_terms_when_warranted: ["causes", "leads to", "results in", "impacts", "proves"]
+    observational_alternatives: ["is associated with", "is correlated with", "suggests", "is consistent with", "would be expected under"]
   number_formatting:
-    p_values: "Report to the precision the field's reporting standard
-               uses, and floor very small values rather than printing
-               spurious digits (e.g. 'p < 0.001'). Be consistent
-               within a document."
-    interval_estimates: "Report an interval estimate alongside the point
-                         estimate (e.g. '12.3 (95% CI 10.1–14.5)'). The
-                         coverage level (95%, 90%, credible vs.
-                         confidence) follows the field's convention —
-                         state which it is."
-    scientific_notation: "Use it for magnitudes outside the range the
-                          reader reads comfortably as decimals (very
-                          small or very large), consistently."
-    units: "Always include where applicable ('1.2 mg/dL', '12.5 °C',
-            '0.85 AUROC', '423 patients')."
-    significant_figures: "Match the precision of the underlying
-                          measurement; do not over-report digits."
+    p_values: "Report to the precision the field's reporting standard uses, and floor very small values rather than printing spurious digits (e.g. 'p < 0.001'). Be consistent within a document."
+    interval_estimates: "Report an interval estimate alongside the point estimate (e.g. '12.3 (95% CI 10.1–14.5)'). The coverage level (95%, 90%, credible vs. confidence) follows the field's convention — state which it is."
+    scientific_notation: "Use it for magnitudes outside the range the reader reads comfortably as decimals (very small or very large), consistently."
+    units: "Always include where applicable ('1.2 mg/dL', '12.5 °C', '0.85 AUROC', '423 patients')."
+    significant_figures: "Match the precision of the underlying measurement; do not over-report digits."
   figure_referencing:
-    - "Every figure cited in prose must exist on disk."
-    - "Reference by its file name or by 'Figure N' once numbered."
-    - "Captions live in <name>.caption.md (technical) and
-       <name>.summary.md (plain-English) sidecars."
+  - "Every figure cited in prose must exist on disk."
+  - "Reference by its file name or by 'Figure N' once numbered."
+  - "Captions live in <name>.caption.md (technical) and <name>.summary.md (plain-English) sidecars."
 
 steps:
-  - id: voice_and_tense_check
-    name: Voice + tense check (during drafting)
-    description: |
-      Before committing any paragraph, self-check the tense matches
-      the section it lives in. Methods/Results past, Discussion
-      present, Future Work future. Consistency within a section
-      matters more than the specific choice.
+- id: voice_and_tense_check
+  name: Voice + tense check (during drafting)
+  description: |
+    Before committing any paragraph, self-check the tense matches
+    the section it lives in. Methods/Results past, Discussion
+    present, Future Work future. Consistency within a section
+    matters more than the specific choice.
 
-      If workspace/.style/voice_profile.md exists, also check the paragraph
-      against the researcher's captured voice (rhythm, diction, stance,
-      signposting) and adjust it toward their profile within the venue's
-      rules — the draft should read like the researcher, not a generic model.
-      No profile yet but drafting substantial prose for them? Offer
-      writing/voice_calibration so future drafts land in their voice.
+    If workspace/.style/voice_profile.md exists, also check the paragraph
+    against the researcher's captured voice (rhythm, diction, stance,
+    signposting) and adjust it toward their profile within the venue's
+    rules — the draft should read like the researcher, not a generic model.
+    No profile yet but drafting substantial prose for them? Offer
+    writing/voice_calibration so future drafts land in their voice.
 
-  - id: claim_grounding_check
-    name: Every claim grounded
-    description: |
-      For each quantitative claim, identify the source. If it lives
-      in a workspace output, the claim is grounded; if it lives in a
-      citation, ensure the citation is verified
-      (`tool_citations_verify`). If it lives in neither, either
-      remove the claim or generate the supporting artefact first.
+- id: claim_grounding_check
+  name: Every claim grounded
+  description: |
+    For each quantitative claim, identify the source. If it lives
+    in a workspace output, the claim is grounded; if it lives in a
+    citation, ensure the citation is verified
+    (`tool_audit (scope=project, dimension=citations)`). If it lives in neither, either
+    remove the claim or generate the supporting artefact first.
 
-      CoVe-style verification on the top-N most load-bearing claims
-      (the ones that anchor abstract / discussion paragraphs):
+    CoVe-style verification on the top-N most load-bearing claims
+    (the ones that anchor abstract / discussion paragraphs):
 
-        tool_verify
-            scope="claim"
-            claim="<verbatim from draft>"
-            verifications=[
-              {question: "Does the cited paper measure the same thing?",
-               answer: "<your finding>", supports: true,
-               evidence: {type: "cited_paper",
-                          path: "inputs/literature/<file>.pdf",
-                          cited_text: "<verbatim span from source>"}},
-              {question: "Same effect direction?", answer: "...", supports: true,
-               evidence: {type: "cited_paper", path: "...", cited_text: "..."}},
-              {question: "Same population / cohort / units?", answer: "...", supports: true,
-               evidence: {type: "cited_paper", path: "...", cited_text: "..."}},
-              {question: "Quantitative anchor in the same range?", answer: "...", supports: true,
-               evidence: {type: "cited_paper", path: "...", cited_text: "..."}},
-            ]
+      tool_verify
+          scope="claim"
+          claim="<verbatim from draft>"
+          verifications=[
+            {question: "Does the cited paper measure the same thing?",
+             answer: "<your finding>", supports: true,
+             evidence: {type: "cited_paper",
+                        path: "inputs/literature/<file>.pdf",
+                        cited_text: "<verbatim span from source>"}},
+            {question: "Same effect direction?", answer: "...", supports: true,
+             evidence: {type: "cited_paper", path: "...", cited_text: "..."}},
+            {question: "Same population / cohort / units?", answer: "...", supports: true,
+             evidence: {type: "cited_paper", path: "...", cited_text: "..."}},
+            {question: "Quantitative anchor in the same range?", answer: "...", supports: true,
+             evidence: {type: "cited_paper", path: "...", cited_text: "..."}},
+          ]
 
-      `supports` is per-verification-entry. A claim is VERIFIED only if
-      EVERY entry has supports==true AND its `evidence.path` resolves
-      with the `cited_text` present in that file; otherwise the entry
-      downgrades to needs_revision / unverifiable and the claim verdict
-      is never `verified`. Any unsupported entry flips the draft sentence
-      into a caveated form ("…in contrast to <paper>, which reports …")
-      OR the claim is removed.
+    `supports` is per-verification-entry. A claim is VERIFIED only if
+    EVERY entry has supports==true AND its `evidence.path` resolves
+    with the `cited_text` present in that file; otherwise the entry
+    downgrades to needs_revision / unverifiable and the claim verdict
+    is never `verified`. Any unsupported entry flips the draft sentence
+    into a caveated form ("…in contrast to <paper>, which reports …")
+    OR the claim is removed.
 
-      tool_verify(scope="project") runs the project-wide audit gate
-      at finalize (a different scope of the same tool):
-        - walks workspace/analysis.md decision blocks
-        - confirms each decision has a grounding record or inline cite
-        - writes workspace/logs/grounding_audit.md
-        - BLOCKS pre-submission checklist if any decision is bare
+    tool_verify(scope="project") runs the project-wide audit gate
+    at finalize (a different scope of the same tool):
+      - walks workspace/analysis.md decision blocks
+      - confirms each decision has a grounding record or inline cite
+      - writes workspace/logs/grounding_audit.md
+      - BLOCKS pre-submission checklist if any decision is bare
 
-  - id: banned_phrase_check
-    name: Banned phrases + causal over-reach
-    description: |
-      Self-scan for the banned phrase list above. Verify any causal
-      term is licensed by the study design. When in doubt, use the
-      observational alternative — over-claiming costs more than
-      under-claiming.
+- id: banned_phrase_check
+  name: Banned phrases + causal over-reach
+  description: |
+    Self-scan for the banned phrase list above. Verify any causal
+    term is licensed by the study design. When in doubt, use the
+    observational alternative — over-claiming costs more than
+    under-claiming.
 
-  - id: vague_quantifier_check
-    name: Vague quantifier check
-    description: |
-      Walk the draft for "a few / several / many / most / some /
-      a number of / a significant amount of / considerable /
-      substantial". For each:
-        - if the exact count is known → replace with the count or
-          percentage
-        - if the exact count is unknown → either run a quick
-          count or remove the claim
-      The vague form is acceptable only when the count would be
-      meaningless to the reader (e.g. "several other reasons" in
-      an introduction's framing).
+- id: vague_quantifier_check
+  name: Vague quantifier check
+  description: |
+    Walk the draft for "a few / several / many / most / some /
+    a number of / a significant amount of / considerable /
+    substantial". For each:
+      - if the exact count is known → replace with the count or
+        percentage
+      - if the exact count is unknown → either run a quick
+        count or remove the claim
+    The vague form is acceptable only when the count would be
+    meaningless to the reader (e.g. "several other reasons" in
+    an introduction's framing).
 
-  - id: anti_bullshit_check
-    name: Anti-bullshit signals check
-    description: |
-      Walk the draft for the patterns listed in
-      `anti_bullshit_signals` above. For each hit:
-        - state what's being claimed in concrete terms
-        - cite the evidence that supports the claim, OR
-        - delete the sentence
+- id: anti_bullshit_check
+  name: Anti-bullshit signals check
+  description: |
+    Walk the draft for the patterns listed in
+    `anti_bullshit_signals` above. For each hit:
+      - state what's being claimed in concrete terms
+      - cite the evidence that supports the claim, OR
+      - delete the sentence
 
-      Sentences that perform rigour without delivering it survive
-      first drafts because they sound right; the audit's job is
-      to make them die.
+    Sentences that perform rigour without delivering it survive
+    first drafts because they sound right; the audit's job is
+    to make them die.
 
-  - id: optional_validation
-    name: Programmatic validation (optional)
-    description: |
-      For substantial drafts:
-        sys_file_validate_md filepath="<path>" protocol_name="writing_core"
-      Flags banned phrases and missing structural headers.
+- id: optional_validation
+  name: Programmatic validation (optional)
+  description: |
+    For substantial drafts:
+      tool_audit (scope=file, dimension=markdown) filepath="<path>" protocol_name="writing_core"
+    Flags banned phrases and missing structural headers.
 
 expected_outputs: []
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: writing
+triggers:
+- writing rules
+- style guide
+- core writing
+summary: Universal writing rules. Implicitly loaded by every synthesis.

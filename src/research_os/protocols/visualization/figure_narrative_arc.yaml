@@ -2,15 +2,15 @@ id: figure_narrative_arc
 tier: 'synthesize'
 name: Figure Narrative Arc (ordering figures across paper / talk / poster)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - visualization/visualization_workflow       # build any missing arc-position figure
-  - visualization/multi_panel_composition      # merge a cut figure into a panel of a kept one
+- visualization/visualization_workflow         # build any missing arc-position figure
+- visualization/multi_panel_composition        # merge a cut figure into a panel of a kept one
 description: |
   Choose and ORDER the figures that appear in a paper / talk / poster
   / dashboard. The choice of WHICH figures and the order they appear
@@ -32,32 +32,16 @@ trigger: |
   "drop a figure", "tighten the figure set", "figure budget".
 
 prerequisites:
-  - At least 2 figures available across workspace/<step>/outputs/figures/
-    OR synthesis/figures/.
-  - A target deliverable (paper / talk / poster / dashboard) named so
-    the figure budget is bounded.
+- At least 2 figures available across workspace/<step>/outputs/figures/ OR synthesis/figures/.
+- A target deliverable (paper / talk / poster / dashboard) named so the figure budget is bounded.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Figure 1 sets the question; the LAST figure delivers the
-       headline. Intermediate figures support the chain — every
-       figure earns its place by being load-bearing for a step in
-       the argument."
-    - "A figure that survives a 'cut this figure' challenge is a
-       figure that belongs. Apply the cut-test to every candidate;
-       the survivors are the keep set."
-    - "Sequence the figures so the reader's mental model BUILDS.
-       Don't introduce a result before introducing the comparison
-       it makes — the reader must already see WHY before they see
-       WHAT."
-    - "Different deliverables have different figure budgets and
-       arcs — a journal paper runs an IMRAD-shaped arc, a talk a
-       story arc, a poster a billboard arc. The budget is set by the
-       TARGET VENUE (the journal's figure limit, the talk's time, the
-       poster's column count), not a generic number. The
-       destination_profile below carries typical ranges; verify them
-       against the actual venue before treating them as the bound."
+  - "Figure 1 sets the question; the LAST figure delivers the headline. Intermediate figures support the chain — every figure earns its place by being load-bearing for a step in the argument."
+  - "A figure that survives a 'cut this figure' challenge is a figure that belongs. Apply the cut-test to every candidate; the survivors are the keep set."
+  - "Sequence the figures so the reader's mental model BUILDS. Don't introduce a result before introducing the comparison it makes — the reader must already see WHY before they see WHAT."
+  - "Different deliverables have different figure budgets and arcs — a journal paper runs an IMRAD-shaped arc, a talk a story arc, a poster a billboard arc. The budget is set by the TARGET VENUE (the journal's figure limit, the talk's time, the poster's column count), not a generic number. The destination_profile below carries typical ranges; verify them against the actual venue before treating them as the bound."
 
 destination_profile:
   # figure_budget ranges are typical venue defaults, not hard limits.
@@ -111,157 +95,157 @@ destination_profile:
       before the dashboard renders.
 
 steps:
-  - id: select_destination
-    name: Select destination + figure budget
-    description: |
-      Ask (or infer):
-        "Destination? paper_journal | paper_short_letter | talk_short
-         | talk_long | poster | dashboard."
-      The destination's figure_budget bounds the keep set;
-      the destination's arc structures the order.
+- id: select_destination
+  name: Select destination + figure budget
+  description: |
+    Ask (or infer):
+      "Destination? paper_journal | paper_short_letter | talk_short
+       | talk_long | poster | dashboard."
+    The destination's figure_budget bounds the keep set;
+    the destination's arc structures the order.
 
-  - id: inventory_candidates
-    name: Inventory all candidate figures
-    description: |
-      In ONE batch:
-        - sys_path                              (all active steps)
-        - sys_file_list directory="workspace/<step>/outputs/figures"
-          for each step
-        - sys_file_list directory="synthesis/figures"
-          (already-curated)
+- id: inventory_candidates
+  name: Inventory all candidate figures
+  description: |
+    In ONE batch:
+      - sys_state_get                              (all active steps)
+      - sys_file_list directory="workspace/<step>/outputs/figures"
+        for each step
+      - sys_file_list directory="synthesis/figures"
+        (already-curated)
 
-      For each candidate, record:
-        - source step
-        - filename
-        - the substantive claim its caption makes (from
-          <name>.caption.md if present)
-        - whether it has both sidecars
-        - whether it is publication-grade (≥300 DPI, both sidecars
-          present, audit-clean)
+    For each candidate, record:
+      - source step
+      - filename
+      - the substantive claim its caption makes (from
+        <name>.caption.md if present)
+      - whether it has both sidecars
+      - whether it is publication-grade (≥300 DPI, both sidecars
+        present, audit-clean)
 
-      Write to workspace/scratch/figure_inventory.md.
+    Write to workspace/scratch/figure_inventory.md.
 
-  - id: name_the_story
-    name: Name the story across the figures
-    description: |
-      Write ONE PARAGRAPH (≤100 words) describing the argument
-      the figures collectively tell. The paragraph names:
-        - the question the reader starts with
-        - the evidence the reader needs to follow the argument
-        - the headline conclusion the reader arrives at
+- id: name_the_story
+  name: Name the story across the figures
+  description: |
+    Write ONE PARAGRAPH (≤100 words) describing the argument
+    the figures collectively tell. The paragraph names:
+      - the question the reader starts with
+      - the evidence the reader needs to follow the argument
+      - the headline conclusion the reader arrives at
 
-      Each figure in the keep set will earn its place by being
-      load-bearing for one beat in this paragraph. Figures that
-      do not appear in the paragraph are decorative; they get
-      cut (or moved to supplementary).
+    Each figure in the keep set will earn its place by being
+    load-bearing for one beat in this paragraph. Figures that
+    do not appear in the paragraph are decorative; they get
+    cut (or moved to supplementary).
 
-  - id: apply_cut_test
-    name: Apply the cut-test to every candidate
-    description: |
-      For each candidate figure, ask:
-        "If this figure were removed, would the argument still
-         hold? If yes, can the reader still follow the chain
-         without it?"
+- id: apply_cut_test
+  name: Apply the cut-test to every candidate
+  description: |
+    For each candidate figure, ask:
+      "If this figure were removed, would the argument still
+       hold? If yes, can the reader still follow the chain
+       without it?"
 
-      Three outcomes:
-        - LOAD-BEARING — removing it breaks the argument → keep
-        - REDUNDANT — another figure makes the same point → cut
-                      (or merge as a panel of the load-bearing one)
-        - SUPPLEMENTARY — informative but not load-bearing → move
-                          to supplementary / appendix
+    Three outcomes:
+      - LOAD-BEARING — removing it breaks the argument → keep
+      - REDUNDANT — another figure makes the same point → cut
+                    (or merge as a panel of the load-bearing one)
+      - SUPPLEMENTARY — informative but not load-bearing → move
+                        to supplementary / appendix
 
-      Apply ruthlessly until the count fits the destination's
-      figure_budget. A paper with 8 figures usually shrinks to 5
-      that are sharper; the cut figures move to supplementary.
+    Apply ruthlessly until the count fits the destination's
+    figure_budget. A paper with 8 figures usually shrinks to 5
+    that are sharper; the cut figures move to supplementary.
 
-  - id: assign_to_arc_positions
-    name: Assign keep-set figures to arc positions
-    description: |
-      Walk the destination's arc and assign each figure to its
-      position:
+- id: assign_to_arc_positions
+  name: Assign keep-set figures to arc positions
+  description: |
+    Walk the destination's arc and assign each figure to its
+    position:
 
-        paper_journal arc:
-          Setup            → figure 1
-          Validation       → figure 2
-          Primary_result   → figure 3 (and 4 if needed)
-          Sub-result       → figure 4 or 5
-          Synthesis        → figure 5 or 6
+      paper_journal arc:
+        Setup            → figure 1
+        Validation       → figure 2
+        Primary_result   → figure 3 (and 4 if needed)
+        Sub-result       → figure 4 or 5
+        Synthesis        → figure 5 or 6
 
-      For positions WITH NO CANDIDATE in the inventory:
-        - either build the missing figure via
-          `visualization/visualization_workflow`, OR
-        - explicitly drop that arc beat from the deliverable
-          (most short-form papers drop the synthesis figure)
+    For positions WITH NO CANDIDATE in the inventory:
+      - either build the missing figure via
+        `visualization/visualization_workflow`, OR
+      - explicitly drop that arc beat from the deliverable
+        (most short-form papers drop the synthesis figure)
 
-      For positions WITH MULTIPLE CANDIDATES, pick the strongest
-      and demote the others to supplementary.
+    For positions WITH MULTIPLE CANDIDATES, pick the strongest
+    and demote the others to supplementary.
 
-      Save the assignment to workspace/scratch/figure_arc.md as a
-      numbered list:
-        Figure 1: <name> — <one-sentence role in the argument>
-        Figure 2: <name> — <one-sentence role in the argument>
-        ...
+    Save the assignment to workspace/scratch/figure_arc.md as a
+    numbered list:
+      Figure 1: <name> — <one-sentence role in the argument>
+      Figure 2: <name> — <one-sentence role in the argument>
+      ...
 
-  - id: check_reading_order_supports_the_chain
-    name: Reading-order sanity check
-    description: |
-      Walk the arc forward as a naive reader would:
-        - does Figure N introduce only concepts already shown in
-          figures 1..N-1?
-        - does Figure N reference any quantity / unit / colour /
-          legend not introduced earlier?
-        - does any figure assume a comparison the reader has not
-          yet been shown?
+- id: check_reading_order_supports_the_chain
+  name: Reading-order sanity check
+  description: |
+    Walk the arc forward as a naive reader would:
+      - does Figure N introduce only concepts already shown in
+        figures 1..N-1?
+      - does Figure N reference any quantity / unit / colour /
+        legend not introduced earlier?
+      - does any figure assume a comparison the reader has not
+        yet been shown?
 
-      When a figure assumes something not yet shown, EITHER move
-      its prerequisite earlier in the arc OR add a small intro
-      figure before it. Reading-order violations are the single
-      most common reason figures "don't quite land" with the
-      reader.
+    When a figure assumes something not yet shown, EITHER move
+    its prerequisite earlier in the arc OR add a small intro
+    figure before it. Reading-order violations are the single
+    most common reason figures "don't quite land" with the
+    reader.
 
-  - id: write_the_figure_brief_for_the_deliverable
-    name: Write a figure brief for the deliverable's drafter
-    description: |
-      sys_file_write filepath="synthesis/figure_brief.md":
+- id: write_the_figure_brief_for_the_deliverable
+  name: Write a figure brief for the deliverable's drafter
+  description: |
+    sys_file_write filepath="synthesis/figure_brief.md":
 
-        # Figure brief — <deliverable>
-        Destination: <destination>
-        Figure budget: <range>
-        Story (1 paragraph): <from name_the_story>
+      # Figure brief — <deliverable>
+      Destination: <destination>
+      Figure budget: <range>
+      Story (1 paragraph): <from name_the_story>
 
-        ## Keep set, ordered
-        Figure 1: <name> — <role> — source: <path>
-        Figure 2: <name> — <role> — source: <path>
-        ...
+      ## Keep set, ordered
+      Figure 1: <name> — <role> — source: <path>
+      Figure 2: <name> — <role> — source: <path>
+      ...
 
-        ## Cuts (with rationale)
-        - <name> → moved to supplementary; <one-line why>
-        - <name> → dropped; <one-line why>
+      ## Cuts (with rationale)
+      - <name> → moved to supplementary; <one-line why>
+      - <name> → dropped; <one-line why>
 
-        ## Building required
-        - position <N>: <missing figure description> — route to
-          visualization/visualization_workflow
+      ## Building required
+      - position <N>: <missing figure description> — route to
+        visualization/visualization_workflow
 
-      This brief is what synthesis_paper / synthesis_slides /
-      synthesis_poster / synthesis_dashboard consume to know which
-      figure goes where. It also documents the cut decisions so a
-      reviewer / collaborator can see what was considered.
+    This brief is what synthesis_paper / synthesis_slides /
+    synthesis_poster / synthesis_dashboard consume to know which
+    figure goes where. It also documents the cut decisions so a
+    reviewer / collaborator can see what was considered.
 
-  - id: route_to_curate
-    name: Route to the deliverable's figure-curation tool
-    description: |
-      For paper / poster / dashboard:
-        tool_synthesis_curate_figures (curates per synthesis/figure_brief.md
-        and copies into synthesis/figures/ with fig01_<slug>.png,
-        fig02_<slug>.png, ...).
-      For talk:
-        the slide protocol reads synthesis/figure_brief.md and
-        embeds per-slide.
+- id: route_to_curate
+  name: Route to the deliverable's figure-curation tool
+  description: |
+    For paper / poster / dashboard:
+      tool_synthesis_scaffold (operation=curate_figures) (curates per synthesis/figure_brief.md
+      and copies into synthesis/figures/ with fig01_<slug>.png,
+      fig02_<slug>.png, ...).
+    For talk:
+      the slide protocol reads synthesis/figure_brief.md and
+      embeds per-slide.
 
 expected_outputs:
-  - workspace/scratch/figure_inventory.md
-  - workspace/scratch/figure_arc.md
-  - synthesis/figure_brief.md
+- workspace/scratch/figure_inventory.md
+- workspace/scratch/figure_arc.md
+- synthesis/figure_brief.md
 
 quality_bar:
   figure_budget_respected: true
@@ -270,6 +254,23 @@ quality_bar:
   cuts_documented_with_rationale: true
   story_paragraph_under_100_words: true
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: synthesize
+sub_intent: figure_arc
+triggers:
+- which figures should i keep
+- order my figures
+- figure arc
+- narrative arc of figures
+- what should figure 1 be
+- drop a figure
+- tighten the figure set
+- figure budget
+- figure brief
+summary: Order figures across a paper / talk / poster (figure budget + arc + cut decisions).
+token_estimate: 1400
+decomposition:
+- protocol: visualization/figure_narrative_arc
+  purpose: Inventory, name story, cut-test, assign-to-arc, brief the drafter.

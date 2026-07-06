@@ -2,16 +2,16 @@ id: showcase_visualization
 tier: 'synthesize'
 name: Showcase Visualization (the visual IS the contribution)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [naive_ai, auditor, maintainer]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - visualization/interactive_dashboard_design   # when the showcase artefact is interactive
-  - visualization/color_accessibility_audit        # the design review's grayscale/CVD pass
-  - visualization/animation_design                 # motion-driven showcase pieces
+- visualization/interactive_dashboard_design     # when the showcase artefact is interactive
+- visualization/color_accessibility_audit          # the design review's grayscale/CVD pass
+- visualization/animation_design                   # motion-driven showcase pieces
 description: |
   Most viz protocols treat the figure as a SUPPORT for a written
   claim. THIS protocol is for the inverse: HCI / UI research, data
@@ -51,229 +51,210 @@ trigger: |
       for attention against thousands of similar landing pages.
 
 prerequisites:
-  - The data narrative is at least sketched — what should the
-    viewer notice in 3 seconds? In 30 seconds? In 3 minutes?
-  - A skill / collaborator capable of executing at this tier
-    exists (D3 / Three.js / Canvas / typography). If not, route
-    to visualization/external_tool_setup first or accept that
-    "showcase" is aspirational.
+- The data narrative is at least sketched — what should the viewer notice in 3 seconds? In 30 seconds? In 3 minutes?
+- A skill / collaborator capable of executing at this tier exists (D3 / Three.js / Canvas / typography). If not, route to visualization/external_tool_setup first or accept that "showcase" is aspirational.
 
 editorial_voice:
   rules:
-    - "The 3-second test. What does the viewer see in 3 seconds
-       — before they read any label? That impression IS the
-       contribution. If the 3-second read is wrong / generic /
-       boring, the visualization failed regardless of what the
-       labels say."
-    - "Data-ink ratio (Tufte) is the floor, not the ceiling.
-       Showcase-tier adds DESIGN INTENT — typography hierarchy,
-       intentional colour beyond ColorBrewer, micro-animation
-       that earns its place, density that rewards re-reading.
-       'No chartjunk' is necessary, not sufficient."
-    - "Custom > library default. A 30-line custom D3 visual that
-       fits the story always beats a 5-line plotly chart that
-       merely accommodates it. The tradeoff cost is justified
-       when the visual carries the contribution."
-    - "Print resolution + screen + projector + mobile. A showcase
-       figure that only works at one size is fragile. Build at
-       vector + raster + responsive variants from the start."
-    - "Reproducibility doesn't drop. The data + the rendering
-       script + the typeface licenses are checked in. 'Hand-
-       polished in Illustrator' is allowed; 'no source' is not."
+  - "The 3-second test. What does the viewer see in 3 seconds — before they read any label? That impression IS the contribution. If the 3-second read is wrong / generic / boring, the visualization failed regardless of what the labels say."
+  - "Data-ink ratio (Tufte) is the floor, not the ceiling. Showcase-tier adds DESIGN INTENT — typography hierarchy, intentional colour beyond ColorBrewer, micro-animation that earns its place, density that rewards re-reading. 'No chartjunk' is necessary, not sufficient."
+  - "Custom > library default. A 30-line custom D3 visual that fits the story always beats a 5-line plotly chart that merely accommodates it. The tradeoff cost is justified when the visual carries the contribution."
+  - "Print resolution + screen + projector + mobile. A showcase figure that only works at one size is fragile. Build at vector + raster + responsive variants from the start."
+  - "Reproducibility doesn't drop. The data + the rendering script + the typeface licenses are checked in. 'Hand- polished in Illustrator' is allowed; 'no source' is not."
 
 steps:
-  - id: define_the_3_second_30_second_3_minute_read
-    name: Define the layered read (3s / 30s / 3min)
-    description: |
-      Write three sentences:
-        - 3-SECOND READ: what does the viewer take away from a
-          glance? (Usually one shape, contrast, or outlier.)
-        - 30-SECOND READ: what do they take after engaging with
-          the axes + legend + headline?
-        - 3-MINUTE READ: what rewards lingering or scrolling?
+- id: define_the_3_second_30_second_3_minute_read
+  name: Define the layered read (3s / 30s / 3min)
+  description: |
+    Write three sentences:
+      - 3-SECOND READ: what does the viewer take away from a
+        glance? (Usually one shape, contrast, or outlier.)
+      - 30-SECOND READ: what do they take after engaging with
+        the axes + legend + headline?
+      - 3-MINUTE READ: what rewards lingering or scrolling?
 
-      If the 3-second read is "another scatter plot", the design
-      hasn't started yet. Iterate until the 3-second read is the
-      headline of the research.
+    If the 3-second read is "another scatter plot", the design
+    hasn't started yet. Iterate until the 3-second read is the
+    headline of the research.
 
-      Write workspace/.showcase/layered_read.md.
+    Write workspace/.showcase/layered_read.md.
 
-  - id: pick_the_form
-    name: Pick the form (chart family + augmentations)
-    description: |
-      Common showcase forms (cite a precedent for any choice):
+- id: pick_the_form
+  name: Pick the form (chart family + augmentations)
+  description: |
+    Common showcase forms (cite a precedent for any choice):
 
-        ANNOTATED SCATTER — augmented with story labels, regions,
-          headline arrows. Reference: NYT election graphics.
+      ANNOTATED SCATTER — augmented with story labels, regions,
+        headline arrows. Reference: NYT election graphics.
 
-        SMALL-MULTIPLES GRID — when the comparison-across-units
-          IS the story. Reference: NYT covid-by-state map grid;
-          Distill articles on grokking.
+      SMALL-MULTIPLES GRID — when the comparison-across-units
+        IS the story. Reference: NYT covid-by-state map grid;
+        Distill articles on grokking.
 
-        SCROLLYTELLING — scroll-driven chart reveal. Reference:
-          Pudding, Pitch Interactive, scrollama.js library.
+      SCROLLYTELLING — scroll-driven chart reveal. Reference:
+        Pudding, Pitch Interactive, scrollama.js library.
 
-        EXPLORATORY SLIDER / PARAMETERISED — interactive
-          mathematics + simulation explainers. Reference:
-          Distill.pub Why Momentum Really Works, Bret Victor's
-          Tangle.js, Observable's reactive cells.
+      EXPLORATORY SLIDER / PARAMETERISED — interactive
+        mathematics + simulation explainers. Reference:
+        Distill.pub Why Momentum Really Works, Bret Victor's
+        Tangle.js, Observable's reactive cells.
 
-        3D / WEBGL — when spatial structure carries meaning
-          (molecular, neural networks, geographical relief,
-          embeddings in latent space). Three.js + react-three-
-          fiber. Reference: Eyes of Cassini, deck.gl-3D layers.
+      3D / WEBGL — when spatial structure carries meaning
+        (molecular, neural networks, geographical relief,
+        embeddings in latent space). Three.js + react-three-
+        fiber. Reference: Eyes of Cassini, deck.gl-3D layers.
 
-        NETWORK-AS-ART — high-density node-link with custom
-          edge bundling + lensing. Reference: places.gephi.org,
-          Krzywinski's hive plots.
+      NETWORK-AS-ART — high-density node-link with custom
+        edge bundling + lensing. Reference: places.gephi.org,
+        Krzywinski's hive plots.
 
-        DATA-MURAL / POSTER-AS-INFOGRAPHIC — single large piece
-          with internal navigation. Reference: Information is
-          Beautiful winners.
+      DATA-MURAL / POSTER-AS-INFOGRAPHIC — single large piece
+        with internal navigation. Reference: Information is
+        Beautiful winners.
 
-        GENERATIVE / PROCEDURAL — algorithmic patterns derived
-          from data. Reference: Marcin Ignac, Refik Anadol-style
-          (academic-appropriate restraint).
+      GENERATIVE / PROCEDURAL — algorithmic patterns derived
+        from data. Reference: Marcin Ignac, Refik Anadol-style
+        (academic-appropriate restraint).
 
-      Document choice + the precedent reference + WHY this form
-      serves THIS layered read.
+    Document choice + the precedent reference + WHY this form
+    serves THIS layered read.
 
-  - id: pick_the_stack
-    name: Pick the technical stack (top-tier defaults)
-    description: |
-      Per-form stack picks:
+- id: pick_the_stack
+  name: Pick the technical stack (top-tier defaults)
+  description: |
+    Per-form stack picks:
 
-        STATIC PRINT / JOURNAL COVER:
-          - D3 + Inkscape / Illustrator finishing (vector).
-          - Cairo / Skia (Python) for high-fidelity rendering
-            from code.
-          - matplotlib + careful typography (Helvetica Neue /
-            Source Sans / Inter) — only when finishing is done
-            in vector software afterward.
-          - Quarto with revealjs for talk-handouts.
+      STATIC PRINT / JOURNAL COVER:
+        - D3 + Inkscape / Illustrator finishing (vector).
+        - Cairo / Skia (Python) for high-fidelity rendering
+          from code.
+        - matplotlib + careful typography (Helvetica Neue /
+          Source Sans / Inter) — only when finishing is done
+          in vector software afterward.
+        - Quarto with revealjs for talk-handouts.
 
-        INTERACTIVE WEB:
-          - D3 v7+ (canonical custom interactive).
-          - Observable Plot + Framework (declarative + polished).
-          - Vega-Lite + Vega for reproducible interactive grammar.
-          - Three.js / react-three-fiber for 3D + WebGL.
-          - Pixi.js for high-performance Canvas.
-          - Lottie / Rive for hand-animated micro-interactions
-            (think onboarding animations applied to data).
-          - Scrollama / Intersection Observer for scrollytelling.
+      INTERACTIVE WEB:
+        - D3 v7+ (canonical custom interactive).
+        - Observable Plot + Framework (declarative + polished).
+        - Vega-Lite + Vega for reproducible interactive grammar.
+        - Three.js / react-three-fiber for 3D + WebGL.
+        - Pixi.js for high-performance Canvas.
+        - Lottie / Rive for hand-animated micro-interactions
+          (think onboarding animations applied to data).
+        - Scrollama / Intersection Observer for scrollytelling.
 
-        DATA JOURNALISM CONTEXT:
-          - Datawrapper for the rapid baseline (only if it
-            actually fits the story).
-          - Flourish for templated narrative charts.
-          - Custom D3 / Observable for anything bespoke.
+      DATA JOURNALISM CONTEXT:
+        - Datawrapper for the rapid baseline (only if it
+          actually fits the story).
+        - Flourish for templated narrative charts.
+        - Custom D3 / Observable for anything bespoke.
 
-        ACADEMIC PUBLISHING WITH POLISH:
-          - Observable Framework → static site + reactive cells.
-          - Quarto + Observable cells + revealjs slides.
-          - Tufte-jekyll style + custom D3 / Vega-Lite figures.
+      ACADEMIC PUBLISHING WITH POLISH:
+        - Observable Framework → static site + reactive cells.
+        - Quarto + Observable cells + revealjs slides.
+        - Tufte-jekyll style + custom D3 / Vega-Lite figures.
 
-      Document choice + version + skill prerequisite. If the
-      researcher can't write the chosen stack, route to
-      methodology/external_tool_setup or scale back the ambition.
+    Document choice + version + skill prerequisite. If the
+    researcher can't write the chosen stack, route to
+    methodology/external_tool_setup or scale back the ambition.
 
-  - id: typography_and_palette
-    name: Typography + palette (most-overlooked, most-impactful)
-    description: |
-      Typography:
-        - SET A SERIF + SANS PAIR. e.g. Tiempos + Inter, Source
-          Serif + Source Sans, Garamond + Helvetica Neue. Free /
-          permissively-licensed faces preferred.
-        - HIERARCHY of weights (regular + medium + bold), not
-          just sizes.
-        - SMALL CAPS for axis labels in print-tier.
-        - NUMBER FORMATTING — tabular figures, consistent decimal
-          places, en-dashes for ranges, thin spaces for thousands.
+- id: typography_and_palette
+  name: Typography + palette (most-overlooked, most-impactful)
+  description: |
+    Typography:
+      - SET A SERIF + SANS PAIR. e.g. Tiempos + Inter, Source
+        Serif + Source Sans, Garamond + Helvetica Neue. Free /
+        permissively-licensed faces preferred.
+      - HIERARCHY of weights (regular + medium + bold), not
+        just sizes.
+      - SMALL CAPS for axis labels in print-tier.
+      - NUMBER FORMATTING — tabular figures, consistent decimal
+        places, en-dashes for ranges, thin spaces for thousands.
 
-      Palette:
-        - Sequential + diverging + qualitative — choose by data
-          type (per visualization/figure_guidelines).
-        - Beyond ColorBrewer: explore Wes Anderson palettes,
-          Carto palettes, MetBrewer (museum-collection-derived),
-          custom hand-tuned ramps.
-        - Test on grayscale (route to color_accessibility_audit).
-        - Test on the destination medium (print, projector, screen
-          at different brightness).
+    Palette:
+      - Sequential + diverging + qualitative — choose by data
+        type (per visualization/figure_guidelines).
+      - Beyond ColorBrewer: explore Wes Anderson palettes,
+        Carto palettes, MetBrewer (museum-collection-derived),
+        custom hand-tuned ramps.
+      - Test on grayscale (route to color_accessibility_audit).
+      - Test on the destination medium (print, projector, screen
+        at different brightness).
 
-      No accidental palettes. Document the choice + reference.
+    No accidental palettes. Document the choice + reference.
 
-  - id: implement_and_iterate
-    name: Implement + iterate until the 3-second read lands
-    description: |
-      First-draft showcase visualizations are bad; plan to iterate
-      until the viewer's 3-second read matches the intended one. A
-      typical pass sequence (not a fixed quota): get the data on the
-      page in the chosen form → add the headline annotation + colour
-      intent → typography pass → show a non-author and ask "what do
-      you see in 3 seconds?" → iterate on the gap between what they
-      saw and what you intended. Stop when the gap closes, not at a
-      round number.
+- id: implement_and_iterate
+  name: Implement + iterate until the 3-second read lands
+  description: |
+    First-draft showcase visualizations are bad; plan to iterate
+    until the viewer's 3-second read matches the intended one. A
+    typical pass sequence (not a fixed quota): get the data on the
+    page in the chosen form → add the headline annotation + colour
+    intent → typography pass → show a non-author and ask "what do
+    you see in 3 seconds?" → iterate on the gap between what they
+    saw and what you intended. Stop when the gap closes, not at a
+    round number.
 
-      Persist every draft to workspace/<step>/iterations/draft_<n>/
-      with a one-line note on what changed.
+    Persist every draft to workspace/<step>/iterations/draft_<n>/
+    with a one-line note on what changed.
 
-      Tooling note: for interactive web work, set up a hot-reload
-      dev server (vite, parcel, observable's localhost) — iteration
-      cycle time is the limiting factor.
+    Tooling note: for interactive web work, set up a hot-reload
+    dev server (vite, parcel, observable's localhost) — iteration
+    cycle time is the limiting factor.
 
-  - id: design_review
-    name: External design review (non-negotiable for showcase tier)
-    description: |
-      Showcase-tier requires fresh eyes. Solicit review from:
-        - someone NOT in your field (do they see what you mean?)
-        - someone who designs (typography, layout, palette critique)
-        - someone with the impairment(s) your audience may have
-          (colour vision, low-vision, low-bandwidth)
+- id: design_review
+  name: External design review (non-negotiable for showcase tier)
+  description: |
+    Showcase-tier requires fresh eyes. Solicit review from:
+      - someone NOT in your field (do they see what you mean?)
+      - someone who designs (typography, layout, palette critique)
+      - someone with the impairment(s) your audience may have
+        (colour vision, low-vision, low-bandwidth)
 
-      Log feedback verbatim + decisions in
-      workspace/.showcase/review_log.md. Iterate at least once on
-      review-surfaced issues; surfaces a "didn't change because…"
-      paragraph for any rejected feedback.
+    Log feedback verbatim + decisions in
+    workspace/.showcase/review_log.md. Iterate at least once on
+    review-surfaced issues; surfaces a "didn't change because…"
+    paragraph for any rejected feedback.
 
-  - id: reproducibility_and_archival
-    name: Reproducibility + archival packaging
-    description: |
-      Even (especially) for showcase work:
-        - source code in workspace/synthesis/showcase_<name>/
-        - data snapshot + content hash
-        - typefaces: include with license OR cite + provide
-          fallback at build time
-        - render script that reproduces the artifact pixel-for-
-          pixel (deterministic seed for any stochastic element)
-        - export at 3 sizes: print (300 DPI vector + raster),
-          screen (1x + 2x), thumbnail (for cards / social)
-        - for interactive: static HTML build + cite-able URL +
-          (ideally) Zenodo/OSF release with DOI
-        - for animations: video file + GIF + key-frame stills
+- id: reproducibility_and_archival
+  name: Reproducibility + archival packaging
+  description: |
+    Even (especially) for showcase work:
+      - source code in workspace/synthesis/showcase_<name>/
+      - data snapshot + content hash
+      - typefaces: include with license OR cite + provide
+        fallback at build time
+      - render script that reproduces the artifact pixel-for-
+        pixel (deterministic seed for any stochastic element)
+      - export at 3 sizes: print (300 DPI vector + raster),
+        screen (1x + 2x), thumbnail (for cards / social)
+      - for interactive: static HTML build + cite-able URL +
+        (ideally) Zenodo/OSF release with DOI
+      - for animations: video file + GIF + key-frame stills
 
-  - id: caption_and_methods
-    name: Caption + methods — credit the design choices
-    description: |
-      Caption should state:
-        - what is shown + the layered read summary
-        - the chart form + the precedent reference
-        - the typefaces + palette + their source
-        - tool stack + version
-        - the cite-able DOI for the source release
+- id: caption_and_methods
+  name: Caption + methods — credit the design choices
+  description: |
+    Caption should state:
+      - what is shown + the layered read summary
+      - the chart form + the precedent reference
+      - the typefaces + palette + their source
+      - tool stack + version
+      - the cite-able DOI for the source release
 
-      In the paper's methods (or supplement), describe the design
-      process — this matters for VIS / HCI papers where the
-      visualization choices ARE methodology.
+    In the paper's methods (or supplement), describe the design
+    process — this matters for VIS / HCI papers where the
+    visualization choices ARE methodology.
 
-      mem_log the design choices for the audit trail.
+    mem_log the design choices for the audit trail.
 
 expected_outputs:
-  - workspace/.showcase/layered_read.md
-  - workspace/.showcase/review_log.md
-  - workspace/synthesis/showcase_<name>/  (source + assets + build)
-  - workspace/<step>/iterations/draft_<n>/  (preserved drafts)
-  - workspace/<step>/outputs/figures/showcase_<topic>.{png,svg,mp4,html}
-  - workspace/<step>/outputs/figures/showcase_<topic>.{caption.md,summary.md,prov.json}
+- workspace/.showcase/layered_read.md
+- workspace/.showcase/review_log.md
+- workspace/synthesis/showcase_<name>/  (source + assets + build)
+- workspace/<step>/iterations/draft_<n>/  (preserved drafts)
+- workspace/<step>/outputs/figures/showcase_<topic>.{png,svg,mp4,html}
+- workspace/<step>/outputs/figures/showcase_<topic>.{caption.md,summary.md,prov.json}
 
 quality_bar:
   three_second_thirty_second_three_minute_reads_defined: true
@@ -290,3 +271,25 @@ quality_bar:
 next_protocol: visualization/figure_critique
 next_protocol_kind: forward_default
 on_failure: visualization/figure_guidelines
+intent_class: synthesize
+sub_intent: showcase
+triggers:
+- showcase
+- journal cover
+- publication cover
+- data art
+- data essay
+- novel visualization
+- vis paper figure
+- infovis figure
+- interactive explainer
+- distill.pub style
+- the pudding style
+- scrollytelling
+- three.js viz
+- webgl visualization
+- hero figure
+- paper landing page figure
+- next-tier figure
+- top-tier visualization
+summary: Top-tier visualization where the visual IS the contribution (HCI / data art / journal covers / novel research). Three.js / D3 / WebGL / Observable.

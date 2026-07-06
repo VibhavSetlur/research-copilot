@@ -17,6 +17,7 @@ from .methodology import HANDLERS as _METHODOLOGY_HANDLERS  # noqa: E501
 from .grounding import HANDLERS as _GROUNDING_HANDLERS  # noqa: E501
 from .build import HANDLERS as _BUILD_HANDLERS  # noqa: E501
 from .gradient import HANDLERS as _GRADIENT_HANDLERS  # noqa: E501
+from .memory import HANDLERS as _MEMORY_HANDLERS  # noqa: E501
 
 _HANDLERS: dict = {
     **_META_ROUTING_HANDLERS,
@@ -34,4 +35,5 @@ _HANDLERS: dict = {
     **_GROUNDING_HANDLERS,
     **_BUILD_HANDLERS,
     **_GRADIENT_HANDLERS,
+    **_MEMORY_HANDLERS,
 }

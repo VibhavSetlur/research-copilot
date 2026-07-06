@@ -2,16 +2,16 @@ id: exploration_promote
 tier: 'execute'
 name: Promote a Probe to a Real Step
 version: '3.8.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai]
   workflow_shape: [exploration, promotion]
 last_reviewed: '2026-06-16'
 see_also:
-  - exploration/exploration_loop               # the loop a promotable probe comes from
-  - guidance/analysis_plan                      # the rigorous loop the promoted step enters
-  - methodology/methodology_selection           # grounds the method the promoted step formalises
+- exploration/exploration_loop                 # the loop a promotable probe comes from
+- guidance/analysis_plan                        # the rigorous loop the promoted step enters
+- methodology/methodology_selection             # grounds the method the promoted step formalises
 description: |
   The bridge out of exploration mode: take a scratch probe that earned it
   and graduate it into a proper numbered analysis step where gates,
@@ -37,108 +37,108 @@ trigger: |
   this", "make this a real step", "let's keep this and do it properly",
   "turn this probe into an experiment".
 prerequisites:
-  - A scratch probe exists with a recorded observation (workspace/scratch/probe_log.md), OR the researcher has pointed at a specific scratch artefact to promote
-  - workspace.mode is exploration (sys_boot reports workspace_mode)
+- A scratch probe exists with a recorded observation (workspace/scratch/probe_log.md), OR the researcher has pointed at a specific scratch artefact to promote
+- workspace.mode is exploration (sys_boot reports workspace_mode)
 
 steps:
-  - id: confirm_worth_promoting
-    name: Confirm the probe is worth the weight
-    description: |
-      Promotion is not free — it commits the project to grounding,
-      provenance, and gates for this line of work. Before promoting,
-      reason honestly about whether the probe earned it:
-        - Is the observation real and reproducible, or a one-off artefact
-          of the sample / a lucky cut?
-        - Is the question worth a publication-grade answer, or was it
-          satisfied by the cheap look?
-        - Could a sharper probe (one more exploration_loop iteration)
-          still kill it cheaply, saving the promotion cost?
+- id: confirm_worth_promoting
+  name: Confirm the probe is worth the weight
+  description: |
+    Promotion is not free — it commits the project to grounding,
+    provenance, and gates for this line of work. Before promoting,
+    reason honestly about whether the probe earned it:
+      - Is the observation real and reproducible, or a one-off artefact
+        of the sample / a lucky cut?
+      - Is the question worth a publication-grade answer, or was it
+        satisfied by the cheap look?
+      - Could a sharper probe (one more exploration_loop iteration)
+        still kill it cheaply, saving the promotion cost?
 
-      If the honest answer is "not yet", return to exploration_loop. Only
-      promote what will survive the rigor you're about to apply.
+    If the honest answer is "not yet", return to exploration_loop. Only
+    promote what will survive the rigor you're about to apply.
 
-      AUTONOMY GATE:
-        Risk: reversible + cheap — promote-or-iterate keeps work in scratch
-        until it's earned a real step; nothing here is hard to undo.
-        proceed (adaptive default, autopilot) → if the observation is reproducible and
-          material, promote; otherwise iterate once more in scratch.
-        confirm first (manual / supervised) → state your recommendation (promote / one
-          more probe) and wait for the researcher.
+    AUTONOMY GATE:
+      Risk: reversible + cheap — promote-or-iterate keeps work in scratch
+      until it's earned a real step; nothing here is hard to undo.
+      proceed (adaptive default, autopilot) → if the observation is reproducible and
+        material, promote; otherwise iterate once more in scratch.
+      confirm first (manual / supervised) → state your recommendation (promote / one
+        more probe) and wait for the researcher.
 
-  - id: state_the_hypothesis
-    name: Turn the probe's question into a hypothesis
-    description: |
-      The probe asked a cheap, falsifiable question; the step needs a
-      hypothesis. Promote the question into a hypothesis statement the
-      real loop can test, and register it:
-        mem_hypothesis_add statement="<H: the claim the probe hinted at>"
+- id: state_the_hypothesis
+  name: Turn the probe's question into a hypothesis
+  description: |
+    The probe asked a cheap, falsifiable question; the step needs a
+    hypothesis. Promote the question into a hypothesis statement the
+    real loop can test, and register it:
+      mem_hypothesis (operation=add) statement="<H: the claim the probe hinted at>"
 
-      Keep the framing honest to what the probe actually observed — don't
-      inflate "there's a weak positive correlation" into "X causes Y".
-      The promoted step's job is to test the hypothesis properly, which
-      includes the possibility of refuting it.
+    Keep the framing honest to what the probe actually observed — don't
+    inflate "there's a weak positive correlation" into "X causes Y".
+    The promoted step's job is to test the hypothesis properly, which
+    includes the possibility of refuting it.
 
-  - id: create_real_step
-    name: Create the numbered step + carry the probe artefacts in
-    description: |
-      Create the proper step folder:
-        sys_path name="<slug>" hypothesis="<H<id>: <text>>"
+- id: create_real_step
+  name: Create the numbered step + carry the probe artefacts in
+  description: |
+    Create the proper step folder:
+      tool_plan (operation=create_step) name="<slug>" hypothesis="<H<id>: <text>>"
 
-      Then carry the probe's work into the step rather than re-deriving it:
-        - Move the relevant scratch script(s) into
-          workspace/<NN_slug>/scripts/ (rename to the
-          <NN>_<slug>_v1 convention) — the probe code is the first draft.
-        - Move any kept figure into workspace/<NN_slug>/outputs/figures/.
-        - Copy the probe_log.md entry that motivated this into the step's
-          context/notes.md as "Origin: promoted from exploration probe".
+    Then carry the probe's work into the step rather than re-deriving it:
+      - Move the relevant scratch script(s) into
+        workspace/<NN_slug>/scripts/ (rename to the
+        <NN>_<slug>_v1 convention) — the probe code is the first draft.
+      - Move any kept figure into workspace/<NN_slug>/outputs/figures/.
+      - Copy the probe_log.md entry that motivated this into the step's
+        context/notes.md as "Origin: promoted from exploration probe".
 
-      The scratch original can stay (it's gitignored); the point is the
-      step now OWNS the work so the gates apply to it.
+    The scratch original can stay (it's gitignored); the point is the
+    step now OWNS the work so the gates apply to it.
 
-  - id: backfill_rigor
-    name: Back-fill the rigor exploration deferred
-    description: |
-      Exploration mode deferred grounding + provenance; promotion pays it
-      back. The promoted step must now meet the same bar as any
-      analysis_plan step:
-        - mem_log the method choice WITH a citation — the probe
-          guessed a method cheaply; now ground it (the literature loop in
-          analysis_plan / methodology_selection applies).
-        - Re-run the analysis as a real, seeded, versioned script (not the
-          throw-away probe) so the numbers are reproducible and
-          provenance-tracked.
-        - Plan the focal figure + table + report the step owes (per
-          analysis_plan), not just the eyeball chart from the probe.
+- id: backfill_rigor
+  name: Back-fill the rigor exploration deferred
+  description: |
+    Exploration mode deferred grounding + provenance; promotion pays it
+    back. The promoted step must now meet the same bar as any
+    analysis_plan step:
+      - mem_log the method choice WITH a citation — the probe
+        guessed a method cheaply; now ground it (the literature loop in
+        analysis_plan / methodology_selection applies).
+      - Re-run the analysis as a real, seeded, versioned script (not the
+        throw-away probe) so the numbers are reproducible and
+        provenance-tracked.
+      - Plan the focal figure + table + report the step owes (per
+        analysis_plan), not just the eyeball chart from the probe.
 
-      Do NOT carry a probe's casual number into the step as a finding
-      without re-computing it under the step's discipline. The probe
-      bought the decision to invest; the step earns the claim.
+    Do NOT carry a probe's casual number into the step as a finding
+    without re-computing it under the step's discipline. The probe
+    bought the decision to invest; the step earns the claim.
 
-  - id: handoff_to_analysis_plan
-    name: Hand off to the rigorous loop
-    description: |
-      The step now exists with its hypothesis registered and the probe's
-      work carried in. Log the promotion so the trail is intact:
-        sys_protocol_log status="completed"   # for this promotion
-        mem_log entry="promoted probe '<question>' → step <NN_slug>"
+- id: handoff_to_analysis_plan
+  name: Hand off to the rigorous loop
+  description: |
+    The step now exists with its hypothesis registered and the probe's
+    work carried in. Log the promotion so the trail is intact:
+      mem_log status="completed"   # for this promotion
+      mem_log entry="promoted probe '<question>' → step <NN_slug>"
 
-      Then enter guidance/analysis_plan on the new step to run it
-      properly — scope, ground methods in literature, write atomic
-      versioned scripts, document conclusions, finalize. From here the
-      work is ordinary rigorous research; exploration mode did its job by
-      finding it cheaply.
+    Then enter guidance/analysis_plan on the new step to run it
+    properly — scope, ground methods in literature, write atomic
+    versioned scripts, document conclusions, finalize. From here the
+    work is ordinary rigorous research; exploration mode did its job by
+    finding it cheaply.
 
-      AUTONOMY GATE:
-        Risk: reversible + cheap — entering analysis_plan on the new step
-        runs no expensive or irreversible action by itself.
-        proceed (adaptive default, autopilot) → proceed into analysis_plan on the new step.
-        confirm first (manual / supervised) → present the new step + the planned
-          analysis_plan entry; wait before running the loop.
+    AUTONOMY GATE:
+      Risk: reversible + cheap — entering analysis_plan on the new step
+      runs no expensive or irreversible action by itself.
+      proceed (adaptive default, autopilot) → proceed into analysis_plan on the new step.
+      confirm first (manual / supervised) → present the new step + the planned
+        analysis_plan entry; wait before running the loop.
 
 expected_outputs:
-  - workspace/<NN_slug>/  (the promoted numbered step)
-  - workspace/<NN_slug>/scripts/  (the probe code, versioned)
-  - workspace/<NN_slug>/context/notes.md  (origin note)
+- workspace/<NN_slug>/  (the promoted numbered step)
+- workspace/<NN_slug>/scripts/  (the probe code, versioned)
+- workspace/<NN_slug>/context/notes.md  (origin note)
 
 quality_bar: |
   - Only probes with a reproducible, material observation are promoted.
@@ -151,3 +151,29 @@ quality_bar: |
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: exploration/exploration_loop
+intent_class: execute
+sub_intent: explore_promote
+triggers:
+- promote this
+- promote this probe
+- graduate this
+- graduate the probe
+- graduate my scratch probe into a numbered step
+- into a numbered step
+- make this a real step
+- make this a real experiment
+- turn this into an experiment
+- do this properly
+- let's keep this
+- keep this and do it properly
+summary: Graduate a scratch probe that earned it into a real numbered step — back-filling the hypothesis, method grounding, and provenance exploration deferred.
+token_estimate: 1300
+decomposition:
+- protocol: exploration/exploration_promote
+  purpose: Confirm worth promoting, register the hypothesis, create the step, carry probe artefacts in, back-fill rigor.
+- tool: mem_hypothesis (operation=add)
+  purpose: Register the hypothesis the probe hinted at.
+- tool: sys_state_get
+  purpose: Create the numbered step folder the probe graduates into.
+- tool: mem_log
+  purpose: Log the promotion (probe question → step).

@@ -2,14 +2,14 @@ id: collaboration_handoff
 tier: 'finalize'
 name: Collaboration Handoff (to a human, not the next AI)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:
   domain: [any]
   audience: [naive_ai]
   workflow_shape: [any]
 see_also:
-  - guidance/chat_handoff      # distinct: handoff to the next AI vs to a human collaborator
+- guidance/chat_handoff        # distinct: handoff to the next AI vs to a human collaborator
 description: |
   Package the project for handoff to a human collaborator who is
   not running Research-OS. Distinct from `chat_handoff` (AI-to-AI,
@@ -27,111 +27,115 @@ trigger: |
 editorial_voice:
   mode: guidance
   rules:
-    - "Write the COLLABORATOR.md in THEIR vocabulary, not Research-OS's.
-       The reader has never heard of `sys_path` or
-       `pipeline.yaml`."
-    - "Include the questions you expected them to ask FIRST — the
-       reasoning behind the design choices, not just the choices."
-    - "List the unspoken assumptions explicitly. The 80% the original
-       author thought was obvious is the 80% the new collaborator
-       will get wrong."
+  - "Write the COLLABORATOR.md in THEIR vocabulary, not Research-OS's. The reader has never heard of `sys_state_get` or `pipeline.yaml`."
+  - "Include the questions you expected them to ask FIRST — the reasoning behind the design choices, not just the choices."
+  - "List the unspoken assumptions explicitly. The 80% the original author thought was obvious is the 80% the new collaborator will get wrong."
 
 steps:
-  - id: scope_handoff
-    name: Scope the handoff
-    description: |
-      Ask the researcher:
-        - WHO is taking this forward? (Stranger / known colleague /
-          their student?)
-        - WHAT are they expected to do? (Reproduce the result /
-          extend it / write a follow-up / port to a different
-          stack?)
-        - WHAT's their stack? (Same Python env / R-only / Stata-only /
-          no programming background?)
-      The answers determine what to include and what to translate.
+- id: scope_handoff
+  name: Scope the handoff
+  description: |
+    Ask the researcher:
+      - WHO is taking this forward? (Stranger / known colleague /
+        their student?)
+      - WHAT are they expected to do? (Reproduce the result /
+        extend it / write a follow-up / port to a different
+        stack?)
+      - WHAT's their stack? (Same Python env / R-only / Stata-only /
+        no programming background?)
+    The answers determine what to include and what to translate.
 
-  - id: write_collaborator_md
-    name: Author COLLABORATOR.md
-    description: |
-      Produces a top-level `COLLABORATOR.md` (NOT `README.md` — we
-      don't want to clobber whatever README the existing project
-      already has). Structure:
+- id: write_collaborator_md
+  name: Author COLLABORATOR.md
+  description: |
+    Produces a top-level `COLLABORATOR.md` (NOT `README.md` — we
+    don't want to clobber whatever README the existing project
+    already has). Structure:
 
-        # <Project> — for the new collaborator
+      # <Project> — for the new collaborator
 
-        ## Project in 60 seconds
-        <one paragraph: what was studied, what was found, where
-         the analysis lives.>
+      ## Project in 60 seconds
+      <one paragraph: what was studied, what was found, where
+       the analysis lives.>
 
-        ## Why we made the choices we did
-        <2-3 paragraphs: the genuine reasoning behind the methodology,
-         not just "we used X". Cover the close-call decisions —
-         "we considered Y, picked X because Z".>
+      ## Why we made the choices we did
+      <2-3 paragraphs: the genuine reasoning behind the methodology,
+       not just "we used X". Cover the close-call decisions —
+       "we considered Y, picked X because Z".>
 
-        ## What we'd want you to do first
-        <numbered list: read the paper draft → walk the analysis
-         folder for step <N> → re-run the final figure → ask
-         questions.>
+      ## What we'd want you to do first
+      <numbered list: read the paper draft → walk the analysis
+       folder for step <N> → re-run the final figure → ask
+       questions.>
 
-        ## The unspoken assumptions
-        <bullet list: things we assumed about the data, the design,
-         the audience that we now realise are non-obvious.>
+      ## The unspoken assumptions
+      <bullet list: things we assumed about the data, the design,
+       the audience that we now realise are non-obvious.>
 
-        ## Stack + how to reproduce
-        <Concrete: Python version, key library versions, the one
-         command to reproduce the headline result, where the data
-         lives.>
+      ## Stack + how to reproduce
+      <Concrete: Python version, key library versions, the one
+       command to reproduce the headline result, where the data
+       lives.>
 
-        ## Open questions / known limitations
-        <Bullet list: what we didn't resolve, where we'd start if
-         we had another month.>
+      ## Open questions / known limitations
+      <Bullet list: what we didn't resolve, where we'd start if
+       we had another month.>
 
-        ## Contact + escalation
-        <Names, channels, response-time expectation.>
+      ## Contact + escalation
+      <Names, channels, response-time expectation.>
 
-  - id: package_share_safe
-    name: Package the share-safe bundle
-    description: |
-      Run the existing `scripts/export_share_archive.py` (or its
-      sh wrapper) — this builds the zip without AI-internal files
-      (no AGENTS.md, no .os_state, no .claude/.cursor configs).
-      The COLLABORATOR.md authored above goes IN this bundle.
+- id: package_share_safe
+  name: Package the share-safe bundle
+  description: |
+    Run the existing `scripts/export_share_archive.py` (or its
+    sh wrapper) — this builds the zip without AI-internal files
+    (no AGENTS.md, no .os_state, no .claude/.cursor configs).
+    The COLLABORATOR.md authored above goes IN this bundle.
 
-      Verify the resulting zip:
-        - Opens cleanly (file listing matches expectations).
-        - Contains the final paper / dashboard / dataset.
-        - Excludes AI configs that would confuse a non-RO reader.
-        - Includes the `requirements.txt` / `environment.yml` so
-          the collaborator can recreate the env.
+    Verify the resulting zip:
+      - Opens cleanly (file listing matches expectations).
+      - Contains the final paper / dashboard / dataset.
+      - Excludes AI configs that would confuse a non-RO reader.
+      - Includes the `requirements.txt` / `environment.yml` so
+        the collaborator can recreate the env.
 
-  - id: confidence_in_reproduction
-    name: Confidence in reproduction
-    description: |
-      Before handing off, the AI should verify the project ACTUALLY
-      reproduces from the bundled assets:
-        - `tool_audit(scope='step', dimension='reproducibility')` (slow but the gold standard)
-          OR a manual walk through the final step's
-          `entrypoint.sh`.
-        - Record the verification outcome in
-          `COLLABORATOR.md > Stack + how to reproduce`.
+- id: confidence_in_reproduction
+  name: Confidence in reproduction
+  description: |
+    Before handing off, the AI should verify the project ACTUALLY
+    reproduces from the bundled assets:
+      - `tool_audit(scope='step', dimension='reproducibility')` (slow but the gold standard)
+        OR a manual walk through the final step's
+        `entrypoint.sh`.
+      - Record the verification outcome in
+        `COLLABORATOR.md > Stack + how to reproduce`.
 
-      A handoff that doesn't reproduce will burn the collaborator's
-      first two days and damage the trust the project needs.
+    A handoff that doesn't reproduce will burn the collaborator's
+    first two days and damage the trust the project needs.
 
-  - id: schedule_followup
-    name: Schedule a follow-up
-    description: |
-      Suggest to the researcher a 30-minute call with the
-      collaborator 1-2 weeks after the handoff. Two weeks is
-      long enough that the collaborator has tried something;
-      short enough that the original team's context isn't gone.
-      Write the suggested follow-up date / agenda into
-      `COLLABORATOR.md > Contact + escalation`.
+- id: schedule_followup
+  name: Schedule a follow-up
+  description: |
+    Suggest to the researcher a 30-minute call with the
+    collaborator 1-2 weeks after the handoff. Two weeks is
+    long enough that the collaborator has tried something;
+    short enough that the original team's context isn't gone.
+    Write the suggested follow-up date / agenda into
+    `COLLABORATOR.md > Contact + escalation`.
 
 expected_outputs:
-  - COLLABORATOR.md (top-level, share-safe)
-  - <project>_share_<date>.zip (via existing export script)
+- COLLABORATOR.md (top-level, share-safe)
+- <project>_share_<date>.zip (via existing export script)
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: session
+sub_intent: collaborator
+triggers:
+- send to a collaborator
+- hand off to the team
+- share with another lab
+- package for handoff
+- another lab is taking this
+summary: Package the project for a HUMAN collaborator outside Research-OS.

@@ -1,7 +1,7 @@
 id: test_failure_causation
 name: Test-Failure Causation (5-whys + fishbone + classification)
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering]
   audience: [auditor]
@@ -33,169 +33,169 @@ trigger: |
   "flaky test", "intermittent failure", "regression analysis".
 
 prerequisites:
-  - A specific failing test with reproducible output (stack trace,
-    assertion diff, or a logged failure run). Vague "it broke
-    sometimes" reports get sent back for a repro first.
-  - The test's expected behaviour is documented (in the test itself,
-    a spec, or workspace/engineering/specs/).
-  - Recent diff or git blame on the implementation under test, so the
-    5-whys has something to walk back through.
+- A specific failing test with reproducible output (stack trace, assertion diff, or a logged failure run). Vague "it broke sometimes" reports get sent back for a repro first.
+- The test's expected behaviour is documented (in the test itself, a spec, or workspace/engineering/specs/).
+- Recent diff or git blame on the implementation under test, so the 5-whys has something to walk back through.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "The first cause that explains the symptom is almost never the
-       root cause. Stop at 'why' #5 only when the next why crosses
-       an organisational boundary you cannot fix."
-    - "A fishbone with five empty branches is a confession, not a
-       diagram. If you cannot populate environment + measurement, you
-       have not looked; debugging without those two is how flaky tests
-       get blamed on cosmic rays."
-    - "Classification is a commitment: 'test bug' means the test gets
-       changed and the implementation does not. If you cannot defend
-       which bucket, the analysis is not done."
-    - "A root cause that cannot be falsified is a story. The output
-       must include the experiment that would distinguish this cause
-       from the next-best candidate."
+  - "The first cause that explains the symptom is almost never the root cause. Stop at 'why' #5 only when the next why crosses an organisational boundary you cannot fix."
+  - "A fishbone with five empty branches is a confession, not a diagram. If you cannot populate environment + measurement, you have not looked; debugging without those two is how flaky tests get blamed on cosmic rays."
+  - "Classification is a commitment: 'test bug' means the test gets changed and the implementation does not. If you cannot defend which bucket, the analysis is not done."
+  - "A root cause that cannot be falsified is a story. The output must include the experiment that would distinguish this cause from the next-best candidate."
 
 quality_bar:
   why_chain_min_depth: 3
   why_chain_target_depth: 5
-  why_chain_stop_rule: "stop when next 'why' crosses an org boundary
-                       you cannot change, OR when the cause is a
-                       documented design decision."
+  why_chain_stop_rule: "stop when next 'why' crosses an org boundary you cannot change, OR when the cause is a documented design decision."
   fishbone_categories_required:
-    - people
-    - process
-    - equipment
-    - materials
-    - environment
-    - measurement
+  - people
+  - process
+  - equipment
+  - materials
+  - environment
+  - measurement
   fishbone_min_populated_categories: 4
   classification_buckets:
-    - design_defect
-    - implementation_bug
-    - test_bug
-    - environmental
+  - design_defect
+  - implementation_bug
+  - test_bug
+  - environmental
   classification_must_be_singular: true
   falsifying_experiment_required: true
 
 steps:
-  - id: capture_failure_signature
-    name: Capture the failure signature
-    description: |
-      Before any analysis: pin the failure to a reproducible signature.
-      Record the full stack trace OR assertion diff, the commit SHA,
-      the test runner invocation, the environment (OS, runtime version,
-      relevant env vars), and whether the failure is deterministic or
-      intermittent. Log with mem_log under tag 'test_failure'.
-      An intermittent failure WITHOUT a measured failure rate (e.g.,
-      "3 of 50 runs") is a different protocol — go run it 50 times
-      first. Causation analysis on a one-off you cannot reproduce is
-      story-telling.
+- id: capture_failure_signature
+  name: Capture the failure signature
+  description: |
+    Before any analysis: pin the failure to a reproducible signature.
+    Record the full stack trace OR assertion diff, the commit SHA,
+    the test runner invocation, the environment (OS, runtime version,
+    relevant env vars), and whether the failure is deterministic or
+    intermittent. Log with mem_log under tag 'test_failure'.
+    An intermittent failure WITHOUT a measured failure rate (e.g.,
+    "3 of 50 runs") is a different protocol — go run it 50 times
+    first. Causation analysis on a one-off you cannot reproduce is
+    story-telling.
 
-  - id: drive_five_whys
-    name: Drive the 5-whys chain
-    description: |
-      Start from the literal symptom (the assertion message, not your
-      interpretation of it). For each 'why', the answer must be a
-      claim about the system that someone else could verify from the
-      code or logs — not a guess.
-      Use tool_search and sys_path to walk the call chain backwards;
-      use git blame on the failing assertion + the most recently
-      changed code path it exercises.
-      Stop conditions: (a) crossing an org boundary you cannot fix
-      ("the upstream library has a bug" → file an issue, stop), or
-      (b) hitting a documented design decision (link the ADR).
-      Three whys is the floor; five is the target; ten means you are
-      lost or the question was too broad.
+- id: drive_five_whys
+  name: Drive the 5-whys chain
+  description: |
+    Start from the literal symptom (the assertion message, not your
+    interpretation of it). For each 'why', the answer must be a
+    claim about the system that someone else could verify from the
+    code or logs — not a guess.
+    Use tool_search and sys_path to walk the call chain backwards;
+    use git blame on the failing assertion + the most recently
+    changed code path it exercises.
+    Stop conditions: (a) crossing an org boundary you cannot fix
+    ("the upstream library has a bug" → file an issue, stop), or
+    (b) hitting a documented design decision (link the ADR).
+    Three whys is the floor; five is the target; ten means you are
+    lost or the question was too broad.
 
-  - id: build_fishbone
-    name: Build the fishbone across all six categories
-    description: |
-      For each category, write at least one contributing factor OR an
-      explicit "not implicated" with one-line justification:
-        - people: who changed it, who reviewed it, who owned the spec
-        - process: was the change merged without the usual gate (CI
-          green, code review, test added)?
-        - equipment: CI runner / hardware / GPU / sensor under test
-        - materials: input data, fixtures, mocks, seed values
-        - environment: OS, runtime version, locale, timezone, network
-        - measurement: is the test itself measuring the right thing?
-          Is the assertion correct? Is the tolerance appropriate?
-      Four populated branches is the floor. Skipping 'measurement' is
-      the #1 way test bugs get mis-classified as implementation bugs.
+- id: build_fishbone
+  name: Build the fishbone across all six categories
+  description: |
+    For each category, write at least one contributing factor OR an
+    explicit "not implicated" with one-line justification:
+      - people: who changed it, who reviewed it, who owned the spec
+      - process: was the change merged without the usual gate (CI
+        green, code review, test added)?
+      - equipment: CI runner / hardware / GPU / sensor under test
+      - materials: input data, fixtures, mocks, seed values
+      - environment: OS, runtime version, locale, timezone, network
+      - measurement: is the test itself measuring the right thing?
+        Is the assertion correct? Is the tolerance appropriate?
+    Four populated branches is the floor. Skipping 'measurement' is
+    the #1 way test bugs get mis-classified as implementation bugs.
 
-  - id: classify_fault
-    name: Classify the fault into exactly one bucket
-    description: |
-      Pick exactly one:
-        - design_defect: the spec is wrong / under-specified; the
-          implementation faithfully implements a flawed design.
-          Fix lives in the spec + a redesign.
-        - implementation_bug: the spec is correct; the code does not
-          match it. Fix lives in the implementation.
-        - test_bug: the implementation is correct (or at least
-          spec-compliant); the test is wrong (bad assertion, brittle
-          mock, race, wrong fixture).
-          Fix lives in the test.
-        - environmental: code + spec + test are all correct; the
-          failure is caused by a runtime / dependency / data state
-          outside the system under test.
-          Fix lives in the environment OR a documented quarantine.
-      If two buckets feel plausible, the 5-whys chain has not gone
-      deep enough — go back to step 2. "It is both a test bug and
-      an implementation bug" is almost always either a spec gap
-      (→ design_defect) or incomplete analysis.
+- id: classify_fault
+  name: Classify the fault into exactly one bucket
+  description: |
+    Pick exactly one:
+      - design_defect: the spec is wrong / under-specified; the
+        implementation faithfully implements a flawed design.
+        Fix lives in the spec + a redesign.
+      - implementation_bug: the spec is correct; the code does not
+        match it. Fix lives in the implementation.
+      - test_bug: the implementation is correct (or at least
+        spec-compliant); the test is wrong (bad assertion, brittle
+        mock, race, wrong fixture).
+        Fix lives in the test.
+      - environmental: code + spec + test are all correct; the
+        failure is caused by a runtime / dependency / data state
+        outside the system under test.
+        Fix lives in the environment OR a documented quarantine.
+    If two buckets feel plausible, the 5-whys chain has not gone
+    deep enough — go back to step 2. "It is both a test bug and
+    an implementation bug" is almost always either a spec gap
+    (→ design_defect) or incomplete analysis.
 
-  - id: design_falsifying_experiment
-    name: Design the experiment that would falsify the chosen cause
-    description: |
-      For the named root cause, write down the experiment that would
-      distinguish it from the next-best candidate cause. Examples:
-        - "If root cause is the locale change, the test passes under
-           LC_ALL=C and fails under LC_ALL=en_US.UTF-8."
-        - "If root cause is the off-by-one in the index calculation,
-           the test passes for N=10 and fails for N=11."
-      Run the experiment. If the result does not match the prediction,
-      the cause is wrong — go back to step 2. This is the step most
-      engineers skip and it is the difference between root-cause
-      analysis and root-cause storytelling.
+- id: design_falsifying_experiment
+  name: Design the experiment that would falsify the chosen cause
+  description: |
+    For the named root cause, write down the experiment that would
+    distinguish it from the next-best candidate cause. Examples:
+      - "If root cause is the locale change, the test passes under
+         LC_ALL=C and fails under LC_ALL=en_US.UTF-8."
+      - "If root cause is the off-by-one in the index calculation,
+         the test passes for N=10 and fails for N=11."
+    Run the experiment. If the result does not match the prediction,
+    the cause is wrong — go back to step 2. This is the step most
+    engineers skip and it is the difference between root-cause
+    analysis and root-cause storytelling.
 
-  - id: write_causation_record
-    name: Write the causation record + link the fix
-    description: |
-      Persist to workspace/engineering/test_failures/<test_id>_<date>.md
-      with sections: signature, five_whys chain, fishbone, classification,
-      falsifying experiment + result, fix PR link, regression test added.
-      Log with mem_log under tags ['test_failure', '<classification>',
-      '<test_id>']. Subsequent failures of the same test should grep
-      this record FIRST. If the same root cause appears three times in
-      six months, escalate to a design review — the system is telling
-      you the analysis is repeatedly stopping one 'why' too early.
+- id: write_causation_record
+  name: Write the causation record + link the fix
+  description: |
+    Persist to workspace/engineering/test_failures/<test_id>_<date>.md
+    with sections: signature, five_whys chain, fishbone, classification,
+    falsifying experiment + result, fix PR link, regression test added.
+    Log with mem_log under tags ['test_failure', '<classification>',
+    '<test_id>']. Subsequent failures of the same test should grep
+    this record FIRST. If the same root cause appears three times in
+    six months, escalate to a design review — the system is telling
+    you the analysis is repeatedly stopping one 'why' too early.
 
-  - id: add_regression_guard
-    name: Add a regression guard at the right layer
-    description: |
-      Where the guard lives depends on the classification:
-        - design_defect: add an acceptance test against the corrected
-          spec; the original failing test may need rewriting.
-        - implementation_bug: add a unit test that fails on the old
-          code and passes on the fix. Do not modify the original test.
-        - test_bug: fix the test; add a meta-test or assertion comment
-          explaining what the test is actually checking.
-        - environmental: add a pre-flight check or pin the dependency;
-          quarantine with a documented expiry date if the env cannot
-          be fixed now.
-      A fix without a regression guard is a fix that will be undone
-      by the next refactor.
+- id: add_regression_guard
+  name: Add a regression guard at the right layer
+  description: |
+    Where the guard lives depends on the classification:
+      - design_defect: add an acceptance test against the corrected
+        spec; the original failing test may need rewriting.
+      - implementation_bug: add a unit test that fails on the old
+        code and passes on the fix. Do not modify the original test.
+      - test_bug: fix the test; add a meta-test or assertion comment
+        explaining what the test is actually checking.
+      - environmental: add a pre-flight check or pin the dependency;
+        quarantine with a documented expiry date if the env cannot
+        be fixed now.
+    A fix without a regression guard is a fix that will be undone
+    by the next refactor.
 
 expected_outputs:
-  - "workspace/engineering/test_failures/<test_id>_<date>.md"
-  - "workspace/engineering/test_failures/_index.md"
-  - "mem_log entries tagged ['test_failure', '<classification>', '<test_id>']"
-  - "regression test committed in the same PR as the fix"
+- "workspace/engineering/test_failures/<test_id>_<date>.md"
+- "workspace/engineering/test_failures/_index.md"
+- "mem_log entries tagged ['test_failure', '<classification>', '<test_id>']"
+- "regression test committed in the same PR as the fix"
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: methodology
+sub_intent: debug
+triggers:
+- test failure
+- 5 whys
+- five whys
+- fishbone
+- ishikawa
+- root cause analysis
+- rca
+summary: 'When a test fails: 5-whys + fishbone + classify (design / impl / test / env). Find the root, not the symptom.'
+token_estimate: 1400
+decomposition:
+- protocol: engineering/test/test_failure_causation
+  purpose: Walk 5-whys + fishbone + classify.

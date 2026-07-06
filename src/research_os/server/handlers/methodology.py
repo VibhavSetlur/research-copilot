@@ -495,12 +495,23 @@ def _handle_tool_quick_review(name, arguments, root):
 
 
 def _handle_tool_plan(name, arguments, root):
-    """Unified plan dispatcher (turn | advance | clear).
+    """Unified plan dispatcher.
 
-    Selects op by:
-      1. Explicit `operation` arg.
-      2. Legacy: invoked under tool_plan_turn / _advance / _clear.
+    Core operations (tool_plan's own):
+      turn    → tool_plan_turn
+      advance → tool_plan_advance
+      clear   → tool_plan_clear
+
+    Step-lifecycle operations (delegated to tool_step):
+      iterate | iterations_list | revision_options | env_lock
+
+    Step-pipeline operations (delegated to tool_step_pipeline):
+      define | run | status | diagram
+
+    Grounded step planning (delegated to tool_plan_step_grounded):
+      grounded_step
     """
+    arguments = arguments or {}
     legacy = {
         "tool_plan_turn": "turn",
         "tool_plan_advance": "advance",
@@ -509,32 +520,43 @@ def _handle_tool_plan(name, arguments, root):
     operation = arguments.get("operation") or legacy.get(name)
     if not operation:
         return _text(_error(
-            "tool_plan requires operation='turn'|'advance'|'clear'"
+            "tool_plan requires operation= "
+            "(turn | advance | clear | iterate | iterations_list | "
+            "revision_options | env_lock | define | run | status | "
+            "diagram | grounded_step)"
         ))
+
+    # tool_plan core operations
     if operation == "turn":
         return _handle_tool_plan_turn(name, arguments, root)
     if operation == "advance":
         return _handle_tool_plan_advance(name, arguments, root)
     if operation == "clear":
         return _handle_tool_plan_clear(name, arguments, root)
+
+    # tool_step operations (iterate / iterations_list / revision_options / env_lock)
+    _STEP_OPS = set(_STEP_DISPATCH.keys())
+    if operation in _STEP_OPS:
+        mapped = dict(arguments)
+        mapped["operation"] = operation
+        return _handle_tool_step(name, mapped, root)
+
+    # tool_step_pipeline operations (define / run / status / diagram)
+    _PIPELINE_OPS = set(_STEP_PIPELINE_DISPATCH.keys())
+    if operation in _PIPELINE_OPS:
+        mapped = dict(arguments)
+        mapped["operation"] = operation
+        return _handle_tool_step_pipeline(name, mapped, root)
+
+    # grounded step planning
+    if operation == "grounded_step":
+        return _handle_tool_plan_step_grounded(name, arguments, root)
+
     return _text(_error(f"Unknown plan operation '{operation}'"))
 
 
 HANDLERS = {
-    "tool_step": _handle_tool_step,
-    "tool_step_pipeline": _handle_tool_step_pipeline,
-    "tool_plan_step_grounded": _handle_tool_plan_step_grounded,
     "tool_preregister": _handle_tool_preregister,
     "tool_sensitivity": _handle_tool_sensitivity,
-    "tool_redteam_review": _handle_tool_redteam_review,
-    "tool_null_findings_report": _handle_tool_null_findings_report,
-    "tool_plan_step": _handle_tool_plan_step,
-    "mem_hypothesis_add": _handle_mem_hypothesis_add,
-    "mem_hypothesis_list": _handle_mem_hypothesis_list,
-    "tool_plan_next_step": _handle_tool_plan_next_step,
-    "tool_branch_recommendation": _handle_tool_branch_recommendation,
-    "tool_session_resume": _handle_tool_session_resume,
-    "tool_progress_digest": _handle_tool_progress_digest,
-    "tool_quick_review": _handle_tool_quick_review,
     "tool_plan": _handle_tool_plan,
 }

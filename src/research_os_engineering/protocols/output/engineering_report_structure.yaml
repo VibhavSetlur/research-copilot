@@ -1,7 +1,7 @@
 id: engineering_report_structure
 name: Engineering Report Structure (non-IMRAD)
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering, biology, wet_lab]
   audience: [auditor, maintainer]
@@ -49,55 +49,32 @@ trigger: |
   should this engineering writeup have".
 
 prerequisites:
-  - An artifact (hardware, firmware, software, mechanism, or
-    process) exists OR has a baseline design at the level
-    where requirements can be traced to design decisions.
-  - A requirements document (SRS, PRD, or equivalent
-    requirements list with IDs) exists or will be drafted
-    in the Requirements section. Verification is meaningless
-    without numbered, testable requirements.
-  - For safety-critical / regulated work, the applicable
-    standard is named upfront (IEC 62304 class, DO-178C DAL,
-    ISO 26262 ASIL, FDA risk class). Validation evidence
-    requirements scale with this.
+- An artifact (hardware, firmware, software, mechanism, or process) exists OR has a baseline design at the level where requirements can be traced to design decisions.
+- A requirements document (SRS, PRD, or equivalent requirements list with IDs) exists or will be drafted in the Requirements section. Verification is meaningless without numbered, testable requirements.
+- For safety-critical / regulated work, the applicable standard is named upfront (IEC 62304 class, DO-178C DAL, ISO 26262 ASIL, FDA risk class). Validation evidence requirements scale with this.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Verification ≠ Validation. If the report cannot be
-       split cleanly into 'matches spec' evidence and
-       'solves problem' evidence, the spec was wrong or the
-       evidence was hand-waved. Reject the draft."
-    - "Every Requirements entry must have an ID (REQ-001,
-       REQ-002, …) and every Verification + Validation
-       claim must cite the ID it discharges. Untraced
-       claims are not evidence; they are opinions."
-    - "Design section documents the decisions taken AND the
-       alternatives rejected. A design without rejected
-       alternatives is a description, not a design."
-    - "Conclusions section names the residual risks +
-       known limitations + deferred requirements. Reports
-       that conclude 'system works as intended' with no
-       caveats are either lying or unfinished."
-    - "Background is not a literature review. It is the
-       problem statement + stakeholders + constraints +
-       why this artifact exists. Two pages, not twelve."
+  - "Verification ≠ Validation. If the report cannot be split cleanly into 'matches spec' evidence and 'solves problem' evidence, the spec was wrong or the evidence was hand-waved. Reject the draft."
+  - "Every Requirements entry must have an ID (REQ-001, REQ-002, …) and every Verification + Validation claim must cite the ID it discharges. Untraced claims are not evidence; they are opinions."
+  - "Design section documents the decisions taken AND the alternatives rejected. A design without rejected alternatives is a description, not a design."
+  - "Conclusions section names the residual risks + known limitations + deferred requirements. Reports that conclude 'system works as intended' with no caveats are either lying or unfinished."
+  - "Background is not a literature review. It is the problem statement + stakeholders + constraints + why this artifact exists. Two pages, not twelve."
 
 quality_bar:
   required_sections:
-    - background
-    - requirements
-    - design
-    - verification
-    - validation
-    - conclusions
+  - background
+  - requirements
+  - design
+  - verification
+  - validation
+  - conclusions
   requirements_section_must_contain:
-    - "unique requirement IDs (REQ-NNN or equivalent)"
-    - "requirement type tag (functional, performance, safety,
-       regulatory, usability, interface)"
-    - "verification method per requirement (test, analysis,
-       inspection, demonstration)"
-    - "acceptance criterion (measurable, not 'works well')"
+  - "unique requirement IDs (REQ-NNN or equivalent)"
+  - "requirement type tag (functional, performance, safety, regulatory, usability, interface)"
+  - "verification method per requirement (test, analysis, inspection, demonstration)"
+  - "acceptance criterion (measurable, not 'works well')"
   verification_to_validation_ratio_warning: |
     "Reports with >90% verification evidence + <10%
     validation evidence usually mean the spec was tested
@@ -106,151 +83,162 @@ quality_bar:
     the spec was skipped. Healthy reports land 50-70%
     verification, 30-50% validation."
   traceability_matrix_required_when:
-    - "safety-critical (IEC 62304 class B/C, DO-178C
-       DAL A-C, ISO 26262 ASIL B-D)"
-    - "regulatory submission (FDA 510(k), CE mark, FAA)"
-    - "contract deliverable with a customer-facing SRS"
+  - "safety-critical (IEC 62304 class B/C, DO-178C DAL A-C, ISO 26262 ASIL B-D)"
+  - "regulatory submission (FDA 510(k), CE mark, FAA)"
+  - "contract deliverable with a customer-facing SRS"
   forbidden_phrases:
-    - "'works as intended' without test ID + result"
-    - "'meets all requirements' without traceability matrix"
-    - "'extensive testing' without test count + coverage metric"
-    - "'industry-standard' without naming the standard"
+  - "'works as intended' without test ID + result"
+  - "'meets all requirements' without traceability matrix"
+  - "'extensive testing' without test count + coverage metric"
+  - "'industry-standard' without naming the standard"
 
 steps:
-  - id: scope_the_artifact
-    name: Scope the artifact + name the report's audience
-    description: |
-      Before drafting, decide three things and write them
-      into workspace/engineering/report/scope.md:
-        - what artifact is being reported on (one sentence,
-          name + version + revision)
-        - who reads this report (internal design review?
-          regulatory auditor? customer acceptance? future
-          maintainer?) — audience determines depth of the
-          V&V sections
-        - what standard / framework applies (IEC 62304,
-          DO-178C, ISO 13485, internal QMS, none) —
-          determines whether traceability matrix is
-          mandatory vs nice-to-have
-      Run sys_path to confirm workspace/engineering/report/
-      exists; mem_log the scope decision before drafting
-      any section. Audience drift mid-report is the second
-      most common failure mode after V&V conflation.
+- id: scope_the_artifact
+  name: Scope the artifact + name the report's audience
+  description: |
+    Before drafting, decide three things and write them
+    into workspace/engineering/report/scope.md:
+      - what artifact is being reported on (one sentence,
+        name + version + revision)
+      - who reads this report (internal design review?
+        regulatory auditor? customer acceptance? future
+        maintainer?) — audience determines depth of the
+        V&V sections
+      - what standard / framework applies (IEC 62304,
+        DO-178C, ISO 13485, internal QMS, none) —
+        determines whether traceability matrix is
+        mandatory vs nice-to-have
+    Run sys_path to confirm workspace/engineering/report/
+    exists; mem_log the scope decision before drafting
+    any section. Audience drift mid-report is the second
+    most common failure mode after V&V conflation.
 
-  - id: draft_background_and_requirements
-    name: Draft Background + Requirements (the contract)
-    description: |
-      Background: problem statement + stakeholders +
-      operating environment + constraints + prior art (if
-      relevant). Keep it bounded; an engineering report is
-      not a thesis chapter. Two to four pages max for most
-      artifacts.
-      Requirements: enumerate REQ-001…REQ-NNN with type
-      tag + acceptance criterion + verification method.
-      Use tool_search against the requirements doctrine if
-      uncertain about phrasing ("the system shall …" is
-      load-bearing in regulated contexts; "should" is not
-      a requirement). For each requirement, the
-      verification method must be one of: Test (T),
-      Analysis (A), Inspection (I), Demonstration (D).
-      Save to workspace/engineering/report/requirements.md
-      and mem_log the count + breakdown by type. This
-      section is the contract the rest of the report
-      discharges.
+- id: draft_background_and_requirements
+  name: Draft Background + Requirements (the contract)
+  description: |
+    Background: problem statement + stakeholders +
+    operating environment + constraints + prior art (if
+    relevant). Keep it bounded; an engineering report is
+    not a thesis chapter. Two to four pages max for most
+    artifacts.
+    Requirements: enumerate REQ-001…REQ-NNN with type
+    tag + acceptance criterion + verification method.
+    Use tool_search against the requirements doctrine if
+    uncertain about phrasing ("the system shall …" is
+    load-bearing in regulated contexts; "should" is not
+    a requirement). For each requirement, the
+    verification method must be one of: Test (T),
+    Analysis (A), Inspection (I), Demonstration (D).
+    Save to workspace/engineering/report/requirements.md
+    and mem_log the count + breakdown by type. This
+    section is the contract the rest of the report
+    discharges.
 
-  - id: draft_design_with_rejected_alternatives
-    name: Draft Design — decisions + rejected alternatives
-    description: |
-      Design section is not a description of the artifact;
-      it is the record of decisions taken. For each major
-      design decision (architecture, component choice,
-      interface, algorithm, material), document:
-        - what was decided
-        - which requirements it satisfies (cite REQ IDs)
-        - what alternatives were considered + why they
-          were rejected (cost, schedule, risk, regulatory,
-          performance)
-        - what tradeoffs were accepted
-      Block diagrams + interface definitions + state
-      machines + BOM live here. If the team did an FMEA
-      (engineering/safety/fmea_protocol), reference the
-      table; do not duplicate it. Designs without rejected
-      alternatives read as post-hoc rationalizations and
-      fail design review.
+- id: draft_design_with_rejected_alternatives
+  name: Draft Design — decisions + rejected alternatives
+  description: |
+    Design section is not a description of the artifact;
+    it is the record of decisions taken. For each major
+    design decision (architecture, component choice,
+    interface, algorithm, material), document:
+      - what was decided
+      - which requirements it satisfies (cite REQ IDs)
+      - what alternatives were considered + why they
+        were rejected (cost, schedule, risk, regulatory,
+        performance)
+      - what tradeoffs were accepted
+    Block diagrams + interface definitions + state
+    machines + BOM live here. If the team did an FMEA
+    (engineering/safety/fmea_protocol), reference the
+    table; do not duplicate it. Designs without rejected
+    alternatives read as post-hoc rationalizations and
+    fail design review.
 
-  - id: write_verification_section
-    name: "Write Verification — does the artifact match the spec?"
-    description: |
-      Verification answers: "for each REQ-NNN, what test /
-      analysis / inspection / demonstration was run, and
-      what was the result?". Structure this section as a
-      table OR as one subsection per requirement, with:
-        - REQ-NNN reference
-        - verification method actually used
-        - test ID / analysis ID / inspection record
-        - pass/fail/conditional pass
-        - link to raw evidence (test log, simulation
-          output, inspection report)
-      tool_search the project's test artifacts before
-      drafting — verification claims without artifact
-      links are not evidence. If a requirement was
-      verified by analysis instead of test, the analysis
-      itself goes in an appendix. Failed verifications
-      are not hidden; they are listed with the
-      disposition (waived, deferred, corrective action
-      taken + re-verified).
+- id: write_verification_section
+  name: "Write Verification — does the artifact match the spec?"
+  description: |
+    Verification answers: "for each REQ-NNN, what test /
+    analysis / inspection / demonstration was run, and
+    what was the result?". Structure this section as a
+    table OR as one subsection per requirement, with:
+      - REQ-NNN reference
+      - verification method actually used
+      - test ID / analysis ID / inspection record
+      - pass/fail/conditional pass
+      - link to raw evidence (test log, simulation
+        output, inspection report)
+    tool_search the project's test artifacts before
+    drafting — verification claims without artifact
+    links are not evidence. If a requirement was
+    verified by analysis instead of test, the analysis
+    itself goes in an appendix. Failed verifications
+    are not hidden; they are listed with the
+    disposition (waived, deferred, corrective action
+    taken + re-verified).
 
-  - id: write_validation_section
-    name: "Write Validation — does the artifact solve the problem?"
-    description: |
-      Validation answers a different question from
-      Verification: "does the artifact, deployed in its
-      real operating environment, actually solve the
-      original problem the stakeholders had?". Evidence
-      types: user acceptance testing, field trials, pilot
-      deployment, clinical evaluation (for medical),
-      operational testing (for aerospace / defense),
-      customer sign-off. This section often surfaces
-      that the requirements themselves were wrong —
-      document it. Validation gaps are the most common
-      reason a fully-verified system fails in deployment.
-      For safety-critical work, name the validation
-      protocol used (HFE/UE per IEC 62366, clinical
-      evaluation per MDR Annex XIV, operational
-      evaluation per DO-178C §6.4.3). Validation evidence
-      that consists only of "the engineers tried it and
-      it worked" is not validation; it is verification
-      mislabeled.
+- id: write_validation_section
+  name: "Write Validation — does the artifact solve the problem?"
+  description: |
+    Validation answers a different question from
+    Verification: "does the artifact, deployed in its
+    real operating environment, actually solve the
+    original problem the stakeholders had?". Evidence
+    types: user acceptance testing, field trials, pilot
+    deployment, clinical evaluation (for medical),
+    operational testing (for aerospace / defense),
+    customer sign-off. This section often surfaces
+    that the requirements themselves were wrong —
+    document it. Validation gaps are the most common
+    reason a fully-verified system fails in deployment.
+    For safety-critical work, name the validation
+    protocol used (HFE/UE per IEC 62366, clinical
+    evaluation per MDR Annex XIV, operational
+    evaluation per DO-178C §6.4.3). Validation evidence
+    that consists only of "the engineers tried it and
+    it worked" is not validation; it is verification
+    mislabeled.
 
-  - id: write_conclusions_and_residuals
-    name: Write Conclusions + residual risks + known limitations
-    description: |
-      Conclusions section names: what the artifact does,
-      what requirements were verified + validated, what
-      requirements were waived / deferred + why, what
-      residual risks remain (link to FMEA / FTA / hazard
-      log), what limitations of scope or environment
-      apply, and what the recommended next steps are
-      (re-verification triggers, monitoring plan,
-      maintenance schedule).
-      A conclusions section without residuals fails
-      reviewer credibility — every nontrivial artifact
-      has known gaps. mem_log the residuals list
-      separately so subsequent design_iteration runs can
-      pick them up. If a traceability matrix is required
-      (see quality_bar), generate it now from the
-      requirements + verification + validation sections
-      and attach as an appendix.
+- id: write_conclusions_and_residuals
+  name: Write Conclusions + residual risks + known limitations
+  description: |
+    Conclusions section names: what the artifact does,
+    what requirements were verified + validated, what
+    requirements were waived / deferred + why, what
+    residual risks remain (link to FMEA / FTA / hazard
+    log), what limitations of scope or environment
+    apply, and what the recommended next steps are
+    (re-verification triggers, monitoring plan,
+    maintenance schedule).
+    A conclusions section without residuals fails
+    reviewer credibility — every nontrivial artifact
+    has known gaps. mem_log the residuals list
+    separately so subsequent design_iteration runs can
+    pick them up. If a traceability matrix is required
+    (see quality_bar), generate it now from the
+    requirements + verification + validation sections
+    and attach as an appendix.
 
 expected_outputs:
-  - workspace/engineering/report/scope.md
-  - workspace/engineering/report/requirements.md
-  - workspace/engineering/report/design.md
-  - workspace/engineering/report/verification.md
-  - workspace/engineering/report/validation.md
-  - workspace/engineering/report/conclusions.md
-  - workspace/engineering/report/traceability_matrix.csv (when required)
+- workspace/engineering/report/scope.md
+- workspace/engineering/report/requirements.md
+- workspace/engineering/report/design.md
+- workspace/engineering/report/verification.md
+- workspace/engineering/report/validation.md
+- workspace/engineering/report/conclusions.md
+- workspace/engineering/report/traceability_matrix.csv (when required)
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: report
+triggers:
+- engineering report
+- engineering report structure
+- v&v report
+- design report
+summary: 'Engineering report format (NOT IMRAD): Background → Requirements → Design → Verification → Validation → Conclusions.'
+token_estimate: 1500
+decomposition:
+- protocol: engineering/output/engineering_report_structure
+  purpose: Build the engineering report skeleton.

@@ -2,15 +2,15 @@ id: pilot_study
 tier: 'plan'
 name: Pilot Study
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [experiment_pipeline]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/power_analysis        # the pilot's variance estimate feeds the full-study power calc
-  - domain/research_design            # the pilot de-risks the design this protocol sketches
+- methodology/power_analysis          # the pilot's variance estimate feeds the full-study power calc
+- domain/research_design              # the pilot de-risks the design this protocol sketches
 description: |
   Small-N preliminary run to de-risk a full study: feasibility, instrument
   reliability, recruitment rate, refining inclusion/exclusion criteria,
@@ -24,88 +24,82 @@ trigger: |
 editorial_voice:
   mode: guidance
   rules:
-    - "A pilot is not a small confirmatory study. If the writeup
-       reports the primary effect estimate as a headline, the pilot
-       was misused."
-    - "Variance estimates from a pilot are noisy by construction.
-       Feeding the point estimate straight into a power calc
-       under-powers the full study; inflate conservatively (e.g.
-       anchor on the upper bound of the pilot variance's CI) and cite
-       the basis for the inflation you choose."
+  - "A pilot is not a small confirmatory study. If the writeup reports the primary effect estimate as a headline, the pilot was misused."
+  - "Variance estimates from a pilot are noisy by construction. Feeding the point estimate straight into a power calc under-powers the full study; inflate conservatively (e.g. anchor on the upper bound of the pilot variance's CI) and cite the basis for the inflation you choose."
 
 steps:
-  - id: declare_pilot_aim
-    name: Declare Pilot Aim Explicitly
-    description: |
-      Write outputs/reports/pilot_aim.md stating which of the following the
-      pilot is intended to inform:
-        - Recruitment feasibility (rate, drop-out)
-        - Instrument / protocol feasibility (acceptability, completion time)
-        - Variance estimate for a future power calculation
-        - Logistics (data pipeline, response times, vendor reliability)
-        - Refining inclusion / exclusion criteria
-      Pilots are NOT intended to test the hypothesis. State this in writing
-      so reviewers (and future-you) don't mistake the pilot for a small
-      confirmatory study.
+- id: declare_pilot_aim
+  name: Declare Pilot Aim Explicitly
+  description: |
+    Write outputs/reports/pilot_aim.md stating which of the following the
+    pilot is intended to inform:
+      - Recruitment feasibility (rate, drop-out)
+      - Instrument / protocol feasibility (acceptability, completion time)
+      - Variance estimate for a future power calculation
+      - Logistics (data pipeline, response times, vendor reliability)
+      - Refining inclusion / exclusion criteria
+    Pilots are NOT intended to test the hypothesis. State this in writing
+    so reviewers (and future-you) don't mistake the pilot for a small
+    confirmatory study.
 
-  - id: pilot_sample
-    name: Choose Pilot Sample Size + Stopping Rule
-    description: |
-      Justify N from the pilot's declared AIM, not from a rule of thumb.
-      A variance-estimation pilot needs enough units to estimate the
-      primary-outcome dispersion with a usable CI; a feasibility pilot
-      needs enough to surface the logistics that break — these are
-      different sizes. Cite whatever sizing guidance the field uses for
-      pilots in this design (e.g. published recommendations for pilot
-      sizing in trials) rather than asserting a number. Pre-specify a
-      stopping rule: hit N, hit a time bound, or hit an acceptability
-      red flag.
+- id: pilot_sample
+  name: Choose Pilot Sample Size + Stopping Rule
+  description: |
+    Justify N from the pilot's declared AIM, not from a rule of thumb.
+    A variance-estimation pilot needs enough units to estimate the
+    primary-outcome dispersion with a usable CI; a feasibility pilot
+    needs enough to surface the logistics that break — these are
+    different sizes. Cite whatever sizing guidance the field uses for
+    pilots in this design (e.g. published recommendations for pilot
+    sizing in trials) rather than asserting a number. Pre-specify a
+    stopping rule: hit N, hit a time bound, or hit an acceptability
+    red flag.
 
-  - id: run_pilot
-    name: Run the Pilot
-    description: |
-      Use the planned full-study protocol AS-IS — do not skip steps to make
-      the pilot easier. The whole point is to find friction. Log issues as
-      they happen (mem_log).
+- id: run_pilot
+  name: Run the Pilot
+  description: |
+    Use the planned full-study protocol AS-IS — do not skip steps to make
+    the pilot easier. The whole point is to find friction. Log issues as
+    they happen (mem_log).
 
-  - id: feasibility_report
-    name: Feasibility Report
-    description: |
-      outputs/reports/feasibility.md:
-        - Recruitment rate (eligible / contacted / consented / completed)
-        - Drop-out rate + reasons (if known)
-        - Median time per participant / unit
-        - Acceptability comments
-        - Logistics that broke + how they were fixed mid-pilot
+- id: feasibility_report
+  name: Feasibility Report
+  description: |
+    outputs/reports/feasibility.md:
+      - Recruitment rate (eligible / contacted / consented / completed)
+      - Drop-out rate + reasons (if known)
+      - Median time per participant / unit
+      - Acceptability comments
+      - Logistics that broke + how they were fixed mid-pilot
 
-  - id: variance_estimate
-    name: Variance Estimate (if applicable)
-    description: |
-      If the pilot is feeding a power calculation, report the observed
-      SD / proportion / event rate for the primary outcome with a CI. Be
-      explicit that these estimates are noisy — the future power calc
-      should inflate them conservatively (e.g. anchor on the upper CI
-      bound) rather than plug in the point estimate; cite the inflation
-      rationale.
+- id: variance_estimate
+  name: Variance Estimate (if applicable)
+  description: |
+    If the pilot is feeding a power calculation, report the observed
+    SD / proportion / event rate for the primary outcome with a CI. Be
+    explicit that these estimates are noisy — the future power calc
+    should inflate them conservatively (e.g. anchor on the upper CI
+    bound) rather than plug in the point estimate; cite the inflation
+    rationale.
 
-  - id: refine_main_protocol
-    name: Refine the Main Protocol
-    description: |
-      In conclusions.md, list every change to the main protocol the pilot
-      surfaced: clarifications, dropped questions, new exclusion criteria,
-      revised consent process. Each change tied to the specific pilot
-      finding that motivated it.
+- id: refine_main_protocol
+  name: Refine the Main Protocol
+  description: |
+    In conclusions.md, list every change to the main protocol the pilot
+    surfaced: clarifications, dropped questions, new exclusion criteria,
+    revised consent process. Each change tied to the specific pilot
+    finding that motivated it.
 
-  - id: decision
-    name: Go / No-Go / Revise
-    description: |
-      conclusions.md ends with a clear verdict: proceed to full study as
-      written | proceed with named revisions | revise + run another pilot |
-      abandon. Justify with the feasibility numbers.
+- id: decision
+  name: Go / No-Go / Revise
+  description: |
+    conclusions.md ends with a clear verdict: proceed to full study as
+    written | proceed with named revisions | revise + run another pilot |
+    abandon. Justify with the feasibility numbers.
 
 expected_outputs:
-  - workspace/*/outputs/reports/pilot_aim.md
-  - workspace/*/outputs/reports/feasibility.md
+- workspace/*/outputs/reports/pilot_aim.md
+- workspace/*/outputs/reports/feasibility.md
 
 quality_bar: |
   - The pilot does NOT report a confirmatory effect estimate; if numbers
@@ -117,3 +111,11 @@ quality_bar: |
 next_protocol: domain/research_design
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: pilot
+triggers:
+- pilot
+- feasibility
+- before the full study
+- test the protocol
+summary: Small-N feasibility / variance estimation before the full study.

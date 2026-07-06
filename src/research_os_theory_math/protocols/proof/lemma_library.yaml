@@ -1,7 +1,7 @@
 id: lemma_library
 name: Lemma Library — versioned, with dependents tracking
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [theory_math, engineering]
   audience: [auditor, maintainer]
@@ -40,37 +40,17 @@ trigger: |
   "lemma library", "factor this out as a lemma".
 
 prerequisites:
-  - The lemma has a precise statement (no "X is roughly Y" — see
-    proof_verification_workflow.prerequisites).
-  - "A proof exists somewhere — either inline, or as a reference to a
-    published result with a citation key (`@author_year`)."
-  - "`workspace/lemmas/` and `workspace/lemmas/_index.yaml` are
-    initialised (the protocol creates them on first run if missing)."
+- The lemma has a precise statement (no "X is roughly Y" — see proof_verification_workflow.prerequisites).
+- "A proof exists somewhere — either inline, or as a reference to a published result with a citation key (`@author_year`)."
+- "`workspace/lemmas/` and `workspace/lemmas/_index.yaml` are initialised (the protocol creates them on first run if missing)."
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "A lemma earns library status only if it will be cited by at
-       least two other results (or one result outside the file where
-       it was first stated). One-off helper steps live inline in the
-       proof that needs them, not in the library. Premature
-       extraction is as bad as premature abstraction in code."
-    - "The statement is the contract; the proof is the implementation.
-       Reviewers and downstream proofs depend on the statement, not on
-       the proof technique. If you can replace the proof without
-       touching the statement, the change is PATCH and dependents do
-       not need re-verification."
-    - "Hypothesis-weakening and conclusion-strengthening are MINOR:
-       every existing citation still type-checks because the new
-       statement implies the old one. Hypothesis-strengthening or
-       conclusion-weakening is MAJOR: existing citations may no
-       longer be justified and must be re-audited one by one."
-    - "Never delete a lemma version. Deprecate it (set
-       status: deprecated, point superseded_by at the replacement),
-       leave the file in place. Dependents tracked against the old
-       version remain resolvable; new citations should use the new
-       version. Mirrors how a published package handles a yanked
-       release."
+  - "A lemma earns library status only if it will be cited by at least two other results (or one result outside the file where it was first stated). One-off helper steps live inline in the proof that needs them, not in the library. Premature extraction is as bad as premature abstraction in code."
+  - "The statement is the contract; the proof is the implementation. Reviewers and downstream proofs depend on the statement, not on the proof technique. If you can replace the proof without touching the statement, the change is PATCH and dependents do not need re-verification."
+  - "Hypothesis-weakening and conclusion-strengthening are MINOR: every existing citation still type-checks because the new statement implies the old one. Hypothesis-strengthening or conclusion-weakening is MAJOR: existing citations may no longer be justified and must be re-audited one by one."
+  - "Never delete a lemma version. Deprecate it (set status: deprecated, point superseded_by at the replacement), leave the file in place. Dependents tracked against the old version remain resolvable; new citations should use the new version. Mirrors how a published package handles a yanked release."
 
 quality_bar:
   minimum_dependents_for_library_entry: 2
@@ -82,13 +62,9 @@ quality_bar:
     expects more to land within the next draft cycle. Document the
     expectation in the lemma's `## Notes` section.
   version_bump_audit_required_when:
-    - "MAJOR bump (hypothesis-strengthening or conclusion-weakening
-       or statement-rewrite that breaks existing citations)"
-    - "any bump that touches a lemma with >= 5 dependents (high
-       blast radius)"
-    - "any bump on a lemma cited by a result that is itself cited
-       by a published paper (the transitive-dependency surface
-       reaches the public record)"
+  - "MAJOR bump (hypothesis-strengthening or conclusion-weakening or statement-rewrite that breaks existing citations)"
+  - "any bump that touches a lemma with >= 5 dependents (high blast radius)"
+  - "any bump on a lemma cited by a result that is itself cited by a published paper (the transitive-dependency surface reaches the public record)"
   rationale_audit_triggers: |
     These three triggers are the cases where a silent re-verification
     failure has irreversible cost: published-paper transitivity means
@@ -97,94 +73,106 @@ quality_bar:
     cheap; above 5, the protocol forces structured fan-out.
 
 steps:
-  - id: extract_or_locate
-    name: Extract a new lemma OR locate the existing one
-    description: |
-      If this is a new lemma: write the statement in
-      `workspace/lemmas/<slug>.md` under a `## Statement` heading,
-      following the same notation conventions as the surrounding
-      project. Pick a slug that names the result, not the technique
-      (`compactness_of_closed_balls` not `helper_lemma_3`).
-      If this is a revision: locate the existing file via
-      `tool_search` over `workspace/lemmas/`, confirm the slug, and
-      read the current statement + version before touching anything.
-      Call `mem_log` with the slug and the intent
-      ('new' | 'revise' | 'deprecate') so the session has a trail.
+- id: extract_or_locate
+  name: Extract a new lemma OR locate the existing one
+  description: |
+    If this is a new lemma: write the statement in
+    `workspace/lemmas/<slug>.md` under a `## Statement` heading,
+    following the same notation conventions as the surrounding
+    project. Pick a slug that names the result, not the technique
+    (`compactness_of_closed_balls` not `helper_lemma_3`).
+    If this is a revision: locate the existing file via
+    `tool_search` over `workspace/lemmas/`, confirm the slug, and
+    read the current statement + version before touching anything.
+    Call `mem_log` with the slug and the intent
+    ('new' | 'revise' | 'deprecate') so the session has a trail.
 
-  - id: register_in_index
-    name: Register (or update) the index entry
-    description: |
-      Open `workspace/lemmas/_index.yaml`. Each entry has:
-      `slug`, `version`, `status` (active | deprecated),
-      `dependents` (list of slugs), `superseded_by` (optional).
-      For a new lemma: add an entry at version `0.1.0`, status
-      active, dependents `[]`. For a revision: do NOT mutate the
-      existing entry yet — the version bump happens after the
-      audit (step 5). The index is the source of truth; the per-
-      lemma file is the long-form content.
+- id: register_in_index
+  name: Register (or update) the index entry
+  description: |
+    Open `workspace/lemmas/_index.yaml`. Each entry has:
+    `slug`, `version`, `status` (active | deprecated),
+    `dependents` (list of slugs), `superseded_by` (optional).
+    For a new lemma: add an entry at version `0.1.0`, status
+    active, dependents `[]`. For a revision: do NOT mutate the
+    existing entry yet — the version bump happens after the
+    audit (step 5). The index is the source of truth; the per-
+    lemma file is the long-form content.
 
-  - id: write_statement_and_proof
-    name: Write the statement and proof (or reference)
-    description: |
-      Under `## Statement` write the lemma precisely. Under `## Proof`
-      either (a) write the proof inline following
-      proof_verification_workflow conventions (numbered steps, every
-      non-trivial step cited), or (b) cite a published reference with
-      a BibTeX key and a page number — `cf. @bourbaki_topology_1966,
-      Ch. III, §2, Prop. 4`. A bare citation with no page number is
-      not a proof; reviewers will flag it. If the proof is long,
-      split it into `workspace/lemmas/<slug>_proof.md` and link from
-      the main file.
+- id: write_statement_and_proof
+  name: Write the statement and proof (or reference)
+  description: |
+    Under `## Statement` write the lemma precisely. Under `## Proof`
+    either (a) write the proof inline following
+    proof_verification_workflow conventions (numbered steps, every
+    non-trivial step cited), or (b) cite a published reference with
+    a BibTeX key and a page number — `cf. @bourbaki_topology_1966,
+    Ch. III, §2, Prop. 4`. A bare citation with no page number is
+    not a proof; reviewers will flag it. If the proof is long,
+    split it into `workspace/lemmas/<slug>_proof.md` and link from
+    the main file.
 
-  - id: classify_bump
-    name: Classify the version bump (revisions only)
-    description: |
-      Skip for a new lemma (it starts at 0.1.0). For a revision,
-      decide the bump using the editorial_voice rules:
-        - statement unchanged, proof rewritten or typo fixed → PATCH
-        - hypothesis weakened OR conclusion strengthened → MINOR
-        - hypothesis strengthened, conclusion weakened, or
-          statement otherwise breaks existing citations → MAJOR
-      Record the decision and the one-sentence justification under
-      `## Version history` in the lemma file. If you cannot tell
-      whether existing citations still type-check, the bump is MAJOR
-      until proven otherwise — the cost of an unnecessary audit is
-      smaller than the cost of a missed broken dependent.
+- id: classify_bump
+  name: Classify the version bump (revisions only)
+  description: |
+    Skip for a new lemma (it starts at 0.1.0). For a revision,
+    decide the bump using the editorial_voice rules:
+      - statement unchanged, proof rewritten or typo fixed → PATCH
+      - hypothesis weakened OR conclusion strengthened → MINOR
+      - hypothesis strengthened, conclusion weakened, or
+        statement otherwise breaks existing citations → MAJOR
+    Record the decision and the one-sentence justification under
+    `## Version history` in the lemma file. If you cannot tell
+    whether existing citations still type-check, the bump is MAJOR
+    until proven otherwise — the cost of an unnecessary audit is
+    smaller than the cost of a missed broken dependent.
 
-  - id: audit_dependents
-    name: Audit dependents (when triggered)
-    description: |
-      Check the quality_bar version_bump_audit_required_when triggers.
-      If any apply, walk every entry in this lemma's `dependents`
-      list and re-verify the citation: does the dependent's proof
-      still go through under the new statement? Use `tool_search` to
-      find the citation point in the dependent's proof file, then
-      either confirm "still valid" (record under `## Audit log` in
-      the dependent) or mark the dependent as `needs-reverification`
-      and queue a proof_verification_workflow re-run. For PATCH bumps
-      below the 5-dependent threshold, the audit is optional —
-      document the waiver under `## Version history` if skipped.
+- id: audit_dependents
+  name: Audit dependents (when triggered)
+  description: |
+    Check the quality_bar version_bump_audit_required_when triggers.
+    If any apply, walk every entry in this lemma's `dependents`
+    list and re-verify the citation: does the dependent's proof
+    still go through under the new statement? Use `tool_search` to
+    find the citation point in the dependent's proof file, then
+    either confirm "still valid" (record under `## Audit log` in
+    the dependent) or mark the dependent as `needs-reverification`
+    and queue a proof_verification_workflow re-run. For PATCH bumps
+    below the 5-dependent threshold, the audit is optional —
+    document the waiver under `## Version history` if skipped.
 
-  - id: update_index_and_backlinks
-    name: Commit the bump, update the index, refresh backlinks
-    description: |
-      Update `workspace/lemmas/_index.yaml`: bump the version, append
-      a `dependents` entry for every new downstream result that cited
-      this lemma during the audit, and (for deprecations) set
-      status: deprecated + superseded_by. For each result that now
-      cites this lemma, add a `## Dependencies` line in the
-      dependent's file pointing at `<slug>@<version>` — explicit
-      pins, like a lockfile. Run `tool_theory_math_dep_graph`
-      (see theory_math/proof/theorem_dependency_graph) to regenerate
-      the global graph. Call `mem_log` with the final version + the
-      dependent count so future sessions can see the impact.
+- id: update_index_and_backlinks
+  name: Commit the bump, update the index, refresh backlinks
+  description: |
+    Update `workspace/lemmas/_index.yaml`: bump the version, append
+    a `dependents` entry for every new downstream result that cited
+    this lemma during the audit, and (for deprecations) set
+    status: deprecated + superseded_by. For each result that now
+    cites this lemma, add a `## Dependencies` line in the
+    dependent's file pointing at `<slug>@<version>` — explicit
+    pins, like a lockfile. Run `tool_theory_math_dep_graph`
+    (see theory_math/proof/theorem_dependency_graph) to regenerate
+    the global graph. Call `mem_log` with the final version + the
+    dependent count so future sessions can see the impact.
 
 expected_outputs:
-  - workspace/lemmas/<slug>.md
-  - workspace/lemmas/<slug>_proof.md       # only when proof is long
-  - workspace/lemmas/_index.yaml           # updated
-  - workspace/lemmas/<slug>_audit.md       # only when audit was triggered
+- workspace/lemmas/<slug>.md
+- workspace/lemmas/<slug>_proof.md         # only when proof is long
+- workspace/lemmas/_index.yaml             # updated
+- workspace/lemmas/<slug>_audit.md         # only when audit was triggered
 
 next_protocol: theory_math/proof/theorem_dependency_graph
 next_protocol_kind: forward_default
 on_failure: theory_math/proof/proof_verification_workflow
+intent_class: memory
+sub_intent: register
+triggers:
+- lemma library
+- register a lemma
+- reusable lemma
+- lemma versioning
+summary: Versioned lemma library with dependents tracking.
+token_estimate: 1300
+decomposition:
+- protocol: theory_math/proof/lemma_library
+  purpose: Add / version / depend on a lemma.

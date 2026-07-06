@@ -2,15 +2,15 @@ id: pipeline_stage_handoff
 tier: 'finalize'
 name: Pipeline Stage Handoff (output → next actor's input)
 version: '4.2.0'
-schema_version: '2.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-27'
 scope_tags:
   domain: [any]
   mode: [analysis, tool_build, hybrid, multi_study, notebook]
 see_also:
-  - guidance/collaboration_handoff   # full-project handoff to a human, not a single stage
-  - reproducibility/reproducibility  # the env/seed/hash discipline a consumable stage needs
-  - audit/provenance_completeness    # the sidecars that prove what produced the output
+- guidance/collaboration_handoff     # full-project handoff to a human, not a single stage
+- reproducibility/reproducibility    # the env/seed/hash discipline a consumable stage needs
+- audit/provenance_completeness      # the sidecars that prove what produced the output
 description: |
   Hand off the OUTPUT of one pipeline stage so a DIFFERENT actor (another
   person, another team, a scheduled job, a downstream tool) can do the NEXT
@@ -34,72 +34,89 @@ trigger: |
 editorial_voice:
   mode: guidance
   rules:
-    - "The consumer has NOT seen this session. Describe the output by what it
-       IS and what they can rely on, never by what you did to make it."
-    - "A handoff without a provenance trail is a guess. The consumer must be
-       able to see what produced each output and whether it's current."
-    - "State the consumer's contract explicitly: the exact files/shape they
-       receive, and the exact thing they're expected to produce back."
+  - "The consumer has NOT seen this session. Describe the output by what it IS and what they can rely on, never by what you did to make it."
+  - "A handoff without a provenance trail is a guess. The consumer must be able to see what produced each output and whether it's current."
+  - "State the consumer's contract explicitly: the exact files/shape they receive, and the exact thing they're expected to produce back."
 
 steps:
-  - id: scope_the_stage_boundary
-    name: Name the stage boundary precisely
-    description: |
-      Reason about WHERE this stage ends and the next begins:
-        - WHICH output is the handoff (a specific folder / set of artefacts),
-          not "the whole project". A stage handoff is narrow on purpose.
-        - WHO consumes it and WHAT they will do next (the next stage's job).
-        - WHETHER they run Research OS or not — it changes the package shape
-          (a RO-aware reader keeps the workspace; an outside reader needs a
-          self-describing bundle).
-      The boundary you draw here is the contract's scope.
+- id: scope_the_stage_boundary
+  name: Name the stage boundary precisely
+  description: |
+    Reason about WHERE this stage ends and the next begins:
+      - WHICH output is the handoff (a specific folder / set of artefacts),
+        not "the whole project". A stage handoff is narrow on purpose.
+      - WHO consumes it and WHAT they will do next (the next stage's job).
+      - WHETHER they run Research OS or not — it changes the package shape
+        (a RO-aware reader keeps the workspace; an outside reader needs a
+        self-describing bundle).
+    The boundary you draw here is the contract's scope.
 
-  - id: pin_the_output_provenance
-    name: Pin what produced the output
-    description: |
-      The consumer needs to trust + (later) reproduce what they receive.
-      Ensure each handed-off artefact carries its provenance: how it was
-      produced (the run / command / container image + digest if it came through
-      a daemon-tracked or container job), the inputs it derived from, and
-      whether it's current (not stale vs the inputs it claims). Surface and
-      resolve any staleness BEFORE handing off — shipping a stale output is the
-      classic pipeline-corruption bug. The point is not a fixed tool sequence;
-      it is that the output's lineage travels WITH it.
+- id: pin_the_output_provenance
+  name: Pin what produced the output
+  description: |
+    The consumer needs to trust + (later) reproduce what they receive.
+    Ensure each handed-off artefact carries its provenance: how it was
+    produced (the run / command / container image + digest if it came through
+    a daemon-tracked or container job), the inputs it derived from, and
+    whether it's current (not stale vs the inputs it claims). Surface and
+    resolve any staleness BEFORE handing off — shipping a stale output is the
+    classic pipeline-corruption bug. The point is not a fixed tool sequence;
+    it is that the output's lineage travels WITH it.
 
-  - id: write_the_output_contract
-    name: Write the output contract
-    description: |
-      Write a short, consumer-facing contract that lives WITH the output (e.g.
-      a HANDOFF.md in the handed-off folder). It states:
-        - WHAT each file is, in the consumer's vocabulary, and the shape they
-          can rely on (columns/units/schema for data; the interface for a tool).
-        - The KNOWN assumptions + limitations the next stage must respect (the
-          things obvious to you that the consumer will otherwise get wrong).
-        - The CONSUMER'S DELIVERABLE: the exact thing the next stage is expected
-          to produce back, in shared units, so the pipeline stays commensurable.
-        - HOW to reproduce the output if they need to (env / image / seed / the
-          one command), pointing at the provenance, not re-deriving it.
+- id: write_the_output_contract
+  name: Write the output contract
+  description: |
+    Write a short, consumer-facing contract that lives WITH the output (e.g.
+    a HANDOFF.md in the handed-off folder). It states:
+      - WHAT each file is, in the consumer's vocabulary, and the shape they
+        can rely on (columns/units/schema for data; the interface for a tool).
+      - The KNOWN assumptions + limitations the next stage must respect (the
+        things obvious to you that the consumer will otherwise get wrong).
+      - The CONSUMER'S DELIVERABLE: the exact thing the next stage is expected
+        to produce back, in shared units, so the pipeline stays commensurable.
+      - HOW to reproduce the output if they need to (env / image / seed / the
+        one command), pointing at the provenance, not re-deriving it.
 
-  - id: package_for_transport
-    name: Package for transport (safely)
-    description: |
-      Produce the actual shareable thing for the boundary you scoped:
-        - RO-aware consumer / next daemon job: keep the workspace shape so the
-          run journal + provenance sidecars travel intact.
-        - Outside consumer: a self-contained bundle (the output + HANDOFF.md +
-          the provenance needed to trust it), with nothing secret in it —
-          screen for credentials / restricted data before packaging.
-      Record where the package went so the lineage shows this boundary.
+- id: package_for_transport
+  name: Package for transport (safely)
+  description: |
+    Produce the actual shareable thing for the boundary you scoped:
+      - RO-aware consumer / next daemon job: keep the workspace shape so the
+        run journal + provenance sidecars travel intact.
+      - Outside consumer: a self-contained bundle (the output + HANDOFF.md +
+        the provenance needed to trust it), with nothing secret in it —
+        screen for credentials / restricted data before packaging.
+    Record where the package went so the lineage shows this boundary.
 
-  - id: confirm_the_loop
-    name: Confirm the loop closes
-    description: |
-      Make the round-trip explicit so work isn't lost at the seam:
-        - Tell the consumer how to signal completion + where their deliverable
-          lands so THIS pipeline can consume it back.
-        - Note the open question the next stage is meant to answer, so when its
-          output returns, it's clear what to do with it.
-      A pipeline stage handoff isn't done when the folder is sent — it's done
-      when the contract for getting the next stage's result back is clear.
+- id: confirm_the_loop
+  name: Confirm the loop closes
+  description: |
+    Make the round-trip explicit so work isn't lost at the seam:
+      - Tell the consumer how to signal completion + where their deliverable
+        lands so THIS pipeline can consume it back.
+      - Note the open question the next stage is meant to answer, so when its
+        output returns, it's clear what to do with it.
+    A pipeline stage handoff isn't done when the folder is sent — it's done
+    when the contract for getting the next stage's result back is clear.
 
-next_protocol: null
+next_protocol:
+intent_class: synthesize
+sub_intent: pipeline_stage_handoff
+triggers:
+- next step in the pipeline
+- hand off the output
+- send the output to
+- take it from here
+- next stage
+- next team
+- someone else continues
+- pass this folder
+- package this for the next step
+- share these results for the next step
+summary: Hand off one pipeline stage's OUTPUT (with provenance + a consumer contract) so a different actor can do the next stage.
+token_estimate: 1400
+decomposition:
+- protocol: program/pipeline_stage_handoff
+  purpose: Scope the stage boundary, pin output provenance, write the output contract, package safely, confirm the return loop.
+- tool: mem_log
+  purpose: Record the handoff boundary + the consumer's expected deliverable.

@@ -3,16 +3,16 @@ tier: 'plan'
 name: Data Quality Audit (standalone QC pass)
 version: '3.0.0'
 last_reviewed: '2026-06-16'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [naive_ai, auditor]
   workflow_shape: [experiment_pipeline]
 see_also:
-  - methodology/exploratory_data_analysis  # the hypothesis-generating pass on clean-enough data
-  - methodology/data_preparation           # where flagged problems get fixed + recorded (raw→analysis-ready)
-  - methodology/data_ethics_review         # the ethical/legal counterpart to this cleanliness pass
-  - methodology/missing_data_strategy      # where flagged missingness gets a handling plan
+- methodology/exploratory_data_analysis    # the hypothesis-generating pass on clean-enough data
+- methodology/data_preparation             # where flagged problems get fixed + recorded (raw→analysis-ready)
+- methodology/data_ethics_review           # the ethical/legal counterpart to this cleanliness pass
+- methodology/missing_data_strategy        # where flagged missingness gets a handling plan
 description: |
   Standalone data quality audit — for the case where the researcher
   wants to know what is in (or wrong with) a dataset BEFORE deciding
@@ -39,217 +39,206 @@ trigger: |
   data dictionary", "validate the schema", "check missingness".
 
 prerequisites:
-  - At least one dataset file under inputs/raw_data/ OR explicitly
-    pointed at by path.
+- At least one dataset file under inputs/raw_data/ OR explicitly pointed at by path.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Distinguish data problems that BLOCK analysis from those that
-       constrain it. A column that is 95% missing blocks itself but
-       does not block the rest of the dataset."
-    - "Findings are pinned to a row count, a column name, and a
-       reproducible check. 'Has missing values' is not a finding;
-       'column `age` has 1,247 nulls (4.2% of rows), concentrated
-       in records where `source = registry_B`' is a finding."
-    - "Audit the SOURCE, not just the file. Many data problems are
-       symptoms of upstream pipeline behaviour — flag the symptom AND
-       ask for the upstream context (the data dictionary, the
-       generating SQL, the export config)."
-    - "An audit that ends 'data is fine' is rarer than the audit-
-       writer thinks. Default to enumerating concerns + flagging
-       which ones block downstream work."
+  - "Distinguish data problems that BLOCK analysis from those that constrain it. A column that is 95% missing blocks itself but does not block the rest of the dataset."
+  - "Findings are pinned to a row count, a column name, and a reproducible check. 'Has missing values' is not a finding; 'column `age` has 1,247 nulls (4.2% of rows), concentrated in records where `source = registry_B`' is a finding."
+  - "Audit the SOURCE, not just the file. Many data problems are symptoms of upstream pipeline behaviour — flag the symptom AND ask for the upstream context (the data dictionary, the generating SQL, the export config)."
+  - "An audit that ends 'data is fine' is rarer than the audit- writer thinks. Default to enumerating concerns + flagging which ones block downstream work."
 
 steps:
-  - id: scope_the_audit
-    name: Scope the audit
-    description: |
-      Confirm in one line:
-        - which file(s) — paths
-        - the analysis the data will feed (when known) — drives
-          which checks are blocking vs informational
-        - the data dictionary, if one exists — path or a note that
-          one should be requested from the source
+- id: scope_the_audit
+  name: Scope the audit
+  description: |
+    Confirm in one line:
+      - which file(s) — paths
+      - the analysis the data will feed (when known) — drives
+        which checks are blocking vs informational
+      - the data dictionary, if one exists — path or a note that
+        one should be requested from the source
 
-      A QC pass without knowing the downstream use is generic; one
-      that knows the downstream use is targeted. Push the researcher
-      to name the downstream use whenever they have one.
+    A QC pass without knowing the downstream use is generic; one
+    that knows the downstream use is targeted. Push the researcher
+    to name the downstream use whenever they have one.
 
-  - id: structural_checks
-    name: Structural checks (schema + types + identifiers)
-    description: |
-      For each tabular file:
-        - sys_file_read the first ~100 rows + the header
-        - tool_data(operation='profile', filepath=<path>)     # full profile sample
+- id: structural_checks
+  name: Structural checks (schema + types + identifiers)
+  description: |
+    For each tabular file:
+      - sys_file_read the first ~100 rows + the header
+      - tool_data(operation='profile', filepath=<path>)     # full profile sample
 
-      Check:
-        - column types — does each column hold what its name suggests?
-          (an `age` column with strings is structural; a `date` column
-          with mixed formats is structural)
-        - unique identifier behaviour — does the declared key uniquely
-          identify rows? (compute row count vs distinct key count)
-        - schema drift — for multi-file datasets, do columns match
-          across files? When they do not, flag exactly which files
-          differ.
-        - empty rows / footer rows / metadata-as-data
-        - encoding / delimiter / escaping problems (read with explicit
-          encoding; flag if the file has BOM / mixed line endings)
+    Check:
+      - column types — does each column hold what its name suggests?
+        (an `age` column with strings is structural; a `date` column
+        with mixed formats is structural)
+      - unique identifier behaviour — does the declared key uniquely
+        identify rows? (compute row count vs distinct key count)
+      - schema drift — for multi-file datasets, do columns match
+        across files? When they do not, flag exactly which files
+        differ.
+      - empty rows / footer rows / metadata-as-data
+      - encoding / delimiter / escaping problems (read with explicit
+        encoding; flag if the file has BOM / mixed line endings)
 
-      Record structural problems to
-      workspace/<step>/outputs/reports/quality_structural_<file>.md.
+    Record structural problems to
+    workspace/<step>/outputs/reports/quality_structural_<file>.md.
 
-  - id: completeness_and_missingness_pattern
-    name: Completeness + missingness pattern
-    description: |
-      For each column:
-        - overall missingness count + percent
-        - WHERE the missingness lives (rows? specific subgroup
-          breakdowns?) — the pattern matters more than the rate
-        - whether missingness correlates with other columns (informs
-          MCAR / MAR / MNAR judgement — name the field's vocabulary
-          for the pattern, do not invent your own)
-        - whether sentinel values are being used (e.g. -999, "NA",
-          "Unknown") and whether they have been converted to
-          true nulls
+- id: completeness_and_missingness_pattern
+  name: Completeness + missingness pattern
+  description: |
+    For each column:
+      - overall missingness count + percent
+      - WHERE the missingness lives (rows? specific subgroup
+        breakdowns?) — the pattern matters more than the rate
+      - whether missingness correlates with other columns (informs
+        MCAR / MAR / MNAR judgement — name the field's vocabulary
+        for the pattern, do not invent your own)
+      - whether sentinel values are being used (e.g. -999, "NA",
+        "Unknown") and whether they have been converted to
+        true nulls
 
-      Build a missingness HEATMAP in an AI-authored plotting script kind=heatmap
-      with cells coloured by missing-flag; the visual is what catches
-      systematic missingness fast.
+    Build a missingness HEATMAP in an AI-authored plotting script kind=heatmap
+    with cells coloured by missing-flag; the visual is what catches
+    systematic missingness fast.
 
-  - id: distributional_sanity
-    name: Distributional sanity checks
-    description: |
-      For each continuous column:
-        - range, min, max — does the range match the data dictionary
-          or biologically / physically / clinically plausible bounds?
-          (a temperature column with values > 1000 is a finding)
-        - count of out-of-range values
-        - presence of clusters at suspicious values (often coding
-          artefacts — a glucose value of exactly 0 across many rows
-          is likely an unspecified missing, not a zero glucose)
+- id: distributional_sanity
+  name: Distributional sanity checks
+  description: |
+    For each continuous column:
+      - range, min, max — does the range match the data dictionary
+        or biologically / physically / clinically plausible bounds?
+        (a temperature column with values > 1000 is a finding)
+      - count of out-of-range values
+      - presence of clusters at suspicious values (often coding
+        artefacts — a glucose value of exactly 0 across many rows
+        is likely an unspecified missing, not a zero glucose)
 
-      For each categorical column:
-        - level count + a top-K table
-        - low-frequency levels — often typos, codings, or
-          rare-category drop targets; what counts as "rare" depends on
-          the column's role downstream, so flag the long tail rather
-          than applying a fixed frequency cutoff
-        - levels not in the data dictionary's enumerated values
+    For each categorical column:
+      - level count + a top-K table
+      - low-frequency levels — often typos, codings, or
+        rare-category drop targets; what counts as "rare" depends on
+        the column's role downstream, so flag the long tail rather
+        than applying a fixed frequency cutoff
+      - levels not in the data dictionary's enumerated values
 
-  - id: duplicate_and_near_duplicate_check
-    name: Duplicate / near-duplicate detection
-    description: |
-      Two checks:
-        - exact duplicates on the declared key
-        - near-duplicates on a small composite key (first-name +
-          last-name + DOB; person_id + visit_date; sample_id +
-          run_id) — depending on context
+- id: duplicate_and_near_duplicate_check
+  name: Duplicate / near-duplicate detection
+  description: |
+    Two checks:
+      - exact duplicates on the declared key
+      - near-duplicates on a small composite key (first-name +
+        last-name + DOB; person_id + visit_date; sample_id +
+        run_id) — depending on context
 
-      Report:
-        - count of exact duplicates
-        - count of near-duplicates with the matching tolerance
-        - whether the near-duplicates are intended (e.g. repeated
-          measurements per subject) or unintended (e.g. accidental
-          double-loads)
+    Report:
+      - count of exact duplicates
+      - count of near-duplicates with the matching tolerance
+      - whether the near-duplicates are intended (e.g. repeated
+        measurements per subject) or unintended (e.g. accidental
+        double-loads)
 
-  - id: leakage_and_temporal_validity_check
-    name: Leakage + temporal validity check
-    description: |
-      For datasets where time / event order matters:
-        - check that timestamps are monotonic where expected
-        - flag columns that should NOT be available at prediction
-          time (post-outcome variables) — these are leakage candidates
-          for any downstream model
-        - check for future-dated rows (a "death_date" earlier than
-          a "birth_date"; an "event_date" in 2030 in a dataset
-          collected in 2025)
+- id: leakage_and_temporal_validity_check
+  name: Leakage + temporal validity check
+  description: |
+    For datasets where time / event order matters:
+      - check that timestamps are monotonic where expected
+      - flag columns that should NOT be available at prediction
+        time (post-outcome variables) — these are leakage candidates
+        for any downstream model
+      - check for future-dated rows (a "death_date" earlier than
+        a "birth_date"; an "event_date" in 2030 in a dataset
+        collected in 2025)
 
-      For longitudinal datasets:
-        - per-subject record counts — flag subjects with single rows
-          when multiple are expected, or vice versa
-        - between-record time gaps — flag impossibly short or long
-          gaps
+    For longitudinal datasets:
+      - per-subject record counts — flag subjects with single rows
+        when multiple are expected, or vice versa
+      - between-record time gaps — flag impossibly short or long
+        gaps
 
-  - id: cross_source_consistency
-    name: Cross-source / cross-table consistency
-    description: |
-      When the dataset is built from multiple sources / tables:
-        - referential integrity — does every foreign key in table B
-          point to a row in table A?
-        - definitional consistency — does a variable named the same
-          in two tables mean the same thing? (a `weight_kg` from
-          the registry and a `weight_kg` from the EHR may use
-          different rounding or units)
-        - units consistency — flag any column whose unit varies by
-          source (most often the EHR-vs-registry merge problem)
+- id: cross_source_consistency
+  name: Cross-source / cross-table consistency
+  description: |
+    When the dataset is built from multiple sources / tables:
+      - referential integrity — does every foreign key in table B
+        point to a row in table A?
+      - definitional consistency — does a variable named the same
+        in two tables mean the same thing? (a `weight_kg` from
+        the registry and a `weight_kg` from the EHR may use
+        different rounding or units)
+      - units consistency — flag any column whose unit varies by
+        source (most often the EHR-vs-registry merge problem)
 
-  - id: bias_and_representation_check
-    name: Representation + selection-bias check
-    description: |
-      Pull the demographic / subgroup columns relevant to the
-      analysis (when one is named in scope; otherwise the obvious
-      ones the data dictionary surfaces):
-        - subgroup counts + percentages
-        - subgroup × outcome cross-tabs
-        - representation gaps relative to the target population the
-          downstream analysis will generalise to (the researcher
-          supplies the reference; if unavailable, flag the gap)
+- id: bias_and_representation_check
+  name: Representation + selection-bias check
+  description: |
+    Pull the demographic / subgroup columns relevant to the
+    analysis (when one is named in scope; otherwise the obvious
+    ones the data dictionary surfaces):
+      - subgroup counts + percentages
+      - subgroup × outcome cross-tabs
+      - representation gaps relative to the target population the
+        downstream analysis will generalise to (the researcher
+        supplies the reference; if unavailable, flag the gap)
 
-      Representation gaps are not always problems — but they CONSTRAIN
-      the downstream analysis's generalisability claims. Flag them
-      so the downstream methods protocol can decide how to handle
-      them (weighting, restriction, sensitivity).
+    Representation gaps are not always problems — but they CONSTRAIN
+    the downstream analysis's generalisability claims. Flag them
+    so the downstream methods protocol can decide how to handle
+    them (weighting, restriction, sensitivity).
 
-  - id: write_audit_report
-    name: Write the QC audit report
-    description: |
-      sys_file_write filepath="workspace/<step>/outputs/reports/data_quality_audit.md":
+- id: write_audit_report
+  name: Write the QC audit report
+  description: |
+    sys_file_write filepath="workspace/<step>/outputs/reports/data_quality_audit.md":
 
-        # Data quality audit: <dataset name>
-        **Files audited**: <list>
-        **Downstream use (when known)**: <text>
+      # Data quality audit: <dataset name>
+      **Files audited**: <list>
+      **Downstream use (when known)**: <text>
 
-        ## Verdict
-          - usable                  (no blocking issues)
-          - usable with conditions  (specific blocking issues; fixable)
-          - usable for subset only  (some columns / rows / subgroups
-                                     unusable)
-          - not usable              (blocking issues that source must fix)
+      ## Verdict
+        - usable                  (no blocking issues)
+        - usable with conditions  (specific blocking issues; fixable)
+        - usable for subset only  (some columns / rows / subgroups
+                                   unusable)
+        - not usable              (blocking issues that source must fix)
 
-        ## Blocking issues
-          - <issue> — affected rows/columns — reproducible check
-            command — what 'fix' would mean
+      ## Blocking issues
+        - <issue> — affected rows/columns — reproducible check
+          command — what 'fix' would mean
 
-        ## Constraining issues (downstream methods must account)
-          - <issue> — affected scope — mitigation per analysis type
+      ## Constraining issues (downstream methods must account)
+        - <issue> — affected scope — mitigation per analysis type
 
-        ## Informational findings
-          - <finding> — context — no action required
+      ## Informational findings
+        - <finding> — context — no action required
 
-        ## Recommended next step
-          - <route to which protocol or which upstream conversation>
+      ## Recommended next step
+        - <route to which protocol or which upstream conversation>
 
-      Cap at ~1500 words for a typical dataset; longer for multi-
-      source merges.
+    Cap at ~1500 words for a typical dataset; longer for multi-
+    source merges.
 
-  - id: route_next
-    name: Route to next protocol
-    description: |
-      Three exits based on verdict:
-        usable / usable with conditions → return to whichever protocol
-          summoned the audit (commonly methodology_selection or
-          analysis_plan).
-        usable for subset only → suggest a data cleaning sub-step
-          (analysis_plan with a `data_cleaning` scope), or back to
-          the source for a fix.
-        not usable → STOP. Tell the researcher exactly which fields
-          the upstream source needs to fix; recommend re-running the
-          audit on the corrected delivery.
+- id: route_next
+  name: Route to next protocol
+  description: |
+    Three exits based on verdict:
+      usable / usable with conditions → return to whichever protocol
+        summoned the audit (commonly methodology_selection or
+        analysis_plan).
+      usable for subset only → suggest a data cleaning sub-step
+        (analysis_plan with a `data_cleaning` scope), or back to
+        the source for a fix.
+      not usable → STOP. Tell the researcher exactly which fields
+        the upstream source needs to fix; recommend re-running the
+        audit on the corrected delivery.
 
 expected_outputs:
-  - workspace/<step>/outputs/reports/quality_structural_*.md
-  - workspace/<step>/outputs/reports/data_quality_audit.md
-  - workspace/<step>/outputs/figures/missingness_heatmap.png
+- workspace/<step>/outputs/reports/quality_structural_*.md
+- workspace/<step>/outputs/reports/data_quality_audit.md
+- workspace/<step>/outputs/figures/missingness_heatmap.png
 
 quality_bar:
   every_blocker_has_reproducible_check: true
@@ -261,3 +250,32 @@ quality_bar:
 next_protocol: methodology/methodology_selection
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: data_audit
+triggers:
+- audit this dataset
+- data quality check
+- data quality audit
+- is this data usable
+- qc pass on inputs
+- qc pass on this data
+- data sanity check
+- check the data dictionary
+- validate the schema
+- before i trust this data
+- check missingness
+- check data leakage
+- clean my data
+- clean the data
+- clean up my data
+- is my data clean
+- is my data any good
+- check my data
+- check my data quality
+- tidy my data
+summary: Standalone data quality audit (schema / missingness / leakage / bias check).
+token_estimate: 1500
+decomposition:
+- protocol: methodology/data_quality_audit
+  purpose: Schema + completeness + distribution + duplicate + leakage + bias checks.
+- tool: tool_data

@@ -2,15 +2,15 @@ id: package_and_publish
 tier: 'finalize'
 name: Package & Publish (distribute the tool so others can install it)
 version: '3.12.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]
   audience: [naive_ai, auditor]
   workflow_shape: [tool_build, distribution]
 last_reviewed: '2026-06-23'
 see_also:
-  - build/release_and_changelog                   # cuts the version this distributes
-  - build/spec_and_design                          # where the public contract was pinned
+- build/release_and_changelog                     # cuts the version this distributes
+- build/spec_and_design                            # where the public contract was pinned
 description: |
   The distribution step a tool takes after it has a cut release: make it
   installable by people who are not the author — published to the right
@@ -41,97 +41,97 @@ trigger: |
   PyPI / crates / npm / conda", "make it pip-installable", "ship it to the
   registry", "release it publicly".
 prerequisites:
-  - A versioned release exists with a changelog + artefact (build/release_and_changelog done)
-  - The public interface contract is stable for this version (build/spec_and_design); publishing pins it for consumers
+- A versioned release exists with a changelog + artefact (build/release_and_changelog done)
+- The public interface contract is stable for this version (build/spec_and_design); publishing pins it for consumers
 
 steps:
-  - id: decide_whether_and_where
-    name: Decide whether to publish, and to which registry
-    description: |
-      Publishing is a commitment: a published version can't be unpublished,
-      and others will depend on it. First reason about WHETHER this should be
-      public at all — an internal tool, an unfinished interface, or a tool with
-      a dependency/licence it can't legally redistribute may not be ready, and
-      "keep it as an installable git/tarball artefact" is a legitimate answer.
+- id: decide_whether_and_where
+  name: Decide whether to publish, and to which registry
+  description: |
+    Publishing is a commitment: a published version can't be unpublished,
+    and others will depend on it. First reason about WHETHER this should be
+    public at all — an internal tool, an unfinished interface, or a tool with
+    a dependency/licence it can't legally redistribute may not be ready, and
+    "keep it as an installable git/tarball artefact" is a legitimate answer.
 
-      If it should be published, choose the RIGHT registry for the ecosystem
-      and audience: the language's primary index (PyPI for Python, crates.io
-      for Rust, npm for Node, Maven Central for JVM, etc.), conda/conda-forge
-      where the scientific audience installs that way, a container registry for
-      a service, or a plain versioned GitHub/Zenodo artefact for a one-off
-      script or a citable research tool. Match where the tool's actual users
-      look, not the registry you know best.
+    If it should be published, choose the RIGHT registry for the ecosystem
+    and audience: the language's primary index (PyPI for Python, crates.io
+    for Rust, npm for Node, Maven Central for JVM, etc.), conda/conda-forge
+    where the scientific audience installs that way, a container registry for
+    a service, or a plain versioned GitHub/Zenodo artefact for a one-off
+    script or a citable research tool. Match where the tool's actual users
+    look, not the registry you know best.
 
-  - id: complete_packaging_metadata
-    name: Complete the packaging metadata
-    description: |
-      A registry entry is only useful if its metadata is complete and honest.
-      In the language's manifest (pyproject.toml / Cargo.toml / package.json /
-      etc.), confirm: the name (available + not squatting a real project), the
-      version (matching the cut release exactly), a one-line description and a
-      README that renders on the registry, the author/maintainer + contact, the
-      declared runtime + dependency constraints (the SAME pins the release
-      reproduced against — a package whose deps float is a package that breaks),
-      keywords/classifiers so it's findable, and the project/repo/issue URLs.
-      Incomplete metadata is the difference between a package people find and
-      trust and one they bounce off.
+- id: complete_packaging_metadata
+  name: Complete the packaging metadata
+  description: |
+    A registry entry is only useful if its metadata is complete and honest.
+    In the language's manifest (pyproject.toml / Cargo.toml / package.json /
+    etc.), confirm: the name (available + not squatting a real project), the
+    version (matching the cut release exactly), a one-line description and a
+    README that renders on the registry, the author/maintainer + contact, the
+    declared runtime + dependency constraints (the SAME pins the release
+    reproduced against — a package whose deps float is a package that breaks),
+    keywords/classifiers so it's findable, and the project/repo/issue URLs.
+    Incomplete metadata is the difference between a package people find and
+    trust and one they bounce off.
 
-  - id: settle_licence_and_legal
-    name: Settle the licence and redistribution legality
-    description: |
-      A tool with no licence is, by default, not legally reusable — publishing
-      it without one is a trap for would-be users. Confirm there is an explicit
-      LICENSE file and that the manifest declares the same licence. Reason about
-      whether the dependencies' licences permit the redistribution you're about
-      to do (a copyleft dependency can constrain the whole package's licence),
-      and whether any bundled data/model has its own terms. Where the tool is a
-      research artefact people will cite, include a CITATION file / DOI so
-      citation is unambiguous. Get the legal footing right BEFORE the one-way
-      publish, not after.
+- id: settle_licence_and_legal
+  name: Settle the licence and redistribution legality
+  description: |
+    A tool with no licence is, by default, not legally reusable — publishing
+    it without one is a trap for would-be users. Confirm there is an explicit
+    LICENSE file and that the manifest declares the same licence. Reason about
+    whether the dependencies' licences permit the redistribution you're about
+    to do (a copyleft dependency can constrain the whole package's licence),
+    and whether any bundled data/model has its own terms. Where the tool is a
+    research artefact people will cite, include a CITATION file / DOI so
+    citation is unambiguous. Get the legal footing right BEFORE the one-way
+    publish, not after.
 
-  - id: verify_install_in_clean_env
-    name: Verify the package installs + works in a clean environment
-    description: |
-      The proof a package is publishable is that it installs and runs somewhere
-      that is NOT the dev machine. Build the distribution artefact and install
-      it into a clean environment (a fresh venv/conda env/container — honouring
-      this project's no-Docker / conda constraints where they apply), then run
-      the tool's own smoke test / entry point from that clean install. Many
-      packaging bugs (a missing data file not included in the manifest, an
-      undeclared dependency that happened to be in the dev env, a broken
-      entry-point) only appear here. Where the registry offers a staging index
-      (TestPyPI and the like), publish there first and install FROM it to catch
-      registry-specific issues before the real publish.
+- id: verify_install_in_clean_env
+  name: Verify the package installs + works in a clean environment
+  description: |
+    The proof a package is publishable is that it installs and runs somewhere
+    that is NOT the dev machine. Build the distribution artefact and install
+    it into a clean environment (a fresh venv/conda env/container — honouring
+    this project's no-Docker / conda constraints where they apply), then run
+    the tool's own smoke test / entry point from that clean install. Many
+    packaging bugs (a missing data file not included in the manifest, an
+    undeclared dependency that happened to be in the dev env, a broken
+    entry-point) only appear here. Where the registry offers a staging index
+    (TestPyPI and the like), publish there first and install FROM it to catch
+    registry-specific issues before the real publish.
 
-  - id: publish_and_verify
-    name: Publish to the registry + verify the public install
-    description: |
-      With metadata, licence, and a verified clean install in hand, publish to
-      the chosen registry, then verify the PUBLIC artefact: install the just-
-      published version from the real registry into a clean env and run the
-      smoke test, and confirm the registry page renders the README + metadata
-      correctly. mem_log "published <name> v<X> to <registry>; clean-install
-      verified". Record the install command in the project's docs/README so
-      users have the one-liner.
+- id: publish_and_verify
+  name: Publish to the registry + verify the public install
+  description: |
+    With metadata, licence, and a verified clean install in hand, publish to
+    the chosen registry, then verify the PUBLIC artefact: install the just-
+    published version from the real registry into a clean env and run the
+    smoke test, and confirm the registry page renders the README + metadata
+    correctly. mem_log "published <name> v<X> to <registry>; clean-install
+    verified". Record the install command in the project's docs/README so
+    users have the one-liner.
 
-      AUTONOMY GATE:
-        Risk: irreversible — a published version to a public registry cannot be
-        unpublished; consumers may pin it within minutes. This is the hardest
-        one-way door in the build lifecycle.
-        proceed (adaptive default, autopilot) → prepare everything (metadata, licence,
-          clean-env verify, staging publish) autonomously, but PAUSE before the
-          final publish to a public registry and confirm — a hard floor, not a
-          judgement call, unless the researcher explicitly opted into autopilot
-          publishing for this project.
-        confirm first (manual / supervised) → present the registry + version + metadata +
-          licence + clean-install evidence; publish only on explicit
-          confirmation.
+    AUTONOMY GATE:
+      Risk: irreversible — a published version to a public registry cannot be
+      unpublished; consumers may pin it within minutes. This is the hardest
+      one-way door in the build lifecycle.
+      proceed (adaptive default, autopilot) → prepare everything (metadata, licence,
+        clean-env verify, staging publish) autonomously, but PAUSE before the
+        final publish to a public registry and confirm — a hard floor, not a
+        judgement call, unless the researcher explicitly opted into autopilot
+        publishing for this project.
+      confirm first (manual / supervised) → present the registry + version + metadata +
+        licence + clean-install evidence; publish only on explicit
+        confirmation.
 
 expected_outputs:
-  - the package published to the chosen registry (or a deliberate decision not to publish)
-  - complete packaging metadata + an explicit LICENSE (+ CITATION/DOI where citable)
-  - a verified clean-environment install of the published artefact
-  - the install command recorded in the project docs/README
+- the package published to the chosen registry (or a deliberate decision not to publish)
+- complete packaging metadata + an explicit LICENSE (+ CITATION/DOI where citable)
+- a verified clean-environment install of the published artefact
+- the install command recorded in the project docs/README
 
 quality_bar: |
   - The publish decision is deliberate (right registry for the audience, or a
@@ -142,6 +142,29 @@ quality_bar: |
     a staging index) before, and from the real registry after, publishing.
   - The irreversible public publish is gated and confirmed.
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: build/release_and_changelog
+intent_class: execute
+sub_intent: build_publish
+triggers:
+- publish to pypi
+- publish to npm
+- publish to crates
+- publish to conda
+- put it on pypi
+- make it pip installable
+- make it pip-installable
+- distribute the package
+- publish the package
+- ship it to the registry
+- release it publicly
+summary: 'Distribute a cut release so others can install it: decide whether + where to publish, complete the packaging metadata + licence, verify a clean-environment install, then gate the irreversible publish to the registry.'
+token_estimate: 1700
+decomposition:
+- protocol: build/package_and_publish
+  purpose: Decide registry, complete metadata + licence, verify a clean-env install, gate the publish, verify the public install.
+- tool: tool_bash_exec
+  purpose: Build the artefact, install into a clean env, publish (staging first), verify the published install.
+- tool: mem_log
+  purpose: Record the publish (name + version + registry + clean-install verified).

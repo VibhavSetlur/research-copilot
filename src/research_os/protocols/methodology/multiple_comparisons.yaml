@@ -2,15 +2,15 @@ id: multiple_comparisons
 tier: 'plan'
 name: Multiple Comparisons / Multiplicity Strategy
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [experiment_pipeline]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/preregistration             # the multiplicity rule belongs in the SAP
-  - methodology/missing_data_strategy        # both shape the analysis plan
+- methodology/preregistration               # the multiplicity rule belongs in the SAP
+- methodology/missing_data_strategy          # both shape the analysis plan
 description: |
   When a study tests more than one hypothesis on the same data, the
   chance of a false positive grows. The fix is not always Bonferroni
@@ -35,201 +35,184 @@ trigger: |
     - methodology/preregistration step asks for the multiplicity rule.
 
 prerequisites:
-  - hypotheses are registered via mem_hypothesis_add (so the protocol
-    can count them and inspect their kind).
-  - analysis_plan exists OR a draft is in workspace/.
+- hypotheses are registered via mem_hypothesis (operation=add) (so the protocol can count them and inspect their kind).
+- analysis_plan exists OR a draft is in workspace/.
 
 editorial_voice:
   rules:
-    - "Declare the FAMILY first. Multiplicity correction applies WITHIN
-       a family; across families is a separate decision. The family is
-       typically: a primary endpoint set, a secondary endpoint set,
-       a hypothesis-generating exploratory set."
-    - "Choose the error metric before the method. FWER (family-wise
-       error rate, P[≥1 false positive]) is strict — appropriate for
-       confirmatory work where any false positive is costly.
-       FDR (false discovery rate, E[false / discoveries]) is more
-       powerful and appropriate for high-throughput discovery (omics,
-       imaging) where some false positives are tolerable if the
-       discovery rate is bounded."
-    - "Confirmatory vs exploratory matters. A pre-registered primary
-       family gets correction; a post-hoc 'we noticed X' is reported
-       as hypothesis-generating, NOT bolted onto the corrected family
-       to keep alpha intact."
-    - "Pre-specified subgroups are NOT free. They count toward the
-       family unless the analysis plan explicitly carves them out
-       (and even then, reviewers will ask). The CONSORT 2010 +
-       extension for cluster trials sections on subgroup analysis
-       apply."
+  - "Declare the FAMILY first. Multiplicity correction applies WITHIN a family; across families is a separate decision. The family is typically: a primary endpoint set, a secondary endpoint set, a hypothesis-generating exploratory set."
+  - "Choose the error metric before the method. FWER (family-wise error rate, P[≥1 false positive]) is strict — appropriate for confirmatory work where any false positive is costly. FDR (false discovery rate, E[false / discoveries]) is more powerful and appropriate for high-throughput discovery (omics, imaging) where some false positives are tolerable if the discovery rate is bounded."
+  - "Confirmatory vs exploratory matters. A pre-registered primary family gets correction; a post-hoc 'we noticed X' is reported as hypothesis-generating, NOT bolted onto the corrected family to keep alpha intact."
+  - "Pre-specified subgroups are NOT free. They count toward the family unless the analysis plan explicitly carves them out (and even then, reviewers will ask). The CONSORT 2010 + extension for cluster trials sections on subgroup analysis apply."
 
 steps:
-  - id: enumerate_hypotheses
-    name: Enumerate every hypothesis the study tests
-    description: |
-      List every hypothesis the analysis_plan touches:
-        - primary outcomes (confirmatory)
-        - secondary outcomes (confirmatory if pre-registered, else
-          exploratory)
-        - pre-specified subgroup analyses
-        - sensitivity analyses (these typically do NOT count — they
-          test the same hypothesis under different assumptions)
-        - any contrast / coefficient the model surfaces (regression
-          tables with k predictors implicitly test k null hypotheses;
-          decide which subset is "the family")
+- id: enumerate_hypotheses
+  name: Enumerate every hypothesis the study tests
+  description: |
+    List every hypothesis the analysis_plan touches:
+      - primary outcomes (confirmatory)
+      - secondary outcomes (confirmatory if pre-registered, else
+        exploratory)
+      - pre-specified subgroup analyses
+      - sensitivity analyses (these typically do NOT count — they
+        test the same hypothesis under different assumptions)
+      - any contrast / coefficient the model surfaces (regression
+        tables with k predictors implicitly test k null hypotheses;
+        decide which subset is "the family")
 
-      Pull from mem_hypothesis_list. Augment with anything in
-      analysis_plan.md not yet logged.
+    Pull from mem_hypothesis (operation=list). Augment with anything in
+    analysis_plan.md not yet logged.
 
-  - id: declare_families
-    name: Group hypotheses into families
-    description: |
-      A family is the set of hypotheses that share an error budget.
-      The default reasonable choices:
+- id: declare_families
+  name: Group hypotheses into families
+  description: |
+    A family is the set of hypotheses that share an error budget.
+    The default reasonable choices:
 
-        FAMILY-LEVEL: each pre-registered family (primary, secondary)
-          gets its own alpha budget. No correction is shared across
-          families. Document this choice.
+      FAMILY-LEVEL: each pre-registered family (primary, secondary)
+        gets its own alpha budget. No correction is shared across
+        families. Document this choice.
 
-        ENDPOINT-LEVEL: when multiple measures of "the same construct"
-          appear (e.g. SF-36 subscales), the family is the construct,
-          not each subscale.
+      ENDPOINT-LEVEL: when multiple measures of "the same construct"
+        appear (e.g. SF-36 subscales), the family is the construct,
+        not each subscale.
 
-        SITE/STRATUM-LEVEL: in multi-site trials, are interaction
-          tests one family or many? Typically one (the global
-          interaction).
+      SITE/STRATUM-LEVEL: in multi-site trials, are interaction
+        tests one family or many? Typically one (the global
+        interaction).
 
-      Write workspace/.multiplicity/families.md listing each family,
-      its size k, and the rationale for the grouping.
+    Write workspace/.multiplicity/families.md listing each family,
+    its size k, and the rationale for the grouping.
 
-  - id: pick_error_metric
-    name: Pick the error metric (FWER vs FDR vs per-comparison)
-    description: |
-      Reason through:
+- id: pick_error_metric
+  name: Pick the error metric (FWER vs FDR vs per-comparison)
+  description: |
+    Reason through:
 
-        FWER (Family-Wise Error Rate) — P[≥1 false positive in family].
-          Appropriate when a single false positive in the family is
-          itself a publishable / actionable error. Conventional in
-          confirmatory clinical trials (FDA-style), regulatory
-          submissions, small primary endpoint sets.
+      FWER (Family-Wise Error Rate) — P[≥1 false positive in family].
+        Appropriate when a single false positive in the family is
+        itself a publishable / actionable error. Conventional in
+        confirmatory clinical trials (FDA-style), regulatory
+        submissions, small primary endpoint sets.
 
-        FDR (False Discovery Rate) — expected proportion of false
-          positives among the rejected nulls.
-          Appropriate when the family is large and the downstream
-          use tolerates some false positives in exchange for power.
-          Standard in genomics, neuroimaging, large-scale screening.
+      FDR (False Discovery Rate) — expected proportion of false
+        positives among the rejected nulls.
+        Appropriate when the family is large and the downstream
+        use tolerates some false positives in exchange for power.
+        Standard in genomics, neuroimaging, large-scale screening.
 
-        PER-COMPARISON — no correction. Appropriate ONLY for explicitly
-          exploratory / hypothesis-generating analyses where the
-          report frames the findings as such.
+      PER-COMPARISON — no correction. Appropriate ONLY for explicitly
+        exploratory / hypothesis-generating analyses where the
+        report frames the findings as such.
 
-      Document the choice + rationale per family. Cite the relevant
-      methodology paper for the field — e.g. Benjamini & Hochberg
-      1995 for FDR, Holm 1979 for sequential FWER, regulatory
-      guidance for the trial type.
+    Document the choice + rationale per family. Cite the relevant
+    methodology paper for the field — e.g. Benjamini & Hochberg
+    1995 for FDR, Holm 1979 for sequential FWER, regulatory
+    guidance for the trial type.
 
-  - id: pick_correction_method
-    name: Pick the correction method
-    description: |
-      Within each family + error metric, name the method:
+- id: pick_correction_method
+  name: Pick the correction method
+  description: |
+    Within each family + error metric, name the method:
 
-        FWER methods:
-          - Bonferroni: divide alpha by k. Most conservative; assumes
-            nothing about dependence.
-          - Holm: step-down Bonferroni; uniformly more powerful than
-            Bonferroni at the same FWER.
-          - Hochberg: step-up; valid under positive dependence.
-          - Permutation-based (max-T, Westfall-Young): valid under
-            arbitrary dependence, often most powerful when
-            permutations are available.
-          - Gatekeeping / hierarchical: order hypotheses; later ones
-            tested only if earlier ones reject. Common in regulatory
-            submissions.
+      FWER methods:
+        - Bonferroni: divide alpha by k. Most conservative; assumes
+          nothing about dependence.
+        - Holm: step-down Bonferroni; uniformly more powerful than
+          Bonferroni at the same FWER.
+        - Hochberg: step-up; valid under positive dependence.
+        - Permutation-based (max-T, Westfall-Young): valid under
+          arbitrary dependence, often most powerful when
+          permutations are available.
+        - Gatekeeping / hierarchical: order hypotheses; later ones
+          tested only if earlier ones reject. Common in regulatory
+          submissions.
 
-        FDR methods:
-          - Benjamini-Hochberg (BH): controls FDR under independence
-            + positive regression dependence.
-          - Benjamini-Yekutieli (BY): controls FDR under arbitrary
-            dependence; more conservative.
-          - q-value (Storey): adaptive FDR with pi-zero estimation;
-            commonly used in genomics.
+      FDR methods:
+        - Benjamini-Hochberg (BH): controls FDR under independence
+          + positive regression dependence.
+        - Benjamini-Yekutieli (BY): controls FDR under arbitrary
+          dependence; more conservative.
+        - q-value (Storey): adaptive FDR with pi-zero estimation;
+          commonly used in genomics.
 
-      Each has assumptions about dependence structure between
-      p-values. Document which assumption is plausible for THIS
-      family + cite a reference. Do not default to Bonferroni
-      just because it's the most familiar — it may be the worst
-      power-vs-control trade in a large family.
+    Each has assumptions about dependence structure between
+    p-values. Document which assumption is plausible for THIS
+    family + cite a reference. Do not default to Bonferroni
+    just because it's the most familiar — it may be the worst
+    power-vs-control trade in a large family.
 
-  - id: handle_secondary_and_exploratory
-    name: Decide secondary endpoint + exploratory handling
-    description: |
-      Three common patterns; pick one + document:
+- id: handle_secondary_and_exploratory
+  name: Decide secondary endpoint + exploratory handling
+  description: |
+    Three common patterns; pick one + document:
 
-        PATTERN A — independent families.
-          Primary family corrected at full alpha. Secondary family
-          corrected at full alpha within itself. Each interpreted
-          in its own right. Most permissive interpretation.
+      PATTERN A — independent families.
+        Primary family corrected at full alpha. Secondary family
+        corrected at full alpha within itself. Each interpreted
+        in its own right. Most permissive interpretation.
 
-        PATTERN B — hierarchical gatekeeping.
-          Secondary tested only if primary rejects. Preserves overall
-          FWER without spending alpha on the secondary set.
+      PATTERN B — hierarchical gatekeeping.
+        Secondary tested only if primary rejects. Preserves overall
+        FWER without spending alpha on the secondary set.
 
-        PATTERN C — alpha-splitting.
-          Allocate the total alpha across families (a larger share
-          to the primary family, the remainder to the secondary).
-          Pre-specify the split + its rationale.
+      PATTERN C — alpha-splitting.
+        Allocate the total alpha across families (a larger share
+        to the primary family, the remainder to the secondary).
+        Pre-specify the split + its rationale.
 
-      Exploratory comparisons (post-hoc, not pre-registered) are
-      reported separately as "hypothesis-generating" and NOT part
-      of any corrected family. The Discussion must say so.
+    Exploratory comparisons (post-hoc, not pre-registered) are
+    reported separately as "hypothesis-generating" and NOT part
+    of any corrected family. The Discussion must say so.
 
-  - id: pre_register_or_flag_post_hoc
-    name: Pre-register the multiplicity plan (or flag post-hoc)
-    description: |
-      If the study is confirmatory, the multiplicity decisions above
-      MUST be pre-registered. Route to methodology/preregistration
-      with the family list + error metric + correction method as the
-      multiplicity field of the SAP.
+- id: pre_register_or_flag_post_hoc
+  name: Pre-register the multiplicity plan (or flag post-hoc)
+  description: |
+    If the study is confirmatory, the multiplicity decisions above
+    MUST be pre-registered. Route to methodology/preregistration
+    with the family list + error metric + correction method as the
+    multiplicity field of the SAP.
 
-      If the multiplicity question only arose post-hoc (the AI is
-      reviewing an existing analysis), the protocol does NOT
-      retroactively grant correction. Instead, surface the choice
-      to the researcher: either accept that the analysis is
-      exploratory (and the paper must say so) or, in rare cases,
-      re-frame which hypothesis was confirmatory using independent
-      external evidence.
+    If the multiplicity question only arose post-hoc (the AI is
+    reviewing an existing analysis), the protocol does NOT
+    retroactively grant correction. Instead, surface the choice
+    to the researcher: either accept that the analysis is
+    exploratory (and the paper must say so) or, in rare cases,
+    re-frame which hypothesis was confirmatory using independent
+    external evidence.
 
-  - id: report_in_methods_and_results
-    name: Report the multiplicity decisions in Methods + Results
-    description: |
-      Methods section must state:
-        - the family / families
-        - the error metric (FWER / FDR / per-comparison)
-        - the method (Bonferroni / Holm / BH / BY / permutation /
-          gatekeeping)
-        - the alpha level + any splitting
-        - which results are corrected vs exploratory
+- id: report_in_methods_and_results
+  name: Report the multiplicity decisions in Methods + Results
+  description: |
+    Methods section must state:
+      - the family / families
+      - the error metric (FWER / FDR / per-comparison)
+      - the method (Bonferroni / Holm / BH / BY / permutation /
+        gatekeeping)
+      - the alpha level + any splitting
+      - which results are corrected vs exploratory
 
-      Results report adjusted p-values (or q-values for BH) alongside
-      raw p-values. Tables flag the threshold visually. Figure captions
-      mention correction when error bars are based on adjusted CIs.
+    Results report adjusted p-values (or q-values for BH) alongside
+    raw p-values. Tables flag the threshold visually. Figure captions
+    mention correction when error bars are based on adjusted CIs.
 
-      mem_log with method="<correction method>" and the
-      family enumeration so the audit trail is intact.
+    mem_log with method="<correction method>" and the
+    family enumeration so the audit trail is intact.
 
-  - id: cross_check_with_audit
-    name: Cross-check with audit_and_validation
-    description: |
-      audit_and_validation looks for: (a) a stated correction method
-      for any analysis with multiple tests, (b) consistency between
-      the pre-registered multiplicity plan and the executed analysis,
-      (c) clear labelling of confirmatory vs exploratory in tables
-      and figures. Return control so the master audit can mark
-      multiplicity as satisfied.
+- id: cross_check_with_audit
+  name: Cross-check with audit_and_validation
+  description: |
+    audit_and_validation looks for: (a) a stated correction method
+    for any analysis with multiple tests, (b) consistency between
+    the pre-registered multiplicity plan and the executed analysis,
+    (c) clear labelling of confirmatory vs exploratory in tables
+    and figures. Return control so the master audit can mark
+    multiplicity as satisfied.
 
 expected_outputs:
-  - workspace/.multiplicity/families.md
-  - workspace/.multiplicity/multiplicity_plan.md
-  - (entry appended to methods.md via mem_log)
+- workspace/.multiplicity/families.md
+- workspace/.multiplicity/multiplicity_plan.md
+- (entry appended to methods.md via mem_log)
 
 quality_bar:
   every_hypothesis_assigned_to_a_family: true
@@ -243,3 +226,17 @@ quality_bar:
 next_protocol: methodology/preregistration
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: multiplicity
+triggers:
+- multiple comparisons
+- multiple testing
+- multiplicity
+- bonferroni
+- fdr
+- benjamini-hochberg
+- holm
+- family-wise error
+- alpha spending
+- gatekeeping
+summary: Pick FWER vs FDR and the correction method per hypothesis family.

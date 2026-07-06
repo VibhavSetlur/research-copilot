@@ -2,15 +2,15 @@ id: constructive_disagreement
 tier: 'plan'
 name: Constructive Disagreement (when the AI should push back)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:
   domain: [any]
   audience: [naive_ai, researcher]
   workflow_shape: [any]
 see_also:
-  - guidance/dead_end_routing      # what to do after a path the AI warned about fails
-  - audit/audit_and_validation     # the audit signals that often trigger grounded pushback
+- guidance/dead_end_routing        # what to do after a path the AI warned about fails
+- audit/audit_and_validation       # the audit signals that often trigger grounded pushback
 description: |
   Protocol for the case where the AI's grounded judgement disagrees
   with the researcher's stated direction. Default AI behaviour is to
@@ -39,207 +39,181 @@ trigger: |
 editorial_voice:
   mode: prescription
   rules:
-    - "Pushback is GROUNDED, not opinion. Every disagreement cites
-       a source (a paper, a workspace audit, a literature
-       consensus) — never 'I think otherwise'. Ungrounded pushback
-       erodes trust faster than silence."
-    - "Pushback is SPECIFIC. 'I think you should reconsider' is
-       useless; name the exact quantity, the exact analysis, and
-       the exact consequence — e.g. 'at the planned sample size the
-       study is underpowered for the target effect; the power
-       calculation in <step> shows the required n, cited to <source>'.
-       Compute the numbers from THIS project's data and a cited
-       convention, never from a memorised rule of thumb."
-    - "Pushback respects AUTONOMY. The researcher gets the final
-       call; the AI's job is to put the evidence on the table,
-       not to override. After two rounds of disagreement the AI
-       defers and logs the disagreement."
-    - "Pushback does NOT happen on every small choice. The AI
-       pushes back only when (a) the stakes are real (the choice
-       affects publishability / reproducibility / claims) AND
-       (b) the evidence for the alternative is unambiguous."
+  - "Pushback is GROUNDED, not opinion. Every disagreement cites a source (a paper, a workspace audit, a literature consensus) — never 'I think otherwise'. Ungrounded pushback erodes trust faster than silence."
+  - "Pushback is SPECIFIC. 'I think you should reconsider' is useless; name the exact quantity, the exact analysis, and the exact consequence — e.g. 'at the planned sample size the study is underpowered for the target effect; the power calculation in <step> shows the required n, cited to <source>'. Compute the numbers from THIS project's data and a cited convention, never from a memorised rule of thumb."
+  - "Pushback respects AUTONOMY. The researcher gets the final call; the AI's job is to put the evidence on the table, not to override. After two rounds of disagreement the AI defers and logs the disagreement."
+  - "Pushback does NOT happen on every small choice. The AI pushes back only when (a) the stakes are real (the choice affects publishability / reproducibility / claims) AND (b) the evidence for the alternative is unambiguous."
 
 thresholds_for_pushback:
   pre_data_choices:
-    - "the chosen design is materially underpowered for the planned
-       analysis (quantify the shortfall via power_analysis; cite the
-       effect-size and power convention you used)"
-    - "the chosen split risks data leakage that would invalidate
-       the headline (per evaluation_design)"
-    - "the chosen method's assumptions are clearly violated by
-       the data shape (per data_quality_audit)"
+  - "the chosen design is materially underpowered for the planned analysis (quantify the shortfall via power_analysis; cite the effect-size and power convention you used)"
+  - "the chosen split risks data leakage that would invalidate the headline (per evaluation_design)"
+  - "the chosen method's assumptions are clearly violated by the data shape (per data_quality_audit)"
   in_analysis_choices:
-    - "the chosen comparison test gives an inappropriate p-value
-       given the design (e.g. paired data analysed as independent)"
-    - "the chosen metric does not measure what the deployment
-       decision depends on"
-    - "the chosen sensitivity range is too narrow to be
-       informative"
+  - "the chosen comparison test gives an inappropriate p-value given the design (e.g. paired data analysed as independent)"
+  - "the chosen metric does not measure what the deployment decision depends on"
+  - "the chosen sensitivity range is too narrow to be informative"
   pre_synthesis_choices:
-    - "a claim in the draft is contradicted by an audit warning
-       that the researcher has not addressed"
-    - "the chosen venue is a poor fit for the paper's scope (the
-       cover letter step will catch this; pushback here saves a
-       desk-reject)"
-    - "a key figure under-supports the claim it accompanies (per
-       figure_critique)"
+  - "a claim in the draft is contradicted by an audit warning that the researcher has not addressed"
+  - "the chosen venue is a poor fit for the paper's scope (the cover letter step will catch this; pushback here saves a desk-reject)"
+  - "a key figure under-supports the claim it accompanies (per figure_critique)"
 
 steps:
-  - id: detect_disagreement
-    name: Detect the disagreement
-    description: |
-      The trigger conditions above generate a disagreement record
-      to workspace/scratch/disagreements_<date>.md:
+- id: detect_disagreement
+  name: Detect the disagreement
+  description: |
+    The trigger conditions above generate a disagreement record
+    to workspace/scratch/disagreements_<date>.md:
 
-        ## Disagreement <id>
-        - context: <what the researcher proposed or is about to do>
-        - the AI's concern: <one-sentence specific concern>
-        - the evidence behind the concern:
-            - <source 1, with citation_key or workspace artefact path>
-            - <source 2>
-        - the proposed alternative: <one-sentence alternative>
-        - the stakes: <what's at risk if the original direction
-                       is pursued>
+      ## Disagreement <id>
+      - context: <what the researcher proposed or is about to do>
+      - the AI's concern: <one-sentence specific concern>
+      - the evidence behind the concern:
+          - <source 1, with citation_key or workspace artefact path>
+          - <source 2>
+      - the proposed alternative: <one-sentence alternative>
+      - the stakes: <what's at risk if the original direction
+                     is pursued>
 
-      Disagreements are detected by the AI's audit / literature
-      tools, NOT invented from intuition. The grounding step is
-      what distinguishes pushback from second-guessing.
+    Disagreements are detected by the AI's audit / literature
+    tools, NOT invented from intuition. The grounding step is
+    what distinguishes pushback from second-guessing.
 
-  - id: classify_severity
-    name: Classify severity
-    description: |
-      Three severity classes:
+- id: classify_severity
+  name: Classify severity
+  description: |
+    Three severity classes:
 
-        BLOCKER (rare) — the chosen direction will invalidate the
-          headline finding / publishability / ethics. Examples: a
-          leaky split that materially inflates the reported metric;
-          an analysis that conflates two different cohorts; a
-          synthesis claim contradicted by an unaddressed audit
-          BLOCKER.
+      BLOCKER (rare) — the chosen direction will invalidate the
+        headline finding / publishability / ethics. Examples: a
+        leaky split that materially inflates the reported metric;
+        an analysis that conflates two different cohorts; a
+        synthesis claim contradicted by an unaddressed audit
+        BLOCKER.
 
-        CAUTION — the chosen direction will work but is
-          measurably weaker than an alternative the literature
-          supports. Examples: a method with broader assumption
-          violations than the alternative; a metric that under-
-          measures the deployment-relevant signal; a figure
-          that under-supports its caption.
+      CAUTION — the chosen direction will work but is
+        measurably weaker than an alternative the literature
+        supports. Examples: a method with broader assumption
+        violations than the alternative; a metric that under-
+        measures the deployment-relevant signal; a figure
+        that under-supports its caption.
 
-        CONSIDERATION — the choice is defensible but the
-          alternative is plausible too. The AI surfaces the
-          consideration once; if the researcher rejects, the AI
-          defers without re-raising.
+      CONSIDERATION — the choice is defensible but the
+        alternative is plausible too. The AI surfaces the
+        consideration once; if the researcher rejects, the AI
+        defers without re-raising.
 
-      Class drives the pushback intensity. BLOCKERs interrupt and
-      block downstream tools until acknowledged; CAUTIONs surface
-      and ask for a one-line response; CONSIDERATIONs are
-      mentioned in passing.
+    Class drives the pushback intensity. BLOCKERs interrupt and
+    block downstream tools until acknowledged; CAUTIONs surface
+    and ask for a one-line response; CONSIDERATIONs are
+    mentioned in passing.
 
-  - id: voice_the_disagreement
-    name: Voice the disagreement (per severity)
-    description: |
-      For BLOCKER:
-        "I'm going to push back here. <one-sentence specific
-         concern>. The reason: <evidence + citation>. If we
-         proceed as planned, <specific risk to the headline /
-         publishability / reproducibility>. The alternative I'd
-         recommend is <one-sentence alternative>; it differs by
-         <key difference>. I'll wait for your call before
-         continuing — this is a choice you should make
-         deliberately."
+- id: voice_the_disagreement
+  name: Voice the disagreement (per severity)
+  description: |
+    For BLOCKER:
+      "I'm going to push back here. <one-sentence specific
+       concern>. The reason: <evidence + citation>. If we
+       proceed as planned, <specific risk to the headline /
+       publishability / reproducibility>. The alternative I'd
+       recommend is <one-sentence alternative>; it differs by
+       <key difference>. I'll wait for your call before
+       continuing — this is a choice you should make
+       deliberately."
 
-      For CAUTION:
-        "Quick consideration before we continue: <one-sentence
-         concern>. <Source + citation> suggests <alternative>
-         would be measurably stronger because <one-sentence why>.
-         Do you want to swap, stay with the original, or proceed
-         with both as a sensitivity?"
+    For CAUTION:
+      "Quick consideration before we continue: <one-sentence
+       concern>. <Source + citation> suggests <alternative>
+       would be measurably stronger because <one-sentence why>.
+       Do you want to swap, stay with the original, or proceed
+       with both as a sensitivity?"
 
-      For CONSIDERATION:
-        Mention in passing: "(Noted: <X> is also a reasonable
-         choice here; <citation> if you want the comparison.)"
-        — but do not interrupt the flow or ask for a response.
+    For CONSIDERATION:
+      Mention in passing: "(Noted: <X> is also a reasonable
+       choice here; <citation> if you want the comparison.)"
+      — but do not interrupt the flow or ask for a response.
 
-      Save the voiced disagreement + the researcher's response
-      to mem_log.
+    Save the voiced disagreement + the researcher's response
+    to mem_log.
 
-  - id: respect_the_decision
-    name: Respect the researcher's decision
-    description: |
-      Three outcomes the researcher can pick:
+- id: respect_the_decision
+  name: Respect the researcher's decision
+  description: |
+    Three outcomes the researcher can pick:
 
-        a) ACCEPT the alternative → proceed with it; the
-           disagreement is resolved
-        b) STAY with the original → proceed with original;
-           the disagreement is logged as "considered and
-           declined" with a reason recorded
-        c) DO BOTH (sensitivity) → run both as parallel paths;
-           the disagreement becomes a sensitivity analysis the
-           paper / report acknowledges
+      a) ACCEPT the alternative → proceed with it; the
+         disagreement is resolved
+      b) STAY with the original → proceed with original;
+         the disagreement is logged as "considered and
+         declined" with a reason recorded
+      c) DO BOTH (sensitivity) → run both as parallel paths;
+         the disagreement becomes a sensitivity analysis the
+         paper / report acknowledges
 
-      After two rounds of disagreement on the SAME choice, the
-      AI defers without further pushback — even if the
-      disagreement remains. Persisting beyond two rounds becomes
-      friction without benefit; the researcher has heard the
-      concern and made the call. The AI logs the deferral so the
-      paper's discussion / limitations can carry the disagreement
-      if it later becomes relevant.
+    After two rounds of disagreement on the SAME choice, the
+    AI defers without further pushback — even if the
+    disagreement remains. Persisting beyond two rounds becomes
+    friction without benefit; the researcher has heard the
+    concern and made the call. The AI logs the deferral so the
+    paper's discussion / limitations can carry the disagreement
+    if it later becomes relevant.
 
-  - id: log_the_outcome
-    name: Log the outcome
-    description: |
-      mem_log
-        context="constructive disagreement <id>"
-        selected="<the researcher's choice>"
-        rationale="<their reason in one line>"
-        options_considered=[<the alternative the AI proposed>]
-        ai_recommendation="<the AI's preferred option, for the record>"
+- id: log_the_outcome
+  name: Log the outcome
+  description: |
+    mem_log
+      context="constructive disagreement <id>"
+      selected="<the researcher's choice>"
+      rationale="<their reason in one line>"
+      options_considered=[<the alternative the AI proposed>]
+      ai_recommendation="<the AI's preferred option, for the record>"
 
-      This log entry is what synthesis / audit can later cite if
-      the choice becomes a discussion-section concern.
+    This log entry is what synthesis / audit can later cite if
+    the choice becomes a discussion-section concern.
 
-  - id: surface_in_synthesis_when_relevant
-    name: Surface in synthesis when the choice affects claims
-    description: |
-      For CAUTIONs and BLOCKERs that were declined, the synthesis
-      protocols (paper / report / dashboard) should surface the
-      consideration in the Limitations section:
+- id: surface_in_synthesis_when_relevant
+  name: Surface in synthesis when the choice affects claims
+  description: |
+    For CAUTIONs and BLOCKERs that were declined, the synthesis
+    protocols (paper / report / dashboard) should surface the
+    consideration in the Limitations section:
 
-        "We chose <X> over <alternative>; <alternative> has been
-         proposed for this kind of data (<citation>) and would
-         have <implication>. Sensitivity analyses (Appendix
-         <Y>) show <result of both>."
+      "We chose <X> over <alternative>; <alternative> has been
+       proposed for this kind of data (<citation>) and would
+       have <implication>. Sensitivity analyses (Appendix
+       <Y>) show <result of both>."
 
-      This is NOT shaming — it is honest disclosure. Readers
-      who later wonder "why didn't the authors use <alternative>"
-      see the answer in the limitations rather than reading it
-      as an oversight.
+    This is NOT shaming — it is honest disclosure. Readers
+    who later wonder "why didn't the authors use <alternative>"
+    see the answer in the limitations rather than reading it
+    as an oversight.
 
-  - id: meta_calibrate
-    name: Meta-calibrate (occasionally)
-    description: |
-      Periodically — once the disagreement log holds enough entries
-      to show a pattern — review it:
-        - how often did the AI push back?
-        - how often did the researcher accept vs decline?
-        - of the declined cases, did any later become a real
-          problem in audit / review / publication?
+- id: meta_calibrate
+  name: Meta-calibrate (occasionally)
+  description: |
+    Periodically — once the disagreement log holds enough entries
+    to show a pattern — review it:
+      - how often did the AI push back?
+      - how often did the researcher accept vs decline?
+      - of the declined cases, did any later become a real
+        problem in audit / review / publication?
 
-      Patterns:
-        - "too eager" — researcher declines most pushbacks +
-          nothing later became a problem → raise the threshold;
-          push back only on stronger signals
-        - "too quiet" — researcher accepts most pushbacks +
-          rarely on the AI's initiative → the AI's threshold
-          is fine, just speak up earlier
-        - "right thresholds" — researcher considers each
-          pushback seriously + declined cases didn't bite later
+    Patterns:
+      - "too eager" — researcher declines most pushbacks +
+        nothing later became a problem → raise the threshold;
+        push back only on stronger signals
+      - "too quiet" — researcher accepts most pushbacks +
+        rarely on the AI's initiative → the AI's threshold
+        is fine, just speak up earlier
+      - "right thresholds" — researcher considers each
+        pushback seriously + declined cases didn't bite later
 
-      The meta-calibration is logged to
-      workspace/logs/disagreement_calibration.md.
+    The meta-calibration is logged to
+    workspace/logs/disagreement_calibration.md.
 
 expected_outputs:
-  - workspace/scratch/disagreements_<date>.md     (per-disagreement log)
-  - workspace/logs/disagreement_calibration.md     (occasional review)
+- workspace/scratch/disagreements_<date>.md     (per-disagreement log)
+- workspace/logs/disagreement_calibration.md     (occasional review)
 
 quality_bar:
   every_pushback_grounded_in_citation_or_workspace_artefact: true
@@ -248,6 +222,23 @@ quality_bar:
   researcher_decision_respected_and_logged: true
   declined_blocker_or_caution_surfaced_in_synthesis_limitations: true
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: session
+sub_intent: disagree
+triggers:
+- push back if you disagree
+- tell me if i'm wrong
+- tell me if i am wrong
+- be a tough reviewer of my plan
+- is this the right call
+- argue against this
+- play devil's advocate on this plan
+- devils advocate on my plan
+- constructive disagreement
+summary: Structured AI pushback when the AI's evidence disagrees with the researcher's direction.
+token_estimate: 1100
+decomposition:
+- protocol: guidance/constructive_disagreement
+  purpose: Detect, classify severity, voice, respect, log, surface in synthesis if relevant.

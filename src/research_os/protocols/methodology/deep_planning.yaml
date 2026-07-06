@@ -2,17 +2,17 @@ id: deep_planning
 tier: 'plan'
 name: Deep Iterative Planning
 version: '4.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-25'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai]
   workflow_shape: [any]
 see_also:
-  - guidance/roadmap_execution             # the autonomous loop that BUILDS toward the roadmap this protocol writes
-  - guidance/analysis_paths                # how the branch points named here become real workspace paths
-  - guidance/iterative_planning            # the lighter per-turn "what's the next single step?" loop
-  - guidance/analysis_plan                 # where one committed roadmap step is actually executed
+- guidance/roadmap_execution               # the autonomous loop that BUILDS toward the roadmap this protocol writes
+- guidance/analysis_paths                  # how the branch points named here become real workspace paths
+- guidance/iterative_planning              # the lighter per-turn "what's the next single step?" loop
+- guidance/analysis_plan                   # where one committed roadmap step is actually executed
 description: >
   Helps a researcher build a rigorous, BRANCHABLE research roadmap step by
   step — decompose the goal, surface the decision points where the work could
@@ -26,189 +26,189 @@ trigger: >
   too large for a single next-step decision.
 
 steps:
-  - id: orient_and_frame
-    name: Orient, Then State the Goal as a Question
-    description: |
-      Boot once if you haven't this session (sys_boot) to pick up state +
-      autonomy + any existing plan. If a roadmap already exists
-      (inputs/research_plan.md), you are RESHAPING it, not starting fresh —
-      read it first.
+- id: orient_and_frame
+  name: Orient, Then State the Goal as a Question
+  description: |
+    Boot once if you haven't this session (sys_boot) to pick up state +
+    autonomy + any existing plan. If a roadmap already exists
+    (inputs/research_plan.md), you are RESHAPING it, not starting fresh —
+    read it first.
 
-      Restate the researcher's goal as a researchable QUESTION (or a small set
-      of them), not a task list. "Make the model better" becomes "Which of
-      {data, architecture, objective} most limits held-out performance on the
-      deployment distribution, and by how much?" The roadmap is only as good
-      as the question it serves.
+    Restate the researcher's goal as a researchable QUESTION (or a small set
+    of them), not a task list. "Make the model better" becomes "Which of
+    {data, architecture, objective} most limits held-out performance on the
+    deployment distribution, and by how much?" The roadmap is only as good
+    as the question it serves.
 
-      Name, in the researcher's own terms:
-        - the GOAL (what "done" looks like — the deliverable + the bar it must clear)
-        - the CONSTRAINTS (time, data access, compute, ethics, who must sign off)
-        - the SUCCESS CRITERIA (how you and the researcher will know each
-          milestone landed — observable, not vibes)
+    Name, in the researcher's own terms:
+      - the GOAL (what "done" looks like — the deliverable + the bar it must clear)
+      - the CONSTRAINTS (time, data access, compute, ethics, who must sign off)
+      - the SUCCESS CRITERIA (how you and the researcher will know each
+        milestone landed — observable, not vibes)
 
-      Do NOT invent a method, a tool, or a number here. This step fixes the
-      target, not the route.
+    Do NOT invent a method, a tool, or a number here. This step fixes the
+    target, not the route.
 
-  - id: decompose
-    name: Decompose the Goal into Milestones
-    description: |
-      Break the goal into a small number of MILESTONES — coherent chunks of
-      work, each of which answers part of the question and produces something
-      the next milestone (or the researcher) can build on. A milestone is not
-      a single script; it is a unit of progress the researcher would recognise
-      as "a thing we now know / have".
+- id: decompose
+  name: Decompose the Goal into Milestones
+  description: |
+    Break the goal into a small number of MILESTONES — coherent chunks of
+    work, each of which answers part of the question and produces something
+    the next milestone (or the researcher) can build on. A milestone is not
+    a single script; it is a unit of progress the researcher would recognise
+    as "a thing we now know / have".
 
-      For each milestone capture, in plain language:
-        - what question this milestone answers
-        - what it produces (the artefact / evidence / decision)
-        - what it depends on (which earlier milestones must land first)
-        - roughly how big it is (so the researcher can feel the shape)
+    For each milestone capture, in plain language:
+      - what question this milestone answers
+      - what it produces (the artefact / evidence / decision)
+      - what it depends on (which earlier milestones must land first)
+      - roughly how big it is (so the researcher can feel the shape)
 
-      Keep the decomposition at the altitude where the researcher reasons.
-      Sub-steps, methods, and tools are decided later, per milestone, by
-      guidance/analysis_plan when that milestone is actually executed —
-      committing them now would freeze choices that the evidence should make.
+    Keep the decomposition at the altitude where the researcher reasons.
+    Sub-steps, methods, and tools are decided later, per milestone, by
+    guidance/analysis_plan when that milestone is actually executed —
+    committing them now would freeze choices that the evidence should make.
 
-  - id: mark_uncertainty
-    name: Mark What Is Uncertain (the things that could change the plan)
-    description: |
-      A roadmap that hides its own fragility is a fantasy. For each milestone,
-      surface what you DON'T yet know that could reshape the rest of the plan:
-        - assumptions the milestone rests on (data will be clean enough; the
-          effect is large enough to detect; the method will converge)
-        - the observations that would FALSIFY each assumption
-        - the dependencies that are themselves uncertain (a milestone that
-          only matters if an earlier one comes out a particular way)
+- id: mark_uncertainty
+  name: Mark What Is Uncertain (the things that could change the plan)
+  description: |
+    A roadmap that hides its own fragility is a fantasy. For each milestone,
+    surface what you DON'T yet know that could reshape the rest of the plan:
+      - assumptions the milestone rests on (data will be clean enough; the
+        effect is large enough to detect; the method will converge)
+      - the observations that would FALSIFY each assumption
+      - the dependencies that are themselves uncertain (a milestone that
+        only matters if an earlier one comes out a particular way)
 
-      Tag each item by how much it could move the plan: does it change a detail
-      of one milestone, re-order milestones, or invalidate the goal's framing?
-      Reason about the SIZE of the consequence, not a fixed risk score. These
-      tags tell the executor (guidance/roadmap_execution) which results deserve
-      a re-plan and which are routine.
+    Tag each item by how much it could move the plan: does it change a detail
+    of one milestone, re-order milestones, or invalidate the goal's framing?
+    Reason about the SIZE of the consequence, not a fixed risk score. These
+    tags tell the executor (guidance/roadmap_execution) which results deserve
+    a re-plan and which are routine.
 
-      Register the load-bearing assumptions as hypotheses where that helps
-      (mem_hypothesis_add) so their status is tracked as evidence accrues.
+    Register the load-bearing assumptions as hypotheses where that helps
+    (mem_hypothesis (operation=add)) so their status is tracked as evidence accrues.
 
-  - id: identify_branch_points
-    name: Identify Decision Points + the Branches They Open
-    description: |
-      This is the heart of a BRANCHABLE plan. Walk the milestones and find the
-      DECISION POINTS — the places where the result of one milestone will tell
-      you which of several different next moves is right. At each decision
-      point, name:
-        - the question the decision turns on ("does signal X survive the
-          confound check?")
-        - the BRANCHES it could open — the genuinely different paths forward,
-          each with a one-line description of what it would pursue
-        - the observation that would send the work down each branch
+- id: identify_branch_points
+  name: Identify Decision Points + the Branches They Open
+  description: |
+    This is the heart of a BRANCHABLE plan. Walk the milestones and find the
+    DECISION POINTS — the places where the result of one milestone will tell
+    you which of several different next moves is right. At each decision
+    point, name:
+      - the question the decision turns on ("does signal X survive the
+        confound check?")
+      - the BRANCHES it could open — the genuinely different paths forward,
+        each with a one-line description of what it would pursue
+      - the observation that would send the work down each branch
 
-      A branch belongs in the plan when the paths are mutually informative
-      rivals worth comparing, OR when you genuinely cannot tell yet which is
-      right and the evidence will decide. Do NOT pre-enumerate every
-      conceivable fork — that turns a roadmap into a maze. Mark the forks that
-      are LIKELY and CONSEQUENTIAL; let guidance/analysis_paths govern when a
-      marked branch actually becomes a live workspace path.
+    A branch belongs in the plan when the paths are mutually informative
+    rivals worth comparing, OR when you genuinely cannot tell yet which is
+    right and the evidence will decide. Do NOT pre-enumerate every
+    conceivable fork — that turns a roadmap into a maze. Mark the forks that
+    are LIKELY and CONSEQUENTIAL; let guidance/analysis_paths govern when a
+    marked branch actually becomes a live workspace path.
 
-      For HOW to name, compare, merge, and abandon these branches once they go
-      live, defer to guidance/analysis_paths — this step only records that the
-      fork EXISTS and what decides it.
+    For HOW to name, compare, merge, and abandon these branches once they go
+    live, defer to guidance/analysis_paths — this step only records that the
+    fork EXISTS and what decides it.
 
-  - id: sequence
-    name: Sequence the Work (with the branches in view)
-    description: |
-      Order the milestones into a path the AI can walk: what comes first, what
-      unblocks what, where the branches sit. Prefer an order that resolves the
-      highest-uncertainty / highest-consequence questions EARLY — a milestone
-      that could invalidate the goal's framing should not sit at the end of the
-      plan. Cheap, high-information probes that de-risk later expensive work
-      earn their place near the front.
+- id: sequence
+  name: Sequence the Work (with the branches in view)
+  description: |
+    Order the milestones into a path the AI can walk: what comes first, what
+    unblocks what, where the branches sit. Prefer an order that resolves the
+    highest-uncertainty / highest-consequence questions EARLY — a milestone
+    that could invalidate the goal's framing should not sit at the end of the
+    plan. Cheap, high-information probes that de-risk later expensive work
+    earn their place near the front.
 
-      Make the sequence honest about its branch points: the plan is not a
-      straight line if the work genuinely forks. Show where it forks and what
-      reconverges.
+    Make the sequence honest about its branch points: the plan is not a
+    straight line if the work genuinely forks. Show where it forks and what
+    reconverges.
 
-      AUTONOMY GATE:
-        Risk: reversible — sequencing writes a plan, commits no analysis; the
-        order is the researcher's to shape.
-        proceed (adaptive default, autopilot) → propose the sequence + its
-          rationale, note the ordering calls you made, and capture it; surface
-          and WAIT on any ordering choice that materially changes WHAT the
-          project concludes (e.g. deferring the confound check that gates
-          everything).
-        confirm first (manual / supervised) → present the sequence + the branch
-          points and iterate with the researcher until the shape is agreed.
+    AUTONOMY GATE:
+      Risk: reversible — sequencing writes a plan, commits no analysis; the
+      order is the researcher's to shape.
+      proceed (adaptive default, autopilot) → propose the sequence + its
+        rationale, note the ordering calls you made, and capture it; surface
+        and WAIT on any ordering choice that materially changes WHAT the
+        project concludes (e.g. deferring the confound check that gates
+        everything).
+      confirm first (manual / supervised) → present the sequence + the branch
+        points and iterate with the researcher until the shape is agreed.
 
-  - id: capture_roadmap
-    name: Capture the Durable, Executable Roadmap
-    description: |
-      Write the roadmap to inputs/research_plan.md (sys_file_write) — the
-      single living plan that guidance/roadmap_execution and
-      guidance/analysis_plan both read and keep in sync. This is the durable
-      thread the work never loses.
+- id: capture_roadmap
+  name: Capture the Durable, Executable Roadmap
+  description: |
+    Write the roadmap to inputs/research_plan.md (sys_file_write) — the
+    single living plan that guidance/roadmap_execution and
+    guidance/analysis_plan both read and keep in sync. This is the durable
+    thread the work never loses.
 
-      The roadmap is a SCAFFOLD, not a script: it names goals, questions,
-      milestones, the decision points + branches, the uncertainties, and the
-      sequence. It does NOT pin the method, library, threshold, or exact step
-      count for milestones not yet reached — those are decided per milestone,
-      from the literature, when that milestone runs.
+    The roadmap is a SCAFFOLD, not a script: it names goals, questions,
+    milestones, the decision points + branches, the uncertainties, and the
+    sequence. It does NOT pin the method, library, threshold, or exact step
+    count for milestones not yet reached — those are decided per milestone,
+    from the literature, when that milestone runs.
 
-      Capture enough that a fresh AI (Hermes or any) could pick up the project
-      cold and know what to build next and why. At minimum the roadmap records:
-        - the goal-as-question + success criteria + constraints
-        - the milestones (question / produces / depends-on / rough size)
-        - the decision points + the branches each could open + what decides them
-        - the load-bearing assumptions + their falsifiers
-        - the sequence, with branch points shown
-        - an ITERATION LOG section, appended to (never overwritten) every time
-          the plan is reshaped — date, what changed, why, what evidence drove it
+    Capture enough that a fresh AI (Hermes or any) could pick up the project
+    cold and know what to build next and why. At minimum the roadmap records:
+      - the goal-as-question + success criteria + constraints
+      - the milestones (question / produces / depends-on / rough size)
+      - the decision points + the branches each could open + what decides them
+      - the load-bearing assumptions + their falsifiers
+      - the sequence, with branch points shown
+      - an ITERATION LOG section, appended to (never overwritten) every time
+        the plan is reshaped — date, what changed, why, what evidence drove it
 
-      The format above is illustrative, not mandated; let the project's shape
-      drive the headings. What matters is that every element is present and
-      legible, and that the iteration log preserves the plan's history.
+    The format above is illustrative, not mandated; let the project's shape
+    drive the headings. What matters is that every element is present and
+    legible, and that the iteration log preserves the plan's history.
 
-  - id: set_iteration_contract
-    name: Set the Iteration Contract (the plan is not frozen)
-    description: |
-      Before handing the roadmap to execution, make the iteration discipline
-      explicit so the plan stays alive:
-        - the plan is REVISITED after each milestone, not at the end
-        - a result that touches a marked uncertainty triggers a re-plan
-          (guidance/roadmap_execution does this; it reads the tags you set)
-        - a decision point that resolves opens or closes branches
-        - every reshape appends to the roadmap's iteration log
+- id: set_iteration_contract
+  name: Set the Iteration Contract (the plan is not frozen)
+  description: |
+    Before handing the roadmap to execution, make the iteration discipline
+    explicit so the plan stays alive:
+      - the plan is REVISITED after each milestone, not at the end
+      - a result that touches a marked uncertainty triggers a re-plan
+        (guidance/roadmap_execution does this; it reads the tags you set)
+      - a decision point that resolves opens or closes branches
+      - every reshape appends to the roadmap's iteration log
 
-      State, in one line to the researcher, the cadence you'll plan at and the
-      conditions under which you'll pause to re-plan WITH them rather than
-      re-plan autonomously. Then hand off:
-        - If the researcher wants the AI to BUILD toward the roadmap mostly on
-          its own ("let it loose", "run it autonomously"), route to
-          guidance/roadmap_execution — the verified autonomous loop that selects
-          the next milestone, executes it, SCORES the work (tool_judge_score:
-          ship/iterate/redo), records the result as evidence, re-plans, and
-          continues toward the goal until the success criteria are met or a
-          floor gate / decision point pages the researcher. The loop is the
-          concrete, verified mechanism for high-quality execution against the
-          roadmap — quality is enforced by the per-milestone judge + the audit
-          gates, not assumed.
-        - OFFER orchestration: if the researcher's agent is Hermes Agent, note
-          that Hermes can ORCHESTRATE this loop end-to-end (drive the milestones,
-          learn from each result, pull relevant skills, and improve its approach
-          as evidence comes in) and will NOTIFY the researcher at decision points,
-          on a floor-gate pause, or if a run exceeds the declared resources. The
-          opt-in autonomous-continuation hook (daemon.continue_command) is how
-          the daemon re-invokes the agent to keep the loop going hands-off.
-        - If they want to drive milestone-by-milestone themselves, route to
-          guidance/analysis_plan for the first milestone.
+    State, in one line to the researcher, the cadence you'll plan at and the
+    conditions under which you'll pause to re-plan WITH them rather than
+    re-plan autonomously. Then hand off:
+      - If the researcher wants the AI to BUILD toward the roadmap mostly on
+        its own ("let it loose", "run it autonomously"), route to
+        guidance/roadmap_execution — the verified autonomous loop that selects
+        the next milestone, executes it, SCORES the work (tool_audit (operation=judge):
+        ship/iterate/redo), records the result as evidence, re-plans, and
+        continues toward the goal until the success criteria are met or a
+        floor gate / decision point pages the researcher. The loop is the
+        concrete, verified mechanism for high-quality execution against the
+        roadmap — quality is enforced by the per-milestone judge + the audit
+        gates, not assumed.
+      - OFFER orchestration: if the researcher's agent is Hermes Agent, note
+        that Hermes can ORCHESTRATE this loop end-to-end (drive the milestones,
+        learn from each result, pull relevant skills, and improve its approach
+        as evidence comes in) and will NOTIFY the researcher at decision points,
+        on a floor-gate pause, or if a run exceeds the declared resources. The
+        opt-in autonomous-continuation hook (daemon.continue_command) is how
+        the daemon re-invokes the agent to keep the loop going hands-off.
+      - If they want to drive milestone-by-milestone themselves, route to
+        guidance/analysis_plan for the first milestone.
 
-      AUTONOMY GATE:
-        Risk: reversible — the contract is a working agreement, re-negotiable.
-        proceed (adaptive default, autopilot) → state the cadence + the
-          re-plan-with-human conditions and proceed to execution.
-        confirm first (manual / supervised) → confirm the cadence with the
-          researcher first.
+    AUTONOMY GATE:
+      Risk: reversible — the contract is a working agreement, re-negotiable.
+      proceed (adaptive default, autopilot) → state the cadence + the
+        re-plan-with-human conditions and proceed to execution.
+      confirm first (manual / supervised) → confirm the cadence with the
+        researcher first.
 
 expected_outputs:
-  - inputs/research_plan.md (the durable, branchable roadmap + iteration log)
+- inputs/research_plan.md (the durable, branchable roadmap + iteration log)
 
 quality_bar: |
   - The roadmap states the goal as a question with observable success criteria.
@@ -221,3 +221,31 @@ quality_bar: |
 next_protocol: guidance/roadmap_execution
 next_protocol_kind: forward_default
 on_failure: guidance/iterative_planning
+intent_class: plan
+sub_intent: deep_plan
+triggers:
+- plan this deeply
+- deep planning
+- deep plan
+- plan this out properly
+- let's plan this out
+- build me a research plan
+- build a research plan
+- make a roadmap
+- build a roadmap
+- create a roadmap
+- research roadmap
+- think through the whole project
+- map out the project
+- map out how we'd get there
+- plan the whole thing
+- rigorous plan
+summary: Build a rigorous, branchable research roadmap step by step — decompose, mark uncertainty, find branch points, sequence, capture as a durable plan.
+token_estimate: 1600
+decomposition:
+- protocol: methodology/deep_planning
+  purpose: Decompose the goal, mark uncertainty, find branch points, sequence the work.
+- tool: mem_hypothesis (operation=add)
+  purpose: Register load-bearing assumptions as tracked hypotheses.
+- tool: sys_file_write
+  purpose: Capture the durable, branchable roadmap to inputs/research_plan.md.

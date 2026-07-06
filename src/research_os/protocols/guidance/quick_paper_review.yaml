@@ -2,15 +2,15 @@ id: quick_paper_review
 tier: 'review'
 name: Quick Paper Review
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai]
   workflow_shape: [any]
 see_also:
-  - guidance/code_review                # distinct: reviews scripts, not prose
-  - guidance/peer_review_response       # distinct: drafting YOUR reply to reviewers of YOUR paper
+- guidance/code_review                  # distinct: reviews scripts, not prose
+- guidance/peer_review_response         # distinct: drafting YOUR reply to reviewers of YOUR paper
 description: |
   Fast (20-40 minute) critical appraisal of someone else's paper. NOT a full
   systematic review. Outputs a one-page review brief: TLDR, three strengths,
@@ -22,98 +22,124 @@ trigger: |
   "what do you think". Distinguish from systematic_review (broad evidence
   synthesis) and evidence_synthesis (grading a body of work).
 prerequisites:
-  - At least one PDF in inputs/literature/ OR a URL the AI can fetch
+- At least one PDF in inputs/literature/ OR a URL the AI can fetch
 
 steps:
-  - id: scope_review
-    name: Confirm Scope + Focus
-    description: |
-      Ask in ONE sentence:
-        "Quick review of <paper>. What lens do you want — methodological
-         rigour, novelty, statistical inference, replicability, claims-vs-
-         evidence, or all of the above?"
-      Default lens = "claims vs evidence" if no answer in one turn.
+- id: scope_review
+  name: Confirm Scope + Focus
+  description: |
+    Ask in ONE sentence:
+      "Quick review of <paper>. What lens do you want — methodological
+       rigour, novelty, statistical inference, replicability, claims-vs-
+       evidence, or all of the above?"
+    Default lens = "claims vs evidence" if no answer in one turn.
 
-  - id: read_paper
-    name: Read the Paper Once, Take Notes
-    description: |
-      sys_file_read on the PDF (if text-extractable) OR tool_web_scrape on
-      the URL. Extract into workspace/scratch/<paper>_notes.md:
-        - Research question (1 sentence)
-        - Claimed contribution (≤3 bullets)
-        - Data source + sample size
-        - Method used (1 sentence + reference)
-        - Headline numerical result
-        - Reported limitations
-      Do NOT summarise the paper for the researcher yet — these notes feed
-      the next step.
+- id: read_paper
+  name: Read the Paper Once, Take Notes
+  description: |
+    sys_file_read on the PDF (if text-extractable) OR tool_search (mode=scrape) on
+    the URL. Extract into workspace/scratch/<paper>_notes.md:
+      - Research question (1 sentence)
+      - Claimed contribution (≤3 bullets)
+      - Data source + sample size
+      - Method used (1 sentence + reference)
+      - Headline numerical result
+      - Reported limitations
+    Do NOT summarise the paper for the researcher yet — these notes feed
+    the next step.
 
-  - id: ground_method
-    name: Ground the Method Against Literature
-    description: |
-      tool_research_method query="<method> + <domain>" limit=5. Skim for
-      common critiques the authors should have addressed. Note any standard
-      assumption or sensitivity check the paper omitted.
+- id: ground_method
+  name: Ground the Method Against Literature
+  description: |
+    tool_search query="<method> + <domain>" limit=5. Skim for
+    common critiques the authors should have addressed. Note any standard
+    assumption or sensitivity check the paper omitted.
 
-  - id: spot_check_stats
-    name: Spot-check Headline Stats
-    description: |
-      For the headline result, ask whether the reported numbers pass simple
-      sniff tests: degrees of freedom plausible, effect size in the range
-      the field's prior work would predict, multiple-comparison correction
-      present when the paper runs a family of tests, confidence intervals
-      consistent with the claimed contrast.
-      Do NOT run a re-analysis — this is appraisal, not replication. Flag
-      anything off as a concern, not a verdict.
+- id: spot_check_stats
+  name: Spot-check Headline Stats
+  description: |
+    For the headline result, ask whether the reported numbers pass simple
+    sniff tests: degrees of freedom plausible, effect size in the range
+    the field's prior work would predict, multiple-comparison correction
+    present when the paper runs a family of tests, confidence intervals
+    consistent with the claimed contrast.
+    Do NOT run a re-analysis — this is appraisal, not replication. Flag
+    anything off as a concern, not a verdict.
 
-  - id: write_review_brief
-    name: Write the Review Brief
-    description: |
-      sys_file_write filepath="workspace/reviews/<paper_slug>.md" with this
-      EXACT structure:
+- id: write_review_brief
+  name: Write the Review Brief
+  description: |
+    sys_file_write filepath="workspace/reviews/<paper_slug>.md" with this
+    EXACT structure:
 
-        # Review: <paper title>
-        **Verdict**: accept | minor revise | major revise | reject
-        **One-line TLDR**: ...
+      # Review: <paper title>
+      **Verdict**: accept | minor revise | major revise | reject
+      **One-line TLDR**: ...
 
-        ## Three strengths
-        1. ...
-        2. ...
-        3. ...
+      ## Three strengths
+      1. ...
+      2. ...
+      3. ...
 
-        ## Five concerns (most→least severe)
-        1. **<concern>** — *(severity: critical|major|minor)* evidence + why
-        2. ...
+      ## Five concerns (most→least severe)
+      1. **<concern>** — *(severity: critical|major|minor)* evidence + why
+      2. ...
 
-        ## Suggested citations the authors should engage
-        - <cite_key>: <one-line relevance>
+      ## Suggested citations the authors should engage
+      - <cite_key>: <one-line relevance>
 
-        ## Reviewer signature
-        Generated <iso> via Research OS quick_paper_review.
+      ## Reviewer signature
+      Generated <iso> via Research OS quick_paper_review.
 
-      Keep total length ≤ 800 words. Cite real literature only — every
-      citation MUST come from a tool_search_* call this session, never from
-      memory.
+    Keep total length ≤ 800 words. Cite real literature only — every
+    citation MUST come from a tool_search_* call this session, never from
+    memory.
 
-  - id: notify_researcher
-    name: Hand Back the Brief
-    description: |
-      sys_notify level="info" message="Review brief written to
-      workspace/reviews/<paper_slug>.md — verdict: <verdict>".
-      Do NOT save the paper into the project's literature_index unless the
-      researcher explicitly says "add this to my library".
+- id: notify_researcher
+  name: Hand Back the Brief
+  description: |
+    sys_notify level="info" message="Review brief written to
+    workspace/reviews/<paper_slug>.md — verdict: <verdict>".
+    Do NOT save the paper into the project's literature_index unless the
+    researcher explicitly says "add this to my library".
 
 expected_outputs:
-  - workspace/reviews/
+- workspace/reviews/
 
 quality_bar: |
   - Every concern cites specific text or data from the paper, not vague
     impression.
   - At least 3 of the 5 concerns are tied to a comparison against literature
-    surfaced by tool_research_method.
+    surfaced by tool_search.
   - Verdict is justified by the top-2 concerns, not vibes.
   - Brief is ≤ 800 words.
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: review
+sub_intent: quick
+triggers:
+- review this paper
+- tear apart
+- critique this paper
+- critique the paper
+- critique this manuscript
+- tough reviewer
+- quick review
+- what do you think of this paper
+- peer review
+- brutal review
+- reviewing a paper
+- reviewing this paper
+- journal review
+- structured feedback
+- walk me through structured feedback
+summary: Fast 20-40 min critical appraisal of a paper.
+shortcut_tool: tool_audit
+token_estimate: 700
+decomposition:
+- tool: tool_audit
+  purpose: Stage the review skeleton (operation='quick_review').
+- protocol: guidance/quick_paper_review
+  purpose: Walk through the appraisal.

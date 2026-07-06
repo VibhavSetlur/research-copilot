@@ -466,7 +466,26 @@ def check_protocols_referenced_tools_resolve():
     """Every sys_/tool_/mem_ name in a protocol must be a real tool (after alias)."""
     import re
 
+    import yaml
+
     from research_os.server import TOOL_DEFINITIONS, _resolve_tool_name
+
+    # Routing metadata fields (merged into bodies in P1) can carry values
+    # that look like tool names but are sub_intent / intent_class labels
+    # (e.g. sub_intent: tool_setup, tool_pick). Strip those keys before the
+    # prose scan so a sub_intent value is never mistaken for a tool call.
+    _ROUTING_META_KEYS = {"sub_intent", "intent_class"}
+
+    def _strip_routing_meta(text: str) -> str:
+        try:
+            data = yaml.safe_load(text) or {}
+        except Exception:
+            return text
+        if isinstance(data, dict):
+            for k in _ROUTING_META_KEYS:
+                data.pop(k, None)
+            return yaml.safe_dump(data, allow_unicode=True)
+        return text
 
     # Add known false positives that aren't tool calls
     false_positive_strings = {
@@ -495,7 +514,7 @@ def check_protocols_referenced_tools_resolve():
             # Registry / index files; their tool refs are validated below
             # via a dedicated router-index check.
             continue
-        text = f.read_text()
+        text = _strip_routing_meta(f.read_text())
         for m in pattern.finditer(text):
             name = m.group(1)
             if name in false_positive_strings or name in protocol_id_stems:
@@ -517,64 +536,78 @@ def check_protocols_referenced_tools_resolve():
     return True, f"{len(refs)} unique tool refs all resolve"
 
 
-def check_router_index_consistent():
-    """Every protocol in _router_index.yaml must exist; every tool ref must resolve."""
+def check_bundle_fresh():
+    """The compiled _protocols.bundle must match the current protocol YAMLs.
+
+    P1 single-source guard: the bundle's stored source_hash must equal the
+    hash re-derived from every protocol YAML (+ the routing taxonomy). A
+    drift means a protocol was edited without rebuilding — routing, gates,
+    and preconditions would silently serve stale data.
+
+    Fix when this fails:
+        python scripts/build_protocols.py
+    """
+    import msgpack
+
+    bundle_path = PROTOCOLS_DIR / "_protocols.bundle"
+    if not bundle_path.exists():
+        return False, "missing _protocols.bundle — run python scripts/build_protocols.py"
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    try:
+        bp = __import__("build_protocols")
+    except Exception as exc:
+        return False, f"failed to import scripts/build_protocols.py: {exc}"
+    try:
+        on_disk = msgpack.unpackb(bundle_path.read_bytes(), raw=False)
+    except Exception as exc:
+        return False, f"could not parse _protocols.bundle: {exc}"
+    now = bp.source_hash()
+    stored = on_disk.get("source_hash")
+    if stored != now:
+        return False, (
+            "STALE — recompile: python scripts/build_protocols.py "
+            f"(on-disk={str(stored)[:12]}…, now={now[:12]}…)"
+        )
+    n = len(on_disk.get("protocols", {}))
+    g = len(on_disk.get("gates", []))
+    return True, f"bundle fresh: {n} protocols, {g} gate(s)"
+
+
+def check_protocols_validate():
+    """Every protocol YAML must validate against the Protocol model + be v3.0.
+
+    The single Pydantic model is the source of truth (P1). A protocol that
+    fails validation (bad gate floor, unknown check kind, missing id, wrong
+    schema_version) must never ship — the bundle build would reject it, and
+    so does this gate.
+    """
     import yaml
 
-    from research_os.server import TOOL_DEFINITIONS, _resolve_tool_name
-
-    idx_path = PROTOCOLS_DIR / "_router_index.yaml"
-    if not idx_path.exists():
-        return False, "_router_index.yaml missing"
-    idx = yaml.safe_load(idx_path.read_text()) or {}
+    from research_os.protocols.schema import Protocol
 
     bad: list[str] = []
-
-    # Every protocol entry must point at a real protocol YAML.
-    for proto_name in (idx.get("protocols") or {}).keys():
-        path = PROTOCOLS_DIR / f"{proto_name}.yaml"
-        if not path.exists():
-            bad.append(f"protocol `{proto_name}` not on disk")
-
-    # Every protocol on disk must be in the index (or in an allow-list).
-    on_disk = set()
-    for f in PROTOCOLS_DIR.rglob("*.yaml"):
+    total = 0
+    for f in sorted(PROTOCOLS_DIR.rglob("*.yaml")):
         if "light" in f.parts or f.name.startswith("_"):
             continue
+        total += 1
         rel = f.relative_to(PROTOCOLS_DIR).with_suffix("").as_posix()
-        on_disk.add(rel)
-    in_index = set((idx.get("protocols") or {}).keys())
-    missing_from_index = sorted(on_disk - in_index)
-    if missing_from_index:
-        bad.append(
-            f"{len(missing_from_index)} protocol(s) not in _router_index.yaml: "
-            f"{missing_from_index[:3]}..."
-        )
-
-    # Every tool ref (shortcut_tool, decomposition.tool, shortcut_intents.tool)
-    # must resolve to a real TOOL_DEFINITIONS entry.
-    def _check_tool(t: str, ctx: str) -> None:
-        if not t:
-            return
-        if _resolve_tool_name(t) not in TOOL_DEFINITIONS:
-            bad.append(f"unknown tool `{t}` in {ctx}")
-
-    for name, data in (idx.get("protocols") or {}).items():
-        if not isinstance(data, dict):
+        try:
+            data = yaml.safe_load(f.read_text()) or {}
+        except Exception as exc:
+            bad.append(f"{rel}: YAML parse failed: {exc}")
             continue
-        _check_tool(data.get("shortcut_tool", ""), f"protocols/{name}")
-        for entry in data.get("decomposition", []) or []:
-            if isinstance(entry, dict):
-                _check_tool(entry.get("tool", ""), f"protocols/{name} decomposition")
-    for sid, data in (idx.get("shortcut_intents") or {}).items():
-        if not isinstance(data, dict):
+        try:
+            model = Protocol.model_validate(data)
+        except Exception as exc:
+            bad.append(f"{rel}: {str(exc).splitlines()[0]}")
             continue
-        _check_tool(data.get("tool", ""), f"shortcut_intents/{sid}")
-
+        if model.schema_version != "3.0":
+            bad.append(f"{rel}: schema_version {model.schema_version!r} != '3.0'")
     return not bad, (
-        f"{len(in_index)} protocols indexed, all tool refs resolve"
+        f"{total} protocols validate against Protocol model (schema 3.0)"
         if not bad
-        else "; ".join(bad[:3])
+        else f"{len(bad)} invalid: " + "; ".join(bad[:3])
     )
 
 
@@ -610,12 +643,9 @@ def check_every_tool_is_reachable():
     that no protocol ever tells the AI to use — dead from the user's view.
     """
     from research_os.server import TOOL_DEFINITIONS, _resolve_tool_name
-    import yaml
+    from research_os.tools.actions.protocol import ProtocolRegistry
 
-    idx_path = PROTOCOLS_DIR / "_router_index.yaml"
-    if not idx_path.exists():
-        return True, "_router_index.yaml missing (skipped)"
-    idx = yaml.safe_load(idx_path.read_text()) or {}
+    idx = ProtocolRegistry.get_index()
     referenced: set[str] = set()
     for name, data in (idx.get("protocols") or {}).items():
         if not isinstance(data, dict):
@@ -669,43 +699,6 @@ def check_every_tool_is_reachable():
         f"all {len(TOOL_DEFINITIONS)} tools reachable "
         f"(referenced by a protocol or standalone-allowlisted)"
     )
-
-
-def check_router_index_bumped():
-    """Warn when _router_index.yaml is older than any protocol YAML.
-
-    AUDIT-v1.9.2-069: the index carries a ``version:`` integer counter
-    that maintainers must bump whenever they touch the index. Easy to
-    forget when only a protocol body changed. This check compares the
-    index's mtime against every non-stub protocol YAML's mtime and
-    surfaces the offenders. The check WARNs (always returns True) so
-    preflight doesn't gate on it — protocol edits often don't require
-    an index bump — but the detail line catches the eye if drift is
-    starting to accumulate.
-    """
-    idx_path = PROTOCOLS_DIR / "_router_index.yaml"
-    if not idx_path.exists():
-        return True, "no _router_index.yaml on disk; skipped"
-    idx_mtime = idx_path.stat().st_mtime
-    newer: list[str] = []
-    total = 0
-    for f in PROTOCOLS_DIR.rglob("*.yaml"):
-        if "light" in f.parts or f.name.startswith("_"):
-            continue
-        total += 1
-        try:
-            if f.stat().st_mtime > idx_mtime:
-                rel = f.relative_to(PROTOCOLS_DIR).with_suffix("").as_posix()
-                newer.append(rel)
-        except OSError:
-            continue
-    if newer:
-        return True, (
-            f"{len(newer)}/{total} protocol(s) newer than _router_index.yaml "
-            f"(consider bumping `version:`): {', '.join(newer[:3])}"
-            + ("..." if len(newer) > 3 else "")
-        )
-    return True, f"_router_index.yaml fresher than all {total} protocols"
 
 
 def check_next_protocol_kind_present():
@@ -871,193 +864,6 @@ def check_embeddings_fresh():
         f"{meta.get('n_protocols')} protocols + {meta.get('n_tools')} tools "
         f"({meta.get('model')}, dim={meta.get('dim')})"
     )
-
-
-def check_route_meta():
-    """The compiled runtime routing sidecar must be fresh + consistent.
-
-    Routing (tool_route + semantic.py) loads _route_meta.json at runtime, NOT
-    the 104K _router_index.yaml. A stale/inconsistent sidecar = silent
-    misroutes, so we re-derive it from the authoring index + protocol bodies
-    and compare, then assert per-protocol fields and embeddings parity.
-
-    Fix when this fails:
-        python scripts/build_embeddings.py --route-meta-only
-    """
-    import json
-
-    route_meta = PROTOCOLS_DIR / "_route_meta.json"
-    if not route_meta.exists():
-        return False, (
-            "missing _route_meta.json — run "
-            "`python scripts/build_embeddings.py --route-meta-only`"
-        )
-    sys.path.insert(0, str(REPO_ROOT / "scripts"))
-    try:
-        be = __import__("build_embeddings")
-    except Exception as exc:
-        return False, f"failed to import scripts/build_embeddings.py: {exc}"
-    try:
-        on_disk = json.loads(route_meta.read_text())
-    except Exception as exc:
-        return False, f"could not parse _route_meta.json: {exc}"
-    # Freshness: re-derive the sidecar (index + body tier/shape) and compare.
-    expected = be._build_route_meta()
-    if on_disk.get("source_hash") != expected.get("source_hash"):
-        return False, (
-            "STALE — recompile: python scripts/build_embeddings.py "
-            "--route-meta-only "
-            f"(on-disk={str(on_disk.get('source_hash'))[:12]}…, "
-            f"now={str(expected.get('source_hash'))[:12]}…)"
-        )
-    bad: list[str] = []
-    for key in ("protocols", "shortcut_intents", "hierarchy"):
-        if key not in on_disk:
-            bad.append(f"missing top-level `{key}`")
-    protos = on_disk.get("protocols", {}) or {}
-    missing_shape = [pid for pid, e in protos.items() if "workflow_shape" not in e]
-    missing_ic = [pid for pid, e in protos.items() if not e.get("intent_class")]
-    if missing_shape:
-        bad.append(
-            f"{len(missing_shape)} protocol(s) missing baked workflow_shape: "
-            f"{missing_shape[:3]}"
-        )
-    if missing_ic:
-        bad.append(f"{len(missing_ic)} protocol(s) missing intent_class: {missing_ic[:3]}")
-    # Parity: every core routable protocol must have an embedding (else the
-    # semantic path can rank a protocol it then can't route to).
-    embeds_npz = PROTOCOLS_DIR / "_embeddings.npz"
-    if embeds_npz.exists():
-        import numpy as np
-
-        try:
-            emb_ids = {str(x) for x in np.load(embeds_npz, allow_pickle=True)["protocol_ids"]}
-            missing_emb = sorted(set(protos) - emb_ids)
-            if missing_emb:
-                bad.append(
-                    f"{len(missing_emb)} route_meta protocol(s) not embedded: "
-                    f"{missing_emb[:3]}"
-                )
-        except Exception as exc:
-            bad.append(f"could not read embeddings protocol_ids: {exc}")
-    # Decomposition / shortcut tool names must exist in TOOL_DEFINITIONS — a
-    # phantom tool (typo / rename) in a decomposition makes the AI 404 mid-plan.
-    try:
-        from research_os.server import TOOL_DEFINITIONS
-        known_tools = set(TOOL_DEFINITIONS)
-        phantom: list[str] = []
-        for pid, e in protos.items():
-            for step in (e.get("decomposition") or []):
-                t = step.get("tool") if isinstance(step, dict) else None
-                if t and t not in known_tools:
-                    phantom.append(f"{pid}:{t}")
-            st = e.get("shortcut_tool")
-            if st and st not in known_tools:
-                phantom.append(f"{pid}:shortcut={st}")
-        for intent, e in (on_disk.get("shortcut_intents", {}) or {}).items():
-            st = e.get("tool") if isinstance(e, dict) else e
-            if st and st not in known_tools:
-                phantom.append(f"shortcut_intent {intent}:{st}")
-        if phantom:
-            bad.append(
-                f"{len(phantom)} decomposition/shortcut tool(s) not in "
-                f"TOOL_DEFINITIONS: {phantom[:3]}"
-            )
-    except Exception as exc:
-        bad.append(f"could not validate decomposition tool names: {exc}")
-    return (not bad), (
-        f"{len(protos)} protocols compiled, fresh + embedded"
-        if not bad
-        else "; ".join(bad[:3])
-    )
-
-
-def check_gate_meta():
-    """The compiled floor-gate sidecar must be fresh + agree with the engine.
-
-    The HYBRID layer (docs/HYBRID_ARCHITECTURE.md): protocols declare
-    their hard floor gates in ``enforcement.gates``; the build compiles them
-    into ``protocols/_gate_meta.json``, which the engine
-    (server/gate_spec.py + autopilot_gate.py) reads to decide which actions
-    are floor gates. A stale or inconsistent sidecar = the engine enforces a
-    different floor than the protocol declares (silent corner-cutting OR a
-    surprise gate). This check makes that impossible to merge.
-
-    Asserts:
-      1. _gate_meta.json exists and is fresh (re-derive + compare hash).
-      2. Every declared gate key resolves through autopilot_gate to the
-         SAME floor (declaration ⇆ engine agree).
-      3. The legacy fail-safe table covers exactly the declared gate keys
-         with the same floors (so the sidecar-absent fallback can't enforce
-         a different floor than the live declaration).
-
-    Fix when this fails:
-        python scripts/build_gate_meta.py
-    """
-    import json as _json
-
-    gate_meta = PROTOCOLS_DIR / "_gate_meta.json"
-    if not gate_meta.exists():
-        return False, "missing _gate_meta.json — run python scripts/build_gate_meta.py"
-    sys.path.insert(0, str(REPO_ROOT / "scripts"))
-    try:
-        bgm = __import__("build_gate_meta")
-    except Exception as exc:  # noqa: BLE001
-        return False, f"failed to import scripts/build_gate_meta.py: {exc}"
-    try:
-        on_disk = _json.loads(gate_meta.read_text(encoding="utf-8"))
-    except Exception as exc:  # noqa: BLE001
-        return False, f"could not parse _gate_meta.json: {exc}"
-    try:
-        fresh = bgm.build_gate_meta()
-    except SystemExit as exc:
-        return False, f"gate-meta build error: {exc}"
-    if on_disk.get("source_hash") != fresh.get("source_hash"):
-        return False, (
-            "STALE — recompile: python scripts/build_gate_meta.py "
-            f"(on-disk={str(on_disk.get('source_hash'))[:12]}…, "
-            f"now={str(fresh.get('source_hash'))[:12]}…)"
-        )
-
-    bad: list[str] = []
-    # 2. declaration ⇆ engine floor agreement.
-    try:
-        from research_os.server import autopilot_gate as ag
-
-        engine_floor = ag._GATE_FLOOR_resolved()
-    except Exception as exc:  # noqa: BLE001
-        return False, f"could not load autopilot_gate floor map: {exc}"
-    declared = {g["key"]: g["floor"] for g in fresh.get("gates", [])}
-    for key, floor in declared.items():
-        if engine_floor.get(key) != floor:
-            bad.append(
-                f"gate {key!r}: declared floor {floor!r} != engine "
-                f"{engine_floor.get(key)!r}"
-            )
-    # 3. legacy fallback covers the same keys + floors (so the safe
-    #    fallback can never enforce a DIFFERENT floor than the declaration).
-    legacy = getattr(ag, "_LEGACY_GATE_FLOOR", {})
-    if set(legacy) != set(declared):
-        only_legacy = sorted(set(legacy) - set(declared))
-        only_decl = sorted(set(declared) - set(legacy))
-        bad.append(
-            f"legacy fallback keys differ from declared "
-            f"(legacy-only={only_legacy[:3]}, declared-only={only_decl[:3]})"
-        )
-    else:
-        for key, floor in declared.items():
-            if legacy.get(key) != floor:
-                bad.append(
-                    f"gate {key!r}: declared {floor!r} != legacy fallback "
-                    f"{legacy.get(key)!r}"
-                )
-    return (not bad), (
-        f"{len(declared)} declared gate(s) fresh; engine + legacy agree"
-        if not bad
-        else "; ".join(bad[:3])
-    )
-
-
 def check_daemon_contract_paths_agree():
     """The daemon writers and the reasoning-side bridge must point at the
     SAME .os_state/ paths — the load-bearing cross-process contract.
@@ -1107,50 +913,6 @@ def check_daemon_contract_paths_agree():
     if drift:
         return False, "contract drift — " + "; ".join(drift)
     return True, f"{len(pairs)} .os_state contract paths agree (daemon ⇆ bridge)"
-
-
-def check_precondition_meta():
-    """The compiled precondition sidecar must be fresh + reference real protocols.
-
-    docs/PRECONDITION_GATE.md: protocols declare mechanically checkable
-    entry conditions in ``requires.checks``; the build compiles them into
-    ``protocols/_precondition_meta.json``, which server/preconditions.py
-    reads to tell the AI exactly which preconditions are unmet. A stale
-    sidecar = the AI is told the wrong thing; a dangling protocol_completed
-    reference = a precondition that can never be satisfied. The build itself
-    rejects dangling refs, so here we assert freshness.
-
-    Fix when this fails:
-        python scripts/build_precondition_meta.py
-    """
-    import json as _json
-
-    meta = PROTOCOLS_DIR / "_precondition_meta.json"
-    if not meta.exists():
-        return False, "missing _precondition_meta.json — run python scripts/build_precondition_meta.py"
-    sys.path.insert(0, str(REPO_ROOT / "scripts"))
-    try:
-        bpm = __import__("build_precondition_meta")
-    except Exception as exc:  # noqa: BLE001
-        return False, f"failed to import scripts/build_precondition_meta.py: {exc}"
-    try:
-        on_disk = _json.loads(meta.read_text(encoding="utf-8"))
-    except Exception as exc:  # noqa: BLE001
-        return False, f"could not parse _precondition_meta.json: {exc}"
-    try:
-        fresh = bpm.build_precondition_meta()
-    except SystemExit as exc:
-        return False, f"precondition-meta build error: {exc}"
-    if on_disk.get("source_hash") != fresh.get("source_hash"):
-        return False, (
-            "STALE — recompile: python scripts/build_precondition_meta.py "
-            f"(on-disk={str(on_disk.get('source_hash'))[:12]}…, "
-            f"now={str(fresh.get('source_hash'))[:12]}…)"
-        )
-    n = sum(len(v) for v in fresh.get("protocols", {}).values())
-    return True, f"{n} precondition check(s) across {len(fresh.get('protocols', {}))} protocol(s), fresh"
-
-
 def check_routing_targets_resolve():
     """Every next_protocol / on_failure / see_also target must be a real protocol.
 
@@ -1641,6 +1403,21 @@ def check_coherence():
     return True, "clean across docs + templates"
 
 
+def check_tool_description_caps():
+    """Every tool's 'short' must be <=80 chars and 'description' <=200 chars."""
+    from research_os.server.registry import TOOL_DEFINITIONS
+
+    bad = []
+    for name, d in TOOL_DEFINITIONS.items():
+        s = len(d.get("short", ""))
+        ds = len(d.get("description", ""))
+        if s > 80:
+            bad.append(f"{name}.short={s}>80")
+        if ds > 200:
+            bad.append(f"{name}.description={ds}>200")
+    return (not bad), ("all within caps" if not bad else "; ".join(bad))
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -1758,22 +1535,14 @@ def main() -> int:
     tally.check("Dispatcher aliases resolve", check_dispatcher_aliases)
     tally.check("Alias table complete (handlers + param injection)", check_alias_table_complete)
     tally.check("Redirect-stub targets resolve", check_redirect_targets)
-    tally.check("Bundled packs discovered", check_packs_discovered)
-    tally.check("Pack protocols load", check_pack_protocols_load)
-    tally.check("Pack protocol tool refs + routing targets resolve", check_pack_protocol_refs_and_targets)
-    tally.check("Bundled adapters discovered", check_adapters_discovered)
-    tally.check("Adapter regex patterns compile", check_adapter_regex_compile)
     tally.check("Protocol tool refs all resolve", check_protocols_referenced_tools_resolve)
     tally.check("Every tool is reachable (no orphan tools)", check_every_tool_is_reachable)
-    tally.check("Router index references resolve", check_router_index_consistent)
-    tally.check("Router index mtime tracks protocols", check_router_index_bumped)
+    tally.check("Protocols validate against Protocol model (schema 3.0)", check_protocols_validate)
+    tally.check("Compiled _protocols.bundle fresh (source-hash matches YAMLs)", check_bundle_fresh)
     tally.check("Protocol freshness (review cadence)", check_protocol_freshness)
     tally.check("next_protocol_kind declared on every protocol", check_next_protocol_kind_present)
     tally.check("Routing targets resolve (next_protocol/on_failure/see_also)", check_routing_targets_resolve)
     tally.check("Semantic-routing embeddings fresh", check_embeddings_fresh)
-    tally.check("Compiled routing sidecar (_route_meta.json) fresh + consistent", check_route_meta)
-    tally.check("Compiled floor-gate sidecar (_gate_meta.json) fresh + engine agrees", check_gate_meta)
-    tally.check("Compiled precondition sidecar (_precondition_meta.json) fresh", check_precondition_meta)
     tally.check("Daemon ⇆ bridge .os_state contract paths agree", check_daemon_contract_paths_agree)
     tally.check("Workspace scaffold smoke", check_scaffold_smoke)
     tally.check("No historical version commentary in live doctrine", check_no_version_chatter)
@@ -1782,7 +1551,7 @@ def main() -> int:
     tally.check("TOOLS.md vs TOOL_DEFINITIONS round-trip", check_tools_md_roundtrip)
     tally.check("CITATION.cff cff-version valid", check_citation_cff_valid)
     tally.check("Every tool definition has 'short' field <=120 chars", check_tool_short_field_length)
-    tally.check("Every pack dir in both bundled lists (loader + pyproject)", check_packs_in_both_lists)
+    tally.check("Tool short<=80 / description<=200 caps", check_tool_description_caps)
     tally.check("Reasoning layer independent of daemon (v4 arrow)", check_reasoning_layer_independent_of_daemon)
     tally.check("Daemon endpoints documented ⇆ registered (no drift)", check_daemon_endpoints_documented)
 

@@ -2,90 +2,97 @@ id: research_design
 tier: 'plan'
 name: Research Design
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - domain/domain_analysis            # supplies the domain + biases this design mitigates
-  - methodology/power_analysis        # the sample-size / detectable-effect computation
-  - methodology/methodology_selection # the analysis method this design feeds
+- domain/domain_analysis              # supplies the domain + biases this design mitigates
+- methodology/power_analysis          # the sample-size / detectable-effect computation
+- methodology/methodology_selection   # the analysis method this design feeds
 description: Choose the study design that fits the question (interventional vs observational, comparative vs descriptive, primary vs secondary) and justify the sample / power from the design and the field's standard, not a default.
 trigger: After domain_analysis. Re-run if the research question pivots.
 
 steps:
-  - id: choose_design
-    name: Choose the Study Design
-    description: |
-      The design follows from the question and the data-generating process,
-      not from a menu. Reason over the dimensions that fix the design:
-        - Who controls the exposure/treatment — the researcher (interventional)
-          or nature (observational)?
-        - Is there a comparator, and is it concurrent or historical?
-        - What is the temporal structure — one snapshot, a forward cohort, a
-          before/after interruption, repeated panels?
-        - Is the outcome rare enough that sampling on the outcome buys power?
-        - Is data collected for this study, or re-used from an existing source?
-        - Is the work empirical at all, or computational/simulation?
+- id: choose_design
+  name: Choose the Study Design
+  description: |
+    The design follows from the question and the data-generating process,
+    not from a menu. Reason over the dimensions that fix the design:
+      - Who controls the exposure/treatment — the researcher (interventional)
+        or nature (observational)?
+      - Is there a comparator, and is it concurrent or historical?
+      - What is the temporal structure — one snapshot, a forward cohort, a
+        before/after interruption, repeated panels?
+      - Is the outcome rare enough that sampling on the outcome buys power?
+      - Is data collected for this study, or re-used from an existing source?
+      - Is the work empirical at all, or computational/simulation?
 
-      Each dimension rules designs in or out; the named designs (RCT, cohort,
-      case-control, ITS/DiD, cross-sectional, secondary analysis, case series,
-      simulation/benchmark) are the answers those dimensions produce, not a
-      checklist to pick from. Name the design, the dimensions that forced it,
-      and the threats it leaves open. Write the chosen design + a short
-      justification to docs/research_design.md.
+    Each dimension rules designs in or out; the named designs (RCT, cohort,
+    case-control, ITS/DiD, cross-sectional, secondary analysis, case series,
+    simulation/benchmark) are the answers those dimensions produce, not a
+    checklist to pick from. Name the design, the dimensions that forced it,
+    and the threats it leaves open. Write the chosen design + a short
+    justification to docs/research_design.md.
 
-  - id: sample_size_justification
-    name: Sample Size or Power Justification
-    description: |
-      Justify the sample from the design, the target effect, and the
-      inferential goal — do not copy a formula or a conventional n. The
-      questions to answer:
-        - What is the estimand and the smallest effect worth detecting (or the
-          precision worth achieving)? Ground the target effect in prior work or
-          a stated minimally-important difference, not in a "medium effect"
-          default.
-        - What error rates / confidence does the field hold this kind of study
-          to, and what is the source for that convention?
-        - Which power/precision approach matches the design and outcome family
-          (analytic formula, simulation-based power, sequential/adaptive,
-          Bayesian assurance)? The right approach is design-specific.
-        - For fixed-n / secondary data: invert the question — report the
-          minimum detectable effect (or attainable precision) at the field's
-          power as a CONSTRAINT, and state what it rules out.
-        - For computational/benchmark work: justify dataset/run size from the
-          variance of the metric and the comparison being made, not a rule of
-          thumb tied to model size.
+- id: sample_size_justification
+  name: Sample Size or Power Justification
+  description: |
+    Justify the sample from the design, the target effect, and the
+    inferential goal — do not copy a formula or a conventional n. The
+    questions to answer:
+      - What is the estimand and the smallest effect worth detecting (or the
+        precision worth achieving)? Ground the target effect in prior work or
+        a stated minimally-important difference, not in a "medium effect"
+        default.
+      - What error rates / confidence does the field hold this kind of study
+        to, and what is the source for that convention?
+      - Which power/precision approach matches the design and outcome family
+        (analytic formula, simulation-based power, sequential/adaptive,
+        Bayesian assurance)? The right approach is design-specific.
+      - For fixed-n / secondary data: invert the question — report the
+        minimum detectable effect (or attainable precision) at the field's
+        power as a CONSTRAINT, and state what it rules out.
+      - For computational/benchmark work: justify dataset/run size from the
+        variance of the metric and the comparison being made, not a rule of
+        thumb tied to model size.
 
-      Surface the field's current practice for THIS design via
-      tool_research_method / tool_search before committing, and offload the
-      actual computation to methodology/power_analysis. Save the computation as
-      a short script in workspace/<step>/scripts/ or inline in
-      docs/research_design.md, citing the assumptions and their source.
+    Surface the field's current practice for THIS design via
+    tool_search / tool_search before committing, and offload the
+    actual computation to methodology/power_analysis. Save the computation as
+    a short script in workspace/<step>/scripts/ or inline in
+    docs/research_design.md, citing the assumptions and their source.
 
-  - id: bias_mitigation_plan
-    name: Bias Mitigation Plan
-    description: |
-      For each bias listed in docs/domain_summary.md, write the design-level
-      mitigation (randomisation, matching, instrumental variable, sensitivity
-      analysis, hold-out test set, etc.) into docs/research_design.md.
+- id: bias_mitigation_plan
+  name: Bias Mitigation Plan
+  description: |
+    For each bias listed in docs/domain_summary.md, write the design-level
+    mitigation (randomisation, matching, instrumental variable, sensitivity
+    analysis, hold-out test set, etc.) into docs/research_design.md.
 
-  - id: ground_design_choice
-    name: Ground the Design in Literature
-    description: |
-      tool_search query="<design> in <domain>"
-      tool_search query="<design> <topic>"
-      Cite prior work that used the same design for a similar question — enough
-      to show the design is accepted practice for this kind of study, and to
-      surface any design-specific pitfall those papers hit. Add the citations to
-      workspace/citations.md via mem_citations_generate after updating
-      inputs/literature_index.yaml.
+- id: ground_design_choice
+  name: Ground the Design in Literature
+  description: |
+    tool_search query="<design> in <domain>"
+    tool_search query="<design> <topic>"
+    Cite prior work that used the same design for a similar question — enough
+    to show the design is accepted practice for this kind of study, and to
+    surface any design-specific pitfall those papers hit. Add the citations to
+    workspace/citations.md via mem_log (operation=citations_generate) after updating
+    inputs/literature_index.yaml.
 
 expected_outputs:
-  - docs/research_design.md
+- docs/research_design.md
 
 next_protocol: methodology/methodology_selection
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: design
+triggers:
+- study design
+- research design
+- design the study
+summary: Pick study design (RCT / cohort / cross-sectional / qual / sim).

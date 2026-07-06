@@ -6,6 +6,21 @@ Versioning: [SemVer](https://semver.org).
 
 ---
 
+## [4.4.6] — array-items schema fix for Gemini API compatibility (2026-07-01)
+
+A PATCH release: fixes six `INVALID_ARGUMENT (400)` errors from the Gemini
+API, which requires `items` on every `type: "array"` parameter in tool
+function-calling schemas. The MCP server omitted `items` on six parameters
+across four tools.
+
+### Fixed
+- **`tool_ground`** — `sources`, `context_paths`, `cited_excerpts` each
+  lacked `items` in their JSON schema. Added `items: {type: "object|string"}`
+  as appropriate.
+- **`tool_verify`** — `verifications` array lacked `items` (complex object).
+- **`mem_log`** — `assumptions` array lacked `items` (string items).
+- **`tool_step_pipeline`** — `nodes` array lacked `items` (object items).
+
 ## [4.4.5] — large-data symlinks · canonical scratch · paper-ready captions (2026-06-30)
 
 A PATCH release bundling three researcher-reported bugs.

@@ -2,15 +2,15 @@ id: synthesis_null_findings
 tier: 'synthesize'
 name: Synthesis — Null findings & inconclusive results
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - synthesis/synthesis_paper        # the null doc is often a companion to a paper
-  - methodology/power_analysis       # power is what makes a null interpretable
+- synthesis/synthesis_paper          # the null doc is often a companion to a paper
+- methodology/power_analysis         # power is what makes a null interpretable
 description: |
   Assemble a publishable companion document for findings that DIDN'T
   pan out: refuted hypotheses, underpowered tests, abandoned
@@ -31,120 +31,121 @@ trigger: |
   surfaces refuted hypotheses + the synthesis paper is being assembled.
 
 prerequisites:
-  - At least one hypothesis with status `refuted` or `inconclusive`,
-    OR at least one __DEAD_END path, OR at least one underpowered
-    test in workspace/<step>/outputs/reports/power_report.md.
+- At least one hypothesis with status `refuted` or `inconclusive`, OR at least one __DEAD_END path, OR at least one underpowered test in workspace/<step>/outputs/reports/power_report.md.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Distinguish 'no evidence of an effect' (honest, underpowered)
-       from 'evidence of no effect' (rare, requires equivalence
-       testing or a small-enough confidence interval to rule out
-       meaningful effects)."
-    - "Lead with study power. A null finding in an underpowered
-       study has different implications than one in a pre-registered,
-       adequately powered study."
-    - "Cite the pre-registration prominently when it exists — it
-       earns the credibility a null result needs."
-    - "Avoid hedging language ('failed to find', 'unable to detect')
-       in favour of factual framing ('observed effect was X, 95% CI
-       [L, U] — within the equivalence margin / spanning the null')."
+  - "Distinguish 'no evidence of an effect' (honest, underpowered) from 'evidence of no effect' (rare, requires equivalence testing or a small-enough confidence interval to rule out meaningful effects)."
+  - "Lead with study power. A null finding in an underpowered study has different implications than one in a pre-registered, adequately powered study."
+  - "Cite the pre-registration prominently when it exists — it earns the credibility a null result needs."
+  - "Avoid hedging language ('failed to find', 'unable to detect') in favour of factual framing ('observed effect was X, 95% CI [L, U] — within the equivalence margin / spanning the null')."
 
 steps:
-  - id: inventory
-    name: Inventory what didn't pan out
-    description: |
-      Walk three sources of "didn't pan out":
-        1. Hypothesis tracker — every status `refuted` or `inconclusive`.
-        2. Step power reports — any test whose achieved power falls
-           below the adequacy threshold the project (or the field)
-           pre-specified; cite the source of that threshold rather
-           than assuming a convention.
-        3. Dead-end paths — every `workspace/<id>__DEAD_END/` folder.
+- id: inventory
+  name: Inventory what didn't pan out
+  description: |
+    Walk three sources of "didn't pan out":
+      1. Hypothesis tracker — every status `refuted` or `inconclusive`.
+      2. Step power reports — any test whose achieved power falls
+         below the adequacy threshold the project (or the field)
+         pre-specified; cite the source of that threshold rather
+         than assuming a convention.
+      3. Dead-end paths — every `workspace/<id>__DEAD_END/` folder.
 
-      The tool `tool_null_findings_report` does this walk automatically
-      and produces `synthesis/null_findings.md` as the starting
-      draft; refine the prose from there.
+    The tool `tool_synthesis_scaffold (operation=null_findings)` does this walk automatically
+    and produces `synthesis/null_findings.md` as the starting
+    draft; refine the prose from there.
 
-  - id: classify_each_null
-    name: Classify each null result honestly
-    description: |
-      For every refuted or inconclusive hypothesis, decide which kind
-      of null it is:
+- id: classify_each_null
+  name: Classify each null result honestly
+  description: |
+    For every refuted or inconclusive hypothesis, decide which kind
+    of null it is:
 
-        - **Underpowered null** — the study didn't have enough
-          observations to detect a plausible effect. Report the
-          minimum detectable effect (MDE) at the achieved n and
-          frame as "no evidence of an effect ≥ X."
-        - **Adequately powered null** — the observed effect was small
-          AND the CI is narrow enough to rule out practically
-          meaningful effects. Frame as "evidence consistent with no
-          effect / a small effect."
-        - **Specification-fragile null** — the result depends on the
-          analytic choices made. Consider running a sensitivity grid
-          (`tool_sensitivity(operation='run')`) before concluding; specification
-          curves are the standard companion plot here.
-        - **Dead-end** — methodological / data quality reason the
-          test couldn't run as planned. Document the reason
-          transparently.
+      - **Underpowered null** — the study didn't have enough
+        observations to detect a plausible effect. Report the
+        minimum detectable effect (MDE) at the achieved n and
+        frame as "no evidence of an effect ≥ X."
+      - **Adequately powered null** — the observed effect was small
+        AND the CI is narrow enough to rule out practically
+        meaningful effects. Frame as "evidence consistent with no
+        effect / a small effect."
+      - **Specification-fragile null** — the result depends on the
+        analytic choices made. Consider running a sensitivity grid
+        (`tool_sensitivity(operation='run')`) before concluding; specification
+        curves are the standard companion plot here.
+      - **Dead-end** — methodological / data quality reason the
+        test couldn't run as planned. Document the reason
+        transparently.
 
-      The classification drives the framing in the writeup.
+    The classification drives the framing in the writeup.
 
-  - id: write_honest_framing
-    name: Write the honest framing
-    description: |
-      For each null, the writeup should answer four questions:
+- id: write_honest_framing
+  name: Write the honest framing
+  description: |
+    For each null, the writeup should answer four questions:
 
-        1. What was the pre-registered hypothesis?
-        2. What was the observed effect (with 95% CI)?
-        3. What CAN and CANNOT be concluded from this result?
-        4. What follow-up would resolve the ambiguity?
+      1. What was the pre-registered hypothesis?
+      2. What was the observed effect (with 95% CI)?
+      3. What CAN and CANNOT be concluded from this result?
+      4. What follow-up would resolve the ambiguity?
 
-      Avoid the "we did not find" phrasing in isolation — pair it
-      with the precision of the estimate and the power achieved.
+    Avoid the "we did not find" phrasing in isolation — pair it
+    with the precision of the estimate and the power achieved.
 
-  - id: link_preregistration
-    name: Link the pre-registration prominently
-    description: |
-      If the project carries a frozen SAP
-      (`workspace/.preregistration/prereg_*.yaml`), the null
-      findings document should reference it at the top — the
-      pre-registration is what makes a null finding credible.
-      Include the OSF / AsPredicted URL if the SAP was registered
-      externally.
+- id: link_preregistration
+  name: Link the pre-registration prominently
+  description: |
+    If the project carries a frozen SAP
+    (`workspace/.preregistration/prereg_*.yaml`), the null
+    findings document should reference it at the top — the
+    pre-registration is what makes a null finding credible.
+    Include the OSF / AsPredicted URL if the SAP was registered
+    externally.
 
-  - id: figure_companion
-    name: Add a specification curve when appropriate
-    description: |
-      For each "specification-fragile" classification, the
-      strongest companion figure is a specification curve
-      (`tool_sensitivity(operation='run')`'s output). It shows reviewers exactly
-      how robust (or not) the null is to the analytic choices.
+- id: figure_companion
+  name: Add a specification curve when appropriate
+  description: |
+    For each "specification-fragile" classification, the
+    strongest companion figure is a specification curve
+    (`tool_sensitivity(operation='run')`'s output). It shows reviewers exactly
+    how robust (or not) the null is to the analytic choices.
 
-      For adequately powered nulls, an equivalence-test forest plot
-      or a posterior-distribution figure (Bayesian) is often the
-      strongest visual companion.
+    For adequately powered nulls, an equivalence-test forest plot
+    or a posterior-distribution figure (Bayesian) is often the
+    strongest visual companion.
 
-  - id: choose_venue
-    name: Choose a publication venue
-    description: |
-      Find venues that actively welcome null and inconclusive results
-      — sound-science / results-agnostic journals and, for
-      pre-registered work, Registered Report tracks (where Stage 2
-      acceptance is contingent on the methods, not the result
-      direction). Names and policies shift; route to
-      synthesis/journal_selection to score current candidates on scope,
-      evidence bar, and open-science fit rather than picking from a
-      static list.
+- id: choose_venue
+  name: Choose a publication venue
+  description: |
+    Find venues that actively welcome null and inconclusive results
+    — sound-science / results-agnostic journals and, for
+    pre-registered work, Registered Report tracks (where Stage 2
+    acceptance is contingent on the methods, not the result
+    direction). Names and policies shift; route to
+    synthesis/journal_selection to score current candidates on scope,
+    evidence bar, and open-science fit rather than picking from a
+    static list.
 
 expected_outputs:
-  - synthesis/null_findings.md
+- synthesis/null_findings.md
 
 # Terminal: the null-findings doc is a deliverable in its own right.
 # It is frequently a COMPANION to a paper, but composing the paper is
 # a separate, researcher-initiated deliverable (see_also synthesis_paper)
 # — do not auto-create one the researcher did not ask for.
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: synthesize
+sub_intent: null_findings
+triggers:
+- null findings
+- null result
+- what didn't work
+- negative results
+- refuted hypothesis
+- dead ends paper
+summary: Publishable companion for refuted / inconclusive / underpowered / abandoned.
+shortcut_tool: tool_synthesis_scaffold (operation=null_findings)

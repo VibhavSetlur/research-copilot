@@ -2,16 +2,16 @@ id: journal_selection
 tier: 'synthesize'
 name: Journal / Venue Selection + Fit Assessment
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - synthesis/synthesis_paper
-  - synthesis/synthesis_cover_letter
-  - synthesis/manuscript_outline       # venue choice shapes the outline template
+- synthesis/synthesis_paper
+- synthesis/synthesis_cover_letter
+- synthesis/manuscript_outline         # venue choice shapes the outline template
 description: |
   Picking the wrong venue wastes months. The right venue is the
   intersection of: scope fit (does the audience care about THIS
@@ -41,173 +41,157 @@ trigger: |
       venue to format against.
 
 prerequisites:
-  - The paper's MAIN finding + headline claim is stable enough to
-    summarise in 2 sentences.
-  - researcher's career-stage + field convention is known (the
-    AI may ask the researcher to confirm).
+- The paper's MAIN finding + headline claim is stable enough to summarise in 2 sentences.
+- researcher's career-stage + field convention is known (the AI may ask the researcher to confirm).
 
 editorial_voice:
   rules:
-    - "Audience fit BEFORE impact factor. A high-IF journal whose
-       audience doesn't care about the question is a desk reject;
-       a mid-tier journal whose audience READS the finding cites it.
-       Citations follow audience, not impact factor."
-    - "Predatory venues are a real risk. Check DOAJ membership,
-       COPE membership, transparent fees, named editorial board with
-       verifiable affiliations, prior issues actually published,
-       indexing in field-appropriate databases (PubMed, Scopus, Web
-       of Science). Anything sketchy → reject the venue."
-    - "Match the venue's evidence bar. CONSORT for clinical trials,
-       PRISMA for systematic reviews, ARRIVE for animal studies,
-       MIAME for microarray, STROBE for observational. If the paper
-       does not (or cannot) meet a venue's required reporting
-       standard, the venue is a wrong fit."
-    - "The cover letter is part of fit. Some venues' editors triage
-       on the cover letter; others on the abstract. Pick venues
-       where the paper's story can be made compelling in the format
-       that venue actually reads."
+  - "Audience fit BEFORE impact factor. A high-IF journal whose audience doesn't care about the question is a desk reject; a mid-tier journal whose audience READS the finding cites it. Citations follow audience, not impact factor."
+  - "Predatory venues are a real risk. Check DOAJ membership, COPE membership, transparent fees, named editorial board with verifiable affiliations, prior issues actually published, indexing in field-appropriate databases (PubMed, Scopus, Web of Science). Anything sketchy → reject the venue."
+  - "Match the venue's evidence bar. CONSORT for clinical trials, PRISMA for systematic reviews, ARRIVE for animal studies, MIAME for microarray, STROBE for observational. If the paper does not (or cannot) meet a venue's required reporting standard, the venue is a wrong fit."
+  - "The cover letter is part of fit. Some venues' editors triage on the cover letter; others on the abstract. Pick venues where the paper's story can be made compelling in the format that venue actually reads."
 
 steps:
-  - id: characterize_paper
-    name: Characterise the paper for matching
-    description: |
-      Build a one-page profile of the paper:
-        - HEADLINE FINDING — one sentence
-        - TYPE OF CONTRIBUTION — empirical / methodological /
-          theoretical / dataset / negative-result / review / position
-        - METHODOLOGY — quant / qual / mixed / computational
-        - EVIDENCE STRENGTH — randomised / observational / simulation /
-          benchmark / case study; preregistered or not
-        - AUDIENCE — who needs to read this? (field + sub-field)
-        - SIZE — word count + figures + tables
-        - DATA + CODE SHARING posture — what is shareable, what is
-          embargoed, what is restricted
-        - ETHICS — IRB / IACUC / consent state
+- id: characterize_paper
+  name: Characterise the paper for matching
+  description: |
+    Build a one-page profile of the paper:
+      - HEADLINE FINDING — one sentence
+      - TYPE OF CONTRIBUTION — empirical / methodological /
+        theoretical / dataset / negative-result / review / position
+      - METHODOLOGY — quant / qual / mixed / computational
+      - EVIDENCE STRENGTH — randomised / observational / simulation /
+        benchmark / case study; preregistered or not
+      - AUDIENCE — who needs to read this? (field + sub-field)
+      - SIZE — word count + figures + tables
+      - DATA + CODE SHARING posture — what is shareable, what is
+        embargoed, what is restricted
+      - ETHICS — IRB / IACUC / consent state
 
-      Write workspace/.venue/paper_profile.md.
+    Write workspace/.venue/paper_profile.md.
 
-  - id: enumerate_candidate_venues
-    name: Enumerate candidate venues
-    description: |
-      Cast a wide enough net that the comparison has real alternatives,
-      not a foregone conclusion. Draw from:
-        - venues cited by the paper's references (where do its
-          intellectual neighbours publish?)
-        - venues recommended by senior collaborators / advisor
-        - field-aggregator search (Scopus, Web of Science) for
-          recent papers on the same question
-        - field-specific venue lists (CCF for CS, ABS for business,
-          REF for UK humanities, NIH-friendly clinical journals)
-        - tool_research_method query="<field> <type> journal" for a
-          recency-aware sweep
+- id: enumerate_candidate_venues
+  name: Enumerate candidate venues
+  description: |
+    Cast a wide enough net that the comparison has real alternatives,
+    not a foregone conclusion. Draw from:
+      - venues cited by the paper's references (where do its
+        intellectual neighbours publish?)
+      - venues recommended by senior collaborators / advisor
+      - field-aggregator search (Scopus, Web of Science) for
+        recent papers on the same question
+      - field-specific venue lists (CCF for CS, ABS for business,
+        REF for UK humanities, NIH-friendly clinical journals)
+      - tool_search query="<field> <type> journal" for a
+        recency-aware sweep
 
-      DO NOT seed exclusively from impact factor or journal-finder
-      tools (Elsevier's, Springer's) — they are scope-blind.
+    DO NOT seed exclusively from impact factor or journal-finder
+    tools (Elsevier's, Springer's) — they are scope-blind.
 
-      Write workspace/.venue/candidates.md with name + publisher +
-      open-access mode + likely turnaround.
+    Write workspace/.venue/candidates.md with name + publisher +
+    open-access mode + likely turnaround.
 
-  - id: filter_for_legitimacy
-    name: Filter for legitimacy (no predatory venues)
-    description: |
-      For each candidate, verify:
-        - publisher is reputable (or independently verifiable)
-        - editorial board lists named editors with institutional
-          affiliations that are real and field-relevant
-        - indexed in field-appropriate databases (Scopus / WoS /
-          PubMed / DBLP / MathSciNet)
-        - the journal's prior issues actually publish papers in the
-          claimed field
-        - COPE member OR DOAJ-listed (for open-access)
-        - transparent fees (APC stated clearly, not hidden)
-        - peer-review process described
+- id: filter_for_legitimacy
+  name: Filter for legitimacy (no predatory venues)
+  description: |
+    For each candidate, verify:
+      - publisher is reputable (or independently verifiable)
+      - editorial board lists named editors with institutional
+        affiliations that are real and field-relevant
+      - indexed in field-appropriate databases (Scopus / WoS /
+        PubMed / DBLP / MathSciNet)
+      - the journal's prior issues actually publish papers in the
+        claimed field
+      - COPE member OR DOAJ-listed (for open-access)
+      - transparent fees (APC stated clearly, not hidden)
+      - peer-review process described
 
-      Drop any venue that fails on multiple dimensions. Use
-      thinkchecksubmit.org as a quick checklist when in doubt.
+    Drop any venue that fails on multiple dimensions. Use
+    thinkchecksubmit.org as a quick checklist when in doubt.
 
-  - id: score_candidates_on_fit
-    name: Score remaining candidates on multiple dimensions
-    description: |
-      Build a comparison table — one row per candidate, columns:
+- id: score_candidates_on_fit
+  name: Score remaining candidates on multiple dimensions
+  description: |
+    Build a comparison table — one row per candidate, columns:
 
-        SCOPE FIT — does the journal publish work like this?
-          (Read the aims & scope + a recent run of the table of
-          contents. Be honest about whether THIS paper's audience
-          overlaps.)
-        EVIDENCE FIT — does the paper meet the journal's typical
-          evidence bar? (Sample size, replication, mechanism, etc.)
-        FORMAT FIT — letter / brief / full article / data paper /
-          registered report — which does the venue offer and which
-          fits the paper?
-        REPORTING-STANDARD FIT — CONSORT / PRISMA / STROBE / ARRIVE /
-          MIAME — can the paper supply what the venue requires?
-        TIMELINE FIT — typical time-to-first-decision, time-to-
-          publication, acceptance rate. Compute against the lab's
-          deadline pressure.
-        OPEN-SCIENCE FIT — preprint policy, data-sharing requirements,
-          green / gold / hybrid OA, copyright (CTA vs CC), embargo.
-        COST FIT — APC + page charges + colour charges + open data
-          fees. Verify with the journal's current page, not memory.
-        AUDIENCE FIT — does the paper's intended community READ
-          this journal? (Check who cites the paper's references in
-          this venue.)
-        REPUTATION FIT — career-stage relevant (e.g. first-author
-          flagship vs solid mid-tier vs society journal).
+      SCOPE FIT — does the journal publish work like this?
+        (Read the aims & scope + a recent run of the table of
+        contents. Be honest about whether THIS paper's audience
+        overlaps.)
+      EVIDENCE FIT — does the paper meet the journal's typical
+        evidence bar? (Sample size, replication, mechanism, etc.)
+      FORMAT FIT — letter / brief / full article / data paper /
+        registered report — which does the venue offer and which
+        fits the paper?
+      REPORTING-STANDARD FIT — CONSORT / PRISMA / STROBE / ARRIVE /
+        MIAME — can the paper supply what the venue requires?
+      TIMELINE FIT — typical time-to-first-decision, time-to-
+        publication, acceptance rate. Compute against the lab's
+        deadline pressure.
+      OPEN-SCIENCE FIT — preprint policy, data-sharing requirements,
+        green / gold / hybrid OA, copyright (CTA vs CC), embargo.
+      COST FIT — APC + page charges + colour charges + open data
+        fees. Verify with the journal's current page, not memory.
+      AUDIENCE FIT — does the paper's intended community READ
+        this journal? (Check who cites the paper's references in
+        this venue.)
+      REPUTATION FIT — career-stage relevant (e.g. first-author
+        flagship vs solid mid-tier vs society journal).
 
-      Score qualitatively per dimension (good / mixed / poor) with
-      a one-line note. Write workspace/.venue/comparison.md.
+    Score qualitatively per dimension (good / mixed / poor) with
+    a one-line note. Write workspace/.venue/comparison.md.
 
-  - id: shortlist_and_sequence
-    name: Shortlist + plan the submission sequence
-    description: |
-      Pick a TOP CHOICE + 2-3 fallbacks. Plan the resubmission
-      sequence: if top choice desks, where does the paper go next?
-      The fallback should be ready BEFORE submitting to the top
-      choice — a 6-week desk reject without a plan loses momentum.
+- id: shortlist_and_sequence
+  name: Shortlist + plan the submission sequence
+  description: |
+    Pick a TOP CHOICE + 2-3 fallbacks. Plan the resubmission
+    sequence: if top choice desks, where does the paper go next?
+    The fallback should be ready BEFORE submitting to the top
+    choice — a 6-week desk reject without a plan loses momentum.
 
-      Document the rationale: why TOP, why FALLBACKS in this order.
+    Document the rationale: why TOP, why FALLBACKS in this order.
 
-      Optional: consider preprinting (bioRxiv, arXiv, SSRN, OSF) on
-      first submission to claim priority + accumulate feedback.
-      Surface preprint policy from the target venues (some accept
-      preprints, some don't — check, don't guess).
+    Optional: consider preprinting (bioRxiv, arXiv, SSRN, OSF) on
+    first submission to claim priority + accumulate feedback.
+    Surface preprint policy from the target venues (some accept
+    preprints, some don't — check, don't guess).
 
-  - id: align_paper_to_target
-    name: Align the paper to the target venue's format
-    description: |
-      Once a top choice is set:
-        - check word limits + abstract length + reference cap
-        - check structure (IMRaD / Results-first / case-report /
-          letter)
-        - check figure / table caps + DPI requirements
-        - check submission system (Editorial Manager / ScholarOne /
-          OJS / Manuscript Central / preprint-style)
-        - check author-contribution taxonomy (CRediT is common)
-        - check disclosure forms (COI, ICMJE, funding statements)
-        - check reproducibility checklist if venue requires one
-          (NeurIPS, eLife, Nature transparent-author-checklist)
+- id: align_paper_to_target
+  name: Align the paper to the target venue's format
+  description: |
+    Once a top choice is set:
+      - check word limits + abstract length + reference cap
+      - check structure (IMRaD / Results-first / case-report /
+        letter)
+      - check figure / table caps + DPI requirements
+      - check submission system (Editorial Manager / ScholarOne /
+        OJS / Manuscript Central / preprint-style)
+      - check author-contribution taxonomy (CRediT is common)
+      - check disclosure forms (COI, ICMJE, funding statements)
+      - check reproducibility checklist if venue requires one
+        (NeurIPS, eLife, Nature transparent-author-checklist)
 
-      Update synthesis_spec.yaml's target_venue field. Route to
-      synthesis_paper to apply venue-specific formatting + to
-      synthesis_cover_letter for the cover letter.
+    Update synthesis_spec.yaml's target_venue field. Route to
+    synthesis_paper to apply venue-specific formatting + to
+    synthesis_cover_letter for the cover letter.
 
-  - id: update_config_and_route
-    name: Update researcher_config + route to deliverable
-    description: |
-      Set inputs/researcher_config.yaml:
-        research_goal.target_venue: "<journal name>"
+- id: update_config_and_route
+  name: Update researcher_config + route to deliverable
+  description: |
+    Set inputs/researcher_config.yaml:
+      research_goal.target_venue: "<journal name>"
 
-      Route next to synthesis_paper (if drafting) or
-      synthesis_cover_letter (if assembling submission) or
-      audit/pre_submission_checklist (if the paper is otherwise
-      ready).
+    Route next to synthesis_paper (if drafting) or
+    synthesis_cover_letter (if assembling submission) or
+    audit/pre_submission_checklist (if the paper is otherwise
+    ready).
 
 expected_outputs:
-  - workspace/.venue/paper_profile.md
-  - workspace/.venue/candidates.md
-  - workspace/.venue/comparison.md
-  - workspace/.venue/decision.md
-  - (research_goal.target_venue updated in researcher_config.yaml)
+- workspace/.venue/paper_profile.md
+- workspace/.venue/candidates.md
+- workspace/.venue/comparison.md
+- workspace/.venue/decision.md
+- (research_goal.target_venue updated in researcher_config.yaml)
 
 quality_bar:
   paper_profile_summary_present: true
@@ -222,3 +206,20 @@ quality_bar:
 next_protocol: synthesis/synthesis_paper
 next_protocol_kind: forward_default
 on_failure: guidance/scope_clarification
+intent_class: synthesize
+sub_intent: venue
+triggers:
+- where should i submit
+- journal selection
+- target journal
+- target venue
+- venue selection
+- is this nature material
+- pick a journal
+- fit the journal
+- conference deadline
+- journal fit
+- what journal
+- which journal
+- journal to aim for
+summary: Compare 3-5 candidate venues on scope / evidence / cost / timeline / open-science fit.

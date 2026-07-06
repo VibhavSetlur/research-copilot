@@ -302,16 +302,6 @@ def _handle_tool_finalize_project(name, arguments, root):
 
 
 HANDLERS = {
-    "tool_state_freshness_check": _handle_tool_state_freshness_check,
-    "tool_intake_freshness": _handle_tool_intake_freshness,
-    "tool_rigor_signals_scan": _handle_tool_rigor_signals_scan,
-    "tool_resolve_gate_strictness": _handle_tool_resolve_gate_strictness,
-    "tool_self_certify": _handle_tool_self_certify,
-    "tool_list_certifications": _handle_tool_list_certifications,
-    "tool_quick_route": _handle_tool_quick_route,
-    "tool_promote_to_step": _handle_tool_promote_to_step,
-    "tool_project_tier_strictness": _handle_tool_project_tier_strictness,
     "tool_dry_run": _handle_tool_dry_run,
-    "tool_step_complete": _handle_tool_step_complete,
     "tool_finalize_project": _handle_tool_finalize_project,
 }

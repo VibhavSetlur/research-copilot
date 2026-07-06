@@ -2,15 +2,15 @@ id: synthesis_from_inputs
 tier: 'synthesize'
 name: Synthesis — From Inputs (no workspace analysis required)
 version: '3.8.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - synthesis/synthesis_paper       # the target deliverable this sources for
-  - synthesis/synthesis_report
+- synthesis/synthesis_paper         # the target deliverable this sources for
+- synthesis/synthesis_report
 description: |
   Synthesis for the case where the researcher has finished analyses,
   results tables, draft figures, prior reports, meeting notes, or other
@@ -40,9 +40,7 @@ trigger: |
   "migrate this old project into a paper".
 
 prerequisites:
-  - At least one substantive artefact under inputs/ — a results table,
-    a draft figure with caption, a prior report, a notebook export,
-    or a notes file with extractable findings.
+- At least one substantive artefact under inputs/ — a results table, a draft figure with caption, a prior report, a notebook export, or a notes file with extractable findings.
 
 quality_bar:
   shadow_step_created: true              # synthesis hangs off a real step
@@ -55,201 +53,213 @@ quality_bar:
 editorial_voice:
   mode: hybrid
   rules:
-    - "Distinguish what the inputs ACTUALLY say from what the AI
-       infers. The synthesis section labelled 'Methods' is the
-       methods the inputs name — never inferred from a result table."
-    - "Numbers come from tables, not from prose. A prose claim
-       'we found a 14% improvement' is a CITATION POINTER, not a
-       grounding — go find the row in a table or the assertion in a
-       result file."
-    - "Provenance ceiling is honest: 'this synthesis was assembled
-       from prior artefacts the researcher provided; full
-       reproducibility cannot be guaranteed without re-running the
-       upstream pipeline.' Reviewers respect honesty more than they
-       respect false confidence."
-    - "If the input set is incomplete (no figure, no methods file),
-       the right answer is to STOP and ask, not to hallucinate
-       what the missing artefact would have said."
+  - "Distinguish what the inputs ACTUALLY say from what the AI infers. The synthesis section labelled 'Methods' is the methods the inputs name — never inferred from a result table."
+  - "Numbers come from tables, not from prose. A prose claim 'we found a 14% improvement' is a CITATION POINTER, not a grounding — go find the row in a table or the assertion in a result file."
+  - "Provenance ceiling is honest: 'this synthesis was assembled from prior artefacts the researcher provided; full reproducibility cannot be guaranteed without re-running the upstream pipeline.' Reviewers respect honesty more than they respect false confidence."
+  - "If the input set is incomplete (no figure, no methods file), the right answer is to STOP and ask, not to hallucinate what the missing artefact would have said."
 
 steps:
-  - id: scope_what_exists
-    name: Scope what already exists
-    description: |
-      In ONE batch:
-        - sys_file_list directory="inputs/raw_data"
-        - sys_file_list directory="inputs/literature"
-        - sys_file_list directory="inputs/context"
-        - sys_file_list directory="inputs/"          (catch loose files)
-        - sys_path                              (any existing steps)
+- id: scope_what_exists
+  name: Scope what already exists
+  description: |
+    In ONE batch:
+      - sys_file_list directory="inputs/raw_data"
+      - sys_file_list directory="inputs/literature"
+      - sys_file_list directory="inputs/context"
+      - sys_file_list directory="inputs/"          (catch loose files)
+      - sys_state_get                              (any existing steps)
 
-      For each artefact, record what TYPE it is — results table, draft
-      figure, prior report, notes, draft section, methods note, citation
-      list, anything else. The scope step's output becomes the synthesis's
-      provenance manifest.
+    For each artefact, record what TYPE it is — results table, draft
+    figure, prior report, notes, draft section, methods note, citation
+    list, anything else. The scope step's output becomes the synthesis's
+    provenance manifest.
 
-      If nothing usable is present, STOP and tell the researcher to drop
-      the relevant artefacts into inputs/ first. Do not invent inputs
-      that are not on disk.
+    If nothing usable is present, STOP and tell the researcher to drop
+    the relevant artefacts into inputs/ first. Do not invent inputs
+    that are not on disk.
 
-  - id: route_loose_files
-    name: Route loose files into the right inputs subfolder
-    description: |
-      tool_context_intake also_autofill=false
-      Loose PDFs go to inputs/literature; loose CSVs / parquet to
-      inputs/raw_data; loose markdown / docx / txt / notebooks to
-      inputs/context. The router's per-file log lands in
-      workspace/logs/context_intake_log.jsonl — this is the
-      manifest synthesis will cite from.
+- id: route_loose_files
+  name: Route loose files into the right inputs subfolder
+  description: |
+    mem_log (operation=context_intake) also_autofill=false
+    Loose PDFs go to inputs/literature; loose CSVs / parquet to
+    inputs/raw_data; loose markdown / docx / txt / notebooks to
+    inputs/context. The router's per-file log lands in
+    workspace/logs/context_intake_log.jsonl — this is the
+    manifest synthesis will cite from.
 
-  - id: pick_the_target_deliverable
-    name: Pick the target deliverable
-    description: |
-      Ask: "What's the target? paper | abstract | poster | slides |
-      dashboard | report | lay_summary | grant | essay | handout."
+- id: pick_the_target_deliverable
+  name: Pick the target deliverable
+  description: |
+    Ask: "What's the target? paper | abstract | poster | slides |
+    dashboard | report | lay_summary | grant | essay | handout."
 
-      This protocol is the SOURCING layer; the named target's
-      synthesis/* protocol still runs on top. The shadow workspace
-      step + the provenance manifest are what makes it possible.
+    This protocol is the SOURCING layer; the named target's
+    synthesis/* protocol still runs on top. The shadow workspace
+    step + the provenance manifest are what makes it possible.
 
-      AUTONOMY GATE:
-        Risk: reversible — picking the output type shapes the draft, which
-        stays editable.
-        proceed (adaptive default, autopilot) → pick based on `research_goal.output_types`
-                              when set; otherwise default to `report`.
-        confirm first (manual / supervised) → wait for the researcher to pick.
+    AUTONOMY GATE:
+      Risk: reversible — picking the output type shapes the draft, which
+      stays editable.
+      proceed (adaptive default, autopilot) → pick based on `research_goal.output_types`
+                            when set; otherwise default to `report`.
+      confirm first (manual / supervised) → wait for the researcher to pick.
 
-  - id: create_shadow_step
-    name: Create a shadow workspace step
-    description: |
-      sys_path name="<short_slug>_shadow_synthesis"
-        hypothesis="(inputs-derived synthesis — no in-RO analysis)"
+- id: create_shadow_step
+  name: Create a shadow workspace step
+  description: |
+    tool_plan (operation=create_step) name="<short_slug>_shadow_synthesis"
+      hypothesis="(inputs-derived synthesis — no in-RO analysis)"
 
-      The folder exists ONLY so the standard synthesis tooling has
-      a step to anchor to (figures get copied here, audit runs here,
-      the dashboard appendix has a row for it). It does not pretend
-      a real analysis ran — its README and conclusions explicitly
-      say "inputs-derived synthesis".
+    The folder exists ONLY so the standard synthesis tooling has
+    a step to anchor to (figures get copied here, audit runs here,
+    the dashboard appendix has a row for it). It does not pretend
+    a real analysis ran — its README and conclusions explicitly
+    say "inputs-derived synthesis".
 
-      Inside the shadow step:
-        sys_file_write filepath="workspace/<NN>_<slug>_shadow_synthesis/README.md"
-          with a paragraph: "This step was created to anchor a
-          synthesis assembled from artefacts the researcher provided
-          under inputs/. No analysis was run inside Research-OS for
-          this step. The synthesis below traces every claim to an
-          input artefact; provenance beyond that is the responsibility
-          of the upstream pipeline."
+    Inside the shadow step:
+      sys_file_write filepath="workspace/<NN>_<slug>_shadow_synthesis/README.md"
+        with a paragraph: "This step was created to anchor a
+        synthesis assembled from artefacts the researcher provided
+        under inputs/. No analysis was run inside Research-OS for
+        this step. The synthesis below traces every claim to an
+        input artefact; provenance beyond that is the responsibility
+        of the upstream pipeline."
 
-  - id: extract_findings_to_conclusions
-    name: Extract findings into the shadow step's conclusions.md
-    description: |
-      Walk each input artefact and extract:
-        - the substantive findings (numbers + units + direction)
-        - the methods, as the artefacts NAME them (not inferred)
-        - the limitations, as the artefacts NAME them
-        - the citations, as the artefacts NAME them
+- id: extract_findings_to_conclusions
+  name: Extract findings into the shadow step's conclusions.md
+  description: |
+    Walk each input artefact and extract:
+      - the substantive findings (numbers + units + direction)
+      - the methods, as the artefacts NAME them (not inferred)
+      - the limitations, as the artefacts NAME them
+      - the citations, as the artefacts NAME them
 
-      Write to workspace/<NN>_<slug>_shadow_synthesis/conclusions.md:
+    Write to workspace/<NN>_<slug>_shadow_synthesis/conclusions.md:
 
-        ## Source manifest
-          - <artefact> (path, type, mtime)
-          - ...
-        ## Plain-language summary
-          (one paragraph)
-        ## Findings
-          - <quantitative bullet> — source: <artefact, page/cell>
-          - ...
-        ## Methods (as named by the source artefacts)
-          (no inference — only what the artefacts state)
-        ## Limitations
-          (from the source artefacts + the inputs-derived ceiling)
-        ## Provenance ceiling
-          "This synthesis was assembled from prior artefacts; full
-           reproducibility requires re-running the upstream pipeline."
+      ## Source manifest
+        - <artefact> (path, type, mtime)
+        - ...
+      ## Plain-language summary
+        (one paragraph)
+      ## Findings
+        - <quantitative bullet> — source: <artefact, page/cell>
+        - ...
+      ## Methods (as named by the source artefacts)
+        (no inference — only what the artefacts state)
+      ## Limitations
+        (from the source artefacts + the inputs-derived ceiling)
+      ## Provenance ceiling
+        "This synthesis was assembled from prior artefacts; full
+         reproducibility requires re-running the upstream pipeline."
 
-      EVERY findings bullet cites the SPECIFIC source row + path. A
-      bullet without a citation is removed, not paraphrased.
+    EVERY findings bullet cites the SPECIFIC source row + path. A
+    bullet without a citation is removed, not paraphrased.
 
-  - id: copy_or_rebuild_figures
-    name: Copy or rebuild the deliverable figures
-    description: |
-      For each figure the deliverable will use:
-        - if the input figure is publication-grade (≥300 DPI, both
-          sidecars, the kind tool_audit(scope='step', dimension='figure_full') will pass) →
-          copy into workspace/<step>/outputs/figures/ with a manifest
-          line recording the source.
-        - if the input figure is sub-quality but the SOURCE DATA is
-          present → rebuild in an AI-authored plotting script. The rebuild's
-          caption.md states it was reconstructed from the source data.
-        - if the source data is NOT present → either keep the input
-          figure as-is and label the caption "figure provided by the
-          researcher; reconstruction not possible without the
-          underlying data", OR route to `visualization_workflow` to
-          recover the data through alternative means.
+- id: copy_or_rebuild_figures
+  name: Copy or rebuild the deliverable figures
+  description: |
+    For each figure the deliverable will use:
+      - if the input figure is publication-grade (≥300 DPI, both
+        sidecars, the kind tool_audit(scope='step', dimension='figure_full') will pass) →
+        copy into workspace/<step>/outputs/figures/ with a manifest
+        line recording the source.
+      - if the input figure is sub-quality but the SOURCE DATA is
+        present → rebuild in an AI-authored plotting script. The rebuild's
+        caption.md states it was reconstructed from the source data.
+      - if the source data is NOT present → either keep the input
+        figure as-is and label the caption "figure provided by the
+        researcher; reconstruction not possible without the
+        underlying data", OR route to `visualization_workflow` to
+        recover the data through alternative means.
 
-      Each figure ends with the standard pair of sidecars
-      (.caption.md + .summary.md) so the audit gate passes.
+    Each figure ends with the standard pair of sidecars
+    (.caption.md + .summary.md) so the audit gate passes.
 
-  - id: seed_methods_and_citations
-    name: Seed workspace/methods.md + citations.md
-    description: |
-      The synthesis protocols (synthesis_paper, synthesis_dashboard,
-      etc.) read workspace/methods.md and workspace/citations.md.
-      Seed them from the inputs:
+- id: seed_methods_and_citations
+  name: Seed workspace/methods.md + citations.md
+  description: |
+    The synthesis protocols (synthesis_paper, synthesis_dashboard,
+    etc.) read workspace/methods.md and workspace/citations.md.
+    Seed them from the inputs:
 
-        - methods.md: each entry comes from a source artefact and
-          cites its source. Never seed a method that is not in the
-          inputs.
-        - citations.md: the citation list the source artefacts named.
-          Run tool_citations_verify to weed out citations that don't
-          resolve.
+      - methods.md: each entry comes from a source artefact and
+        cites its source. Never seed a method that is not in the
+        inputs.
+      - citations.md: the citation list the source artefacts named.
+        Run tool_audit (scope=project, dimension=citations) to weed out citations that don't
+        resolve.
 
-  - id: run_the_target_synthesis
-    name: Run the chosen synthesis/* protocol on top
-    description: |
-      Now that the shadow step has conclusions / figures / methods /
-      citations, the standard synthesis protocol runs cleanly:
+- id: run_the_target_synthesis
+  name: Run the chosen synthesis/* protocol on top
+  description: |
+    Now that the shadow step has conclusions / figures / methods /
+    citations, the standard synthesis protocol runs cleanly:
 
-        target=paper            → load synthesis/synthesis_paper
-        target=abstract         → load synthesis/synthesis_abstract
-        target=poster           → load synthesis/synthesis_poster
-        target=dashboard        → load synthesis/synthesis_dashboard
-        target=report           → load synthesis/synthesis_report
-        target=grant            → load synthesis/synthesis_grant
-        target=lay_summary      → load synthesis/synthesis_lay_summary
-        target=slides           → load synthesis/synthesis_slides
-        target=progress_update  → load synthesis/synthesis_progress_update
+      target=paper            → load synthesis/synthesis_paper
+      target=abstract         → load synthesis/synthesis_abstract
+      target=poster           → load synthesis/synthesis_poster
+      target=dashboard        → load synthesis/synthesis_dashboard
+      target=report           → load synthesis/synthesis_report
+      target=grant            → load synthesis/synthesis_grant
+      target=lay_summary      → load synthesis/synthesis_lay_summary
+      target=slides           → load synthesis/synthesis_slides
+      target=progress_update  → load synthesis/synthesis_progress_update
 
-      The synthesis run reads from the shadow step like any other.
-      The completeness gate passes (figures + sidecars present); the
-      claims audit passes (every number traces to a table or artefact
-      under inputs/ or workspace/<shadow_step>/).
+    The synthesis run reads from the shadow step like any other.
+    The completeness gate passes (figures + sidecars present); the
+    claims audit passes (every number traces to a table or artefact
+    under inputs/ or workspace/<shadow_step>/).
 
-  - id: surface_provenance_ceiling
-    name: Surface the provenance ceiling in the final deliverable
-    description: |
-      Append a SHORT provenance ceiling paragraph at the bottom of
-      the deliverable (and in the dashboard's Outstanding artefacts
-      section when synthesizing a dashboard):
+- id: surface_provenance_ceiling
+  name: Surface the provenance ceiling in the final deliverable
+  description: |
+    Append a SHORT provenance ceiling paragraph at the bottom of
+    the deliverable (and in the dashboard's Outstanding artefacts
+    section when synthesizing a dashboard):
 
-        "Provenance ceiling: this <deliverable> was assembled from
-         artefacts the researcher provided in inputs/. All claims
-         trace to a specific source artefact; full pipeline
-         reproducibility requires re-running the upstream tooling
-         outside Research-OS."
+      "Provenance ceiling: this <deliverable> was assembled from
+       artefacts the researcher provided in inputs/. All claims
+       trace to a specific source artefact; full pipeline
+       reproducibility requires re-running the upstream tooling
+       outside Research-OS."
 
-      For papers / grants intended for external review, this paragraph
-      goes in a Reproducibility / Code & data availability section.
-      Reviewers respect the disclosure more than they respect a
-      silent omission.
+    For papers / grants intended for external review, this paragraph
+    goes in a Reproducibility / Code & data availability section.
+    Reviewers respect the disclosure more than they respect a
+    silent omission.
 
 expected_outputs:
-  - workspace/<NN>_<slug>_shadow_synthesis/README.md
-  - workspace/<NN>_<slug>_shadow_synthesis/conclusions.md
-  - workspace/<NN>_<slug>_shadow_synthesis/outputs/figures/  (when figures used)
-  - workspace/methods.md                                      (seeded)
-  - workspace/citations.md                                    (seeded)
-  - synthesis/<target>.md                                     (via target protocol)
+- workspace/<NN>_<slug>_shadow_synthesis/README.md
+- workspace/<NN>_<slug>_shadow_synthesis/conclusions.md
+- workspace/<NN>_<slug>_shadow_synthesis/outputs/figures/  (when figures used)
+- workspace/methods.md                                      (seeded)
+- workspace/citations.md                                    (seeded)
+- synthesis/<target>.md                                     (via target protocol)
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: synthesize
+sub_intent: inputs_only
+triggers:
+- synthesize from what i already have
+- i have results write the paper
+- i have results just write
+- i have results — write
+- consolidate my notes
+- draft from my notes
+- no need to re-run anything
+- we already analysed this
+- we already analyzed this
+- just write it up
+- migrate this old project into a paper
+- inputs-only synthesis
+- draft from inputs
+summary: Synthesis from inputs/ alone — when prior analyses were done outside Research-OS.
+token_estimate: 1800
+decomposition:
+- protocol: synthesis/synthesis_from_inputs
+  purpose: Build a shadow step + provenance manifest, then run target synthesis.
+- tool: mem_log (operation=context_intake)
+- tool: sys_state_get
