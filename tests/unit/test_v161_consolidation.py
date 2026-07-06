@@ -261,9 +261,15 @@ def test_tool_search_auto_picks_biomedical_providers_for_rna(
     )
     env = _parse_envelope(r)
     assert env["status"] == "success"
-    assert env["data"]["mode"] == "auto"
-    assert "semantic_scholar" in env["data"]["sources"]
-    assert "pubmed" in env["data"]["sources"]
+    # Pointer architecture: the envelope carries a small pointer + summary;
+    # the full auto-mode payload (mode + sources) lives in the blob store.
+    assert "pointer" in env["data"]
+    from research_os.context.blobstore import get_blob
+
+    full = get_blob(project_root, env["data"]["pointer"])
+    assert full["mode"] == "auto"
+    assert "semantic_scholar" in full["sources"]
+    assert "pubmed" in full["sources"]
     called_providers = {c[0] for c in called}
     assert called_providers == {"s2", "pm"}
 
