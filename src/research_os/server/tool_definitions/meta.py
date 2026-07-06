@@ -177,9 +177,9 @@ META_TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
                 "protocol_name": {"type": "string"},
                 "format": {
                     "type": "string",
-                    "enum": ["summary", "step", "full", "lean", "dryrun"],
+                    "enum": ["ref", "summary", "step", "full", "lean", "dryrun"],
                     "default": "summary",
-                    "description": "summary | step | full | lean | dryrun (default: summary, ~300 tokens — pass 'full' explicitly when you actually need the whole YAML).",
+                    "description": "ref | summary | step | full | lean | dryrun (default: summary, ~300 tokens). 'ref' is the cheapest peek (~50 tokens: id + summary + step count); pass 'full' explicitly when you actually need the whole YAML.",
                 },
                 "step_id": {
                     "type": "string",
