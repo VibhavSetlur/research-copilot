@@ -2,15 +2,15 @@ id: distribution_comparison
 tier: 'synthesize'
 name: Distribution Comparison (raincloud, beeswarm, ridgeline, halfeye)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - visualization/uncertainty_visualization   # shares the show-the-distribution idioms
-  - visualization/color_accessibility_audit    # palette check before finalising
+- visualization/uncertainty_visualization     # shares the show-the-distribution idioms
+- visualization/color_accessibility_audit      # palette check before finalising
 description: |
   Comparing distributions across groups is one of the most common
   figures in any empirical paper, and one of the most consistently
@@ -38,174 +38,162 @@ trigger: |
       distribution could fit.
 
 prerequisites:
-  - The data is grouped (categorical predictor + continuous outcome).
-  - Per-group N is documented (drives the choice of idiom).
+- The data is grouped (categorical predictor + continuous outcome).
+- Per-group N is documented (drives the choice of idiom).
 
 editorial_voice:
   rules:
-    - "Show the data. While plotting every raw point stays legible at
-       the target render size, raw points (strip or beeswarm) are
-       almost always more honest than a summary. Once overplotting
-       defeats the raw idiom, switch to a density-based idiom (violin,
-       halfeye) but keep a visible indication of per-group N so a
-       small group can't masquerade as a large one."
-    - "Avoid SD as the error metric for between-group comparison.
-       SD describes spread in ONE group; SE / CI describes uncertainty
-       about a MEAN. Confusing them is a perennial reviewer
-       complaint."
-    - "Boxplots hide bimodality + outlier structure. Use letter-value
-       plots (boxen) for large N where you want box-like compactness
-       without the bimodality blind spot."
-    - "Order groups meaningfully (effect size, mean, count, time) —
-       alphabetical order is almost never the right choice and reads
-       as 'the author didn't think about it.'"
+  - "Show the data. While plotting every raw point stays legible at the target render size, raw points (strip or beeswarm) are almost always more honest than a summary. Once overplotting defeats the raw idiom, switch to a density-based idiom (violin, halfeye) but keep a visible indication of per-group N so a small group can't masquerade as a large one."
+  - "Avoid SD as the error metric for between-group comparison. SD describes spread in ONE group; SE / CI describes uncertainty about a MEAN. Confusing them is a perennial reviewer complaint."
+  - "Boxplots hide bimodality + outlier structure. Use letter-value plots (boxen) for large N where you want box-like compactness without the bimodality blind spot."
+  - "Order groups meaningfully (effect size, mean, count, time) — alphabetical order is almost never the right choice and reads as 'the author didn't think about it.'"
 
 steps:
-  - id: characterize_data
-    name: Characterise the data
-    description: |
-      Document per group:
-        - N
-        - skew (Bowley or sample skewness)
-        - bimodality (Hartigan's dip statistic or visual)
-        - outlier count (Tukey 1.5×IQR or domain-specific)
-        - missingness handling (already done? per
-          methodology/missing_data_strategy)
+- id: characterize_data
+  name: Characterise the data
+  description: |
+    Document per group:
+      - N
+      - skew (Bowley or sample skewness)
+      - bimodality (Hartigan's dip statistic or visual)
+      - outlier count (Tukey 1.5×IQR or domain-specific)
+      - missingness handling (already done? per
+        methodology/missing_data_strategy)
 
-      Write workspace/.dist_viz/data_profile.md. The profile
-      drives the idiom choice in step 2.
+    Write workspace/.dist_viz/data_profile.md. The profile
+    drives the idiom choice in step 2.
 
-  - id: pick_idiom_by_group_size_and_shape
-    name: Pick the idiom from the question + what stays legible
-    description: |
-      The idiom follows from FOUR dimensions, not a group-size lookup:
-        - HOW MANY GROUPS are being compared (a few side-by-side vs
-          many stacked);
-        - WHETHER raw points stay legible at the target render size
-          or overplotting forces a density summary (from the data
-          profile);
-        - WHETHER the structure is INDEPENDENT groups or PAIRED /
-          repeated measures (paired structure demands a paired idiom);
-        - HOW MUCH distributional detail the reader needs (a ranked
-          comparison vs a shape-by-shape read).
+- id: pick_idiom_by_group_size_and_shape
+  name: Pick the idiom from the question + what stays legible
+  description: |
+    The idiom follows from FOUR dimensions, not a group-size lookup:
+      - HOW MANY GROUPS are being compared (a few side-by-side vs
+        many stacked);
+      - WHETHER raw points stay legible at the target render size
+        or overplotting forces a density summary (from the data
+        profile);
+      - WHETHER the structure is INDEPENDENT groups or PAIRED /
+        repeated measures (paired structure demands a paired idiom);
+      - HOW MUCH distributional detail the reader needs (a ranked
+        comparison vs a shape-by-shape read).
 
-      The modern idiom vocabulary (cite the source for any
-      non-conventional choice):
-        - RAINCLOUD (half-violin + box + strip; Allen et al. 2019)
-          and HALFEYE / dot-interval (ggdist) — raw + summary +
-          density together; strong when the per-group sample stays
-          showable.
-        - DOT/STRIP + JITTER with a mean/median line — the simplest,
-          most honest option when points stay legible.
-        - BEESWARM — when discrete y-jitter helps the count read.
-        - RIDGELINE / JOY plot — many distributions stacked; reads
-          shape across groups.
-        - LETTER-VALUE / BOXEN plot — box-like compactness without a
-          boxplot's bimodality blind spot, when N is large.
-        - VIOLIN (optionally with embedded box) — density when raw
-          points overplot.
-        - ECDF, QQ-plot, mirror/back-to-back, overlaid densities —
-          for comparing two distributions' shapes in detail (ECDF is
-          the cleanest for reading percentiles).
-        - PAIRED-LINE / slopegraph — one line per subject for
-          pre/post; pair with summary distributions on each side.
+    The modern idiom vocabulary (cite the source for any
+    non-conventional choice):
+      - RAINCLOUD (half-violin + box + strip; Allen et al. 2019)
+        and HALFEYE / dot-interval (ggdist) — raw + summary +
+        density together; strong when the per-group sample stays
+        showable.
+      - DOT/STRIP + JITTER with a mean/median line — the simplest,
+        most honest option when points stay legible.
+      - BEESWARM — when discrete y-jitter helps the count read.
+      - RIDGELINE / JOY plot — many distributions stacked; reads
+        shape across groups.
+      - LETTER-VALUE / BOXEN plot — box-like compactness without a
+        boxplot's bimodality blind spot, when N is large.
+      - VIOLIN (optionally with embedded box) — density when raw
+        points overplot.
+      - ECDF, QQ-plot, mirror/back-to-back, overlaid densities —
+        for comparing two distributions' shapes in detail (ECDF is
+        the cleanest for reading percentiles).
+      - PAIRED-LINE / slopegraph — one line per subject for
+        pre/post; pair with summary distributions on each side.
 
-      Document the choice, the dimensions that drove it, and the
-      literature reference + WHY it fits THIS comparison.
+    Document the choice, the dimensions that drove it, and the
+    literature reference + WHY it fits THIS comparison.
 
-  - id: encoding_choices
-    name: Encoding choices (order, palette, summary overlay)
-    description: |
-      GROUP ORDER — meaningful (effect size, mean, count, time).
-      NOT alphabetical unless time / nominal demands it.
+- id: encoding_choices
+  name: Encoding choices (order, palette, summary overlay)
+  description: |
+    GROUP ORDER — meaningful (effect size, mean, count, time).
+    NOT alphabetical unless time / nominal demands it.
 
-      PALETTE — qualitative for unrelated groups; sequential if
-      group is ordinal (e.g. dose levels); diverging if relative
-      to a control.
+    PALETTE — qualitative for unrelated groups; sequential if
+    group is ordinal (e.g. dose levels); diverging if relative
+    to a control.
 
-      SUMMARY OVERLAY — show the central tendency (mean OR median;
-      pick one + commit). Show the spread metric (SD, IQR, or CI —
-      pick the one matching the inferential claim).
+    SUMMARY OVERLAY — show the central tendency (mean OR median;
+    pick one + commit). Show the spread metric (SD, IQR, or CI —
+    pick the one matching the inferential claim).
 
-      N PER GROUP — visible (point count, sub-caption, or text on
-      figure). N = 5 vs N = 500 reads very differently and the
-      reader needs to know.
+    N PER GROUP — visible (point count, sub-caption, or text on
+    figure). N = 5 vs N = 500 reads very differently and the
+    reader needs to know.
 
-      OUTLIERS — show them; never silently clip. If clipping is
-      done for legibility, mark it explicitly ("y-axis clipped at
-      X; n outliers above").
+    OUTLIERS — show them; never silently clip. If clipping is
+    done for legibility, mark it explicitly ("y-axis clipped at
+    X; n outliers above").
 
-  - id: implement_and_render
-    name: Implement + render
-    description: |
-      Libraries (Python):
-        - matplotlib + seaborn (violinplot, stripplot, boxenplot,
-          swarmplot)
-        - ptitprince (raincloud add-on; ports Allen et al. R impl)
-        - plotnine (raincloud, halfeye via ggdist-likes)
-        - matplotlib + custom for letter-value plots
-      R: ggplot2 + ggdist (halfeye, slabinterval, dotsinterval —
-        the modern standard), see1d, ggrain, ggridges.
+- id: implement_and_render
+  name: Implement + render
+  description: |
+    Libraries (Python):
+      - matplotlib + seaborn (violinplot, stripplot, boxenplot,
+        swarmplot)
+      - ptitprince (raincloud add-on; ports Allen et al. R impl)
+      - plotnine (raincloud, halfeye via ggdist-likes)
+      - matplotlib + custom for letter-value plots
+    R: ggplot2 + ggdist (halfeye, slabinterval, dotsinterval —
+      the modern standard), see1d, ggrain, ggridges.
 
-      Interactive / top-tier (for showcase + dashboards):
-        - Vega-Lite + Vega for declarative raincloud + halfeye
-          with brushing
-        - Observable Plot (concise; great in essays + dashboards)
-        - bokeh / holoviews with linked subgroup brushing
-        - For HCI / journalism-grade distribution explainers
-          (animated reveal, scrollytelling, custom encoding):
-          route to visualization/showcase_visualization or
-          visualization/interactive_dashboard_design.
+    Interactive / top-tier (for showcase + dashboards):
+      - Vega-Lite + Vega for declarative raincloud + halfeye
+        with brushing
+      - Observable Plot (concise; great in essays + dashboards)
+      - bokeh / holoviews with linked subgroup brushing
+      - For HCI / journalism-grade distribution explainers
+        (animated reveal, scrollytelling, custom encoding):
+        route to visualization/showcase_visualization or
+        visualization/interactive_dashboard_design.
 
-      The script must:
-        - apply the chosen idiom + group ordering + palette
-        - overlay summary statistic with labelled metric
-        - include per-group N (visible on figure or in legend)
-        - render to png + svg
-        - emit standard sidecars + .prov.json with the idiom name
-          + library version
-        - persist any computed summary (median, IQR, etc.) to
-          data/next_step_output/ so reruns are deterministic.
+    The script must:
+      - apply the chosen idiom + group ordering + palette
+      - overlay summary statistic with labelled metric
+      - include per-group N (visible on figure or in legend)
+      - render to png + svg
+      - emit standard sidecars + .prov.json with the idiom name
+        + library version
+      - persist any computed summary (median, IQR, etc.) to
+        data/next_step_output/ so reruns are deterministic.
 
-  - id: legibility_audit
-    name: Audit for legibility
-    description: |
-      Checks:
-        - is the idiom legible at the target render size (figure
-          will appear ≤ ~4cm tall in many journals)?
-        - per-group N visible?
-        - summary stat labelled (mean vs median)?
-        - error metric labelled (SD vs SE vs CI)?
-        - outliers shown or annotated?
-        - palette accessible (route to
-          visualization/color_accessibility_audit)?
-        - axis breaks / clipping flagged?
+- id: legibility_audit
+  name: Audit for legibility
+  description: |
+    Checks:
+      - is the idiom legible at the target render size (figure
+        will appear ≤ ~4cm tall in many journals)?
+      - per-group N visible?
+      - summary stat labelled (mean vs median)?
+      - error metric labelled (SD vs SE vs CI)?
+      - outliers shown or annotated?
+      - palette accessible (route to
+        visualization/color_accessibility_audit)?
+      - axis breaks / clipping flagged?
 
-      For a final paper figure, prefer the simplest idiom that
-      preserves the data structure. Raincloud + halfeye are great
-      for talks + supplementary but can look busy in journal
-      contexts; strip-plus-summary often wins for the final paper.
+    For a final paper figure, prefer the simplest idiom that
+    preserves the data structure. Raincloud + halfeye are great
+    for talks + supplementary but can look busy in journal
+    contexts; strip-plus-summary often wins for the final paper.
 
-  - id: caption_and_methods
-    name: Caption + methods entry
-    description: |
-      Caption must state:
-        - what is plotted (raw, summary, density, interval)
-        - group order rationale
-        - per-group N (or range of N)
-        - summary statistic + spread metric (with their definition)
-        - statistical test (if any) + multiplicity correction
-          (route to methodology/multiple_comparisons when comparing
-          many groups)
-        - the citation for any non-conventional idiom
+- id: caption_and_methods
+  name: Caption + methods entry
+  description: |
+    Caption must state:
+      - what is plotted (raw, summary, density, interval)
+      - group order rationale
+      - per-group N (or range of N)
+      - summary statistic + spread metric (with their definition)
+      - statistical test (if any) + multiplicity correction
+        (route to methodology/multiple_comparisons when comparing
+        many groups)
+      - the citation for any non-conventional idiom
 
-      mem_log the figure idiom choices so the audit
-      trail is intact.
+    mem_log the figure idiom choices so the audit
+    trail is intact.
 
 expected_outputs:
-  - workspace/.dist_viz/data_profile.md
-  - workspace/<step>/outputs/figures/dist_<topic>.{png,svg}
-  - workspace/<step>/outputs/figures/dist_<topic>.{caption.md,summary.md,prov.json}
+- workspace/.dist_viz/data_profile.md
+- workspace/<step>/outputs/figures/dist_<topic>.{png,svg}
+- workspace/<step>/outputs/figures/dist_<topic>.{caption.md,summary.md,prov.json}
 
 quality_bar:
   per_group_n_visible: true
@@ -218,3 +206,20 @@ quality_bar:
 next_protocol: visualization/figure_critique
 next_protocol_kind: forward_default
 on_failure: visualization/figure_guidelines
+intent_class: synthesize
+sub_intent: distribution
+triggers:
+- raincloud
+- violin plot
+- beeswarm
+- swarm plot
+- ridgeline
+- joy plot
+- halfeye
+- boxenplot
+- letter-value plot
+- distribution comparison
+- compare distributions
+- strip plot
+- ecdf
+summary: Compare distributions across groups (raincloud / halfeye / ridgeline / beeswarm — beyond bar+error).

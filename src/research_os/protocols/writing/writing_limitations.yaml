@@ -2,15 +2,15 @@ id: writing_limitations
 tier: 'synthesize'
 name: Writing — Limitations (the section reviewers read most carefully)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - writing/writing_discussion         # the section this one is woven into
-  - writing/writing_core               # vague-quantifier rules that bite hardest here
+- writing/writing_discussion           # the section this one is woven into
+- writing/writing_core                 # vague-quantifier rules that bite hardest here
 description: |
   Draft the limitations section / sub-section. Limitations are the
   reviewer's primary attack surface — they get read more carefully than
@@ -30,199 +30,175 @@ trigger: |
   limitations".
 
 prerequisites:
-  - At least one experiment step with conclusions OR an existing
-    synthesis/discussion.md or synthesis/paper.md draft.
+- At least one experiment step with conclusions OR an existing synthesis/discussion.md or synthesis/paper.md draft.
 
 editorial_voice:
   mode: prescription
   rules:
-    - "Specificity beats generality. 'Small sample size limits
-       generalisability' is the boilerplate; 'with n=412 the study
-       is powered to detect effects ≥0.4 SD; smaller effects would
-       require an n ≈ 1600 follow-up' is a limitation."
-    - "Every limitation names its DOWNSTREAM IMPLICATION. A
-       limitation without an implication is just a confession — a
-       limitation with an implication tells the reader exactly how
-       to revise their belief."
-    - "Distinguish KNOWN limitations (the study design imposed them;
-       you knew going in) from DISCOVERED limitations (the analysis
-       surfaced them; you didn't know). Both belong; mixing them
-       reads as confusion."
-    - "A limitation that has been MITIGATED in the analysis (a
-       sensitivity, a robustness check, a stratified report) is no
-       longer a limitation — it's a strength. Move it."
-    - "If the limitation kills the conclusion, the conclusion has
-       to retract — not the limitation. The whole point of the
-       section is to prevent the reader from drawing a conclusion
-       the data don't support."
+  - "Specificity beats generality. 'Small sample size limits generalisability' is the boilerplate; 'with n=412 the study is powered to detect effects ≥0.4 SD; smaller effects would require an n ≈ 1600 follow-up' is a limitation."
+  - "Every limitation names its DOWNSTREAM IMPLICATION. A limitation without an implication is just a confession — a limitation with an implication tells the reader exactly how to revise their belief."
+  - "Distinguish KNOWN limitations (the study design imposed them; you knew going in) from DISCOVERED limitations (the analysis surfaced them; you didn't know). Both belong; mixing them reads as confusion."
+  - "A limitation that has been MITIGATED in the analysis (a sensitivity, a robustness check, a stratified report) is no longer a limitation — it's a strength. Move it."
+  - "If the limitation kills the conclusion, the conclusion has to retract — not the limitation. The whole point of the section is to prevent the reader from drawing a conclusion the data don't support."
 
 categories_to_consider:
-  - "Sample / population: size, recruitment, attrition, missingness
-     pattern, representativeness, time period"
-  - "Design: observational vs experimental, single-site vs multi-site,
-     cross-sectional vs longitudinal, study window"
-  - "Measurement: instrument validity, reliability, recall bias,
-     measurement error, outcome ascertainment, classification accuracy"
-  - "Analysis: model assumptions, choice of estimator, multiple
-     testing, subgroup splits, missingness handling, sensitivity
-     not run"
-  - "External validity: setting, era, population, intervention
-     fidelity"
-  - "Confounding: unmeasured confounders, residual confounding after
-     adjustment, instrument validity (for IV designs)"
-  - "Replicability: code/data availability, reproducibility audit
-     status, dependency on a specific library version"
-  - "Generalisability: scope of the claim relative to the study
-     population"
+- "Sample / population: size, recruitment, attrition, missingness pattern, representativeness, time period"
+- "Design: observational vs experimental, single-site vs multi-site, cross-sectional vs longitudinal, study window"
+- "Measurement: instrument validity, reliability, recall bias, measurement error, outcome ascertainment, classification accuracy"
+- "Analysis: model assumptions, choice of estimator, multiple testing, subgroup splits, missingness handling, sensitivity not run"
+- "External validity: setting, era, population, intervention fidelity"
+- "Confounding: unmeasured confounders, residual confounding after adjustment, instrument validity (for IV designs)"
+- "Replicability: code/data availability, reproducibility audit status, dependency on a specific library version"
+- "Generalisability: scope of the claim relative to the study population"
 
 steps:
-  - id: scope_the_limitations_pass
-    name: Scope the pass
-    description: |
-      Confirm:
-        - is this the limitations SUB-SECTION of a discussion / paper,
-          OR a standalone limitations document (e.g. for an internal
-          report's risk register)?
-        - target length — typically 1-2 paragraphs in a journal
-          discussion, longer in a thesis chapter, table-style in a
-          technical audit / risk register
-        - audience — academic reviewers / clinicians / policymakers /
-          collaborators each weight different limitations differently
+- id: scope_the_limitations_pass
+  name: Scope the pass
+  description: |
+    Confirm:
+      - is this the limitations SUB-SECTION of a discussion / paper,
+        OR a standalone limitations document (e.g. for an internal
+        report's risk register)?
+      - target length — typically 1-2 paragraphs in a journal
+        discussion, longer in a thesis chapter, table-style in a
+        technical audit / risk register
+      - audience — academic reviewers / clinicians / policymakers /
+        collaborators each weight different limitations differently
 
-  - id: enumerate_candidates_from_categories
-    name: Enumerate candidate limitations across the categories
-    description: |
-      Walk the categories above. For EACH category, ask: "what would
-      a competent reviewer flag in this category for this paper?"
+- id: enumerate_candidates_from_categories
+  name: Enumerate candidate limitations across the categories
+  description: |
+    Walk the categories above. For EACH category, ask: "what would
+    a competent reviewer flag in this category for this paper?"
 
-      Sources for candidates:
-        - workspace/logs/audit_report.md (the audits already flagged
-          things)
-        - mem_log (each decision implies an alternative;
-          the alternative becomes a limitation)
-        - dead-end paths (sys_path status=__DEAD_END) — the
-          dead ends are limitations made visible
-        - tool_redteam_review (when run; surfaces methodological /
-          statistical / sympathetic-peer critiques)
-        - synthesis/discussion.md > Alternative explanations (the
-          alternatives that survived become limitations)
+    Sources for candidates:
+      - workspace/logs/audit_report.md (the audits already flagged
+        things)
+      - mem_log (each decision implies an alternative;
+        the alternative becomes a limitation)
+      - dead-end paths (sys_path status=__DEAD_END) — the
+        dead ends are limitations made visible
+      - tool_redteam_review (when run; surfaces methodological /
+        statistical / sympathetic-peer critiques)
+      - synthesis/discussion.md > Alternative explanations (the
+        alternatives that survived become limitations)
 
-      Write workspace/scratch/limitations_candidates.md — bullet per
-      candidate, tagged with category. Do not yet write the prose.
+    Write workspace/scratch/limitations_candidates.md — bullet per
+    candidate, tagged with category. Do not yet write the prose.
 
-  - id: deduplicate_and_prioritise
-    name: Deduplicate + prioritise
-    description: |
-      Most candidate lists have redundancy ("small sample" appears in
-      Sample AND in Generalisability). Collapse to the distinct
-      limitations that genuinely change how a reader should weigh the
-      findings — a tight journal discussion carries fewer than a thesis
-      chapter, but in both the test is "does this change the reader's
-      belief", not a target count.
+- id: deduplicate_and_prioritise
+  name: Deduplicate + prioritise
+  description: |
+    Most candidate lists have redundancy ("small sample" appears in
+    Sample AND in Generalisability). Collapse to the distinct
+    limitations that genuinely change how a reader should weigh the
+    findings — a tight journal discussion carries fewer than a thesis
+    chapter, but in both the test is "does this change the reader's
+    belief", not a target count.
 
-      Prioritise by HOW MUCH each limitation changes the
-      interpretation:
-        - CRITICAL — the limitation, if real, kills or sharply
-          qualifies the headline finding
-        - MAJOR — the limitation requires the reader to qualify the
-          generalisation
-        - MINOR — the limitation is worth disclosing but does not
-          change the interpretation
+    Prioritise by HOW MUCH each limitation changes the
+    interpretation:
+      - CRITICAL — the limitation, if real, kills or sharply
+        qualifies the headline finding
+      - MAJOR — the limitation requires the reader to qualify the
+        generalisation
+      - MINOR — the limitation is worth disclosing but does not
+        change the interpretation
 
-      The order in the prose is CRITICAL first, MAJOR next, MINOR
-      last (or omitted for a tight journal Discussion).
+    The order in the prose is CRITICAL first, MAJOR next, MINOR
+    last (or omitted for a tight journal Discussion).
 
-  - id: pair_each_limitation_with_implication
-    name: Pair each limitation with its downstream implication
-    description: |
-      For each kept limitation, write:
-        - WHAT the limitation is — one specific sentence, no
-          boilerplate
-        - WHY it matters — what would a reader believe DIFFERENTLY
-          if they knew this limitation
-        - WHETHER it has been MITIGATED — name the sensitivity /
-          robustness check / stratified report that ruled it out, OR
-          state that no mitigation was run and explain why
-        - WHAT THE READER SHOULD DO with it — quote the SCOPE
-          LIMIT this limitation imposes on the conclusion
+- id: pair_each_limitation_with_implication
+  name: Pair each limitation with its downstream implication
+  description: |
+    For each kept limitation, write:
+      - WHAT the limitation is — one specific sentence, no
+        boilerplate
+      - WHY it matters — what would a reader believe DIFFERENTLY
+        if they knew this limitation
+      - WHETHER it has been MITIGATED — name the sensitivity /
+        robustness check / stratified report that ruled it out, OR
+        state that no mitigation was run and explain why
+      - WHAT THE READER SHOULD DO with it — quote the SCOPE
+        LIMIT this limitation imposes on the conclusion
 
-      Format:
-        "<one-sentence limitation> The implication for
-         interpretation is <one sentence>. We <mitigated|did not
-         mitigate> this via <X | because Y>; <when relevant: 'we
-         recommend interpreting our findings within Z'>."
+    Format:
+      "<one-sentence limitation> The implication for
+       interpretation is <one sentence>. We <mitigated|did not
+       mitigate> this via <X | because Y>; <when relevant: 'we
+       recommend interpreting our findings within Z'>."
 
-  - id: distinguish_known_from_discovered
-    name: Distinguish known limitations from discovered ones
-    description: |
-      Group the limitations into:
-        a) DESIGN limitations — known from the start; the study
-           design accepted them in exchange for feasibility,
-           timeliness, ethics, cost
-        b) DISCOVERED limitations — surfaced during the analysis;
-           the authors did not know going in
+- id: distinguish_known_from_discovered
+  name: Distinguish known limitations from discovered ones
+  description: |
+    Group the limitations into:
+      a) DESIGN limitations — known from the start; the study
+         design accepted them in exchange for feasibility,
+         timeliness, ethics, cost
+      b) DISCOVERED limitations — surfaced during the analysis;
+         the authors did not know going in
 
-      The distinction matters because reviewers weight them
-      differently. A design limitation acknowledged transparently
-      is a credible study; a discovered limitation acknowledged
-      transparently is a more credible study; a discovered
-      limitation NOT acknowledged is a paper that ages badly.
+    The distinction matters because reviewers weight them
+    differently. A design limitation acknowledged transparently
+    is a credible study; a discovered limitation acknowledged
+    transparently is a more credible study; a discovered
+    limitation NOT acknowledged is a paper that ages badly.
 
-  - id: write_the_section
-    name: Write the section
-    description: |
-      sys_file_write filepath="synthesis/limitations.md" — OR write
-      directly into synthesis/discussion.md > Limitations:
+- id: write_the_section
+  name: Write the section
+  description: |
+    sys_file_write filepath="synthesis/limitations.md" — OR write
+    directly into synthesis/discussion.md > Limitations:
 
-        ## Limitations
+      ## Limitations
 
-        [optional one-sentence framing of what the limitations
-         apply to]
+      [optional one-sentence framing of what the limitations
+       apply to]
 
-        First, <CRITICAL limitation with paired implication>.
-        [...]
+      First, <CRITICAL limitation with paired implication>.
+      [...]
 
-        Second, <MAJOR limitation with paired implication>. [...]
+      Second, <MAJOR limitation with paired implication>. [...]
 
-        Third, <MAJOR limitation with paired implication>. [...]
+      Third, <MAJOR limitation with paired implication>. [...]
 
-        [for thesis / report — additional MINOR limitations]
+      [for thesis / report — additional MINOR limitations]
 
-      Notes:
-        - prefer numbered ordering ("First, ...; Second, ...;
-          Third, ...") for clinical / clarity-first journals
-        - use a single paragraph (combining limitations with
-          semi-colons) for short-form journals
-        - never end the section with "future work" — that lives in
-          its own paragraph (writing_discussion's future_work step)
+    Notes:
+      - prefer numbered ordering ("First, ...; Second, ...;
+        Third, ...") for clinical / clarity-first journals
+      - use a single paragraph (combining limitations with
+        semi-colons) for short-form journals
+      - never end the section with "future work" — that lives in
+        its own paragraph (writing_discussion's future_work step)
 
-  - id: scope_limit_cross_check
-    name: Scope-limit cross-check with the conclusions
-    description: |
-      Walk every conclusion in synthesis/discussion.md or
-      synthesis/paper.md. For each, verify the limitations section
-      contains the scope limit that prevents the conclusion from
-      being over-read. If a conclusion's scope is broader than the
-      limitations license, either:
-        - tighten the conclusion (preferred; honest), OR
-        - tighten the limitation to better articulate the residual
-          scope (less common; usually means the conclusion was
-          over-claimed)
+- id: scope_limit_cross_check
+  name: Scope-limit cross-check with the conclusions
+  description: |
+    Walk every conclusion in synthesis/discussion.md or
+    synthesis/paper.md. For each, verify the limitations section
+    contains the scope limit that prevents the conclusion from
+    being over-read. If a conclusion's scope is broader than the
+    limitations license, either:
+      - tighten the conclusion (preferred; honest), OR
+      - tighten the limitation to better articulate the residual
+        scope (less common; usually means the conclusion was
+        over-claimed)
 
-      Never tighten a limitation to widen a conclusion.
+    Never tighten a limitation to widen a conclusion.
 
-  - id: validate
-    name: Validate against writing standards
-    description: |
-      sys_file_validate_md filepath="synthesis/limitations.md"
-        protocol_name="writing_core"
-      Run tool_audit(scope='project', dimension='prose') on the section — surfaces vague
-      quantifiers ("some", "many", "a few") which are particularly
-      damaging in limitations prose.
+- id: validate
+  name: Validate against writing standards
+  description: |
+    sys_file_validate_md filepath="synthesis/limitations.md"
+      protocol_name="writing_core"
+    Run tool_audit(scope='project', dimension='prose') on the section — surfaces vague
+    quantifiers ("some", "many", "a few") which are particularly
+    damaging in limitations prose.
 
 expected_outputs:
-  - synthesis/limitations.md   (OR synthesis/discussion.md > Limitations)
-  - workspace/scratch/limitations_candidates.md
+- synthesis/limitations.md   (OR synthesis/discussion.md > Limitations)
+- workspace/scratch/limitations_candidates.md
 
 quality_bar:
   no_boilerplate_limitations: true            # no "small sample / observational" alone
@@ -232,6 +208,24 @@ quality_bar:
   scope_limit_cross_check_done: true
   covers_the_limitations_that_change_the_interpretation: true   # every belief-changing limitation surfaced; not padded to a count
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: writing
+triggers:
+- write the limitations
+- limitations section
+- the limitations need work
+- tighten the limitations
+- what should the limitations cover
+- the reviewer complained about limitations
+- draft limitations
+- cannot conclude
+- what the study cannot conclude
+- what my study cannot conclude
+summary: Draft the Limitations section (no boilerplate; every limitation paired with implication).
+token_estimate: 1300
+decomposition:
+- protocol: writing/writing_limitations
+  purpose: Enumerate from categories, pair with implications, prioritise.

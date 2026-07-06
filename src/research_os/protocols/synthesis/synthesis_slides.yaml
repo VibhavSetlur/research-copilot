@@ -2,16 +2,16 @@ id: synthesis_slides
 tier: 'synthesize'
 name: Synthesis — Slides / Talk Deck (AI-authored Touying)
 version: '4.4.2'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - synthesis/deliverable_design      # the design skill: slide-layout + palette selection
-  - synthesis/defense_prep            # a deck for a defense needs the Q&A prep
-  - synthesis/synthesis_paper         # the paper the talk compresses
+- synthesis/deliverable_design        # the design skill: slide-layout + palette selection
+- synthesis/defense_prep              # a deck for a defense needs the Q&A prep
+- synthesis/synthesis_paper           # the paper the talk compresses
 description: |
   Guide the AI to author `synthesis/slides.typ` directly (Touying
   template) for a talk — lab meeting, conference, defense, invited
@@ -34,13 +34,8 @@ trigger: |
   "I'm presenting to <audience>".
 
 prerequisites:
-  - At least one workspace/<step>/conclusions.md has substantive
-    findings, OR synthesis/paper.typ already exists.
-  - "Researcher's `research_goal.output_types`
-    (inputs/researcher_config.yaml) includes `slides`. If it
-    doesn't, tool_synthesis_scaffold returns status=ask — confirm
-    with the researcher before scaffolding. Empty output_types is
-    treated as 'open'."
+- At least one workspace/<step>/conclusions.md has substantive findings, OR synthesis/paper.typ already exists.
+- "Researcher's `research_goal.output_types` (inputs/researcher_config.yaml) includes `slides`. If it doesn't, tool_synthesis_scaffold returns status=ask — confirm with the researcher before scaffolding. Empty output_types is treated as 'open'."
 
 design_principles: |
   - One claim per slide. The title bar makes the claim, not labels
@@ -107,82 +102,82 @@ quality_standards: |
     the venue's projection size (legible type, no laptop-only labels)
 
 steps:
-  - id: pick_audience
-    name: Pick audience + duration
-    description: |
-      Ask the researcher in one line; default to lab_meeting / 30 min
-      if not specified.
+- id: pick_audience
+  name: Pick audience + duration
+  description: |
+    Ask the researcher in one line; default to lab_meeting / 30 min
+    if not specified.
 
-  - id: inspect
-    name: Inspect what's ready
-    description: |
-      tool_synthesize_plan returns per-step conclusions + focal
-      figures the deck can draw on.
+- id: inspect
+  name: Inspect what's ready
+  description: |
+    tool_synthesize_plan returns per-step conclusions + focal
+    figures the deck can draw on.
 
-  - id: scaffold
-    name: Scaffold slides.typ (in synthesis/scratch — never a numbered step)
-    description: |
-      A slide deck is a SYNTHESIS deliverable, not an analysis step — do
-      NOT create a numbered workspace step for it. Iterate in the synthesis
-      draft area, then land the finished deck in its proper home:
+- id: scaffold
+  name: Scaffold slides.typ (in synthesis/scratch — never a numbered step)
+  description: |
+    A slide deck is a SYNTHESIS deliverable, not an analysis step — do
+    NOT create a numbered workspace step for it. Iterate in the synthesis
+    draft area, then land the finished deck in its proper home:
 
-        tool_synthesis_scaffold(kind='slides', scratch=true)
-          → synthesis/scratch/slides.typ  (gitignored draft; iterate here)
+      tool_synthesis_scaffold(kind='slides', scratch=true)
+        → synthesis/scratch/slides.typ  (gitignored draft; iterate here)
 
-      Build + refine here until it's done. For a MEETING deck (lab meeting,
-      committee, defense practice), scaffold straight into that meeting's
-      folder so the deck + its figures travel together:
+    Build + refine here until it's done. For a MEETING deck (lab meeting,
+    committee, defense practice), scaffold straight into that meeting's
+    folder so the deck + its figures travel together:
 
-        tool_synthesis_scaffold(kind='slides', meeting='<YYYY-MM-DD>')
-          → synthesis/meetings/<date>/slides.typ
+      tool_synthesis_scaffold(kind='slides', meeting='<YYYY-MM-DD>')
+        → synthesis/meetings/<date>/slides.typ
 
-      For the project's single canonical deck, omit both → the flat
-      synthesis/slides.typ. The skeleton is a <=60-line Touying deck with
-      section headers and `// AI: ...` markers. Refuses to overwrite an
-      existing file. Move a finished scratch draft to its final synthesis
-      location when done.
+    For the project's single canonical deck, omit both → the flat
+    synthesis/slides.typ. The skeleton is a <=60-line Touying deck with
+    section headers and `// AI: ...` markers. Refuses to overwrite an
+    existing file. Move a finished scratch draft to its final synthesis
+    location when done.
 
-  - id: author
-    name: Author the slides
-    description: |
-      Map each audience-section to ONE source artefact. Cut sections
-      that have no clear source for short formats; add placeholders
-      for backup slides in long formats.
+- id: author
+  name: Author the slides
+  description: |
+    Map each audience-section to ONE source artefact. Cut sections
+    that have no clear source for short formats; add placeholders
+    for backup slides in long formats.
 
-  - id: speaker_notes
-    name: Speaker notes on EVERY slide
-    description: |
-      Every slide gets >=1 sentence of notes. For figure slides, the
-      note names the one feature to point the audience at.
+- id: speaker_notes
+  name: Speaker notes on EVERY slide
+  description: |
+    Every slide gets >=1 sentence of notes. For figure slides, the
+    note names the one feature to point the audience at.
 
-  - id: q_and_a
-    name: Build the Q&A anticipation list
-    description: |
-      Anticipate the questions this audience will actually ask — each
-      with a one-bullet answer outline + a backup slide jump. Cover the
-      likely objections; a deck with no Q&A prep is half-finished.
-      Sources — workspace/<step>/conclusions.md
-      Limitations sections, workspace/logs/audit_report.md, mem_log
-      close-call decisions, sys_path dead-end paths.
+- id: q_and_a
+  name: Build the Q&A anticipation list
+  description: |
+    Anticipate the questions this audience will actually ask — each
+    with a one-bullet answer outline + a backup slide jump. Cover the
+    likely objections; a deck with no Q&A prep is half-finished.
+    Sources — workspace/<step>/conclusions.md
+    Limitations sections, workspace/logs/audit_report.md, mem_log
+    close-call decisions, sys_path dead-end paths.
 
-  - id: audit
-    name: Audit
-    description: |
-      tool_synthesis_check(file='synthesis/slides.typ') catches short
-      decks, missing speaker notes, citation over-cap, path leaks.
+- id: audit
+  name: Audit
+  description: |
+    tool_synthesis_check(file='synthesis/slides.typ') catches short
+    decks, missing speaker notes, citation over-cap, path leaks.
 
-  - id: compile
-    name: Compile to PDF
-    description: |
-      tool_typst_compile(source='synthesis/slides.typ') renders
-      synthesis/slides.pdf.
+- id: compile
+  name: Compile to PDF
+  description: |
+    tool_typst_compile(source='synthesis/slides.typ') renders
+    synthesis/slides.pdf.
 
-  - id: dry_run
-    name: Dry-run guidance
-    description: |
-      Tell the researcher to time themselves. If it's a talk in <72h,
-      suggest a recording to spot pacing problems the deck alone
-      won't show.
+- id: dry_run
+  name: Dry-run guidance
+  description: |
+    Tell the researcher to time themselves. If it's a talk in <72h,
+    suggest a recording to spot pacing problems the deck alone
+    won't show.
 
 tools: |
   - tool_synthesize_plan — what's ready
@@ -192,10 +187,47 @@ tools: |
   - tool_typst_compile — render synthesis/slides.pdf
 
 expected_outputs:
-  - synthesis/slides.typ
-  - synthesis/slides.pdf
-  - synthesis/figures/                  # shared with paper.typ
+- synthesis/slides.typ
+- synthesis/slides.pdf
+- synthesis/figures/                    # shared with paper.typ
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: synthesize
+sub_intent: slides
+triggers:
+- make slides
+- make me slides
+- build the talk
+- build my talk
+- build a slide deck
+- slide deck
+- lab meeting deck
+- conference slides
+- defense talk
+- defense slides
+- powerpoint
+- beamer
+- marp
+- reveal.js
+- presentation deck
+- deck for my talk
+- deck for tomorrow
+- i'm presenting
+- job talk
+- invited seminar
+summary: Build a presentation deck (lab meeting / conference / defense / invited / teaching).
+token_estimate: 2000
+decomposition:
+- protocol: synthesis/synthesis_slides
+  purpose: Pick audience + outline + design principles.
+- tool: tool_synthesis_scaffold
+  args:
+    kind: slides
+- tool: tool_synthesis_check
+  args:
+    file: synthesis/slides.typ
+- tool: tool_typst_compile
+  args:
+    source: synthesis/slides.typ

@@ -2,15 +2,15 @@ id: test_strategy
 tier: 'plan'
 name: Test Strategy (the testing regime that fits THIS tool)
 version: '3.8.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]
   audience: [naive_ai, auditor]
   workflow_shape: [tool_build]
 last_reviewed: '2026-06-16'
 see_also:
-  - build/implement_iteration    # the per-increment tests that inherit this regime
-  - build/benchmark_vs_baseline  # performance measurement, the sibling of correctness checks
+- build/implement_iteration      # the per-increment tests that inherit this regime
+- build/benchmark_vs_baseline    # performance measurement, the sibling of correctness checks
 description: |
   Reason about what testing regime actually fits the tool being built —
   which kinds of tests earn their keep, what coverage bar is defensible
@@ -30,115 +30,139 @@ description: |
       the code is guarded.
 trigger: When the testing approach for the tool is unsettled, the suite needs a deliberate design, or the researcher asks "how should I test this", "write tests", "what's the test plan", "set up CI".
 prerequisites:
-  - spec/requirements.md exists (acceptance criteria are what tests ultimately check)
+- spec/requirements.md exists (acceptance criteria are what tests ultimately check)
 
 steps:
-  - id: what_can_break
-    name: Reason about what can actually go wrong in THIS tool
-    description: |
-      Tests exist to catch the failures that matter for this specific tool.
-      Before choosing test types, enumerate the failure surface:
-        - Where is the logic that's easy to get subtly wrong (parsing,
-          numerics, concurrency, state transitions, boundary conditions)?
-        - Where do the integration seams live (I/O, network, the database,
-          the filesystem, other services)?
-        - What inputs are adversarial or malformed in the real world?
-        - What invariants must hold for the tool to be correct at all?
+- id: what_can_break
+  name: Reason about what can actually go wrong in THIS tool
+  description: |
+    Tests exist to catch the failures that matter for this specific tool.
+    Before choosing test types, enumerate the failure surface:
+      - Where is the logic that's easy to get subtly wrong (parsing,
+        numerics, concurrency, state transitions, boundary conditions)?
+      - Where do the integration seams live (I/O, network, the database,
+        the filesystem, other services)?
+      - What inputs are adversarial or malformed in the real world?
+      - What invariants must hold for the tool to be correct at all?
 
-      The map of what can break drives the test design. A regime designed
-      from "the standard test pyramid" instead of from THIS tool's failure
-      surface tests the wrong things thoroughly and the right things not
-      at all.
+    The map of what can break drives the test design. A regime designed
+    from "the standard test pyramid" instead of from THIS tool's failure
+    surface tests the wrong things thoroughly and the right things not
+    at all.
 
-  - id: choose_test_kinds
-    name: Choose the test kinds that fit — and justify each
-    description: |
-      Decide which testing styles earn their place for this tool, mapping
-      each to a part of the failure surface above. The menu is not a
-      checklist to maximise — it's a palette to choose from with reasons:
-        - unit — fast checks on pure logic / single units;
-        - integration — wired paths across seams (I/O, db, services);
-        - property-based — invariants over generated inputs, when the
-          tool has properties that should hold for ALL inputs;
-        - golden / snapshot — stable output formats / serialization;
-        - fuzz — when malformed input is a real attack/robustness surface;
-        - benchmark — when performance is an acceptance criterion (the
-          measurement discipline lives in build/benchmark_vs_baseline).
+- id: choose_test_kinds
+  name: Choose the test kinds that fit — and justify each
+  description: |
+    Decide which testing styles earn their place for this tool, mapping
+    each to a part of the failure surface above. The menu is not a
+    checklist to maximise — it's a palette to choose from with reasons:
+      - unit — fast checks on pure logic / single units;
+      - integration — wired paths across seams (I/O, db, services);
+      - property-based — invariants over generated inputs, when the
+        tool has properties that should hold for ALL inputs;
+      - golden / snapshot — stable output formats / serialization;
+      - fuzz — when malformed input is a real attack/robustness surface;
+      - benchmark — when performance is an acceptance criterion (the
+        measurement discipline lives in build/benchmark_vs_baseline).
 
-      For each kind you include, say WHY it fits and what it buys; for each
-      you exclude, a one-line reason is enough. This justification is the
-      deliverable — it's what makes the regime defensible to a reviewer and
-      legible to the next contributor.
+    For each kind you include, say WHY it fits and what it buys; for each
+    you exclude, a one-line reason is enough. This justification is the
+    deliverable — it's what makes the regime defensible to a reviewer and
+    legible to the next contributor.
 
-  - id: coverage_target
-    name: Decide a defensible coverage bar — and ground the WHY
-    description: |
-      "Coverage" is a means, not the goal. Decide what coverage discipline
-      is defensible for THIS tool and argue it from risk, not from a round
-      number. A safety-critical parser and a throwaway CLI warrant
-      different bars; the field's own norms for this kind of software
-      differ too.
+- id: coverage_target
+  name: Decide a defensible coverage bar — and ground the WHY
+  description: |
+    "Coverage" is a means, not the goal. Decide what coverage discipline
+    is defensible for THIS tool and argue it from risk, not from a round
+    number. A safety-critical parser and a throwaway CLI warrant
+    different bars; the field's own norms for this kind of software
+    differ too.
 
-      Do NOT hardcode a percentage as if it were universal. If you commit
-      to a numeric gate, justify it from the failure surface and, where
-      relevant, cite the practice the field actually uses for this class of
-      tool (surface it via tool_search / tool_research_tool rather than
-      asserting it from memory). State plainly what coverage does and does
-      not prove here (line coverage ≠ behavioural coverage; the critical
-      paths matter more than the aggregate).
+    Do NOT hardcode a percentage as if it were universal. If you commit
+    to a numeric gate, justify it from the failure surface and, where
+    relevant, cite the practice the field actually uses for this class of
+    tool (surface it via tool_search / tool_research_tool rather than
+    asserting it from memory). State plainly what coverage does and does
+    not prove here (line coverage ≠ behavioural coverage; the critical
+    paths matter more than the aggregate).
 
-  - id: ci_gate
-    name: Define what the CI gate enforces
-    description: |
-      Decide the gate that must be green before a change merges — the
-      automated "done" line for the inner repo. Reason about:
-        - which checks block a merge (build + which test tiers + linters /
-          type checks) versus which run advisory;
-        - what runs on every commit vs on a schedule (slow fuzz/benchmark
-          suites often can't gate every push);
-        - how flaky tests are handled (quarantine, not silent skip — a
-          muted test is worse than no test because it looks like coverage).
+- id: ci_gate
+  name: Define what the CI gate enforces
+  description: |
+    Decide the gate that must be green before a change merges — the
+    automated "done" line for the inner repo. Reason about:
+      - which checks block a merge (build + which test tiers + linters /
+        type checks) versus which run advisory;
+      - what runs on every commit vs on a schedule (slow fuzz/benchmark
+        suites often can't gate every push);
+      - how flaky tests are handled (quarantine, not silent skip — a
+        muted test is worse than no test because it looks like coverage).
 
-      Record the gate where it's actionable: as the inner repo's CI config
-      and/or in eval/ as the acceptance harness. The gate should enforce the
-      acceptance criteria from spec/requirements.md, closing the loop from
-      "what done means" to "what's automatically checked". The RO-side mirror
-      of that gate is tool_audit(scope='tool', dimension='tests'|'build') —
-      it runs the same workspace.commands the CI runs, so the AI can check
-      the gate locally before pushing.
+    Record the gate where it's actionable: as the inner repo's CI config
+    and/or in eval/ as the acceptance harness. The gate should enforce the
+    acceptance criteria from spec/requirements.md, closing the loop from
+    "what done means" to "what's automatically checked". The RO-side mirror
+    of that gate is tool_audit(scope='tool', dimension='tests'|'build') —
+    it runs the same workspace.commands the CI runs, so the AI can check
+    the gate locally before pushing.
 
-  - id: wire_and_record
-    name: Wire the regime in and record it
-    description: |
-      Scaffold the agreed regime in the inner repo — test directory layout,
-      the runner invocation, fixtures, and the CI config — via the exec
-      tools (tool_bash_exec for setup, the language exec tools as needed).
-      Record the runner invocation as workspace.commands.test (and build /
-      lint where they apply) so tool_build(operation='test') and the
-      tool_audit(scope='tool', dimension='tests') gate run the regime you
-      just designed. Run the suite once via tool_build(operation='test') and
-      confirm it's green. Install test dependencies via tool_package_install
-      / the language's manager so the regime is reproducible.
+- id: wire_and_record
+  name: Wire the regime in and record it
+  description: |
+    Scaffold the agreed regime in the inner repo — test directory layout,
+    the runner invocation, fixtures, and the CI config — via the exec
+    tools (tool_bash_exec for setup, the language exec tools as needed).
+    Record the runner invocation as workspace.commands.test (and build /
+    lint where they apply) so tool_build(operation='test') and the
+    tool_audit(scope='tool', dimension='tests') gate run the regime you
+    just designed. Run the suite once via tool_build(operation='test') and
+    confirm it's green. Install test dependencies via tool_package_install
+    / the language's manager so the regime is reproducible.
 
-      mem_log the testing-regime decision (kinds chosen + rationale +
-      coverage stance + CI gate) so build/implement_iteration's per-increment
-      tests inherit a consistent target and a later review can replay the WHY.
+    mem_log the testing-regime decision (kinds chosen + rationale +
+    coverage stance + CI gate) so build/implement_iteration's per-increment
+    tests inherit a consistent target and a later review can replay the WHY.
 
-      AUTONOMY GATE:
-        Risk: reversible but shared — CI config is undoable, but it governs
-        everyone's merges, so a bad gate blocks the whole team.
-        proceed (adaptive default, autopilot) → wire the regime and log the rationale; if the
-          CI gate would block merges for collaborators other than yourself,
-          present it first. Judge from blast radius, not from a fixed rule.
-          (Under autopilot, wire it and log the rationale.)
-        confirm first (manual / supervised) → present the proposed regime + CI gate; wait
-          for confirmation before wiring CI (it governs everyone's merges).
+    AUTONOMY GATE:
+      Risk: reversible but shared — CI config is undoable, but it governs
+      everyone's merges, so a bad gate blocks the whole team.
+      proceed (adaptive default, autopilot) → wire the regime and log the rationale; if the
+        CI gate would block merges for collaborators other than yourself,
+        present it first. Judge from blast radius, not from a fixed rule.
+        (Under autopilot, wire it and log the rationale.)
+      confirm first (manual / supervised) → present the proposed regime + CI gate; wait
+        for confirmation before wiring CI (it governs everyone's merges).
 
 expected_outputs:
-  - The inner repo's test suite + runner config
-  - The inner repo's CI gate config (or eval/ acceptance harness)
-  - A logged testing-regime decision (kinds + coverage stance + CI gate)
+- The inner repo's test suite + runner config
+- The inner repo's CI gate config (or eval/ acceptance harness)
+- A logged testing-regime decision (kinds + coverage stance + CI gate)
 
 next_protocol: build/implement_iteration
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: execute
+sub_intent: build_test
+triggers:
+- test strategy
+- testing strategy
+- how should i test this
+- write tests
+- test plan
+- test coverage
+- set up ci
+- ci gate
+- property tests
+- integration tests
+- what tests do i need
+- test regime
+summary: Reason about the testing regime that fits THIS tool (unit/integration/property/golden/fuzz/benchmark), a defensible coverage stance, and what the CI gate enforces.
+token_estimate: 1500
+decomposition:
+- protocol: build/test_strategy
+  purpose: Map the failure surface, choose + justify test kinds, set a defensible coverage stance + CI gate.
+- tool: tool_bash_exec
+  purpose: Scaffold the test layout + CI config and run the suite once to confirm it's green.
+- tool: mem_log
+  purpose: Log the testing-regime decision so per-increment tests inherit a consistent target.

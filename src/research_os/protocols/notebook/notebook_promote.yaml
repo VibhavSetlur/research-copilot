@@ -2,16 +2,16 @@ id: notebook_promote
 tier: 'execute'
 name: Notebook Promote (graduate a notebook into durable evidence)
 version: '4.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai]
   workflow_shape: [notebook, promotion]
 last_reviewed: '2026-06-25'
 see_also:
-  - notebook/notebook_reproduce                 # the hardening a promotable notebook has passed
-  - guidance/analysis_plan                       # the rigorous step a promoted notebook may become
-  - notebook/notebook_synthesize                 # the other exit — straight to a deliverable
+- notebook/notebook_reproduce                   # the hardening a promotable notebook has passed
+- guidance/analysis_plan                         # the rigorous step a promoted notebook may become
+- notebook/notebook_synthesize                   # the other exit — straight to a deliverable
 description: |
   The bridge out of a notebook. A notebook is excellent for working out an
   analysis interactively, but the interactive artefact is rarely the thing a
@@ -40,105 +40,105 @@ trigger: |
   script", "make this a real step", "this notebook produced the figure for
   the paper", "extract this into the pipeline".
 prerequisites:
-  - The notebook passes restart-and-run-all and is reproducible (notebook_reproduce), OR the researcher has explicitly pointed at a notebook to promote
-  - workspace.mode is notebook (sys_boot reports workspace_mode), OR the researcher is working in a Jupyter notebook
+- The notebook passes restart-and-run-all and is reproducible (notebook_reproduce), OR the researcher has explicitly pointed at a notebook to promote
+- workspace.mode is notebook (sys_boot reports workspace_mode), OR the researcher is working in a Jupyter notebook
 
 steps:
-  - id: confirm_durable_form
-    name: Decide the durable form the notebook should take
-    description: |
-      A notebook can graduate three ways; pick the one its content actually
-      warrants — do not default. Reason about what the notebook IS:
-        SCRIPT → the notebook is (or contains) a reusable transform other
-          work will call: cleaning, feature-building, a model others reuse.
-          The durable form is a parameterized, importable script the pipeline
-          can call without opening Jupyter.
-        STEP → the notebook is a self-contained analysis answering a research
-          question that the project will stand behind. The durable form is a
-          numbered analysis step where gates, provenance, and literature
-          grounding apply.
-        FIGURE/RESULT → the notebook's value is the artefact it emits (the
-          figure, the table, the headline number) for a paper/report. The
-          durable form is that artefact, traced to the notebook, fed to
-          synthesis (notebook_synthesize).
-      A notebook can yield more than one (a script AND a figure); name each.
+- id: confirm_durable_form
+  name: Decide the durable form the notebook should take
+  description: |
+    A notebook can graduate three ways; pick the one its content actually
+    warrants — do not default. Reason about what the notebook IS:
+      SCRIPT → the notebook is (or contains) a reusable transform other
+        work will call: cleaning, feature-building, a model others reuse.
+        The durable form is a parameterized, importable script the pipeline
+        can call without opening Jupyter.
+      STEP → the notebook is a self-contained analysis answering a research
+        question that the project will stand behind. The durable form is a
+        numbered analysis step where gates, provenance, and literature
+        grounding apply.
+      FIGURE/RESULT → the notebook's value is the artefact it emits (the
+        figure, the table, the headline number) for a paper/report. The
+        durable form is that artefact, traced to the notebook, fed to
+        synthesis (notebook_synthesize).
+    A notebook can yield more than one (a script AND a figure); name each.
 
-      AUTONOMY GATE:
-        Risk: reversible — choosing the durable form commits no science yet;
-        it's a routing decision.
-        proceed (adaptive default, autopilot) → state the form(s) you'll promote to and why,
-          then proceed.
-        confirm first (manual / supervised) → present the recommended durable form(s) and
-          wait for the researcher.
+    AUTONOMY GATE:
+      Risk: reversible — choosing the durable form commits no science yet;
+      it's a routing decision.
+      proceed (adaptive default, autopilot) → state the form(s) you'll promote to and why,
+        then proceed.
+      confirm first (manual / supervised) → present the recommended durable form(s) and
+        wait for the researcher.
 
-  - id: extract_reusable_logic
-    name: Extract reusable logic out of the notebook (when promoting to script)
-    description: |
-      Notebook-to-script is not a copy-paste of cells. Lift the reusable
-      logic into a clean, importable module/script under scripts/ (or the
-      project's package): named functions with explicit inputs/outputs, the
-      parameters cell becoming the script's parameters/CLI, no notebook-only
-      state (no reliance on a variable defined three cells up). The notebook
-      that remains can then IMPORT and demonstrate the script rather than
-      duplicating it — so there is one source of truth, not two that drift.
+- id: extract_reusable_logic
+  name: Extract reusable logic out of the notebook (when promoting to script)
+  description: |
+    Notebook-to-script is not a copy-paste of cells. Lift the reusable
+    logic into a clean, importable module/script under scripts/ (or the
+    project's package): named functions with explicit inputs/outputs, the
+    parameters cell becoming the script's parameters/CLI, no notebook-only
+    state (no reliance on a variable defined three cells up). The notebook
+    that remains can then IMPORT and demonstrate the script rather than
+    duplicating it — so there is one source of truth, not two that drift.
 
-      Keep the language the notebook used unless there's a reason to port;
-      reproducibility lives in the pinned environment, not in a rewrite. The
-      test: the extracted script runs from a plain shell with its parameters
-      and produces the same output the notebook did.
+    Keep the language the notebook used unless there's a reason to port;
+    reproducibility lives in the pinned environment, not in a rewrite. The
+    test: the extracted script runs from a plain shell with its parameters
+    and produces the same output the notebook did.
 
-  - id: carry_into_step
-    name: Create the numbered step + carry the notebook in (when promoting to step)
-    description: |
-      When the notebook becomes an analysis step:
-        - Register the question as a hypothesis if it is one:
-          mem_hypothesis_add statement="<H: the claim the notebook tests>".
-        - Create the step: sys_path name="<slug>" hypothesis="<H<id>: <text>>".
-        - Carry the notebook + extracted script(s) into the step
-          (workspace/<NN_slug>/), and copy the notebook's headline into the
-          step's context/notes.md as "Origin: promoted from notebook <name>".
-      The step now OWNS the work, so the analysis_plan gates (grounding,
-      provenance, focal figure/table/report) apply to it. Do not carry a
-      notebook's number into the step as a finding without it meeting the
-      step's bar — the notebook bought trust, the step earns the claim.
+- id: carry_into_step
+  name: Create the numbered step + carry the notebook in (when promoting to step)
+  description: |
+    When the notebook becomes an analysis step:
+      - Register the question as a hypothesis if it is one:
+        mem_hypothesis_add statement="<H: the claim the notebook tests>".
+      - Create the step: sys_path name="<slug>" hypothesis="<H<id>: <text>>".
+      - Carry the notebook + extracted script(s) into the step
+        (workspace/<NN_slug>/), and copy the notebook's headline into the
+        step's context/notes.md as "Origin: promoted from notebook <name>".
+    The step now OWNS the work, so the analysis_plan gates (grounding,
+    provenance, focal figure/table/report) apply to it. Do not carry a
+    notebook's number into the step as a finding without it meeting the
+    step's bar — the notebook bought trust, the step earns the claim.
 
-  - id: trace_artefacts
-    name: Trace promoted artefacts back to their source
-    description: |
-      Every promoted artefact must be traceable to what produced it. A
-      promoted figure/table records the notebook (and ideally the cell /
-      parameters) that generated it; a promoted script records the notebook
-      it was extracted from in a header comment; a promoted step records its
-      notebook origin in notes. This is what lets a reviewer — or a later AI
-      session — walk from a number in the paper back to the exact code and
-      data that made it. Provenance is the whole point of promotion; an
-      untraceable promoted artefact is no better than a screenshot.
+- id: trace_artefacts
+  name: Trace promoted artefacts back to their source
+  description: |
+    Every promoted artefact must be traceable to what produced it. A
+    promoted figure/table records the notebook (and ideally the cell /
+    parameters) that generated it; a promoted script records the notebook
+    it was extracted from in a header comment; a promoted step records its
+    notebook origin in notes. This is what lets a reviewer — or a later AI
+    session — walk from a number in the paper back to the exact code and
+    data that made it. Provenance is the whole point of promotion; an
+    untraceable promoted artefact is no better than a screenshot.
 
-  - id: handoff
-    name: Hand off to the durable home + log the promotion
-    description: |
-      Close the loop based on the chosen form:
-        - SCRIPT → the script is in the pipeline; the project calls it
-          directly. Note it where the pipeline is described.
-        - STEP → enter guidance/analysis_plan on the new step to run it under
-          full rigor.
-        - FIGURE/RESULT → enter notebook/notebook_synthesize (or the
-          synthesis tools) to weave the artefact into the deliverable, gated
-          on research_goal.output_types.
-      Log it so the notebook → durable-form trail is auditable:
-        mem_log entry="promoted notebook '<name>' → <form>: <where>".
+- id: handoff
+  name: Hand off to the durable home + log the promotion
+  description: |
+    Close the loop based on the chosen form:
+      - SCRIPT → the script is in the pipeline; the project calls it
+        directly. Note it where the pipeline is described.
+      - STEP → enter guidance/analysis_plan on the new step to run it under
+        full rigor.
+      - FIGURE/RESULT → enter notebook/notebook_synthesize (or the
+        synthesis tools) to weave the artefact into the deliverable, gated
+        on research_goal.output_types.
+    Log it so the notebook → durable-form trail is auditable:
+      mem_log entry="promoted notebook '<name>' → <form>: <where>".
 
-      AUTONOMY GATE:
-        Risk: reversible — entering the next loop runs nothing irreversible
-        by itself.
-        proceed (adaptive default, autopilot) → proceed into the chosen durable home.
-        confirm first (manual / supervised) → present the promoted artefact(s) + the
-          planned next loop; wait.
+    AUTONOMY GATE:
+      Risk: reversible — entering the next loop runs nothing irreversible
+      by itself.
+      proceed (adaptive default, autopilot) → proceed into the chosen durable home.
+      confirm first (manual / supervised) → present the promoted artefact(s) + the
+        planned next loop; wait.
 
 expected_outputs:
-  - scripts/<name>.<ext>  (when promoting reusable logic)
-  - workspace/<NN_slug>/  (when promoting to a numbered step)
-  - a traced figure/table feeding synthesis (when promoting a result)
+- scripts/<name>.<ext>  (when promoting reusable logic)
+- workspace/<NN_slug>/  (when promoting to a numbered step)
+- a traced figure/table feeding synthesis (when promoting a result)
 
 quality_bar: |
   - The durable form fits what the notebook actually is (reusable transform
@@ -154,3 +154,22 @@ quality_bar: |
 next_protocol: notebook/notebook_synthesize
 next_protocol_kind: forward_default
 on_failure: guidance/scope_clarification
+intent_class: execute
+sub_intent: notebook_promote
+triggers:
+- promote this notebook
+- promote the notebook
+- turn this notebook into a script
+- extract this into the pipeline
+- make this notebook a real step
+- this notebook produced the figure
+- graduate the notebook
+summary: Graduate a trustworthy notebook into a durable form — a reusable script, a numbered analysis step, or a traced figure feeding synthesis — re-applying the rigor a notebook makes easy to skip.
+token_estimate: 1500
+decomposition:
+- protocol: notebook/notebook_promote
+  purpose: Decide the durable form, extract reusable logic / create the step, trace artefacts, hand off.
+- tool: sys_path
+  purpose: Create the numbered step when promoting a notebook to an analysis step.
+- tool: mem_log
+  purpose: Record the promotion (notebook → script / step / figure).

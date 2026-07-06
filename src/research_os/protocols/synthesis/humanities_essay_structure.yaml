@@ -2,15 +2,15 @@ id: humanities_essay_structure
 tier: 'synthesize'
 name: Humanities Essay Structure (interpretive, non-IMRAD, AI-authored Typst)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [humanities]
   audience: [auditor]
   workflow_shape: [linear_essay]
 last_reviewed: '2026-06-16'
 see_also:
-  - synthesis/synthesis_paper          # IMRAD sibling; this is the non-IMRAD form
-  - synthesis/journal_selection
+- synthesis/synthesis_paper            # IMRAD sibling; this is the non-IMRAD form
+- synthesis/journal_selection
 description: |
   Guide the AI to author `synthesis/essay.typ` directly as a
   humanities essay — literary criticism, history of ideas,
@@ -41,15 +41,10 @@ trigger: |
   apparatus + critical ledger are sufficient.
 
 prerequisites:
-  - A workspace step with apparatus / transcription / close-reading
-    notes exists (humanities/textual/close_reading produces this).
-  - A working thesis sentence — even a one-line scratch claim is
-    enough; the protocol refines it.
-  - Enough primary-source passages identified for close reading that
-    the thesis rests on a pattern, not a single instance — a lone
-    passage is a note, not an essay.
-  - inputs/literature_index.yaml carries enough secondary-critic
-    entries to situate the argument in its critical conversation.
+- A workspace step with apparatus / transcription / close-reading notes exists (humanities/textual/close_reading produces this).
+- A working thesis sentence — even a one-line scratch claim is enough; the protocol refines it.
+- Enough primary-source passages identified for close reading that the thesis rests on a pattern, not a single instance — a lone passage is a note, not an essay.
+- inputs/literature_index.yaml carries enough secondary-critic entries to situate the argument in its critical conversation.
 
 design_principles: |
   - The thesis is one sentence. Evaluative ("Milton's Satan is
@@ -85,56 +80,56 @@ quality_standards: |
     long passages, no IMRAD headings
 
 steps:
-  - id: lock_thesis
-    name: Lock the thesis sentence
-    description: |
-      Write the one-sentence thesis in workspace/.outline/thesis.md
-      with rationale + the passages you'll read closely. Test it
-      (falsifiable? non-obvious? supported by the apparatus?).
+- id: lock_thesis
+  name: Lock the thesis sentence
+  description: |
+    Write the one-sentence thesis in workspace/.outline/thesis.md
+    with rationale + the passages you'll read closely. Test it
+    (falsifiable? non-obvious? supported by the apparatus?).
 
-  - id: scaffold
-    name: Scaffold essay.typ
-    description: |
-      tool_synthesis_scaffold(kind='essay') writes synthesis/essay.typ
-      with the six interpretive sections + AI markers. Idempotent.
+- id: scaffold
+  name: Scaffold essay.typ
+  description: |
+    tool_synthesis_scaffold(kind='essay') writes synthesis/essay.typ
+    with the six interpretive sections + AI markers. Idempotent.
 
-  - id: close_readings
-    name: Draft the close readings
-    description: |
-      One section per researcher turn. Each — quote the passage
-      (block when long), identify the formal feature doing the work,
-      link to the thesis, footnote the relevant secondary critic.
+- id: close_readings
+  name: Draft the close readings
+  description: |
+    One section per researcher turn. Each — quote the passage
+    (block when long), identify the formal feature doing the work,
+    link to the thesis, footnote the relevant secondary critic.
 
-  - id: critical_conversation
-    name: Draft the critical conversation
-    description: |
-      The named critics the field expects engaged + your relation to
-      each (extends / qualifies / contests / ignores-and-replaces).
+- id: critical_conversation
+  name: Draft the critical conversation
+  description: |
+    The named critics the field expects engaged + your relation to
+    each (extends / qualifies / contests / ignores-and-replaces).
 
-  - id: counter_argument
-    name: Draft the counter-argument and reply
-    description: |
-      Steelman the strongest objection. Reply by showing the counter
-      accounts for FEWER passages.
+- id: counter_argument
+  name: Draft the counter-argument and reply
+  description: |
+    Steelman the strongest objection. Reply by showing the counter
+    accounts for FEWER passages.
 
-  - id: conclusion_stakes
-    name: Draft the conclusion and stakes
-    description: |
-      Two-paragraph close. First — restate the thesis + evidence in
-      compressed form. Second — stakes (why this matters beyond the
-      text).
+- id: conclusion_stakes
+  name: Draft the conclusion and stakes
+  description: |
+    Two-paragraph close. First — restate the thesis + evidence in
+    compressed form. Second — stakes (why this matters beyond the
+    text).
 
-  - id: audit
-    name: Audit
-    description: |
-      tool_synthesis_check(file='synthesis/essay.typ') runs the
-      substantiveness checks (auto-detects Typst headings).
+- id: audit
+  name: Audit
+  description: |
+    tool_synthesis_check(file='synthesis/essay.typ') runs the
+    substantiveness checks (auto-detects Typst headings).
 
-  - id: compile
-    name: Compile to PDF
-    description: |
-      tool_typst_compile(source='synthesis/essay.typ') renders
-      synthesis/essay.pdf using humanities_essay.typ.
+- id: compile
+  name: Compile to PDF
+  description: |
+    tool_typst_compile(source='synthesis/essay.typ') renders
+    synthesis/essay.pdf using humanities_essay.typ.
 
 tools: |
   - tool_synthesis_scaffold(kind='essay') — seed essay.typ with the
@@ -146,10 +141,37 @@ tools: |
     workspace
 
 expected_outputs:
-  - synthesis/essay.typ
-  - synthesis/essay.pdf
-  - workspace/.outline/thesis.md
+- synthesis/essay.typ
+- synthesis/essay.pdf
+- workspace/.outline/thesis.md
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: synthesize
+sub_intent: humanities_essay
+triggers:
+- humanities essay
+- close-reading essay
+- close reading essay
+- literary criticism essay
+- write the essay
+- essay structure
+summary: AI authors a non-IMRAD essay.typ (thesis → context → close readings → critical conversation → counter-argument → stakes). Compiles via humanities_essay.typ template.
+shortcut_tool: tool_synthesis_scaffold
+token_estimate: 1800
+decomposition:
+- tool: tool_synthesis_scaffold
+  args:
+    kind: essay
+  purpose: Write synthesis/essay.typ with the six interpretive sections + AI markers.
+- tool: tool_synthesize_plan
+  purpose: Inspect available sources for the critical conversation + close readings.
+- tool: tool_synthesis_check
+  args:
+    file: synthesis/essay.typ
+  purpose: Audit substantiveness + cliches once the AI fills in the sections.
+- tool: tool_typst_compile
+  args:
+    source: synthesis/essay.typ
+  purpose: Render essay.typ → essay.pdf with the humanities_essay venue template.

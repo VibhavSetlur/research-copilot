@@ -2,60 +2,67 @@ id: evidence_synthesis
 tier: 'ground'
 name: Evidence Synthesis
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - literature/literature_search       # produces the corpus this protocol tabulates
-  - literature/systematic_review       # when the synthesis is a formal review with PRISMA
+- literature/literature_search         # produces the corpus this protocol tabulates
+- literature/systematic_review         # when the synthesis is a formal review with PRISMA
 description: Build an evidence table from the literature corpus, grade each entry on the field's certainty framework, and flag contradictions.
 trigger: After literature_search. Useful as the foundation for the paper's Introduction and Discussion.
 
 steps:
-  - id: build_evidence_table
-    name: Build Evidence Table
-    description: |
-      From the entries in inputs/literature_index.yaml (and the PDFs in
-      inputs/literature/), build a table at synthesis/evidence_table.md
-      with columns:
-        | citation_key | year | design | n | population | primary outcome | direction | certainty |
-      Use sys_file_write to create the file. Fill each row from the
-      paper's downloaded full text — the abstract is the starting point,
-      but design / n / outcome details that the synthesis will rest on
-      must be read from the body, not inferred from the snippet. For
-      fields the paper genuinely does not report, mark "n/r".
+- id: build_evidence_table
+  name: Build Evidence Table
+  description: |
+    From the entries in inputs/literature_index.yaml (and the PDFs in
+    inputs/literature/), build a table at synthesis/evidence_table.md
+    with columns:
+      | citation_key | year | design | n | population | primary outcome | direction | certainty |
+    Use sys_file_write to create the file. Fill each row from the
+    paper's downloaded full text — the abstract is the starting point,
+    but design / n / outcome details that the synthesis will rest on
+    must be read from the body, not inferred from the snippet. For
+    fields the paper genuinely does not report, mark "n/r".
 
-  - id: grade_quality
-    name: Rate certainty of evidence
-    description: |
-      Rate the certainty (or quality / strength) of each entry using the
-      framework the field treats as standard for this kind of evidence
-      — name the framework and cite it, rather than inventing a scale.
-      For clinical / intervention evidence the field-standard framework
-      is usually GRADE; other fields have their own. Whatever the scale,
-      its rating levels and the rules that move an entry up or down a
-      level are the framework's, not the protocol's — cite the source
-      for the rubric you apply. Justify each rating in a short note
-      column tied to the specific limitation or strength that drove it.
+- id: grade_quality
+  name: Rate certainty of evidence
+  description: |
+    Rate the certainty (or quality / strength) of each entry using the
+    framework the field treats as standard for this kind of evidence
+    — name the framework and cite it, rather than inventing a scale.
+    For clinical / intervention evidence the field-standard framework
+    is usually GRADE; other fields have their own. Whatever the scale,
+    its rating levels and the rules that move an entry up or down a
+    level are the framework's, not the protocol's — cite the source
+    for the rubric you apply. Justify each rating in a short note
+    column tied to the specific limitation or strength that drove it.
 
-  - id: detect_contradictions
-    name: Detect Contradictions
-    description: |
-      For each (population, exposure, outcome) triple represented in the evidence
-      table, group entries by direction (positive / negative / null). Any group
-      that contains BOTH positive and (negative or null) directions for the same
-      triple is a contradiction. Log to synthesis/contradictions.md with:
-        - Triple
-        - Conflicting citation_keys
-        - Hypothesised reason (different population? dose? era? definition?)
+- id: detect_contradictions
+  name: Detect Contradictions
+  description: |
+    For each (population, exposure, outcome) triple represented in the evidence
+    table, group entries by direction (positive / negative / null). Any group
+    that contains BOTH positive and (negative or null) directions for the same
+    triple is a contradiction. Log to synthesis/contradictions.md with:
+      - Triple
+      - Conflicting citation_keys
+      - Hypothesised reason (different population? dose? era? definition?)
 
 expected_outputs:
-  - synthesis/evidence_table.md
-  - synthesis/contradictions.md
+- synthesis/evidence_table.md
+- synthesis/contradictions.md
 
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: literature
+sub_intent: evidence_grade
+triggers:
+- grade the evidence
+- evidence synthesis
+- body of evidence
+summary: Grade body of evidence (GRADE-style).

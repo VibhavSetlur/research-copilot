@@ -2,14 +2,14 @@ id: mcp_ecosystem_integration
 tier: 'plan'
 name: MCP Ecosystem Integration (compose other MCP servers with Research OS)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/external_tool_setup         # verifying the runtime prereqs an MCP needs
+- methodology/external_tool_setup           # verifying the runtime prereqs an MCP needs
 description: |
   Research OS is one MCP server. Researchers may need access to
   many — Postgres / SQLite for live database queries; Slack / GitHub
@@ -46,197 +46,184 @@ trigger: |
       asks for help wiring or de-conflicting them.
 
 prerequisites:
-  - The researcher's IDE supports MCP (already established by
-    research-os init).
-  - The need is identified — a specific capability the current
-    Research OS tool set does not deliver.
+- The researcher's IDE supports MCP (already established by research-os init).
+- The need is identified — a specific capability the current Research OS tool set does not deliver.
 
 editorial_voice:
   rules:
-    - "Add MCP servers SPARINGLY. Each adds a tool surface the AI
-       must reason over. A dozen MCP servers in one IDE session
-       means the AI scrolls past relevant tools to find the right
-       one. Add by NEED, not by collection."
-    - "Tool-name collisions are real. Two MCP servers exposing
-       `search` or `get_user` will silently shadow each other
-       depending on registration order. Check for collisions
-       before wiring; prefix or filter where the IDE allows."
-    - "Authentication is the failure mode. Most MCP servers wrap
-       external APIs that need keys. Surface the AUTH path
-       BEFORE installing; many researchers will hit a wall at
-       the OAuth / API-key step."
-    - "Research OS does not proxy other MCP servers. Each MCP
-       runs as its own process; the IDE is the multiplexer.
-       Composition happens in the IDE config, not in Research OS."
+  - "Add MCP servers SPARINGLY. Each adds a tool surface the AI must reason over. A dozen MCP servers in one IDE session means the AI scrolls past relevant tools to find the right one. Add by NEED, not by collection."
+  - "Tool-name collisions are real. Two MCP servers exposing `search` or `get_user` will silently shadow each other depending on registration order. Check for collisions before wiring; prefix or filter where the IDE allows."
+  - "Authentication is the failure mode. Most MCP servers wrap external APIs that need keys. Surface the AUTH path BEFORE installing; many researchers will hit a wall at the OAuth / API-key step."
+  - "Research OS does not proxy other MCP servers. Each MCP runs as its own process; the IDE is the multiplexer. Composition happens in the IDE config, not in Research OS."
 
 steps:
-  - id: identify_the_capability_gap
-    name: Identify what Research OS doesn't deliver
-    description: |
-      Common gaps + the canonical MCP that fills each:
+- id: identify_the_capability_gap
+  name: Identify what Research OS doesn't deliver
+  description: |
+    Common gaps + the canonical MCP that fills each:
 
-        LIVE DATABASE QUERIES — Postgres, MySQL, SQLite, BigQuery,
-          Snowflake. Use modelcontextprotocol/servers Postgres
-          server or BigQuery server.
+      LIVE DATABASE QUERIES — Postgres, MySQL, SQLite, BigQuery,
+        Snowflake. Use modelcontextprotocol/servers Postgres
+        server or BigQuery server.
 
-        FRESH WEB SEARCH — Brave Search MCP, Tavily MCP, Exa MCP.
-          (Note: Research OS does have literature search via its
-          own providers; web MCPs are for general / current web.)
+      FRESH WEB SEARCH — Brave Search MCP, Tavily MCP, Exa MCP.
+        (Note: Research OS does have literature search via its
+        own providers; web MCPs are for general / current web.)
 
-        TEAM CONTEXT — Slack MCP, Linear MCP, GitHub MCP, Notion
-          MCP. For pulling discussion / tickets / issue context
-          into the research session.
+      TEAM CONTEXT — Slack MCP, Linear MCP, GitHub MCP, Notion
+        MCP. For pulling discussion / tickets / issue context
+        into the research session.
 
-        DESIGN ASSETS — Figma MCP for pulling design files /
-          colour tokens into the research context (e.g. when a
-          dashboard needs to match an existing brand).
+      DESIGN ASSETS — Figma MCP for pulling design files /
+        colour tokens into the research context (e.g. when a
+        dashboard needs to match an existing brand).
 
-        DOCUMENT STORES — Google Drive MCP, Sharepoint MCP for
-          institutional docs. Box MCP for clinical orgs.
+      DOCUMENT STORES — Google Drive MCP, Sharepoint MCP for
+        institutional docs. Box MCP for clinical orgs.
 
-        CITATION DATABASES — dedicated arxiv / pubmed MCPs (often
-          richer than Research OS's metadata search alone).
+      CITATION DATABASES — dedicated arxiv / pubmed MCPs (often
+        richer than Research OS's metadata search alone).
 
-        FILESYSTEM (CROSS-PROJECT) — anthropic/filesystem MCP
-          when the researcher needs to reach OUTSIDE the current
-          project's directory (Research OS's sys_file_* is
-          scoped intentionally).
+      FILESYSTEM (CROSS-PROJECT) — anthropic/filesystem MCP
+        when the researcher needs to reach OUTSIDE the current
+        project's directory (Research OS's sys_file_* is
+        scoped intentionally).
 
-        VERSION CONTROL — git / gh MCPs for richer git operations
-          beyond what `tool_bash_exec` covers.
+      VERSION CONTROL — git / gh MCPs for richer git operations
+        beyond what `tool_bash_exec` covers.
 
-      Document the gap + the candidate MCP server in
-      workspace/.mcp/gap.md.
+    Document the gap + the candidate MCP server in
+    workspace/.mcp/gap.md.
 
-  - id: vet_the_candidate
-    name: Vet the candidate MCP server
-    description: |
-      Not all MCP servers are equal. Before adding, check:
+- id: vet_the_candidate
+  name: Vet the candidate MCP server
+  description: |
+    Not all MCP servers are equal. Before adding, check:
 
-        - PROVENANCE: official (anthropic / mcp org) > vendor
-          official (e.g. Figma's own) > community (look at
-          GitHub stars, recent commits, issue activity) >
-          unknown.
-        - LICENSE: compatible with your use (MIT / Apache fine
-          for most; GPL may have implications when bundled).
-        - AUTH MODEL: API key, OAuth, service account, none.
-          Verify your institution allows the data flow before
-          installing.
-        - DATA EGRESS: does it send data to a third-party (the
-          server's hosted backend)? Important for sensitive data
-          (PHI, IP-restricted).
-        - MAINTENANCE: recent commit activity; open issues
-          addressed; not abandoned.
-        - TOOL COUNT: how many tools does it expose? A large tool
-          surface added for a single capability bloats the context
-          the AI must reason over — weigh the gain against the cost.
+      - PROVENANCE: official (anthropic / mcp org) > vendor
+        official (e.g. Figma's own) > community (look at
+        GitHub stars, recent commits, issue activity) >
+        unknown.
+      - LICENSE: compatible with your use (MIT / Apache fine
+        for most; GPL may have implications when bundled).
+      - AUTH MODEL: API key, OAuth, service account, none.
+        Verify your institution allows the data flow before
+        installing.
+      - DATA EGRESS: does it send data to a third-party (the
+        server's hosted backend)? Important for sensitive data
+        (PHI, IP-restricted).
+      - MAINTENANCE: recent commit activity; open issues
+        addressed; not abandoned.
+      - TOOL COUNT: how many tools does it expose? A large tool
+        surface added for a single capability bloats the context
+        the AI must reason over — weigh the gain against the cost.
 
-      Skip + alternative-source any MCP that fails vetting.
+    Skip + alternative-source any MCP that fails vetting.
 
-  - id: check_collisions
-    name: Check for tool-name collisions
-    description: |
-      Run sys_protocol_list (or `mcp list` in the IDE) to see
-      Research OS's current tool surface. Cross-reference with
-      the candidate MCP's tool names.
+- id: check_collisions
+  name: Check for tool-name collisions
+  description: |
+    Run sys_protocol_list (or `mcp list` in the IDE) to see
+    Research OS's current tool surface. Cross-reference with
+    the candidate MCP's tool names.
 
-      Common collisions:
-        - `search`, `query`, `get_file`, `list_files`,
-          `get_user`, `read_file` — generic names overlap often.
+    Common collisions:
+      - `search`, `query`, `get_file`, `list_files`,
+        `get_user`, `read_file` — generic names overlap often.
 
-      If the IDE supports it, prefix the new MCP's tools (e.g.
-      `pg.search` for Postgres' search). If not, surface the
-      collision to the researcher BEFORE wiring; sometimes
-      renaming an MCP's tools in its config is possible.
+    If the IDE supports it, prefix the new MCP's tools (e.g.
+    `pg.search` for Postgres' search). If not, surface the
+    collision to the researcher BEFORE wiring; sometimes
+    renaming an MCP's tools in its config is possible.
 
-  - id: install_the_server
-    name: Install the MCP server (researcher executes)
-    description: |
-      Most MCP servers ship as:
-        - `npx` one-shot (node-based): no install, just config.
-        - `pip` / `pipx` (python-based): per-user or per-venv.
-        - Pre-built binary: download + add to PATH.
-        - Docker container: docker run + config to that.
+- id: install_the_server
+  name: Install the MCP server (researcher executes)
+  description: |
+    Most MCP servers ship as:
+      - `npx` one-shot (node-based): no install, just config.
+      - `pip` / `pipx` (python-based): per-user or per-venv.
+      - Pre-built binary: download + add to PATH.
+      - Docker container: docker run + config to that.
 
-      Surface the install command + verification command for the
-      candidate. DO NOT auto-install; route to
-      methodology/external_tool_setup for verification of
-      prereqs (Node, Python, Docker).
+    Surface the install command + verification command for the
+    candidate. DO NOT auto-install; route to
+    methodology/external_tool_setup for verification of
+    prereqs (Node, Python, Docker).
 
-  - id: wire_into_ide_mcp_config
-    name: Wire the server into the IDE's MCP config
-    description: |
-      Per IDE, the config file lives at:
-        - Claude Desktop: ~/Library/Application Support/Claude/
-          claude_desktop_config.json (macOS) — JSON, mcpServers
-          block.
-        - Cursor: .cursor/mcp.json in the project root.
-        - Continue: .continuerules referenced server.
-        - VS Code + MCP ext: .vscode/mcp.json or settings.json.
-        - OpenCode: opencode.json.
+- id: wire_into_ide_mcp_config
+  name: Wire the server into the IDE's MCP config
+  description: |
+    Per IDE, the config file lives at:
+      - Claude Desktop: ~/Library/Application Support/Claude/
+        claude_desktop_config.json (macOS) — JSON, mcpServers
+        block.
+      - Cursor: .cursor/mcp.json in the project root.
+      - Continue: .continuerules referenced server.
+      - VS Code + MCP ext: .vscode/mcp.json or settings.json.
+      - OpenCode: opencode.json.
 
-      Append the new server NEXT TO research-os; don't replace.
-      Add the auth (env var, file pointer) per the server's docs.
-      RESTART the IDE so it picks up the new config.
+    Append the new server NEXT TO research-os; don't replace.
+    Add the auth (env var, file pointer) per the server's docs.
+    RESTART the IDE so it picks up the new config.
 
-      Example config sketch (Claude Desktop, adding Postgres):
-        {
-          "mcpServers": {
-            "research-os": { "command": "research-os",
-              "args": ["start"] },
-            "postgres": { "command": "npx",
-              "args": ["-y", "@modelcontextprotocol/server-postgres",
-                       "postgresql://user:pass@host/db"] }
-          }
+    Example config sketch (Claude Desktop, adding Postgres):
+      {
+        "mcpServers": {
+          "research-os": { "command": "research-os",
+            "args": ["start"] },
+          "postgres": { "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-postgres",
+                     "postgresql://user:pass@host/db"] }
         }
+      }
 
-      WARNING: credentials in MCP config files are visible to
-      anyone with access to the dotfile. Prefer environment
-      variables + reference them in the config; .gitignore the
-      config file when credentials are inline.
+    WARNING: credentials in MCP config files are visible to
+    anyone with access to the dotfile. Prefer environment
+    variables + reference them in the config; .gitignore the
+    config file when credentials are inline.
 
-  - id: verify_and_test
-    name: Verify + smoke-test the integration
-    description: |
-      In the IDE, ask the AI to:
-        - list available tools (confirm the new MCP's tools
-          appear)
-        - call ONE tool from the new MCP (sanity check auth +
-          connectivity)
-        - confirm Research OS tools still work (no shadowing)
+- id: verify_and_test
+  name: Verify + smoke-test the integration
+  description: |
+    In the IDE, ask the AI to:
+      - list available tools (confirm the new MCP's tools
+        appear)
+      - call ONE tool from the new MCP (sanity check auth +
+        connectivity)
+      - confirm Research OS tools still work (no shadowing)
 
-      If anything fails, surface the diagnostic:
-        - server not listed → config syntax / restart needed
-        - tool call returns auth error → credential path wrong
-        - tool call hangs → MCP server itself crashed; check its
-          logs
+    If anything fails, surface the diagnostic:
+      - server not listed → config syntax / restart needed
+      - tool call returns auth error → credential path wrong
+      - tool call hangs → MCP server itself crashed; check its
+        logs
 
-      Log the verified state in workspace/.mcp/active_servers.md.
+    Log the verified state in workspace/.mcp/active_servers.md.
 
-  - id: document_the_composition
-    name: Document the multi-MCP composition in the project README
-    description: |
-      Append a "MCP servers" section to the project README listing:
-        - each active MCP server + version
-        - which research workflow uses it (avoid leaving stale
-          servers configured)
-        - the install + verify commands
-        - auth gotchas (where the credentials come from)
+- id: document_the_composition
+  name: Document the multi-MCP composition in the project README
+  description: |
+    Append a "MCP servers" section to the project README listing:
+      - each active MCP server + version
+      - which research workflow uses it (avoid leaving stale
+        servers configured)
+      - the install + verify commands
+      - auth gotchas (where the credentials come from)
 
-      The next contributor (or the researcher in 3 months)
-      needs this to reconstruct the active capability set.
+    The next contributor (or the researcher in 3 months)
+    needs this to reconstruct the active capability set.
 
-  - id: route_back
-    name: Route back to the original workflow
-    description: |
-      Confirm + return to the protocol that surfaced the gap.
-      The added MCP's tools are now available; the AI can call
-      them alongside Research OS's.
+- id: route_back
+  name: Route back to the original workflow
+  description: |
+    Confirm + return to the protocol that surfaced the gap.
+    The added MCP's tools are now available; the AI can call
+    them alongside Research OS's.
 
 expected_outputs:
-  - workspace/.mcp/gap.md
-  - workspace/.mcp/active_servers.md
-  - (entries appended to IDE MCP config + project README)
+- workspace/.mcp/gap.md
+- workspace/.mcp/active_servers.md
+- (entries appended to IDE MCP config + project README)
 
 quality_bar:
   capability_gap_explicitly_identified: true
@@ -251,6 +238,27 @@ quality_bar:
 # Route back to external_tool_setup via the dispatcher when runtime
 # prereqs need verifying (no direct back-edge, to keep the graph
 # acyclic).
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/scope_clarification
+intent_class: methodology
+sub_intent: mcp_compose
+triggers:
+- mcp server
+- another mcp
+- mcp marketplace
+- mcp registry
+- compose mcp
+- wire up mcp
+- postgres mcp
+- slack mcp
+- github mcp
+- notion mcp
+- figma mcp
+- linear mcp
+- filesystem mcp
+- brave search mcp
+- tavily mcp
+- add an mcp
+- multiple mcp servers
+summary: Compose other MCP servers alongside Research OS — Postgres / Slack / GitHub / Notion / Figma / etc.

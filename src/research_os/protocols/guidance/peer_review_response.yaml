@@ -2,15 +2,15 @@ id: peer_review_response
 tier: 'review'
 name: Peer Review — Respond to Reviewers
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai]
   workflow_shape: [any]
 see_also:
-  - guidance/revise_and_resubmit   # the full R&R cycle this reply-drafting step plugs into
-  - guidance/analysis_plan         # where new experiments demanded by reviewers run
+- guidance/revise_and_resubmit     # the full R&R cycle this reply-drafting step plugs into
+- guidance/analysis_plan           # where new experiments demanded by reviewers run
 description: |
   Process a peer-review report against the submitted paper. Produces
   `synthesis/response_to_reviewers.md` with per-comment status
@@ -29,160 +29,162 @@ trigger: |
   "address the major concerns".
 
 prerequisites:
-  - synthesis/paper.md exists (the paper that was reviewed).
-  - The reviewer report text is available (paste, file, or PDF).
+- synthesis/paper.md exists (the paper that was reviewed).
+- The reviewer report text is available (paste, file, or PDF).
 
 # Machine-checkable subset (precondition gate). The reviewer-report
 # availability stays prose — it can arrive by paste, so it isn't a file
 # the verifier can check.
 requires:
   checks:
-    - kind: file_exists
-      path: synthesis/paper.md
-      because: a response addresses comments on a written paper
+  - kind: file_exists
+    path: synthesis/paper.md
+    because: a response addresses comments on a written paper
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Respond to every comment, even the minor ones. Silently
-       dropping a comment reads as combative or lazy."
-    - "Match the reviewer's framing back to them. If they wrote
-       'M3. The propensity-score overlap is concerning' — your
-       response opens with 'M3. Propensity-score overlap.'"
-    - "Use 'we' for the author voice in the response letter,
-       regardless of the paper's voice convention. Reviewer letters
-       are personal correspondence."
-    - "When pushing back, do it with evidence (a new figure, an
-       added analysis, a citation) — never with mere assertion."
-    - "Track changes by section + line number in the revised paper.
-       Reviewers want to verify the change is real."
+  - "Respond to every comment, even the minor ones. Silently dropping a comment reads as combative or lazy."
+  - "Match the reviewer's framing back to them. If they wrote 'M3. The propensity-score overlap is concerning' — your response opens with 'M3. Propensity-score overlap.'"
+  - "Use 'we' for the author voice in the response letter, regardless of the paper's voice convention. Reviewer letters are personal correspondence."
+  - "When pushing back, do it with evidence (a new figure, an added analysis, a citation) — never with mere assertion."
+  - "Track changes by section + line number in the revised paper. Reviewers want to verify the change is real."
 
 steps:
-  - id: capture_review
-    name: Capture the reviewer report
-    description: |
-      Either the researcher pastes it, points at a file, or
-      attaches a PDF. Write the verbatim text to
-      `workspace/reviews/incoming_<journal>_<round>_<date>.md`
-      so the record is preserved with the rebuttal.
+- id: capture_review
+  name: Capture the reviewer report
+  description: |
+    Either the researcher pastes it, points at a file, or
+    attaches a PDF. Write the verbatim text to
+    `workspace/reviews/incoming_<journal>_<round>_<date>.md`
+    so the record is preserved with the rebuttal.
 
-      Many journals send multiple reviewer reports — handle each
-      as a separate file so the response can address each
-      reviewer individually.
+    Many journals send multiple reviewer reports — handle each
+    as a separate file so the response can address each
+    reviewer individually.
 
-  - id: extract_comments
-    name: Extract numbered comments
-    description: |
-      Parse each reviewer's report into atomic numbered items:
-        - **Major comments** (Mn): substantive issues with the
-          methods, results, or interpretation. These usually demand
-          action.
-        - **Minor comments** (mn): smaller issues with clarity,
-          presentation, missing citations, language. Quick to
-          address.
-        - **Editorial comments**: from the editor specifically;
-          treat with high priority.
+- id: extract_comments
+  name: Extract numbered comments
+  description: |
+    Parse each reviewer's report into atomic numbered items:
+      - **Major comments** (Mn): substantive issues with the
+        methods, results, or interpretation. These usually demand
+        action.
+      - **Minor comments** (mn): smaller issues with clarity,
+        presentation, missing citations, language. Quick to
+        address.
+      - **Editorial comments**: from the editor specifically;
+        treat with high priority.
 
-      Some reviewers don't number — number them yourself; the
-      response letter uses your numbering and quotes the
-      reviewer's text verbatim.
+    Some reviewers don't number — number them yourself; the
+    response letter uses your numbering and quotes the
+    reviewer's text verbatim.
 
-  - id: classify_each_comment
-    name: Classify each comment
-    description: |
-      For each comment, decide the response posture:
+- id: classify_each_comment
+  name: Classify each comment
+  description: |
+    For each comment, decide the response posture:
 
-        - **ACCEPT** — the reviewer is right; revise the paper.
-          The response describes the revision + line ref.
-        - **ACCEPT WITH CLARIFICATION** — the comment reveals a
-          misunderstanding that the paper could prevent. Revise
-          the paper for clarity + acknowledge the source of the
-          confusion in the response.
-        - **PARTIALLY ACCEPT** — the reviewer raises a real
-          concern but their proposed fix is wrong or too costly.
-          Acknowledge the concern, propose an alternative fix,
-          implement it.
-        - **PUSH BACK** — the reviewer is mistaken. Push back
-          politely with evidence (a citation, a new figure, an
-          added analysis). Never push back on assertion alone;
-          the rebuttal is the place to BE the experiment that
-          the reviewer assumed didn't exist.
-        - **DEFER** — out of scope for this paper; commit to it
-          as future work. Use sparingly; reviewers see through
-          obvious deferrals.
+      - **ACCEPT** — the reviewer is right; revise the paper.
+        The response describes the revision + line ref.
+      - **ACCEPT WITH CLARIFICATION** — the comment reveals a
+        misunderstanding that the paper could prevent. Revise
+        the paper for clarity + acknowledge the source of the
+        confusion in the response.
+      - **PARTIALLY ACCEPT** — the reviewer raises a real
+        concern but their proposed fix is wrong or too costly.
+        Acknowledge the concern, propose an alternative fix,
+        implement it.
+      - **PUSH BACK** — the reviewer is mistaken. Push back
+        politely with evidence (a citation, a new figure, an
+        added analysis). Never push back on assertion alone;
+        the rebuttal is the place to BE the experiment that
+        the reviewer assumed didn't exist.
+      - **DEFER** — out of scope for this paper; commit to it
+        as future work. Use sparingly; reviewers see through
+        obvious deferrals.
 
-      Persist the classification in
-      `synthesis/response_to_reviewers.md` per comment.
+    Persist the classification in
+    `synthesis/response_to_reviewers.md` per comment.
 
-  - id: route_new_experiments
-    name: Route new experiments through analysis_plan
-    description: |
-      Some accept-with-revision and push-back comments demand a
-      new experiment (re-run with a different model, add a
-      sensitivity analysis, run on a held-out subset). These are
-      NOT handled inside this protocol — they get their own
-      numbered step via `sys_path` and walk through
-      `guidance/analysis_plan` like any analysis.
+- id: route_new_experiments
+  name: Route new experiments through analysis_plan
+  description: |
+    Some accept-with-revision and push-back comments demand a
+    new experiment (re-run with a different model, add a
+    sensitivity analysis, run on a held-out subset). These are
+    NOT handled inside this protocol — they get their own
+    numbered step via `sys_path` and walk through
+    `guidance/analysis_plan` like any analysis.
 
-      The response letter THEN cites the new step's results once
-      it's complete. This protocol orchestrates the rebuttal; the
-      analysis happens in its own track.
+    The response letter THEN cites the new step's results once
+    it's complete. This protocol orchestrates the rebuttal; the
+    analysis happens in its own track.
 
-  - id: draft_response_letter
-    name: Draft the response letter
-    description: |
-      Structure (the de facto standard across BMJ, Nature, Cell,
-      PLOS):
+- id: draft_response_letter
+  name: Draft the response letter
+  description: |
+    Structure (the de facto standard across BMJ, Nature, Cell,
+    PLOS):
 
-        ## Reviewer 1
+      ## Reviewer 1
 
-        We thank the reviewer for the careful read. Each comment
-        is addressed below; revised passages are referenced by
-        section + line number in the resubmitted manuscript.
+      We thank the reviewer for the careful read. Each comment
+      is addressed below; revised passages are referenced by
+      section + line number in the resubmitted manuscript.
 
-        ### M1. <reviewer's title for the comment>
-        > <verbatim quote of the reviewer's comment, italicised>
+      ### M1. <reviewer's title for the comment>
+      > <verbatim quote of the reviewer's comment, italicised>
 
-        **Response.** <The response: what we did, where in the
-        paper it landed (Section X, lines Y-Z), and any caveat
-        worth surfacing.>
+      **Response.** <The response: what we did, where in the
+      paper it landed (Section X, lines Y-Z), and any caveat
+      worth surfacing.>
 
-      The `tool_reviewer(operation='response')` call produces a
-      scaffold with one heading per comment — fill the response prose
-      in this protocol.
+    The `tool_reviewer(operation='response')` call produces a
+    scaffold with one heading per comment — fill the response prose
+    in this protocol.
 
-  - id: cross_check_with_paper
-    name: Cross-check responses with the revised paper
-    description: |
-      Before finalising:
-        - Every "we have revised <section>" claim in the response
-          must map to a real change in `synthesis/paper.md`.
-        - Every "we have added <analysis>" must map to a real
-          new step / figure / table.
-        - Every "we have added <citation>" must verify via
-          `tool_citations_verify`.
-        - Every "we now report <metric>" must trace through
-          `tool_audit(scope='project', dimension='claims')` (the number must live in a
-          workspace output).
+- id: cross_check_with_paper
+  name: Cross-check responses with the revised paper
+  description: |
+    Before finalising:
+      - Every "we have revised <section>" claim in the response
+        must map to a real change in `synthesis/paper.md`.
+      - Every "we have added <analysis>" must map to a real
+        new step / figure / table.
+      - Every "we have added <citation>" must verify via
+        `tool_citations_verify`.
+      - Every "we now report <metric>" must trace through
+        `tool_audit(scope='project', dimension='claims')` (the number must live in a
+        workspace output).
 
-  - id: editor_cover_letter
-    name: Cover letter to the editor
-    description: |
-      Some journals ask for a brief cover note to the editor
-      separate from the reviewer responses. It should:
-        - Summarise the major revisions in 1-2 paragraphs.
-        - Acknowledge the reviewers' contribution to the
-          improvements.
-        - Highlight any places where reviewers disagreed and how
-          the revision navigates the disagreement.
+- id: editor_cover_letter
+  name: Cover letter to the editor
+  description: |
+    Some journals ask for a brief cover note to the editor
+    separate from the reviewer responses. It should:
+      - Summarise the major revisions in 1-2 paragraphs.
+      - Acknowledge the reviewers' contribution to the
+        improvements.
+      - Highlight any places where reviewers disagreed and how
+        the revision navigates the disagreement.
 
-      Save as `synthesis/cover_letter_<round>.md`.
+    Save as `synthesis/cover_letter_<round>.md`.
 
 expected_outputs:
-  - workspace/reviews/incoming_*.md (verbatim reviewer text)
-  - synthesis/response_to_reviewers.md
-  - synthesis/cover_letter_*.md (when applicable)
+- workspace/reviews/incoming_*.md (verbatim reviewer text)
+- synthesis/response_to_reviewers.md
+- synthesis/cover_letter_*.md (when applicable)
 
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: review
+sub_intent: respond
+triggers:
+- respond to reviewers
+- reviewer comments
+- rebuttal
+- draft a response
+- the editor sent back
+summary: Structured response to external peer-review comments on YOUR paper.

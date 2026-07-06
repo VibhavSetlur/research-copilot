@@ -2,16 +2,16 @@ id: voice_calibration
 tier: 'synthesize'
 name: Voice Calibration (learn the researcher's writing voice + apply it)
 version: '3.12.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai]
   workflow_shape: [any]
 last_reviewed: '2026-06-24'
 see_also:
-  - writing/writing_core           # the universal voice rules this profile layers under
-  - synthesis/synthesis_paper      # the deliverable the calibrated voice flows into
-  - synthesis/synthesis_lay_summary # register-shifting; the voice profile is register-aware
+- writing/writing_core             # the universal voice rules this profile layers under
+- synthesis/synthesis_paper        # the deliverable the calibrated voice flows into
+- synthesis/synthesis_lay_summary   # register-shifting; the voice profile is register-aware
 description: |
   Learn how THIS researcher writes, record it as a reusable voice profile,
   and apply it when drafting on their behalf — so the prose reads like them,
@@ -54,103 +54,100 @@ trigger: |
   and samples of their writing are available.
 
 prerequisites:
-  - At least one sample of the researcher's OWN writing exists, or can be
-    pointed to (a prior paper, a draft they wrote, an email/blog in their
-    voice, or a passage they edited heavily). Without a real sample there is
-    nothing to learn — do not invent a voice.
+- At least one sample of the researcher's OWN writing exists, or can be pointed to (a prior paper, a draft they wrote, an email/blog in their voice, or a passage they edited heavily). Without a real sample there is nothing to learn — do not invent a voice.
 
 steps:
-  - id: gather_samples
-    name: Gather genuine samples of the researcher's writing
-    description: |
-      Collect 1–N passages the researcher actually wrote (or heavily edited),
-      ideally in or near the register of the target deliverable — a prior
-      paper for paper drafting, informal notes for a blog, a grant for a
-      grant. Note the register of each sample, because voice is
-      register-dependent: the same person writes a methods section and a
-      tweet differently, and the profile should say so.
+- id: gather_samples
+  name: Gather genuine samples of the researcher's writing
+  description: |
+    Collect 1–N passages the researcher actually wrote (or heavily edited),
+    ideally in or near the register of the target deliverable — a prior
+    paper for paper drafting, informal notes for a blog, a grant for a
+    grant. Note the register of each sample, because voice is
+    register-dependent: the same person writes a methods section and a
+    tweet differently, and the profile should say so.
 
-      Be honest about provenance: a passage the AI drafted and the researcher
-      lightly approved is NOT a sample of the researcher's voice. Use writing
-      that originated with them. If no genuine sample exists, stop and ask for
-      one rather than fabricating a style.
+    Be honest about provenance: a passage the AI drafted and the researcher
+    lightly approved is NOT a sample of the researcher's voice. Use writing
+    that originated with them. If no genuine sample exists, stop and ask for
+    one rather than fabricating a style.
 
-  - id: observe_voice_dimensions
-    name: Observe the dimensions of their voice (don't judge them)
-    description: |
-      Read the samples and characterise the voice along its observable
-      dimensions — describe what IS there, never what "should" be:
-        - SENTENCE RHYTHM — typical length + variation; short and punchy,
-          long and subordinated, or mixed; how clauses are joined.
-        - STANCE — assertive vs hedged; how certainty and uncertainty are
-          expressed; comfort with strong claims.
-        - PERSON + VOICE — first-person ("we found"), impersonal ("it was
-          found"), or mixed; active vs passive tendency.
-        - DICTION — plain vs technical-dense; Latinate vs Anglo-Saxon; any
-          characteristic words or constructions they favour or avoid.
-        - SIGNPOSTING — how they structure an argument and signal transitions
-          (explicit "First… Second…", or flowing); paragraph shape.
-        - FIGURES OF SPEECH — do they use analogy, rhetorical questions,
-          understatement, humour, or keep it strictly literal?
-        - PUNCTUATION HABITS — em-dashes, semicolons, parentheticals,
-          lists — the small marks that fingerprint a writer.
+- id: observe_voice_dimensions
+  name: Observe the dimensions of their voice (don't judge them)
+  description: |
+    Read the samples and characterise the voice along its observable
+    dimensions — describe what IS there, never what "should" be:
+      - SENTENCE RHYTHM — typical length + variation; short and punchy,
+        long and subordinated, or mixed; how clauses are joined.
+      - STANCE — assertive vs hedged; how certainty and uncertainty are
+        expressed; comfort with strong claims.
+      - PERSON + VOICE — first-person ("we found"), impersonal ("it was
+        found"), or mixed; active vs passive tendency.
+      - DICTION — plain vs technical-dense; Latinate vs Anglo-Saxon; any
+        characteristic words or constructions they favour or avoid.
+      - SIGNPOSTING — how they structure an argument and signal transitions
+        (explicit "First… Second…", or flowing); paragraph shape.
+      - FIGURES OF SPEECH — do they use analogy, rhetorical questions,
+        understatement, humour, or keep it strictly literal?
+      - PUNCTUATION HABITS — em-dashes, semicolons, parentheticals,
+        lists — the small marks that fingerprint a writer.
 
-      Distinguish STABLE voice (recurs across samples — genuinely theirs)
-      from one-off quirks of a single passage. Only stable features go in the
-      profile. Where samples span registers, record per-register notes.
+    Distinguish STABLE voice (recurs across samples — genuinely theirs)
+    from one-off quirks of a single passage. Only stable features go in the
+    profile. Where samples span registers, record per-register notes.
 
-  - id: write_voice_profile
-    name: Distil the observations into a voice profile
-    description: |
-      Write workspace/.style/voice_profile.md: a concise, USABLE description
-      of the researcher's voice — concrete enough that a draft written to it
-      reads like them. Favour specific, applicable guidance over abstract
-      labels:
-        - "prefers short declarative sentences; rarely subordinates" beats
-          "concise style".
-        - quote 2–3 SHORT exemplar sentences from the samples that typify the
-          voice (the AI calibrates better against examples than adjectives).
-        - record per-register variants where they differ.
-        - note explicit DO and AVOID items the samples reveal (e.g. "avoids
-          first person in formal writing", "uses em-dashes freely").
+- id: write_voice_profile
+  name: Distil the observations into a voice profile
+  description: |
+    Write workspace/.style/voice_profile.md: a concise, USABLE description
+    of the researcher's voice — concrete enough that a draft written to it
+    reads like them. Favour specific, applicable guidance over abstract
+    labels:
+      - "prefers short declarative sentences; rarely subordinates" beats
+        "concise style".
+      - quote 2–3 SHORT exemplar sentences from the samples that typify the
+        voice (the AI calibrates better against examples than adjectives).
+      - record per-register variants where they differ.
+      - note explicit DO and AVOID items the samples reveal (e.g. "avoids
+        first person in formal writing", "uses em-dashes freely").
 
-      Keep it lean — this is loaded at drafting time, so it pays a token cost
-      every draft. A page is plenty; a treatise is self-defeating.
+    Keep it lean — this is loaded at drafting time, so it pays a token cost
+    every draft. A page is plenty; a treatise is self-defeating.
 
-  - id: reconcile_with_venue_and_rigor
-    name: Reconcile personal voice with venue + rigor constraints
-    description: |
-      State the precedence explicitly in the profile so later drafting never
-      has to guess:
-        - HARD CONSTRAINTS win over voice: the venue's required structure +
-          tense + citation style (writing_core, the venue template), claim
-          grounding, banned AI-isms, honest hedging. Voice never overrides
-          these.
-        - Voice OWNS the discretionary space: within the venue's rules, the
-          sentence rhythm, diction, signposting, and stance follow the
-          researcher's profile.
-      Where the researcher's natural voice clashes with a hard rule (e.g.
-      they write first-person but the venue forbids it), the rule wins for
-      that deliverable and the profile notes the exception — don't silently
-      override either.
+- id: reconcile_with_venue_and_rigor
+  name: Reconcile personal voice with venue + rigor constraints
+  description: |
+    State the precedence explicitly in the profile so later drafting never
+    has to guess:
+      - HARD CONSTRAINTS win over voice: the venue's required structure +
+        tense + citation style (writing_core, the venue template), claim
+        grounding, banned AI-isms, honest hedging. Voice never overrides
+        these.
+      - Voice OWNS the discretionary space: within the venue's rules, the
+        sentence rhythm, diction, signposting, and stance follow the
+        researcher's profile.
+    Where the researcher's natural voice clashes with a hard rule (e.g.
+    they write first-person but the venue forbids it), the rule wins for
+    that deliverable and the profile notes the exception — don't silently
+    override either.
 
-  - id: apply_and_confirm
-    name: Apply the voice to a draft + confirm the fit with the researcher
-    description: |
-      Draft (or re-draft) a real passage applying the profile, then show the
-      researcher and ask whether it sounds like them. Their reaction is the
-      ground truth — a profile is only as good as the drafts it produces.
-      Refine the profile from their feedback ("more clipped", "I'd never say
-      'leverage'", "too informal for this venue"), and record durable,
-      cross-project preferences via sys_config(operation='note') so they
-      persist even outside this project's voice profile.
+- id: apply_and_confirm
+  name: Apply the voice to a draft + confirm the fit with the researcher
+  description: |
+    Draft (or re-draft) a real passage applying the profile, then show the
+    researcher and ask whether it sounds like them. Their reaction is the
+    ground truth — a profile is only as good as the drafts it produces.
+    Refine the profile from their feedback ("more clipped", "I'd never say
+    'leverage'", "too informal for this venue"), and record durable,
+    cross-project preferences via sys_config(operation='note') so they
+    persist even outside this project's voice profile.
 
-      From here on, writing_core consults workspace/.style/voice_profile.md
-      when present, so every section drafted under the writing/* and
-      synthesis/* protocols inherits the calibrated voice automatically.
+    From here on, writing_core consults workspace/.style/voice_profile.md
+    when present, so every section drafted under the writing/* and
+    synthesis/* protocols inherits the calibrated voice automatically.
 
 expected_outputs:
-  - workspace/.style/voice_profile.md
+- workspace/.style/voice_profile.md
 
 quality_bar: |
   - The profile is built ONLY from genuine samples of the researcher's
@@ -163,6 +160,27 @@ quality_bar: |
   - A draft written to the profile was confirmed against the researcher's own
     reaction, and durable preferences were persisted via sys_config note.
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: synthesize
+sub_intent: writing
+triggers:
+- write like me
+- match my writing style
+- make it sound like me
+- mimic my voice
+- use my voice
+- this doesn't sound like me
+- this doesn't sound like my writing
+- learn my style
+- learn my writing style
+- calibrate to my writing
+- here's how i write
+- i write more like this
+- tailor the writing to me
+summary: Learn the researcher's own writing voice from their samples + apply it to drafts (author-voice, not venue-voice). Profile flows into writing_core.
+token_estimate: 1300
+decomposition:
+- protocol: writing/voice_calibration
+  purpose: Gather genuine samples, observe voice dimensions, distil a profile, reconcile with venue/rigor, apply + confirm.

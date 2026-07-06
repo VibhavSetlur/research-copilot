@@ -2,17 +2,17 @@ id: sample_data_and_validation
 tier: 'execute'
 name: Sample Data & Tool-on-Data Validation (get data, run the tool on it, validate behaviour)
 version: '4.4.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]
   audience: [naive_ai, researcher, auditor]
   workflow_shape: [tool_build, hybrid]
 last_reviewed: '2026-06-28'
 see_also:
-  - build/test_strategy            # decides the testing REGIME; this gets DATA to test on
-  - build/tool_evaluation_loop     # the iterative probe-and-improve loop this feeds with data
-  - build/implement_iteration      # where a fix found by running on data is built
-  - methodology/simulation_studies # rigorous synthetic-data generation for statistical claims
+- build/test_strategy              # decides the testing REGIME; this gets DATA to test on
+- build/tool_evaluation_loop       # the iterative probe-and-improve loop this feeds with data
+- build/implement_iteration        # where a fix found by running on data is built
+- methodology/simulation_studies   # rigorous synthetic-data generation for statistical claims
 description: |
   Before a tool can be tested, benchmarked, or evaluated, it needs DATA to
   run on. This scaffold covers the recurring "run the tool against data" need:
@@ -53,91 +53,120 @@ trigger: |
   actually work on real input", "validate it on a dataset".
 
 prerequisites:
-  - A working tool increment exists (something to run on the data).
+- A working tool increment exists (something to run on the data).
 
 steps:
-  - id: input_contract
-    name: Pin down the tool's real input contract
-    description: |
-      Before sourcing or generating anything, state precisely what the tool
-      expects: the format (CSV / parquet / FASTA / JSON / image / …), the
-      schema (columns + types + units), required vs optional fields, value
-      ranges + categorical levels, and the structural invariants (sorted? one
-      row per X? a key that joins to another table?). Read it from
-      spec/requirements.md and the tool's own parsing code — do not guess. The
-      validation later is only as good as this contract.
+- id: input_contract
+  name: Pin down the tool's real input contract
+  description: |
+    Before sourcing or generating anything, state precisely what the tool
+    expects: the format (CSV / parquet / FASTA / JSON / image / …), the
+    schema (columns + types + units), required vs optional fields, value
+    ranges + categorical levels, and the structural invariants (sorted? one
+    row per X? a key that joins to another table?). Read it from
+    spec/requirements.md and the tool's own parsing code — do not guess. The
+    validation later is only as good as this contract.
 
-  - id: choose_data_path
-    name: Real sample vs. synthetic — decide and justify
-    description: |
-      Branch on what's available:
-        - Real data exists and is shareable → pull a SMALL representative
-          slice into inputs/raw_data/ (or the step's data/), recording where
-          it came from. Prefer a sample that hits the variety the tool must
-          handle, not just the easy common case.
-        - No real data, or it's sensitive/huge → GENERATE synthetic sample
-          data that matches the input contract. Write a seeded, re-runnable
-          generator script (so the data is reproducible) — not a hand-typed
-          fixture. Pin the seed; save the generator alongside the data so a
-          reviewer can regenerate or scale it.
-      Record the choice + reason. Synthetic data must be LABELLED as synthetic
-      everywhere it's used so no one mistakes it for a real result.
+- id: choose_data_path
+  name: Real sample vs. synthetic — decide and justify
+  description: |
+    Branch on what's available:
+      - Real data exists and is shareable → pull a SMALL representative
+        slice into inputs/raw_data/ (or the step's data/), recording where
+        it came from. Prefer a sample that hits the variety the tool must
+        handle, not just the easy common case.
+      - No real data, or it's sensitive/huge → GENERATE synthetic sample
+        data that matches the input contract. Write a seeded, re-runnable
+        generator script (so the data is reproducible) — not a hand-typed
+        fixture. Pin the seed; save the generator alongside the data so a
+        reviewer can regenerate or scale it.
+    Record the choice + reason. Synthetic data must be LABELLED as synthetic
+    everywhere it's used so no one mistakes it for a real result.
 
-  - id: representativeness
-    name: Make the data actually representative — include the hard cases
-    description: |
-      A sample that only covers the happy path validates almost nothing. Make
-      the data exercise the real surface:
-        - the typical case (realistic distributions, plausible correlations);
-        - boundary + edge cases (min/max, empty, single-row, very large);
-        - the messy reality (missing values, nulls, mixed types, malformed
-          rows, duplicate keys, unexpected encodings) IF the tool is meant to
-          handle or reject them.
-      For synthetic data, draw from distributions that match the domain rather
-      than uniform noise; preserve the correlations the tool's logic depends
-      on. State what the sample does and does NOT cover.
+- id: representativeness
+  name: Make the data actually representative — include the hard cases
+  description: |
+    A sample that only covers the happy path validates almost nothing. Make
+    the data exercise the real surface:
+      - the typical case (realistic distributions, plausible correlations);
+      - boundary + edge cases (min/max, empty, single-row, very large);
+      - the messy reality (missing values, nulls, mixed types, malformed
+        rows, duplicate keys, unexpected encodings) IF the tool is meant to
+        handle or reject them.
+    For synthetic data, draw from distributions that match the domain rather
+    than uniform noise; preserve the correlations the tool's logic depends
+    on. State what the sample does and does NOT cover.
 
-  - id: run_on_data
-    name: Run the tool on the data, end-to-end
-    description: |
-      Execute the tool over the sample via the exec tools, exactly as a user
-      would — same entry point, same flags. Capture the output, the exit
-      status, and the runtime. A run that errors, hangs, or silently produces
-      nothing is itself a finding; record it and route the fix through
-      build/implement_iteration. Run inside the tool's pinned environment
-      (sys_env snapshot / its container) so the result is reproducible.
+- id: run_on_data
+  name: Run the tool on the data, end-to-end
+  description: |
+    Execute the tool over the sample via the exec tools, exactly as a user
+    would — same entry point, same flags. Capture the output, the exit
+    status, and the runtime. A run that errors, hangs, or silently produces
+    nothing is itself a finding; record it and route the fix through
+    build/implement_iteration. Run inside the tool's pinned environment
+    (sys_env snapshot / its container) so the result is reproducible.
 
-  - id: validate_output
-    name: Validate the output is correct AND sensible
-    description: |
-      Two layers of validation:
-        - CORRECTNESS — does the output match what the input contract +
-          spec/requirements.md say it should? Where the expected answer is
-          known (especially for synthetic data, where you generated ground
-          truth), assert against it. This is the strongest check synthetic
-          data buys you: you KNOW the right answer because you made the data.
-        - SENSIBILITY — even without ground truth, sanity-check shape, ranges,
-          monotonicity, conservation, and invariants the result must satisfy.
-          A number outside its possible range, a count that exceeds the input,
-          or an empty output where rows were expected is a defect.
-      Turn every failure into a prioritised item for build/tool_evaluation_loop
-      → build/implement_iteration. Save the validation as a re-runnable check
-      so it becomes part of the test suite, not a one-off.
+- id: validate_output
+  name: Validate the output is correct AND sensible
+  description: |
+    Two layers of validation:
+      - CORRECTNESS — does the output match what the input contract +
+        spec/requirements.md say it should? Where the expected answer is
+        known (especially for synthetic data, where you generated ground
+        truth), assert against it. This is the strongest check synthetic
+        data buys you: you KNOW the right answer because you made the data.
+      - SENSIBILITY — even without ground truth, sanity-check shape, ranges,
+        monotonicity, conservation, and invariants the result must satisfy.
+        A number outside its possible range, a count that exceeds the input,
+        or an empty output where rows were expected is a defect.
+    Turn every failure into a prioritised item for build/tool_evaluation_loop
+    → build/implement_iteration. Save the validation as a re-runnable check
+    so it becomes part of the test suite, not a one-off.
 
-  - id: record
-    name: Record the data + validation as a reusable fixture
-    description: |
-      Persist the sample data, its generator (if synthetic), and the
-      validation check so future increments re-run against the same baseline.
-      Log the decision (real vs synthetic + why) with mem_log. This data set
-      now feeds build/tool_evaluation_loop on every iteration.
+- id: record
+  name: Record the data + validation as a reusable fixture
+  description: |
+    Persist the sample data, its generator (if synthetic), and the
+    validation check so future increments re-run against the same baseline.
+    Log the decision (real vs synthetic + why) with mem_log. This data set
+    now feeds build/tool_evaluation_loop on every iteration.
 
 expected_outputs:
-  - A representative sample dataset (real slice or seeded synthetic) saved + provenanced
-  - A re-runnable generator script (when synthetic)
-  - A validation check (correctness + sensibility) saved into the test suite
-  - A logged decision recording real-vs-synthetic and what the sample covers
+- A representative sample dataset (real slice or seeded synthetic) saved + provenanced
+- A re-runnable generator script (when synthetic)
+- A validation check (correctness + sensibility) saved into the test suite
+- A logged decision recording real-vs-synthetic and what the sample covers
 
 next_protocol: build/tool_evaluation_loop
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: execute
+sub_intent: build_sample_data
+triggers:
+- test this on some data
+- test it on data
+- run it on sample data
+- run the tool on data
+- make me sample data
+- make sample data
+- create sample data
+- create test data
+- generate sample data
+- generate synthetic data
+- synthetic data
+- mock data
+- i don't have data yet
+- i have no data
+- does it work on real data
+- validate it on a dataset
+- try it on a dataset
+summary: Get data to run the tool on (a real sample, or seeded synthetic/sample data when none exists), run the tool end-to-end on it, and validate the output is correct + sensible — feeding failures into the evaluation loop.
+token_estimate: 1500
+decomposition:
+- protocol: build/sample_data_and_validation
+  purpose: Pin the input contract, source real or seeded-synthetic representative data (incl. edge cases), run the tool end-to-end, validate correctness + sensibility.
+- tool: tool_bash_exec
+  purpose: Write + run the seeded data generator and the validation check; run the tool over the sample.
+- tool: mem_log
+  purpose: Record real-vs-synthetic choice, what the sample covers, and the validation outcome.

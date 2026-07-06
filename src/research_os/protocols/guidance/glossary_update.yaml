@@ -2,7 +2,7 @@ id: glossary_update
 tier: 'plan'
 name: Glossary Update
 version: '3.8.0'
-schema_version: '2.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:
   domain: [any]
@@ -11,38 +11,46 @@ scope_tags:
 description: Add or refine a definition in docs/glossary.md. Run this protocol the first time any non-trivial term appears in the project.
 trigger: A jargon term, acronym, or domain-specific concept appears in methods/analysis/conclusions for the first time.
 see_also:
-  - writing/writing_core
-  - guidance/analysis_plan
+- writing/writing_core
+- guidance/analysis_plan
 
 steps:
-  - id: identify_terms
-    name: Identify Undefined Terms
-    description: |
-      Scan workspace/methods.md, workspace/analysis.md, and the latest conclusions.md
-      for acronyms (uppercase >= 2 chars), domain-specific terms, statistical or
-      computational terms with a non-obvious meaning. List those not already in
-      docs/glossary.md.
+- id: identify_terms
+  name: Identify Undefined Terms
+  description: |
+    Scan workspace/methods.md, workspace/analysis.md, and the latest conclusions.md
+    for acronyms (uppercase >= 2 chars), domain-specific terms, statistical or
+    computational terms with a non-obvious meaning. List those not already in
+    docs/glossary.md.
 
-  - id: write_definitions
-    name: Write Definitions
-    description: |
-      For each undefined term:
-        - 1-2 sentence plain-English definition.
-        - Where used in the project (which step or method).
-        - 1 citation if the term was sourced from literature.
-      Append rows to docs/glossary.md table. Keep entries alphabetised.
+- id: write_definitions
+  name: Write Definitions
+  description: |
+    For each undefined term:
+      - 1-2 sentence plain-English definition.
+      - Where used in the project (which step or method).
+      - 1 citation if the term was sourced from literature.
+    Append rows to docs/glossary.md table. Keep entries alphabetised.
 
-  - id: ground_unclear
-    name: Ground Definitions in Literature
-    description: |
-      For any term you are not 100% confident about:
-        tool_search query="<term> definition"
-        OR tool_search query="<term> review"
-      Cite the source in the glossary entry.
+- id: ground_unclear
+  name: Ground Definitions in Literature
+  description: |
+    For any term you are not 100% confident about:
+      tool_search query="<term> definition"
+      OR tool_search query="<term> review"
+    Cite the source in the glossary entry.
 
 expected_outputs:
-  - docs/glossary.md
+- docs/glossary.md
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: memory
+sub_intent: glossary
+triggers:
+- add to glossary
+- glossary
+- define term
+- explain term
+summary: Extend docs/glossary.md with new terms.

@@ -2,15 +2,15 @@ id: survey_psychometrics
 tier: 'plan'
 name: Survey & Psychometrics
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [any]
 see_also:
-  - methodology/survey_design       # builds the instrument this protocol analyses
-  - methodology/missing_data_strategy  # item-level missingness handling
+- methodology/survey_design         # builds the instrument this protocol analyses
+- methodology/missing_data_strategy    # item-level missingness handling
 description: |
   Reasoning scaffold for analysing survey / multi-item-scale /
   complex-sample-design data. Names the dimensions an analyst must
@@ -27,97 +27,103 @@ trigger: Data is survey responses with multi-item scales OR complex sample desig
 editorial_voice:
   mode: guidance
   rules:
-    - "Thresholds for reliability indices, factor-model fit indices,
-       and missingness handling are FIELD-SPECIFIC. Reporting
-       'CFI ≥ 0.95' is meaningless unless the field's recent
-       literature endorses that cutoff for this kind of instrument."
-    - "If the instrument is established, cite the original
-       psychometric validation paper + at least one independent
-       replication. If the instrument is new or adapted, the analysis
-       IS its psychometric validation — treat it accordingly."
-    - "Sample weights are not optional when the design is complex.
-       Naïve unweighted analyses of stratified / clustered /
-       oversampled data are biased."
+  - "Thresholds for reliability indices, factor-model fit indices, and missingness handling are FIELD-SPECIFIC. Reporting 'CFI ≥ 0.95' is meaningless unless the field's recent literature endorses that cutoff for this kind of instrument."
+  - "If the instrument is established, cite the original psychometric validation paper + at least one independent replication. If the instrument is new or adapted, the analysis IS its psychometric validation — treat it accordingly."
+  - "Sample weights are not optional when the design is complex. Naïve unweighted analyses of stratified / clustered / oversampled data are biased."
 
 steps:
-  - id: characterise_instruments
-    name: Characterise the instruments
-    description: |
-      For each scale being analysed, surface from `inputs/` and
-      `inputs/literature/`:
-        - Source: established (cite the validation paper) /
-          adapted (cite the original + describe the adaptation) /
-          newly developed (this protocol IS its validation).
-        - Theoretical structure: unidimensional / multidimensional;
-          number of expected factors.
-        - Population the instrument was validated on; whether the
-          present sample matches that population.
+- id: characterise_instruments
+  name: Characterise the instruments
+  description: |
+    For each scale being analysed, surface from `inputs/` and
+    `inputs/literature/`:
+      - Source: established (cite the validation paper) /
+        adapted (cite the original + describe the adaptation) /
+        newly developed (this protocol IS its validation).
+      - Theoretical structure: unidimensional / multidimensional;
+        number of expected factors.
+      - Population the instrument was validated on; whether the
+        present sample matches that population.
 
-  - id: reliability
-    name: Reliability — internal consistency
-    description: |
-      Compute the reliability statistic the literature recommends for
-      this kind of scale (Cronbach's α, McDonald's ω, KR-20, item-
-      response-theory information — the right choice depends on the
-      response format + dimensionality). Report inter-item / item-
-      total correlations.
+- id: reliability
+  name: Reliability — internal consistency
+  description: |
+    Compute the reliability statistic the literature recommends for
+    this kind of scale (Cronbach's α, McDonald's ω, KR-20, item-
+    response-theory information — the right choice depends on the
+    response format + dimensionality). Report inter-item / item-
+    total correlations.
 
-      The threshold for "acceptable" is FIELD-SPECIFIC. Cite the
-      source for whichever cutoff is used. A "fail" is not a hard
-      stop — flag the items that drag reliability and reason about
-      whether they should be revised, dropped, or accepted with the
-      limitation noted.
+    The threshold for "acceptable" is FIELD-SPECIFIC. Cite the
+    source for whichever cutoff is used. A "fail" is not a hard
+    stop — flag the items that drag reliability and reason about
+    whether they should be revised, dropped, or accepted with the
+    limitation noted.
 
-  - id: factor_structure
-    name: Factor structure — EFA or CFA
-    description: |
-      Decide between exploratory (no a-priori structure or
-      adaptation) and confirmatory (validating an established
-      structure). Justify the choice + the extraction / rotation /
-      estimator from the literature for this scale.
+- id: factor_structure
+  name: Factor structure — EFA or CFA
+  description: |
+    Decide between exploratory (no a-priori structure or
+    adaptation) and confirmatory (validating an established
+    structure). Justify the choice + the extraction / rotation /
+    estimator from the literature for this scale.
 
-      Report whichever fit indices the field treats as canonical for
-      this kind of model. Thresholds, again, are field-specific —
-      cite the source. A close fit on every index without inspection
-      of residuals + modification indices is suspicious; reason
-      about misfit rather than accepting the headline numbers.
+    Report whichever fit indices the field treats as canonical for
+    this kind of model. Thresholds, again, are field-specific —
+    cite the source. A close fit on every index without inspection
+    of residuals + modification indices is suspicious; reason
+    about misfit rather than accepting the headline numbers.
 
-  - id: sampling_weights
-    name: Sample design + weights
-    description: |
-      If the design is complex (stratified / clustered / oversampled
-      / multi-stage), every downstream estimate must use the survey
-      weights and a design-aware variance estimator. The implementing
-      library is whichever the project's runtime supports — surface
-      it from `tool_research_tool`. Document the weighting scheme in
-      `outputs/reports/sample_design.md`.
+- id: sampling_weights
+  name: Sample design + weights
+  description: |
+    If the design is complex (stratified / clustered / oversampled
+    / multi-stage), every downstream estimate must use the survey
+    weights and a design-aware variance estimator. The implementing
+    library is whichever the project's runtime supports — surface
+    it from `tool_research_tool`. Document the weighting scheme in
+    `outputs/reports/sample_design.md`.
 
-  - id: nonresponse
-    name: Non-response bias
-    description: |
-      Reason about who is missing from the responding sample.
-      Approaches the literature names: early-vs-late responder
-      comparison, post-stratification against known population
-      margins, weighted comparison with auxiliary data. Pick the
-      one(s) the data supports. Report what differs between
-      respondents and non-respondents on variables consequential to
-      the outcome.
+- id: nonresponse
+  name: Non-response bias
+  description: |
+    Reason about who is missing from the responding sample.
+    Approaches the literature names: early-vs-late responder
+    comparison, post-stratification against known population
+    margins, weighted comparison with auxiliary data. Pick the
+    one(s) the data supports. Report what differs between
+    respondents and non-respondents on variables consequential to
+    the outcome.
 
-  - id: item_level_missingness
-    name: Item-level missingness
-    description: |
-      For each scale: quantify missingness per item + per respondent.
-      The handling strategy follows from the assumed mechanism + the
-      field's convention (full-information ML, multiple imputation,
-      pairwise deletion under MCAR, person-fit analysis for IRT).
-      Cite the source for the chosen strategy.
+- id: item_level_missingness
+  name: Item-level missingness
+  description: |
+    For each scale: quantify missingness per item + per respondent.
+    The handling strategy follows from the assumed mechanism + the
+    field's convention (full-information ML, multiple imputation,
+    pairwise deletion under MCAR, person-fit analysis for IRT).
+    Cite the source for the chosen strategy.
 
 expected_outputs:
-  - workspace/*/outputs/reports/reliability.md
-  - workspace/*/outputs/reports/factor_structure.md
-  - workspace/*/outputs/reports/sample_design.md
-  - workspace/*/outputs/reports/missing_data.md
+- workspace/*/outputs/reports/reliability.md
+- workspace/*/outputs/reports/factor_structure.md
+- workspace/*/outputs/reports/sample_design.md
+- workspace/*/outputs/reports/missing_data.md
 
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: survey
+triggers:
+- psychometric
+- factor analysis
+- scale validation
+- validate a scale
+- validate a survey scale
+- validate my scale
+- survey scale
+- scale validity
+- cronbach
+- irt
+summary: Scale validation, EFA/CFA, reliability.

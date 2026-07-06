@@ -2,16 +2,16 @@ id: session_resume
 tier: 'intake'
 name: Session Resume
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [naive_ai, maintainer]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - guidance/session_boot          # resume is reached via boot's pause_classification
-  - guidance/chat_handoff          # the handoff doc resume reads back in on ctx_exhaustion
-  - guidance/mid_pipeline_entry    # distinct: resuming RO state vs importing outside work
+- guidance/session_boot            # resume is reached via boot's pause_classification
+- guidance/chat_handoff            # the handoff doc resume reads back in on ctx_exhaustion
+- guidance/mid_pipeline_entry      # distinct: resuming RO state vs importing outside work
 description: |
   Re-enter a paused / interrupted / handed-off project — possibly in a
   different chat or with a different AI model. Two MCP calls: tool_session_resume
@@ -22,79 +22,79 @@ trigger: |
   OR sys_boot returned pause_classification ∈ {mid_step, long_running_job,
   ctx_exhaustion}.
 prerequisites:
-  - session_boot has run (sys_boot called)
+- session_boot has run (sys_boot called)
 
 steps:
-  - id: read_state
-    name: One-Call Resume Brief
-    description: |
-      Call tool_session_resume — single MCP call returns:
-        - project_name + pipeline_stage + current_path
-        - pause_reason (fresh_session | mid_step | dead_end |
-                        long_running_job | ctx_exhaustion | completed_step)
-        - last_protocol_entry + active_path_ids
-        - hypotheses (by id + status)
-        - background_tasks.running (with PIDs + commands)
-        - analysis_tail + methods_tail (last 30 lines of each)
-        - latest_handoff (path to most recent handoff doc, if any)
-        - recommended_next_protocol
-        - resume_message — exact text to read aloud to the researcher
+- id: read_state
+  name: One-Call Resume Brief
+  description: |
+    Call tool_session_resume — single MCP call returns:
+      - project_name + pipeline_stage + current_path
+      - pause_reason (fresh_session | mid_step | dead_end |
+                      long_running_job | ctx_exhaustion | completed_step)
+      - last_protocol_entry + active_path_ids
+      - hypotheses (by id + status)
+      - background_tasks.running (with PIDs + commands)
+      - analysis_tail + methods_tail (last 30 lines of each)
+      - latest_handoff (path to most recent handoff doc, if any)
+      - recommended_next_protocol
+      - resume_message — exact text to read aloud to the researcher
 
-      DO NOT call sys_state_get / sys_protocol_history / mem_hypothesis_list
-      / sys_path separately. They are all bundled.
+    DO NOT call sys_state_get / sys_protocol_history / mem_hypothesis_list
+    / sys_path separately. They are all bundled.
 
-  - id: poll_background_tasks
-    name: Poll Live Background Tasks (only if any)
-    description: |
-      If tool_session_resume reported background_tasks.running > 0, call
-      tool_task(operation='status') for each task_id:
-        - finished → log result, surface a one-line summary
-        - still running → report elapsed time + log tail
-        - stuck (no log growth in 10+ min) → flag for researcher review
+- id: poll_background_tasks
+  name: Poll Live Background Tasks (only if any)
+  description: |
+    If tool_session_resume reported background_tasks.running > 0, call
+    tool_task(operation='status') for each task_id:
+      - finished → log result, surface a one-line summary
+      - still running → report elapsed time + log tail
+      - stuck (no log growth in 10+ min) → flag for researcher review
 
-  - id: read_handoff_if_present
-    name: Read Latest Handoff Doc (only if ctx_exhaustion)
-    description: |
-      If latest_handoff is non-null, sys_file_read filepath=<latest_handoff>.
-      The handoff includes: open hypotheses, dead-end lessons, critical
-      assumptions, and a "Notes for the next AI" addendum. Use it to
-      avoid re-asking the researcher questions they already answered.
+- id: read_handoff_if_present
+  name: Read Latest Handoff Doc (only if ctx_exhaustion)
+  description: |
+    If latest_handoff is non-null, sys_file_read filepath=<latest_handoff>.
+    The handoff includes: open hypotheses, dead-end lessons, critical
+    assumptions, and a "Notes for the next AI" addendum. Use it to
+    avoid re-asking the researcher questions they already answered.
 
-  - id: check_freshness
-    name: Stale-state check
-    description: |
-      tool_state_freshness_check
-      If is_stale=true, surface the `signals` + `prompt_for_ai` to the
-      researcher BEFORE present_brief. A workspace that hasn't been
-      touched in > 30 days, OR whose citations.md predates new PDFs,
-      OR whose .prov.json sidecars point to deleted scripts, is at
-      high risk of silent drift — better to reconfirm current state
-      than to resume into a stale plan.
+- id: check_freshness
+  name: Stale-state check
+  description: |
+    tool_state_freshness_check
+    If is_stale=true, surface the `signals` + `prompt_for_ai` to the
+    researcher BEFORE present_brief. A workspace that hasn't been
+    touched in > 30 days, OR whose citations.md predates new PDFs,
+    OR whose .prov.json sidecars point to deleted scripts, is at
+    high risk of silent drift — better to reconfirm current state
+    than to resume into a stale plan.
 
-      Also call:
-        tool_reliability(operation='log_event', event_type="protocol_start",
-          protocol_name="session_resume")
-      so the reliability log captures the resume (helps the maintainer
-      spot regressions across releases — no project content leaks).
+    Also call:
+      tool_reliability(operation='log_event', event_type="protocol_start",
+        protocol_name="session_resume")
+    so the reliability log captures the resume (helps the maintainer
+    spot regressions across releases — no project content leaks).
 
-  - id: present_brief
-    name: Present the Resume Brief
-    description: |
-      Read tool_session_resume's `resume_message` field verbatim. Append
-      ONE question:
-        "Continue the recommended next protocol (<name>), pivot, or start
-         something new?"
-      Wait for the researcher's answer.
+- id: present_brief
+  name: Present the Resume Brief
+  description: |
+    Read tool_session_resume's `resume_message` field verbatim. Append
+    ONE question:
+      "Continue the recommended next protocol (<name>), pivot, or start
+       something new?"
+    Wait for the researcher's answer.
 
-  - id: route_their_answer
-    name: Route Their Answer
-    description: |
-      When they respond, call tool_route(prompt=<their answer>) — same
-      flow as session_boot's last step. Load primary protocol with
-      format="summary", drill into a step with format="step" when ready.
+- id: route_their_answer
+  name: Route Their Answer
+  description: |
+    When they respond, call tool_route(prompt=<their answer>) — same
+    flow as session_boot's last step. Load primary protocol with
+    format="summary", drill into a step with format="step" when ready.
 
 expected_outputs: []
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
 
@@ -103,3 +103,23 @@ quality_bar: |
     its payload.
   - Background tasks are polled, not assumed.
   - If a handoff doc exists, it is read before asking the researcher questions.
+intent_class: session
+sub_intent: resume
+triggers:
+- resume
+- pick up
+- where were we
+- continue from
+- what was I doing
+- back to work
+- another session
+- next day
+- i'm back
+summary: Re-enter a paused / interrupted / handed-off project.
+shortcut_tool: tool_session_resume
+token_estimate: 800
+decomposition:
+- tool: tool_session_resume
+  purpose: Reconstruct intent + status in one call.
+- tool: sys_protocol_next
+  purpose: Confirm pipeline-recommended next step.

@@ -2,56 +2,77 @@ id: dead_end_routing
 tier: 'execute'
 name: Dead-End Routing
 version: '3.1.0'
-schema_version: '2.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-25'
 scope_tags:
   domain: [any]
   audience: [naive_ai]
   workflow_shape: [experiment_pipeline]
 see_also:
-  - guidance/analysis_plan                 # the loop a fresh path re-enters
-  - guidance/analysis_paths                # abandoning a losing branch routes here from the path comparison
-  - methodology/methodology_selection      # loop here when the method itself was wrong
+- guidance/analysis_plan                   # the loop a fresh path re-enters
+- guidance/analysis_paths                  # abandoning a losing branch routes here from the path comparison
+- methodology/methodology_selection        # loop here when the method itself was wrong
 description: What to do when an experiment path fails or a methodology proves unworkable. Preserves the failed path and routes back into the pipeline.
 trigger: An experiment's conclusions.md decision is "dead-end", or the researcher asks to abandon the current direction.
 
 steps:
-  - id: document_failure
-    name: Document the Failure
-    description: |
-      Append to workspace/<step>/conclusions.md a clearly headed `## Why this path failed`
-      with at minimum: hypothesis tested, what was tried, the result that ruled it out,
-      and what we learned that applies to OTHER paths.
+- id: document_failure
+  name: Document the Failure
+  description: |
+    Append to workspace/<step>/conclusions.md a clearly headed `## Why this path failed`
+    with at minimum: hypothesis tested, what was tried, the result that ruled it out,
+    and what we learned that applies to OTHER paths.
 
-  - id: mark_dead_end
-    name: Mark the Path Dead
-    description: |
-      sys_path path_name="<NN_slug>" rationale="<one-paragraph summary>"
-      This renames the folder to NN_<slug>__DEAD_END (files preserved), updates
-      state.paths[name].status=dead_end, and removes it from the active path list.
+- id: mark_dead_end
+  name: Mark the Path Dead
+  description: |
+    sys_path path_name="<NN_slug>" rationale="<one-paragraph summary>"
+    This renames the folder to NN_<slug>__DEAD_END (files preserved), updates
+    state.paths[name].status=dead_end, and removes it from the active path list.
 
-  - id: log_decision
-    name: Log the Routing Decision
-    description: |
-      mem_log
-        context="Abandoning experiment <NN_slug>"
-        selected="<new direction OR pause for researcher input>"
-        rationale="<what we learned + why the new direction>"
+- id: log_decision
+  name: Log the Routing Decision
+  description: |
+    mem_log
+      context="Abandoning experiment <NN_slug>"
+      selected="<new direction OR pause for researcher input>"
+      rationale="<what we learned + why the new direction>"
 
-  - id: pick_next_direction
-    name: Choose Where to Resume
-    description: |
-      Options, in order of preference:
-        1. Start a fresh experiment path (sys_path) targeting the same
-           research question with a different method.
-        2. Loop back to methodology_selection if the methodology itself was wrong.
-        3. Loop back to domain/research_design if the framing was wrong.
-        4. If the researcher prefers, pause and wait for input.
-      Whichever you pick, immediately load that protocol (sys_protocol_get) and run
-      its first step.
+- id: pick_next_direction
+  name: Choose Where to Resume
+  description: |
+    Options, in order of preference:
+      1. Start a fresh experiment path (sys_path) targeting the same
+         research question with a different method.
+      2. Loop back to methodology_selection if the methodology itself was wrong.
+      3. Loop back to domain/research_design if the framing was wrong.
+      4. If the researcher prefers, pause and wait for input.
+    Whichever you pick, immediately load that protocol (sys_protocol_get) and run
+    its first step.
 
 expected_outputs: []
 
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: execute
+sub_intent: abandon
+triggers:
+- dead end
+- this isn't working
+- abandon
+- scrap this
+- give up
+- wrong approach
+- not working
+summary: Abandon a path cleanly + decide where to go from here.
+token_estimate: 700
+decomposition:
+- tool: sys_path
+  purpose: Mark folder as __DEAD_END with rationale.
+- tool: tool_lessons
+  args:
+    operation: dead_end
+  purpose: Capture the lesson for future steps.
+- tool: tool_plan_next_step
+  purpose: Propose alternative direction.

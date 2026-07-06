@@ -2,15 +2,15 @@ id: writing_conclusions
 tier: 'synthesize'
 name: Writing — Conclusions (per step)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - guidance/analysis_plan             # calls this protocol's document_conclusions step
-  - writing/writing_core               # the grounding + voice rules every finding obeys
+- guidance/analysis_plan               # calls this protocol's document_conclusions step
+- writing/writing_core                 # the grounding + voice rules every finding obeys
 description: |
   How to write per-step `workspace/<step>/conclusions.md`. Called by
   analysis_plan's `document_conclusions` step. Conclusions are the
@@ -65,41 +65,48 @@ template: |
   2. {candidate 2}
 
 steps:
-  - id: write
-    name: Write Conclusions
-    description: |
-      sys_file_write filepath="workspace/<step>/conclusions.md"
-      content=<template above filled in>.
+- id: write
+  name: Write Conclusions
+  description: |
+    sys_file_write filepath="workspace/<step>/conclusions.md"
+    content=<template above filled in>.
 
-      Findings section MUST cite each finding to a figure, table, or
-      output file produced by THIS step (workspace/<step>/outputs/...).
-      The Figures + tables produced section MUST list every figure
-      under outputs/figures/ and every table under outputs/tables/
-      with a one-line caption summary that mirrors the figure's
-      `.caption.md` sidecar — the downstream synthesis stages depend
-      on this table to pick what to embed.
+    Findings section MUST cite each finding to a figure, table, or
+    output file produced by THIS step (workspace/<step>/outputs/...).
+    The Figures + tables produced section MUST list every figure
+    under outputs/figures/ and every table under outputs/tables/
+    with a one-line caption summary that mirrors the figure's
+    `.caption.md` sidecar — the downstream synthesis stages depend
+    on this table to pick what to embed.
 
-  - id: log
-    name: Log to analysis.md
-    description: |
-      mem_log entry="<step_id> conclusions: <one-line summary, key number>"
+- id: log
+  name: Log to analysis.md
+  description: |
+    mem_log entry="<step_id> conclusions: <one-line summary, key number>"
 
-  - id: validate
-    name: Validate Against Writing Standards
-    description: |
-      sys_file_validate_md filepath="workspace/<step>/conclusions.md"
-        protocol_name="writing_core"
+- id: validate
+  name: Validate Against Writing Standards
+  description: |
+    sys_file_validate_md filepath="workspace/<step>/conclusions.md"
+      protocol_name="writing_core"
 
-      Validation gates (BLOCKER if violated):
-        - every bullet in Findings cites at least one figure / table /
-          output file produced by the step
-        - Figures + tables produced section lists every artefact under
-          outputs/figures/ and outputs/tables/
-        - every figure row references an existing `.caption.md` sidecar
+    Validation gates (BLOCKER if violated):
+      - every bullet in Findings cites at least one figure / table /
+        output file produced by the step
+      - Figures + tables produced section lists every artefact under
+        outputs/figures/ and outputs/tables/
+      - every figure row references an existing `.caption.md` sidecar
 
 expected_outputs:
-  - workspace/*/conclusions.md
+- workspace/*/conclusions.md
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: writing
+triggers:
+- step conclusions
+- write conclusions
+- wrap up step
+summary: How to write per-step conclusions.md.

@@ -2,17 +2,17 @@ id: optimal_approach
 tier: 'plan'
 name: Optimal Approach (brain out the candidate approaches before committing to one)
 version: '4.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]
   audience: [naive_ai, researcher, auditor]
   workflow_shape: [tool_build, hybrid]
 last_reviewed: '2026-06-25'
 see_also:
-  - build/spec_and_design        # the spec whose constraints this reasons against; run after the spec is pinned
-  - build/method_scouting        # when "the best approach" turns out to hinge on external prior art, scout it
-  - build/implement_iteration    # where the chosen approach is built, once committed
-  - build/tool_from_description   # the describe→build loop that enters this to choose HOW before building
+- build/spec_and_design          # the spec whose constraints this reasons against; run after the spec is pinned
+- build/method_scouting          # when "the best approach" turns out to hinge on external prior art, scout it
+- build/implement_iteration      # where the chosen approach is built, once committed
+- build/tool_from_description     # the describe→build loop that enters this to choose HOW before building
 description: |
   The "find the optimal way to build this, brain it out first" step. Before
   a tool_build project commits to an implementation, this protocol forces the
@@ -54,142 +54,129 @@ trigger: |
   "don't just build the first thing". Also entered from
   build/tool_from_description to choose HOW before building.
 prerequisites:
-  - A spec or a clear description of what the tool must do exists (from build/spec_and_design or build/tool_from_description) — you cannot judge "optimal" without the criteria it is optimal AGAINST.
-  - The constraints that bind this build are at least sketched (the environment, the consumer, the non-functional bar) — these are the axes the trade-off turns on.
+- A spec or a clear description of what the tool must do exists (from build/spec_and_design or build/tool_from_description) — you cannot judge "optimal" without the criteria it is optimal AGAINST.
+- The constraints that bind this build are at least sketched (the environment, the consumer, the non-functional bar) — these are the axes the trade-off turns on.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "An approach choice is a research-grade decision, justified from the
-       problem, not asserted from familiarity. 'We'll build it as X' with no
-       alternative weighed is a guess wearing a decision's clothes. The
-       justification must name what X buys and what it costs against the
-       specific constraints — not generic pros and cons copied from memory."
-    - "Generate alternatives that are actually DIFFERENT, not three flavours
-       of the same idea. Two approaches that differ only in a library choice
-       are one approach; the valuable spread is across the axis that actually
-       changes the tool's shape, risk, or cost here."
-    - "Reason against THIS project's constraints, never a canned trade-off
-       table. 'Streaming scales better' is a memorised platitude; 'streaming
-       avoids the 40GB peak this batch job would hit on the target node' is a
-       reason. The constraint makes the trade-off real."
-    - "Be willing to recommend the boring approach. The point is not novelty;
-       it is fit. If the simplest approach clears the bar, the brainstorm's
-       job is to PROVE the fancier ones buy nothing here — that is a finding,
-       not a failure."
+  - "An approach choice is a research-grade decision, justified from the problem, not asserted from familiarity. 'We'll build it as X' with no alternative weighed is a guess wearing a decision's clothes. The justification must name what X buys and what it costs against the specific constraints — not generic pros and cons copied from memory."
+  - "Generate alternatives that are actually DIFFERENT, not three flavours of the same idea. Two approaches that differ only in a library choice are one approach; the valuable spread is across the axis that actually changes the tool's shape, risk, or cost here."
+  - "Reason against THIS project's constraints, never a canned trade-off table. 'Streaming scales better' is a memorised platitude; 'streaming avoids the 40GB peak this batch job would hit on the target node' is a reason. The constraint makes the trade-off real."
+  - "Be willing to recommend the boring approach. The point is not novelty; it is fit. If the simplest approach clears the bar, the brainstorm's job is to PROVE the fancier ones buy nothing here — that is a finding, not a failure."
 
 steps:
-  - id: pin_what_optimal_means_here
-    name: Pin what "optimal" means for THIS build
-    description: |
-      "Best" is meaningless without the axes it is best on. From the spec (or
-      the description), name the criteria this approach will be judged
-      against — and which DOMINATE here, because they rarely weigh equally.
-      Reason over candidates such as: correctness/risk of getting it wrong,
-      time-to-working, runtime cost (latency/throughput/memory) at the real
-      scale, maintainability + who will maintain it, reversibility (how hard
-      to change course later), and dependency/operational burden. Which of
-      these binds follows from the consumer and environment in the spec, not
-      from a default ranking.
+- id: pin_what_optimal_means_here
+  name: Pin what "optimal" means for THIS build
+  description: |
+    "Best" is meaningless without the axes it is best on. From the spec (or
+    the description), name the criteria this approach will be judged
+    against — and which DOMINATE here, because they rarely weigh equally.
+    Reason over candidates such as: correctness/risk of getting it wrong,
+    time-to-working, runtime cost (latency/throughput/memory) at the real
+    scale, maintainability + who will maintain it, reversibility (how hard
+    to change course later), and dependency/operational burden. Which of
+    these binds follows from the consumer and environment in the spec, not
+    from a default ranking.
 
-      Write the ranked criteria into a brief in workspace/<step>/
-      approach_brief.md (or decisions/) so the eventual choice is judged
-      against the bar that was set BEFORE the options were known — not one
-      retrofitted to justify the option you liked.
+    Write the ranked criteria into a brief in workspace/<step>/
+    approach_brief.md (or decisions/) so the eventual choice is judged
+    against the bar that was set BEFORE the options were known — not one
+    retrofitted to justify the option you liked.
 
-  - id: generate_candidate_approaches
-    name: Generate genuinely distinct candidate approaches
-    description: |
-      Brain out two to a few candidate approaches that differ along the axis
-      that actually matters for this tool — not minor variants. Derive them
-      FROM the problem: what is the core hard part of this tool, and what are
-      the structurally different ways to attack it? (The right axis is
-      problem-specific: where the work happens, what the tool leans on, how
-      it is decomposed, what it trades to get the load-bearing property the
-      spec demands.)
+- id: generate_candidate_approaches
+  name: Generate genuinely distinct candidate approaches
+  description: |
+    Brain out two to a few candidate approaches that differ along the axis
+    that actually matters for this tool — not minor variants. Derive them
+    FROM the problem: what is the core hard part of this tool, and what are
+    the structurally different ways to attack it? (The right axis is
+    problem-specific: where the work happens, what the tool leans on, how
+    it is decomposed, what it trades to get the load-bearing property the
+    spec demands.)
 
-      For each candidate, sketch enough to reason about it: the shape of the
-      solution, the key risk it carries, and the one thing it is clearly best
-      and clearly worst at. Resist collapsing to one too early — the value of
-      this step is that a real alternative was on the table.
+    For each candidate, sketch enough to reason about it: the shape of the
+    solution, the key risk it carries, and the one thing it is clearly best
+    and clearly worst at. Resist collapsing to one too early — the value of
+    this step is that a real alternative was on the table.
 
-      If a candidate's viability hinges on whether an external method or
-      library exists (rather than on a choice you can make outright), that is
-      a signal to route into build/method_scouting for that candidate before
-      you can fairly weigh it — an approach you can't tell is feasible can't
-      be compared.
+    If a candidate's viability hinges on whether an external method or
+    library exists (rather than on a choice you can make outright), that is
+    a signal to route into build/method_scouting for that candidate before
+    you can fairly weigh it — an approach you can't tell is feasible can't
+    be compared.
 
-  - id: reason_about_tradeoffs
-    name: Reason about each candidate against the binding constraints
-    description: |
-      Weigh each candidate against the ranked criteria from
-      pin_what_optimal_means_here — concretely, against THIS project's
-      numbers and environment, not a generic table. For the dominant
-      criterion especially, reason about how each approach actually behaves
-      here: not "approach A is faster" but "approach A avoids re-reading the
-      input per pass, which matters because the real inputs are the part that
-      doesn't fit in memory on the target node".
+- id: reason_about_tradeoffs
+  name: Reason about each candidate against the binding constraints
+  description: |
+    Weigh each candidate against the ranked criteria from
+    pin_what_optimal_means_here — concretely, against THIS project's
+    numbers and environment, not a generic table. For the dominant
+    criterion especially, reason about how each approach actually behaves
+    here: not "approach A is faster" but "approach A avoids re-reading the
+    input per pass, which matters because the real inputs are the part that
+    doesn't fit in memory on the target node".
 
-      Surface the assumptions each approach rests on, and flag the ones that,
-      if wrong, would flip the choice — those are the things worth a cheap
-      check (a spike via build/integration_spike, a back-of-envelope
-      estimate) BEFORE committing, not after building.
+    Surface the assumptions each approach rests on, and flag the ones that,
+    if wrong, would flip the choice — those are the things worth a cheap
+    check (a spike via build/integration_spike, a back-of-envelope
+    estimate) BEFORE committing, not after building.
 
-      Where an approach's edge is a claim that can be measured cheaply and
-      would change the decision, do the cheap measurement rather than
-      arguing it — a brainstorm that resolves a load-bearing uncertainty for
-      the cost of a spike is worth far more than one that doesn't.
+    Where an approach's edge is a claim that can be measured cheaply and
+    would change the decision, do the cheap measurement rather than
+    arguing it — a brainstorm that resolves a load-bearing uncertainty for
+    the cost of a spike is worth far more than one that doesn't.
 
-  - id: choose_and_justify
-    name: Choose one approach and record why the others lost
-    description: |
-      Commit to ONE approach and write the justification: which criterion
-      decided it, what the chosen approach buys against that criterion, and —
-      as load-bearing as the pick — why each rejected approach lost, so a
-      later session does not re-litigate the same dead ends. If the choice
-      was close, say so and name the condition under which the runner-up
-      would have won (it may become the fallback if the choice regresses).
+- id: choose_and_justify
+  name: Choose one approach and record why the others lost
+  description: |
+    Commit to ONE approach and write the justification: which criterion
+    decided it, what the chosen approach buys against that criterion, and —
+    as load-bearing as the pick — why each rejected approach lost, so a
+    later session does not re-litigate the same dead ends. If the choice
+    was close, say so and name the condition under which the runner-up
+    would have won (it may become the fallback if the choice regresses).
 
-      Record this as an ADR in decisions/ (one decision, the alternatives
-      weighed, the consequences) when the choice is load-bearing — reuse
-      build/spec_and_design's ADR discipline rather than inventing a new
-      record. mem_log the chosen approach + the deciding criterion so the
-      build's reasoning is auditable.
+    Record this as an ADR in decisions/ (one decision, the alternatives
+    weighed, the consequences) when the choice is load-bearing — reuse
+    build/spec_and_design's ADR discipline rather than inventing a new
+    record. mem_log the chosen approach + the deciding criterion so the
+    build's reasoning is auditable.
 
-      AUTONOMY GATE:
-        Risk: choosing the approach is reversible on paper but expensive to
-        reverse once built on — the cost sits in the implementation that
-        follows, not in writing the choice down.
-        proceed (adaptive default, autopilot) → if one approach clearly
-          dominates on the binding criterion and no flipping assumption is
-          unchecked, record the choice + the rejected alternatives and
-          proceed to implement; if the choice is close or rests on an
-          unchecked assumption, resolve the assumption (a spike) or present
-          the trade-off before committing.
-        confirm first (manual / supervised) → present the candidates, the
-          trade-off reasoning, and the recommendation; let the researcher
-          pick the approach before any code is written.
+    AUTONOMY GATE:
+      Risk: choosing the approach is reversible on paper but expensive to
+      reverse once built on — the cost sits in the implementation that
+      follows, not in writing the choice down.
+      proceed (adaptive default, autopilot) → if one approach clearly
+        dominates on the binding criterion and no flipping assumption is
+        unchecked, record the choice + the rejected alternatives and
+        proceed to implement; if the choice is close or rests on an
+        unchecked assumption, resolve the assumption (a spike) or present
+        the trade-off before committing.
+      confirm first (manual / supervised) → present the candidates, the
+        trade-off reasoning, and the recommendation; let the researcher
+        pick the approach before any code is written.
 
-  - id: branch_into_implementation
-    name: Branch into the build on the chosen approach
-    description: |
-      A chosen approach is an input to the build loop, not the build. Hand
-      off to build/implement_iteration to scope the first increment ON the
-      chosen approach. If the choice surfaced an external piece worth
-      adopting, that increment may begin with build/method_scouting →
-      build/integration_spike; if the choice rests on an assumption you
-      flagged as flipping, make the first increment the cheap thing that
-      confirms it, so a wrong approach is caught at increment one, not at
-      release.
+- id: branch_into_implementation
+  name: Branch into the build on the chosen approach
+  description: |
+    A chosen approach is an input to the build loop, not the build. Hand
+    off to build/implement_iteration to scope the first increment ON the
+    chosen approach. If the choice surfaced an external piece worth
+    adopting, that increment may begin with build/method_scouting →
+    build/integration_spike; if the choice rests on an assumption you
+    flagged as flipping, make the first increment the cheap thing that
+    confirms it, so a wrong approach is caught at increment one, not at
+    release.
 
-      Keep the rejected approaches recorded (in the ADR): if the build later
-      shows the chosen approach was wrong, the brainstorm is where the
-      project returns to pick the fallback, with the reasoning already done.
+    Keep the rejected approaches recorded (in the ADR): if the build later
+    shows the chosen approach was wrong, the brainstorm is where the
+    project returns to pick the fallback, with the reasoning already done.
 
 expected_outputs:
-  - workspace/<step>/approach_brief.md (ranked criteria + candidate approaches + trade-off reasoning)
-  - An ADR in decisions/ recording the chosen approach, the alternatives weighed, and why each lost
-  - mem_log entry naming the chosen approach + the deciding criterion
+- workspace/<step>/approach_brief.md (ranked criteria + candidate approaches + trade-off reasoning)
+- An ADR in decisions/ recording the chosen approach, the alternatives weighed, and why each lost
+- mem_log entry naming the chosen approach + the deciding criterion
 
 quality_bar: |
   - "Optimal" is defined by ranked criteria fixed BEFORE the options were known, derived from the spec's constraints — not a generic ranking.
@@ -201,3 +188,32 @@ quality_bar: |
 next_protocol: build/implement_iteration
 next_protocol_kind: forward_default
 on_failure: guidance/scope_clarification
+intent_class: plan
+sub_intent: build_approach
+triggers:
+- find the best way to build
+- find the best way to build this
+- find the optimal way
+- what's the optimal approach
+- best approach to build
+- brain it out
+- brain out the approach
+- explore the options first
+- how should we build this
+- weigh the approaches
+- which design is best here
+- think through the alternatives
+- consider the alternatives
+- don't just build the first thing
+- what are my options for building
+summary: "Brain out the candidate approaches before committing: define what 'optimal' means here, generate genuinely distinct candidates, reason about trade-offs against THIS build's real constraints, pick one with a recorded justification, then branch into the build."
+token_estimate: 1700
+decomposition:
+- protocol: build/optimal_approach
+  purpose: Pin the ranked criteria, generate distinct candidates, reason trade-offs against real constraints, choose + justify, branch into the build.
+- protocol: build/method_scouting
+  purpose: When an approach's viability hinges on external prior art, scout it before it can be fairly weighed.
+- tool: sys_file_write
+  purpose: Write the approach brief + an ADR recording the chosen approach and why the alternatives lost.
+- tool: mem_log
+  purpose: Log the chosen approach + the deciding criterion.

@@ -3,15 +3,15 @@ tier: 'plan'
 name: Data Ethics Review (IRB / privacy / consent / fairness)
 version: '3.0.0'
 last_reviewed: '2026-06-16'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor, maintainer]
   workflow_shape: [any]
 see_also:
-  - methodology/data_management_plan     # sharing/access decisions feed the DMP
-  - methodology/data_quality_audit       # the cleanliness counterpart to this ethics pass
-  - methodology/fairness_audit           # the deep dive when decisions are made about people
+- methodology/data_management_plan       # sharing/access decisions feed the DMP
+- methodology/data_quality_audit         # the cleanliness counterpart to this ethics pass
+- methodology/fairness_audit             # the deep dive when decisions are made about people
 description: |
   Walk an ethics review of the data + analysis. Covers IRB / REC
   scope, informed-consent status, privacy + de-identification,
@@ -32,244 +32,232 @@ trigger: |
   on the data".
 
 prerequisites:
-  - At least one dataset on disk OR a data-acquisition plan in
-    inputs/context.
+- At least one dataset on disk OR a data-acquisition plan in inputs/context.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Ethics is not a paperwork exercise. Each section of this
-       review names a real failure mode (a participant's privacy
-       breached, a subgroup harmed, a data-sharing agreement
-       violated). If a section reduces to 'we have IRB approval',
-       it's not done."
-    - "IRB / REC approval covers the ORIGINAL collection. Secondary
-       analyses, re-identification possibilities, and downstream
-       sharing usually require NEW review."
-    - "De-identification is harder than it looks. The HIPAA Safe
-       Harbor list is a floor, not a ceiling — quasi-identifier
-       combinations can re-identify even after stripping direct
-       identifiers."
-    - "Fairness audits surface the questions reviewers will ask;
-       running them before submission turns potential rejections
-       into known limitations the discussion can address."
+  - "Ethics is not a paperwork exercise. Each section of this review names a real failure mode (a participant's privacy breached, a subgroup harmed, a data-sharing agreement violated). If a section reduces to 'we have IRB approval', it's not done."
+  - "IRB / REC approval covers the ORIGINAL collection. Secondary analyses, re-identification possibilities, and downstream sharing usually require NEW review."
+  - "De-identification is harder than it looks. The HIPAA Safe Harbor list is a floor, not a ceiling — quasi-identifier combinations can re-identify even after stripping direct identifiers."
+  - "Fairness audits surface the questions reviewers will ask; running them before submission turns potential rejections into known limitations the discussion can address."
 
 steps:
-  - id: scope_the_review
-    name: Scope the review
-    description: |
-      Confirm:
-        - which dataset(s)
-        - whether the data come from:
-            (a) the research team's own collection (primary)
-            (b) secondary use of someone else's data (e.g.
-                published, public, licensed, EHR extract)
-            (c) automated collection (web scrape, sensor logs,
-                user telemetry)
-        - the intended use (publication / public dataset release /
-          model deployment / internal-only / regulatory submission)
-        - the population (human subjects? animal? environmental?
-          synthetic? human tissue?) — drives which regulatory
-          framework applies
+- id: scope_the_review
+  name: Scope the review
+  description: |
+    Confirm:
+      - which dataset(s)
+      - whether the data come from:
+          (a) the research team's own collection (primary)
+          (b) secondary use of someone else's data (e.g.
+              published, public, licensed, EHR extract)
+          (c) automated collection (web scrape, sensor logs,
+              user telemetry)
+      - the intended use (publication / public dataset release /
+        model deployment / internal-only / regulatory submission)
+      - the population (human subjects? animal? environmental?
+        synthetic? human tissue?) — drives which regulatory
+        framework applies
 
-  - id: irb_or_rec_scope
-    name: IRB / REC scope check
-    description: |
-      For human-subjects (or human-tissue) data:
-        - is there current IRB / REC approval that COVERS the
-          intended use? (current scope, current expiry, named
-          investigators)
-        - has the intended use DRIFTED from the originally-approved
-          protocol? (secondary analyses, new sub-population, new
-          outcomes, sharing with a third party)
-        - is an AMENDMENT required? Most institutions require an
-          amendment for any of: new sub-analysis, new collaborator,
-          new data export destination, new sharing agreement
-        - is there an EXEMPTION available (Category 4 de-identified
-          secondary use, Category 5 public-benefit, etc.)?
+- id: irb_or_rec_scope
+  name: IRB / REC scope check
+  description: |
+    For human-subjects (or human-tissue) data:
+      - is there current IRB / REC approval that COVERS the
+        intended use? (current scope, current expiry, named
+        investigators)
+      - has the intended use DRIFTED from the originally-approved
+        protocol? (secondary analyses, new sub-population, new
+        outcomes, sharing with a third party)
+      - is an AMENDMENT required? Most institutions require an
+        amendment for any of: new sub-analysis, new collaborator,
+        new data export destination, new sharing agreement
+      - is there an EXEMPTION available (Category 4 de-identified
+        secondary use, Category 5 public-benefit, etc.)?
 
-      For non-human data:
-        - animal: IACUC / equivalent
-        - environmental: institutional + jurisdictional permits
-        - human tissue: tissue-bank agreements + de-identification
+    For non-human data:
+      - animal: IACUC / equivalent
+      - environmental: institutional + jurisdictional permits
+      - human tissue: tissue-bank agreements + de-identification
 
-      Write the IRB / REC status to
-      workspace/<step>/outputs/reports/ethics_irb_status.md.
+    Write the IRB / REC status to
+    workspace/<step>/outputs/reports/ethics_irb_status.md.
 
-  - id: consent_check
-    name: Consent check (scope + revocability + secondary use)
-    description: |
-      For human-subjects data, walk:
-        - did participants CONSENT to the SPECIFIC use the project
-          will make? (research use generally; this particular
-          analysis specifically; this particular collaborator
-          downstream; this particular publication)
-        - is the consent BROAD or NARROW? Many older consents
-          do not cover ML / secondary-use / data-sharing
-        - is there a REVOCATION mechanism? If a participant
-          revokes, can their data be removed from the analysis +
-          downstream artefacts?
-        - for waiver-of-consent contexts (e.g. EHR retrospective
-          analyses), is the waiver documented + the data-use
-          conditions respected?
+- id: consent_check
+  name: Consent check (scope + revocability + secondary use)
+  description: |
+    For human-subjects data, walk:
+      - did participants CONSENT to the SPECIFIC use the project
+        will make? (research use generally; this particular
+        analysis specifically; this particular collaborator
+        downstream; this particular publication)
+      - is the consent BROAD or NARROW? Many older consents
+        do not cover ML / secondary-use / data-sharing
+      - is there a REVOCATION mechanism? If a participant
+        revokes, can their data be removed from the analysis +
+        downstream artefacts?
+      - for waiver-of-consent contexts (e.g. EHR retrospective
+        analyses), is the waiver documented + the data-use
+        conditions respected?
 
-      Write the consent status to
-      workspace/<step>/outputs/reports/ethics_consent.md.
+    Write the consent status to
+    workspace/<step>/outputs/reports/ethics_consent.md.
 
-  - id: privacy_and_deidentification
-    name: Privacy + de-identification audit
-    description: |
-      For any data containing personal information:
-        - DIRECT IDENTIFIERS removed (name, address, MRN, SSN,
-          email, phone, etc. — the HIPAA Safe Harbor 18 list is
-          the floor)
-        - QUASI-IDENTIFIERS audited for re-identification risk
-          (a small combination such as birth date + ZIP + sex can
-          re-identify a large fraction of a population — cite the
-          re-identification study for the population at hand rather
-          than quoting a single figure)
-        - k-ANONYMITY estimated (every quasi-identifier
-          combination shared by ≥k individuals); the acceptable k is
-          a context + regulatory decision, cite the source
-        - DATE-SHIFTING when retained date columns could
-          re-identify (the date of a rare diagnosis is itself
-          identifying)
-        - GEO precision reduced (5-digit ZIP → 3-digit ZIP or
-          county; lat/lon → bounding region) per the population
-          density
+- id: privacy_and_deidentification
+  name: Privacy + de-identification audit
+  description: |
+    For any data containing personal information:
+      - DIRECT IDENTIFIERS removed (name, address, MRN, SSN,
+        email, phone, etc. — the HIPAA Safe Harbor 18 list is
+        the floor)
+      - QUASI-IDENTIFIERS audited for re-identification risk
+        (a small combination such as birth date + ZIP + sex can
+        re-identify a large fraction of a population — cite the
+        re-identification study for the population at hand rather
+        than quoting a single figure)
+      - k-ANONYMITY estimated (every quasi-identifier
+        combination shared by ≥k individuals); the acceptable k is
+        a context + regulatory decision, cite the source
+      - DATE-SHIFTING when retained date columns could
+        re-identify (the date of a rare diagnosis is itself
+        identifying)
+      - GEO precision reduced (5-digit ZIP → 3-digit ZIP or
+        county; lat/lon → bounding region) per the population
+        density
 
-      For genomic / sequence data: separate framework
-      (de-identification is largely impossible; access controls
-      + DUAs replace it).
+    For genomic / sequence data: separate framework
+    (de-identification is largely impossible; access controls
+    + DUAs replace it).
 
-      Save to workspace/<step>/outputs/reports/ethics_privacy.md
-      including k-anonymity estimates per quasi-identifier set.
+    Save to workspace/<step>/outputs/reports/ethics_privacy.md
+    including k-anonymity estimates per quasi-identifier set.
 
-  - id: data_sharing_constraints
-    name: Data-sharing constraints + licensing
-    description: |
-      For secondary-use data:
-        - what is the LICENSE / Data Use Agreement (DUA) on the
-          source data? (CC-BY / CC-0 / restricted / "by request")
-        - does the license permit:
-            * downstream sharing (the data appendix to the paper)?
-            * derived-data sharing (de-identified summaries)?
-            * model release trained on the data?
-            * commercial use?
-        - is ATTRIBUTION required? cite the data source per the
-          DUA terms
+- id: data_sharing_constraints
+  name: Data-sharing constraints + licensing
+  description: |
+    For secondary-use data:
+      - what is the LICENSE / Data Use Agreement (DUA) on the
+        source data? (CC-BY / CC-0 / restricted / "by request")
+      - does the license permit:
+          * downstream sharing (the data appendix to the paper)?
+          * derived-data sharing (de-identified summaries)?
+          * model release trained on the data?
+          * commercial use?
+      - is ATTRIBUTION required? cite the data source per the
+        DUA terms
 
-      For primary-collected data the team owns:
-        - what sharing model will the project commit to (open /
-          controlled-access / on-request)?
-        - what derived artefacts are sharable vs gated?
-        - what's the EMBARGO timeline (often 12-24 months
-          post-publication for clinical data)?
+    For primary-collected data the team owns:
+      - what sharing model will the project commit to (open /
+        controlled-access / on-request)?
+      - what derived artefacts are sharable vs gated?
+      - what's the EMBARGO timeline (often 12-24 months
+        post-publication for clinical data)?
 
-      Save to workspace/<step>/outputs/reports/ethics_sharing.md.
+    Save to workspace/<step>/outputs/reports/ethics_sharing.md.
 
-  - id: fairness_and_bias_audit
-    name: Fairness + bias audit
-    description: |
-      For any data the project will use to make decisions about
-      people (prediction, classification, scoring, ranking,
-      generation):
+- id: fairness_and_bias_audit
+  name: Fairness + bias audit
+  description: |
+    For any data the project will use to make decisions about
+    people (prediction, classification, scoring, ranking,
+    generation):
 
-        - REPRESENTATION audit: subgroup counts for the relevant
-          protected attributes (race, ethnicity, sex, gender,
-          age, disability, socioeconomic status) and the
-          downstream-decision-relevant attributes
-        - LABEL audit: is the outcome label itself fair? Many
-          outcome labels encode historical bias (arrest rates,
-          credit decisions, hiring decisions, diagnostic codes)
-        - LEAKAGE-OF-PROXY audit: do supposedly-neutral features
-          encode protected attributes? (ZIP encodes race;
-          first-name encodes gender + ethnicity; insurance type
-          encodes socioeconomic status)
-        - FAIRNESS-METRIC plan: which fairness metric the analysis
-          will report — demographic parity, equalised odds,
-          equal opportunity, calibration parity. CITE the choice;
-          different metrics encode different fairness desiderata
-          and cannot all hold simultaneously
+      - REPRESENTATION audit: subgroup counts for the relevant
+        protected attributes (race, ethnicity, sex, gender,
+        age, disability, socioeconomic status) and the
+        downstream-decision-relevant attributes
+      - LABEL audit: is the outcome label itself fair? Many
+        outcome labels encode historical bias (arrest rates,
+        credit decisions, hiring decisions, diagnostic codes)
+      - LEAKAGE-OF-PROXY audit: do supposedly-neutral features
+        encode protected attributes? (ZIP encodes race;
+        first-name encodes gender + ethnicity; insurance type
+        encodes socioeconomic status)
+      - FAIRNESS-METRIC plan: which fairness metric the analysis
+        will report — demographic parity, equalised odds,
+        equal opportunity, calibration parity. CITE the choice;
+        different metrics encode different fairness desiderata
+        and cannot all hold simultaneously
 
-      For purely descriptive / exploratory work that does NOT
-      drive a decision: representation alone matters; fairness
-      metrics matter less.
+    For purely descriptive / exploratory work that does NOT
+    drive a decision: representation alone matters; fairness
+    metrics matter less.
 
-      Save to workspace/<step>/outputs/reports/ethics_fairness.md.
+    Save to workspace/<step>/outputs/reports/ethics_fairness.md.
 
-  - id: dual_use_and_harms_review
-    name: Dual-use + harms review
-    description: |
-      For research with plausible misuse pathways:
-        - could the findings ENABLE harm if misused? (biosecurity,
-          cybersecurity, surveillance, content generation,
-          financial manipulation)
-        - what RESPONSIBLE DISCLOSURE pathway applies before
-          public release? (security: coordinated disclosure to
-          vendors; biosecurity: pre-publication review with the
-          institutional biosafety committee; AI: red-team /
-          stress-test before model release)
-        - what MITIGATIONS are baked in? (capability gating,
-          access controls, monitoring, dataset filtering, model
-          card disclosing risks)
+- id: dual_use_and_harms_review
+  name: Dual-use + harms review
+  description: |
+    For research with plausible misuse pathways:
+      - could the findings ENABLE harm if misused? (biosecurity,
+        cybersecurity, surveillance, content generation,
+        financial manipulation)
+      - what RESPONSIBLE DISCLOSURE pathway applies before
+        public release? (security: coordinated disclosure to
+        vendors; biosecurity: pre-publication review with the
+        institutional biosafety committee; AI: red-team /
+        stress-test before model release)
+      - what MITIGATIONS are baked in? (capability gating,
+        access controls, monitoring, dataset filtering, model
+        card disclosing risks)
 
-      For projects with no plausible dual-use pathway, document
-      that the question was considered and the answer was no
-      — the consideration itself is increasingly expected in
-      ethical-review prose.
+    For projects with no plausible dual-use pathway, document
+    that the question was considered and the answer was no
+    — the consideration itself is increasingly expected in
+    ethical-review prose.
 
-  - id: write_the_review
-    name: Write the ethics review document
-    description: |
-      sys_file_write filepath="docs/ethics_review.md":
+- id: write_the_review
+  name: Write the ethics review document
+  description: |
+    sys_file_write filepath="docs/ethics_review.md":
 
-        # Data ethics review
+      # Data ethics review
 
-        ## Summary
-        Verdict: <green | yellow | red>
-          green  — proceed without changes
-          yellow — proceed with conditions (named below)
-          red    — STOP; address before any further work
+      ## Summary
+      Verdict: <green | yellow | red>
+        green  — proceed without changes
+        yellow — proceed with conditions (named below)
+        red    — STOP; address before any further work
 
-        ## IRB / REC status
-        ## Consent status
-        ## Privacy + de-identification status
-        ## Data-sharing + license status
-        ## Fairness + bias considerations
-        ## Dual-use + harms considerations
-        ## Conditions (when yellow)
-          - <condition> — <owner> — <by when>
-        ## Routine compliance checks scheduled
-          - <re-audit cadence>
+      ## IRB / REC status
+      ## Consent status
+      ## Privacy + de-identification status
+      ## Data-sharing + license status
+      ## Fairness + bias considerations
+      ## Dual-use + harms considerations
+      ## Conditions (when yellow)
+        - <condition> — <owner> — <by when>
+      ## Routine compliance checks scheduled
+        - <re-audit cadence>
 
-      For PUBLISHABLE artefacts, surface relevant sections in:
-        - paper Methods (IRB number, consent, de-id procedure)
-        - paper Discussion > Limitations (fairness / generalisability
-          gaps)
-        - end-matter Data Availability (sharing model + DUA)
+    For PUBLISHABLE artefacts, surface relevant sections in:
+      - paper Methods (IRB number, consent, de-id procedure)
+      - paper Discussion > Limitations (fairness / generalisability
+        gaps)
+      - end-matter Data Availability (sharing model + DUA)
 
-  - id: route_to_amendment_or_proceed
-    name: Route to amendment or proceed
-    description: |
-      green   → proceed (route back to whichever protocol called
-                this one, with the review document linked)
-      yellow  → proceed with conditions; record conditions to
-                mem_log; assign owner + deadline; route
-                back to caller
-      red     → STOP. Route to the responsible action:
-                  - amendment to IRB / REC
-                  - escalation to data steward
-                  - re-acquisition under broader consent
-                  - re-design with smaller / different scope
+- id: route_to_amendment_or_proceed
+  name: Route to amendment or proceed
+  description: |
+    green   → proceed (route back to whichever protocol called
+              this one, with the review document linked)
+    yellow  → proceed with conditions; record conditions to
+              mem_log; assign owner + deadline; route
+              back to caller
+    red     → STOP. Route to the responsible action:
+                - amendment to IRB / REC
+                - escalation to data steward
+                - re-acquisition under broader consent
+                - re-design with smaller / different scope
 
 expected_outputs:
-  - workspace/<step>/outputs/reports/ethics_irb_status.md
-  - workspace/<step>/outputs/reports/ethics_consent.md
-  - workspace/<step>/outputs/reports/ethics_privacy.md
-  - workspace/<step>/outputs/reports/ethics_sharing.md
-  - workspace/<step>/outputs/reports/ethics_fairness.md
-  - docs/ethics_review.md
+- workspace/<step>/outputs/reports/ethics_irb_status.md
+- workspace/<step>/outputs/reports/ethics_consent.md
+- workspace/<step>/outputs/reports/ethics_privacy.md
+- workspace/<step>/outputs/reports/ethics_sharing.md
+- workspace/<step>/outputs/reports/ethics_fairness.md
+- docs/ethics_review.md
 
 quality_bar:
   verdict_one_of_green_yellow_red: true
@@ -279,6 +267,25 @@ quality_bar:
   dual_use_considered_or_explicitly_noted: true
   conditions_named_with_owner_when_yellow: true
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: methodology
+sub_intent: ethics
+triggers:
+- irb review
+- rec review
+- ethics review
+- privacy check
+- consent check
+- deidentification audit
+- data sharing agreement
+- is this data ethical to use
+- fairness audit
+- bias and fairness review
+- compliance check on the data
+summary: IRB / consent / privacy / sharing / fairness / dual-use review on data.
+token_estimate: 1600
+decomposition:
+- protocol: methodology/data_ethics_review
+  purpose: Walk IRB / consent / privacy / sharing / fairness / dual-use; produce verdict.

@@ -2,15 +2,15 @@ id: inter_rater_reliability
 tier: 'plan'
 name: Inter-rater Reliability (IRR) — design + computation + reporting
 version: '3.0.1'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/coding_scheme_development   # the codebook the raters apply
-  - methodology/qualitative_quality_audit   # consumes the IRR gate
+- methodology/coding_scheme_development     # the codebook the raters apply
+- methodology/qualitative_quality_audit     # consumes the IRR gate
 description: |
   When more than one rater applies categorical (or ordinal, or
   continuous) judgements to the same data — coding qualitative
@@ -41,192 +41,175 @@ trigger: |
       IRR report.
 
 prerequisites:
-  - ≥2 trained raters identified.
-  - A rating scheme exists (codebook, rubric, annotation guide).
-  - A sampling plan for the IRR subset is drafted (or this protocol
-    will draft one).
+- ≥2 trained raters identified.
+- A rating scheme exists (codebook, rubric, annotation guide).
+- A sampling plan for the IRR subset is drafted (or this protocol will draft one).
 
 editorial_voice:
   rules:
-    - "Let the rating task select the statistic: reason over rater count,
-       measurement level, missingness, and rater design, then surface the
-       agreement statistic the field treats as canonical for that
-       combination and cite the source. Do not import a statistic because
-       it is the most familiar."
-    - "Thresholds vary by field. 'Substantial' agreement (κ ≥ 0.61
-       in Landis & Koch 1977) is a heuristic, not a law. Some
-       clinical fields require κ ≥ 0.80; some text classification
-       work accepts κ ≥ 0.60. State the threshold + cite a field
-       standard or justify the choice."
-    - "Agreement is not validity. Two raters can perfectly agree on
-       a wrong label. IRR is necessary, not sufficient. Validity
-       (do the codes capture what they claim to capture?) is a
-       separate question — typically argued via theoretical
-       grounding + audit by a domain expert."
-    - "Prevalence matters. When one category dominates the marginal
-       distribution, kappa shrinks even with high observed agreement
-       (the kappa paradox). Report observed agreement, a
-       prevalence-adjusted statistic (e.g. PABAK), and the marginal
-       distribution alongside kappa."
+  - "Let the rating task select the statistic: reason over rater count, measurement level, missingness, and rater design, then surface the agreement statistic the field treats as canonical for that combination and cite the source. Do not import a statistic because it is the most familiar."
+  - "Thresholds vary by field. 'Substantial' agreement (κ ≥ 0.61 in Landis & Koch 1977) is a heuristic, not a law. Some clinical fields require κ ≥ 0.80; some text classification work accepts κ ≥ 0.60. State the threshold + cite a field standard or justify the choice."
+  - "Agreement is not validity. Two raters can perfectly agree on a wrong label. IRR is necessary, not sufficient. Validity (do the codes capture what they claim to capture?) is a separate question — typically argued via theoretical grounding + audit by a domain expert."
+  - "Prevalence matters. When one category dominates the marginal distribution, kappa shrinks even with high observed agreement (the kappa paradox). Report observed agreement, a prevalence-adjusted statistic (e.g. PABAK), and the marginal distribution alongside kappa."
 
 steps:
-  - id: characterize_rating_task
-    name: Characterise the rating task
-    description: |
-      Capture:
-        - how many raters? (2 vs ≥3 changes the statistic)
-        - nominal / ordinal / interval / ratio?
-        - mutually exclusive codes per segment, or multi-label?
-        - how many categories? (binary vs many-class affects
-          sensitivity)
-        - missing / unrateable allowed? (Krippendorff handles missing;
-          kappa does not without imputation)
-        - what is the UNIT being rated? (transcript line / paragraph /
-          turn / utterance / image / clinical event)
+- id: characterize_rating_task
+  name: Characterise the rating task
+  description: |
+    Capture:
+      - how many raters? (2 vs ≥3 changes the statistic)
+      - nominal / ordinal / interval / ratio?
+      - mutually exclusive codes per segment, or multi-label?
+      - how many categories? (binary vs many-class affects
+        sensitivity)
+      - missing / unrateable allowed? (Krippendorff handles missing;
+        kappa does not without imputation)
+      - what is the UNIT being rated? (transcript line / paragraph /
+        turn / utterance / image / clinical event)
 
-      Write workspace/.qualitative/irr_design.md with this profile.
+    Write workspace/.qualitative/irr_design.md with this profile.
 
-  - id: pick_statistic
-    name: Pick the agreement statistic that fits the task
-    description: |
-      Reason from the rating task's profile (from the prior step) to the
-      agreement statistic, then surface the matching one via
-      tool_research_method and cite the source that justifies it for THIS
-      task type. The dimensions that drive the choice — reason over each,
-      don't pick from memory:
+- id: pick_statistic
+  name: Pick the agreement statistic that fits the task
+  description: |
+    Reason from the rating task's profile (from the prior step) to the
+    agreement statistic, then surface the matching one via
+    tool_research_method and cite the source that justifies it for THIS
+    task type. The dimensions that drive the choice — reason over each,
+    don't pick from memory:
 
-        - RATER COUNT — exactly two vs three-or-more changes which
-          chance-corrected statistic applies.
-        - MEASUREMENT LEVEL — nominal / ordinal / interval / ratio. Ordinal
-          codes where partial agreement matters need a weighting scheme;
-          continuous ratings move you to an intraclass-correlation family.
-        - MISSING / UNRATEABLE DATA — some statistics require complete data;
-          others tolerate missingness natively. If the task has gaps, that
-          constrains the choice.
-        - RATER DESIGN — are the same raters used for every unit, or a
-          rotating pool? For continuous ratings this selects the ICC form
-          (one-way vs two-way, random vs fixed); naming the wrong form
-          silently changes what the estimate generalises to.
-        - LABEL STRUCTURE — mutually-exclusive single codes vs multi-label
-          (where per-code present/absent agreement is the natural unit).
+      - RATER COUNT — exactly two vs three-or-more changes which
+        chance-corrected statistic applies.
+      - MEASUREMENT LEVEL — nominal / ordinal / interval / ratio. Ordinal
+        codes where partial agreement matters need a weighting scheme;
+        continuous ratings move you to an intraclass-correlation family.
+      - MISSING / UNRATEABLE DATA — some statistics require complete data;
+        others tolerate missingness natively. If the task has gaps, that
+        constrains the choice.
+      - RATER DESIGN — are the same raters used for every unit, or a
+        rotating pool? For continuous ratings this selects the ICC form
+        (one-way vs two-way, random vs fixed); naming the wrong form
+        silently changes what the estimate generalises to.
+      - LABEL STRUCTURE — mutually-exclusive single codes vs multi-label
+        (where per-code present/absent agreement is the natural unit).
 
-      Document the chosen statistic, the dimensions that forced it, and the
-      methods-literature citation that adopts it for this kind of task. Do
-      not import a statistic because it is the most familiar — let the task
-      profile select it.
+    Document the chosen statistic, the dimensions that forced it, and the
+    methods-literature citation that adopts it for this kind of task. Do
+    not import a statistic because it is the most familiar — let the task
+    profile select it.
 
-  - id: sampling_plan
-    name: Plan the IRR sample (how many units, drawn how)
-    description: |
-      IRR is computed on a SAMPLE of the corpus (typically the full
-      corpus is too large for double-coding). Decide:
-        - SAMPLE SIZE — large enough that the agreement estimate's
-          CI is tight, and large enough to populate the rarest
-          category's cells. The methods literature on IRR sample
-          size (e.g. Hallgren 2012) gives field-appropriate rules of
-          thumb — cite the one you adopt rather than guessing. Rare
-          categories drive the requirement up.
-        - SAMPLING METHOD — random vs stratified by participant /
-          time / category. Stratification helps rare categories.
-        - INDEPENDENCE — raters must not see each other's codes
-          before reconciliation. Specify the workflow.
-        - TIMING — IRR computed once after calibration freeze, or
-          periodically throughout coding? Periodic catches drift.
+- id: sampling_plan
+  name: Plan the IRR sample (how many units, drawn how)
+  description: |
+    IRR is computed on a SAMPLE of the corpus (typically the full
+    corpus is too large for double-coding). Decide:
+      - SAMPLE SIZE — large enough that the agreement estimate's
+        CI is tight, and large enough to populate the rarest
+        category's cells. The methods literature on IRR sample
+        size (e.g. Hallgren 2012) gives field-appropriate rules of
+        thumb — cite the one you adopt rather than guessing. Rare
+        categories drive the requirement up.
+      - SAMPLING METHOD — random vs stratified by participant /
+        time / category. Stratification helps rare categories.
+      - INDEPENDENCE — raters must not see each other's codes
+        before reconciliation. Specify the workflow.
+      - TIMING — IRR computed once after calibration freeze, or
+        periodically throughout coding? Periodic catches drift.
 
-      Document in workspace/.qualitative/irr_design.md.
+    Document in workspace/.qualitative/irr_design.md.
 
-  - id: pick_threshold
-    name: Pick the acceptable threshold + field justification
-    description: |
-      State the threshold the project will defend + WHY, and commit
-      to it BEFORE running. Lowering the threshold after seeing the
-      result is a researcher degree of freedom.
+- id: pick_threshold
+  name: Pick the acceptable threshold + field justification
+  description: |
+    State the threshold the project will defend + WHY, and commit
+    to it BEFORE running. Lowering the threshold after seeing the
+    result is a researcher degree of freedom.
 
-      The acceptable agreement level is field-specific — there is no
-      universal cut. Interpretive scales exist (e.g. the Landis &
-      Koch verbal labels; Krippendorff's confirmatory-vs-tentative
-      bands; field-specific arguments that clinical use needs a
-      higher bar). Cite whichever scale governs THIS field and the
-      published study or methods paper that adopts it; do not import
-      a number because it is familiar.
+    The acceptable agreement level is field-specific — there is no
+    universal cut. Interpretive scales exist (e.g. the Landis &
+    Koch verbal labels; Krippendorff's confirmatory-vs-tentative
+    bands; field-specific arguments that clinical use needs a
+    higher bar). Cite whichever scale governs THIS field and the
+    published study or methods paper that adopts it; do not import
+    a number because it is familiar.
 
-      The qualitative audit pack exposes the threshold as a TIERED
-      gate so the chosen cut is explicit and auditable:
-        - LIGHT gate — exploratory / formative work, where the bar
-          documents that IRR was measured at all.
-        - NORMAL gate — the default for thematic / codebook coding;
-          its cut is the BLOCKER threshold in
-          qualitative_quality_audit and the pack-side
-          `per_code_kappa_minimum` default.
-        - STRICT gate — clinical / confirmatory work, where the cut
-          rises to the confirmatory level the field's methods
-          literature names.
-      Set each gate's numeric cut from the cited field convention,
-      not from this protocol; record the citation alongside the
-      number. Override the pack default only with a documented
-      rationale.
+    The qualitative audit pack exposes the threshold as a TIERED
+    gate so the chosen cut is explicit and auditable:
+      - LIGHT gate — exploratory / formative work, where the bar
+        documents that IRR was measured at all.
+      - NORMAL gate — the default for thematic / codebook coding;
+        its cut is the BLOCKER threshold in
+        qualitative_quality_audit and the pack-side
+        `per_code_kappa_minimum` default.
+      - STRICT gate — clinical / confirmatory work, where the cut
+        rises to the confirmatory level the field's methods
+        literature names.
+    Set each gate's numeric cut from the cited field convention,
+    not from this protocol; record the citation alongside the
+    number. Override the pack default only with a documented
+    rationale.
 
-  - id: compute_agreement
-    name: Compute agreement on the IRR sample
-    description: |
-      The AI authors the computation in its own script (tool_python_exec /
-      tool_r_exec) — Research-OS does not compute IRR internally. Use a
-      maintained implementation of the chosen statistic from the project's
-      runtime; surface one via tool_research_tool rather than defaulting to
-      a remembered package, and record which implementation + version was
-      used (the result must be reproducible).
+- id: compute_agreement
+  name: Compute agreement on the IRR sample
+  description: |
+    The AI authors the computation in its own script (tool_python_exec /
+    tool_r_exec) — Research-OS does not compute IRR internally. Use a
+    maintained implementation of the chosen statistic from the project's
+    runtime; surface one via tool_research_tool rather than defaulting to
+    a remembered package, and record which implementation + version was
+    used (the result must be reproducible).
 
-      The script must persist:
-        - the per-segment label matrix
-        - the agreement statistic + its confidence interval (bootstrap when
-          no analytic interval exists)
-        - the confusion matrix
-        - per-code agreement (where does disagreement concentrate?)
-        - prevalence of each code in the sample
+    The script must persist:
+      - the per-segment label matrix
+      - the agreement statistic + its confidence interval (bootstrap when
+        no analytic interval exists)
+      - the confusion matrix
+      - per-code agreement (where does disagreement concentrate?)
+      - prevalence of each code in the sample
 
-      Save to workspace/.qualitative/irr_report.md.
+    Save to workspace/.qualitative/irr_report.md.
 
-  - id: interpret_and_remediate
-    name: Interpret + remediate if threshold not met
-    description: |
-      If threshold met: log + proceed.
-      If threshold not met:
-        - identify which codes drive disagreement (per-code kappa
-          / per-code agreement matrix)
-        - decide:
-            REFINE CODEBOOK — split / merge / clarify the problem
-              codes; return to methodology/coding_scheme_development;
-              re-train raters; re-compute on a fresh sample.
-            DROP CODES — retire codes that cannot be reliably
-              applied (and explain in methods why).
-            ACCEPT WITH CAVEAT — for exploratory analysis with
-              explicit limitation in the discussion.
+- id: interpret_and_remediate
+  name: Interpret + remediate if threshold not met
+  description: |
+    If threshold met: log + proceed.
+    If threshold not met:
+      - identify which codes drive disagreement (per-code kappa
+        / per-code agreement matrix)
+      - decide:
+          REFINE CODEBOOK — split / merge / clarify the problem
+            codes; return to methodology/coding_scheme_development;
+            re-train raters; re-compute on a fresh sample.
+          DROP CODES — retire codes that cannot be reliably
+            applied (and explain in methods why).
+          ACCEPT WITH CAVEAT — for exploratory analysis with
+            explicit limitation in the discussion.
 
-      Never silently lower the threshold to make the number meet it.
+    Never silently lower the threshold to make the number meet it.
 
-  - id: report
-    name: Report IRR in Methods + Results
-    description: |
-      Methods section:
-        - statistic chosen + why it fits the task
-        - sample size + sampling method
-        - rater training (when, how long, by whom)
-        - threshold + citation for that threshold
+- id: report
+  name: Report IRR in Methods + Results
+  description: |
+    Methods section:
+      - statistic chosen + why it fits the task
+      - sample size + sampling method
+      - rater training (when, how long, by whom)
+      - threshold + citation for that threshold
 
-      Results section (or supplement):
-        - the IRR estimate + 95% CI
-        - per-code agreement when codes vary in difficulty
-        - drift reports if computed periodically
-        - any remediation (refined codebook v<n> → v<n+1>)
+    Results section (or supplement):
+      - the IRR estimate + 95% CI
+      - per-code agreement when codes vary in difficulty
+      - drift reports if computed periodically
+      - any remediation (refined codebook v<n> → v<n+1>)
 
-      mem_log method="IRR computation" with the statistic
-      + threshold + result so the audit trail is intact.
+    mem_log method="IRR computation" with the statistic
+    + threshold + result so the audit trail is intact.
 
 expected_outputs:
-  - workspace/.qualitative/irr_design.md
-  - workspace/.qualitative/irr_report.md
-  - workspace/<step>/scripts/<NN>_irr_compute_v<n>.py
-  - (entries appended to methods.md via mem_log)
+- workspace/.qualitative/irr_design.md
+- workspace/.qualitative/irr_report.md
+- workspace/<step>/scripts/<NN>_irr_compute_v<n>.py
+- (entries appended to methods.md via mem_log)
 
 quality_bar:
   statistic_choice_matches_rating_task: true
@@ -240,6 +223,26 @@ quality_bar:
 # Re-enter coding_scheme_development via the dispatcher when
 # remediation requires another codebook iteration (no back-edge
 # here, to keep the graph acyclic).
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: irr
+triggers:
+- inter-rater
+- inter-coder
+- irr
+- kappa
+- krippendorff
+- krippendorff alpha
+- icc
+- annotation reliability
+- rater agreement
+- inter-rater agreement
+- coder agreement
+- annotators
+- annotator
+- coders disagree
+- raters disagree
+- disagree on the labels
+summary: Design + compute + report inter-rater reliability (kappa / alpha / ICC).

@@ -2,15 +2,15 @@ id: pre_submission_checklist
 tier: 'finalize'
 name: Pre-Submission Checklist (final ready-to-submit gate)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor, maintainer]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - audit/audit_and_validation    # the mid-project quality audit this gate assumes ran
-  - synthesis/synthesis_paper     # paper assembly upstream of this gate
+- audit/audit_and_validation      # the mid-project quality audit this gate assumes ran
+- synthesis/synthesis_paper       # paper assembly upstream of this gate
 description: |
   Final ready-to-submit gate. Walks the project through every
   pre-submission check that journals, reviewers, and program
@@ -40,362 +40,352 @@ trigger: |
   audit", "final gate before journal submission".
 
 prerequisites:
-  - synthesis/paper.md exists.
-  - audit/audit_and_validation has run (workspace/logs/audit_report.md
-    exists).
+- synthesis/paper.md exists.
+- audit/audit_and_validation has run (workspace/logs/audit_report.md exists).
 
 # Machine-checkable subset of the prose prerequisites (precondition gate):
 # verified by server/preconditions.py, surfaced on protocol load. Prose
 # keeps any fuzzy judgement; these are pure existence/completion facts.
 requires:
   checks:
-    - kind: file_exists
-      path: synthesis/paper.md
-      because: the pre-submission checklist reviews a written paper
-    - kind: file_exists
-      path: workspace/logs/audit_report.md
-      because: the checklist builds on the prior quality audit's report
+  - kind: file_exists
+    path: synthesis/paper.md
+    because: the pre-submission checklist reviews a written paper
+  - kind: file_exists
+    path: workspace/logs/audit_report.md
+    because: the checklist builds on the prior quality audit's report
 
 editorial_voice:
   mode: prescription
   rules:
-    - "Every check has a SPECIFIC, venue-grounded fail criterion.
-       'Title looks good' is not a check; 'title is within the
-       venue's character cap AND carries the field's key search
-       terms' is — with the cap read from the venue's guidelines,
-       not assumed."
-    - "RED is rare and explicit. Most projects pass with YELLOW
-       (some things to address); the protocol's job is to make
-       the YELLOW items concrete + actionable, not to gate
-       submission unnecessarily."
-    - "The checklist is COPYABLE. The output is a one-page
-       summary the researcher can show their co-authors / PI as
-       evidence the paper is submission-ready."
+  - "Every check has a SPECIFIC, venue-grounded fail criterion. 'Title looks good' is not a check; 'title is within the venue's character cap AND carries the field's key search terms' is — with the cap read from the venue's guidelines, not assumed."
+  - "RED is rare and explicit. Most projects pass with YELLOW (some things to address); the protocol's job is to make the YELLOW items concrete + actionable, not to gate submission unnecessarily."
+  - "The checklist is COPYABLE. The output is a one-page summary the researcher can show their co-authors / PI as evidence the paper is submission-ready."
 
 steps:
-  - id: scope_submission
-    name: Scope the submission
-    description: |
-      Confirm:
-        - target venue (journal name + section)
-        - submission deadline (so blockers can be triaged by
-          time-to-fix)
-        - whether the submission is a NEW manuscript / a REVISION
-          (revisions skip some checks and add others — see
-          revision_addendum below)
+- id: scope_submission
+  name: Scope the submission
+  description: |
+    Confirm:
+      - target venue (journal name + section)
+      - submission deadline (so blockers can be triaged by
+        time-to-fix)
+      - whether the submission is a NEW manuscript / a REVISION
+        (revisions skip some checks and add others — see
+        revision_addendum below)
 
-  - id: artefact_inventory
-    name: Artefact inventory (everything the submission needs)
-    description: |
-      For a standard journal submission, expect:
-        REQUIRED:
-          - paper.md (or .docx / .tex / .pdf)
-          - abstract.md
-          - figures (high-res TIFF / EPS / PDF per journal)
-          - figure captions (separate file for some journals)
-          - tables (separate file for some journals)
-          - cover_letter.md
-          - end-matter: data availability, code availability,
-            author contributions, funding, conflicts,
-            acknowledgements
-          - references / bibliography
-          - suggested reviewers list
-        OFTEN-REQUIRED:
-          - supplementary materials (PDF + raw files)
-          - response to reviewers (revisions only)
-          - reporting checklist (CONSORT / PRISMA / STROBE /
-            ARRIVE / TRIPOD-AI per study type)
-          - title page (separate from manuscript per some
-            journals)
-          - graphical abstract
-          - highlights bullets (some journals require a fixed
-            number of short bullets — use the venue's count + cap)
-          - data deposit (DOI / accession number)
-        SOMETIMES-REQUIRED:
-          - ethics approval letter
-          - registered-report Stage 1 acceptance
-          - statistics editor's pre-review
-          - layperson summary
+- id: artefact_inventory
+  name: Artefact inventory (everything the submission needs)
+  description: |
+    For a standard journal submission, expect:
+      REQUIRED:
+        - paper.md (or .docx / .tex / .pdf)
+        - abstract.md
+        - figures (high-res TIFF / EPS / PDF per journal)
+        - figure captions (separate file for some journals)
+        - tables (separate file for some journals)
+        - cover_letter.md
+        - end-matter: data availability, code availability,
+          author contributions, funding, conflicts,
+          acknowledgements
+        - references / bibliography
+        - suggested reviewers list
+      OFTEN-REQUIRED:
+        - supplementary materials (PDF + raw files)
+        - response to reviewers (revisions only)
+        - reporting checklist (CONSORT / PRISMA / STROBE /
+          ARRIVE / TRIPOD-AI per study type)
+        - title page (separate from manuscript per some
+          journals)
+        - graphical abstract
+        - highlights bullets (some journals require a fixed
+          number of short bullets — use the venue's count + cap)
+        - data deposit (DOI / accession number)
+      SOMETIMES-REQUIRED:
+        - ethics approval letter
+        - registered-report Stage 1 acceptance
+        - statistics editor's pre-review
+        - layperson summary
 
-      For each REQUIRED item, check it exists at the expected
-      path. Missing required items become RED. Missing
-      often-required items become YELLOW.
+    For each REQUIRED item, check it exists at the expected
+    path. Missing required items become RED. Missing
+    often-required items become YELLOW.
 
-  - id: paper_content_checks
-    name: Paper content checks
-    description: |
-      Walk the paper:
-        TITLE:
-          - exists, within the venue's character cap
-          - the opening conveys the finding (a reader sees the
-            result in the first clause) — per
-            synthesis/synthesis_title_workshop
-        ABSTRACT:
-          - in venue's word band (per synthesis_paper venue_profile)
-          - structured / unstructured per venue
-          - citation count within the venue's abstract policy
-        INTRODUCTION:
-          - ends with explicit "in this study, we ..." sentence
-          - frames the question against enough prior work to
-            establish the gap
-        METHODS:
-          - has reproducibility-relevant detail (versions, seeds,
-            data source)
-          - cites every method to its canonical reference
-        RESULTS:
-          - every figure / table cited in prose
-          - every statistic in full reporting form (per
-            writing_results)
-          - no interpretation (per writing_results)
-        DISCUSSION:
-          - a tight principal-findings paragraph within the venue's
-            length norm
-          - alternative-explanations named per finding (per
-            writing_discussion)
-          - limitations section follows writing_limitations'
-            structure
-          - no causal language for observational designs
-        REFERENCES:
-          - every cited reference resolves (run
-            tool_citations_verify)
-          - no hallucinated citations
-          - bibliography style matches the journal
+- id: paper_content_checks
+  name: Paper content checks
+  description: |
+    Walk the paper:
+      TITLE:
+        - exists, within the venue's character cap
+        - the opening conveys the finding (a reader sees the
+          result in the first clause) — per
+          synthesis/synthesis_title_workshop
+      ABSTRACT:
+        - in venue's word band (per synthesis_paper venue_profile)
+        - structured / unstructured per venue
+        - citation count within the venue's abstract policy
+      INTRODUCTION:
+        - ends with explicit "in this study, we ..." sentence
+        - frames the question against enough prior work to
+          establish the gap
+      METHODS:
+        - has reproducibility-relevant detail (versions, seeds,
+          data source)
+        - cites every method to its canonical reference
+      RESULTS:
+        - every figure / table cited in prose
+        - every statistic in full reporting form (per
+          writing_results)
+        - no interpretation (per writing_results)
+      DISCUSSION:
+        - a tight principal-findings paragraph within the venue's
+          length norm
+        - alternative-explanations named per finding (per
+          writing_discussion)
+        - limitations section follows writing_limitations'
+          structure
+        - no causal language for observational designs
+      REFERENCES:
+        - every cited reference resolves (run
+          tool_citations_verify)
+        - no hallucinated citations
+        - bibliography style matches the journal
 
-  - id: figure_table_checks
-    name: Figure + table checks
-    description: |
-      For each figure in synthesis/figures/:
-        - resolution meets the journal's DPI floor (print and line
-          art often differ — read the venue's spec)
-        - format meets journal spec (TIFF + PNG / EPS / PDF)
-        - file size within the journal's per-figure cap
-        - caption sidecars present
-        - colour-blind safe (per
-          visualization/color_accessibility_audit)
-        - no embedded fonts that won't be available at the
-          publisher
+- id: figure_table_checks
+  name: Figure + table checks
+  description: |
+    For each figure in synthesis/figures/:
+      - resolution meets the journal's DPI floor (print and line
+        art often differ — read the venue's spec)
+      - format meets journal spec (TIFF + PNG / EPS / PDF)
+      - file size within the journal's per-figure cap
+      - caption sidecars present
+      - colour-blind safe (per
+        visualization/color_accessibility_audit)
+      - no embedded fonts that won't be available at the
+        publisher
 
-      For each table:
-        - header row matches column types
-        - values match the prose
-        - footnotes present for any abbreviation / star convention
-        - export to the journal's preferred format (XLSX / CSV /
-          embedded markdown)
+    For each table:
+      - header row matches column types
+      - values match the prose
+      - footnotes present for any abbreviation / star convention
+      - export to the journal's preferred format (XLSX / CSV /
+        embedded markdown)
 
-      Run tool_audit(scope='step', dimension='figure_full') on every figure in
-      synthesis/figures/. Aggregate fails to the punch list.
+    Run tool_audit(scope='step', dimension='figure_full') on every figure in
+    synthesis/figures/. Aggregate fails to the punch list.
 
-  - id: end_matter_checks
-    name: End-matter checks
-    description: |
-      Confirm each end-matter section per
-      writing/writing_data_availability:
-        - data availability statement matches actual data-sharing
-          capability
-        - code availability statement matches actual code release
-        - author contributions (CRediT) statement covers every
-          author + every relevant CRediT role
-        - funding statement includes grant numbers + "role of
-          funder" clause
-        - conflicts of interest stated (even when absent)
-        - acknowledgements present
+- id: end_matter_checks
+  name: End-matter checks
+  description: |
+    Confirm each end-matter section per
+    writing/writing_data_availability:
+      - data availability statement matches actual data-sharing
+        capability
+      - code availability statement matches actual code release
+      - author contributions (CRediT) statement covers every
+        author + every relevant CRediT role
+      - funding statement includes grant numbers + "role of
+        funder" clause
+      - conflicts of interest stated (even when absent)
+      - acknowledgements present
 
-  - id: cover_letter_check
-    name: Cover letter check
-    description: |
-      Per synthesis/synthesis_cover_letter:
-        - cover_letter.md exists
-        - addresses the editor by name when known
-        - states significance in one sentence
-        - justifies journal fit with a citation to recent work in
-          the venue
-        - declares no concurrent submission
-        - suggests reviewers (and any to exclude, with reasons),
-          within the venue's requested counts
-        - within the venue's cover-letter length norm
-        - one-page test passes
+- id: cover_letter_check
+  name: Cover letter check
+  description: |
+    Per synthesis/synthesis_cover_letter:
+      - cover_letter.md exists
+      - addresses the editor by name when known
+      - states significance in one sentence
+      - justifies journal fit with a citation to recent work in
+        the venue
+      - declares no concurrent submission
+      - suggests reviewers (and any to exclude, with reasons),
+        within the venue's requested counts
+      - within the venue's cover-letter length norm
+      - one-page test passes
 
-  - id: ethics_and_compliance_checks
-    name: Ethics + compliance checks
-    description: |
-      Per methodology/data_ethics_review (when previously run):
-        - IRB / REC approval number listed in Methods (if human
-          subjects)
-        - consent + de-identification statement in Methods
-        - data-sharing constraints reflected in data availability
-          statement
-        - reporting checklist completed (CONSORT / PRISMA / STROBE
-          / ARRIVE / TRIPOD-AI per study type — most journals
-          require the completed form as a separate upload)
-        - registered-report Stage 1 acceptance (when applicable)
+- id: ethics_and_compliance_checks
+  name: Ethics + compliance checks
+  description: |
+    Per methodology/data_ethics_review (when previously run):
+      - IRB / REC approval number listed in Methods (if human
+        subjects)
+      - consent + de-identification statement in Methods
+      - data-sharing constraints reflected in data availability
+        statement
+      - reporting checklist completed (CONSORT / PRISMA / STROBE
+        / ARRIVE / TRIPOD-AI per study type — most journals
+        require the completed form as a separate upload)
+      - registered-report Stage 1 acceptance (when applicable)
 
-  - id: reproducibility_checks
-    name: Reproducibility checks
-    description: |
-      Per reproducibility/reproducibility:
-        - environment snapshot per active step
-        - random seeds explicit in all scripts
-        - relative paths only
-        - output hashes recorded
-        - Dockerfile present (when journal requires
-          containerised reproducibility)
-        - code deposited at a public URL with a release tag +
-          Zenodo DOI (when journal requires)
+- id: reproducibility_checks
+  name: Reproducibility checks
+  description: |
+    Per reproducibility/reproducibility:
+      - environment snapshot per active step
+      - random seeds explicit in all scripts
+      - relative paths only
+      - output hashes recorded
+      - Dockerfile present (when journal requires
+        containerised reproducibility)
+      - code deposited at a public URL with a release tag +
+        Zenodo DOI (when journal requires)
 
-      Run tool_audit(scope='step', dimension='reproducibility') for high-stakes
-      submissions; skip for time-pressed submissions where
-      the standard reproducibility audit already passed.
+    Run tool_audit(scope='step', dimension='reproducibility') for high-stakes
+    submissions; skip for time-pressed submissions where
+    the standard reproducibility audit already passed.
 
-  - id: claim_grounding_audit
-    name: Claim grounding audit
-    description: |
-      Run tool_audit(scope='project', dimension='claims') on synthesis/paper.md.
-      Every numeric claim must trace to a workspace artefact
-      OR a verified citation. Hallucinated numbers are RED.
+- id: claim_grounding_audit
+  name: Claim grounding audit
+  description: |
+    Run tool_audit(scope='project', dimension='claims') on synthesis/paper.md.
+    Every numeric claim must trace to a workspace artefact
+    OR a verified citation. Hallucinated numbers are RED.
 
-      Also run tool_verify on the project's
-      decision log — every methodological commitment must have
-      been grounded in PROV-O sources. Ungrounded commitments
-      are YELLOW (the discussion / limitations should
-      acknowledge them).
+    Also run tool_verify on the project's
+    decision log — every methodological commitment must have
+    been grounded in PROV-O sources. Ungrounded commitments
+    are YELLOW (the discussion / limitations should
+    acknowledge them).
 
-      Also surface the ReAct trace + per-step literature audit in the
-      bundle:
-        tool_thought(operation='trace', decision_id=<any flagged decision>)
-          — replays the Thought/Plan/Action/Observation/Reflection
-            chain for a specific decision. Useful when claim_grounding
-            flags an unsupported claim and the reviewer asks "what
-            was the AI thinking?". Read-only.
-        tool_audit(scope='step', dimension='literature')   # project-wide
-          — aggregates per-step findings_vs_literature.md verdicts
-            into workspace/logs/step_literature_audit.md. Surfaces
-            steps where DISAGREES verdicts lack discussion or all
-            claims are DEFERRED.
+    Also surface the ReAct trace + per-step literature audit in the
+    bundle:
+      tool_thought(operation='trace', decision_id=<any flagged decision>)
+        — replays the Thought/Plan/Action/Observation/Reflection
+          chain for a specific decision. Useful when claim_grounding
+          flags an unsupported claim and the reviewer asks "what
+          was the AI thinking?". Read-only.
+      tool_audit(scope='step', dimension='literature')   # project-wide
+        — aggregates per-step findings_vs_literature.md verdicts
+          into workspace/logs/step_literature_audit.md. Surfaces
+          steps where DISAGREES verdicts lack discussion or all
+          claims are DEFERRED.
 
-  - id: override_audit_review
-    name: Override audit — every quality-gate bypass surfaces here
-    description: |
-      Read workspace/logs/override_log.md (call sys_file_read).
-      Each entry is one moment the researcher authorised the AI
-      to bypass a quality gate (override_discussion_coverage=true on
-      tool_discussion_coverage_audit, or override_gate=true on
-      tool_plan). Per entry,
-      confirm with the researcher:
+- id: override_audit_review
+  name: Override audit — every quality-gate bypass surfaces here
+  description: |
+    Read workspace/logs/override_log.md (call sys_file_read).
+    Each entry is one moment the researcher authorised the AI
+    to bypass a quality gate (override_discussion_coverage=true on
+    tool_discussion_coverage_audit, or override_gate=true on
+    tool_plan). Per entry,
+    confirm with the researcher:
 
-        - was the bypass still warranted at submission time?
-        - has the underlying blocker been resolved since?
-        - if NOT resolved: is the rationale strong enough to
-          appear in the cover letter as a known limitation
-          (e.g. "Figure 3 caption is provisional; revised in
-          response to reviewer comments")?
+      - was the bypass still warranted at submission time?
+      - has the underlying blocker been resolved since?
+      - if NOT resolved: is the rationale strong enough to
+        appear in the cover letter as a known limitation
+        (e.g. "Figure 3 caption is provisional; revised in
+        response to reviewer comments")?
 
-      Bypass-handling rules for the verdict:
-        - any UNRESOLVED bypass with `<no rationale provided>`
-          → RED (no justification on record)
-        - any UNRESOLVED bypass with rationale that is NOT
-          mirrored in cover_letter.md or limitations → YELLOW
-        - all bypasses resolved OR documented → no impact on
-          the verdict
+    Bypass-handling rules for the verdict:
+      - any UNRESOLVED bypass with `<no rationale provided>`
+        → RED (no justification on record)
+      - any UNRESOLVED bypass with rationale that is NOT
+        mirrored in cover_letter.md or limitations → YELLOW
+      - all bypasses resolved OR documented → no impact on
+        the verdict
 
-      If override_log.md does not exist, that is the GREEN
-      case — no gate was ever bypassed. Surface that fact
-      explicitly so the researcher knows the audit ran.
+    If override_log.md does not exist, that is the GREEN
+    case — no gate was ever bypassed. Surface that fact
+    explicitly so the researcher knows the audit ran.
 
-  - id: venue_specific_checks
-    name: Venue-specific checks (per journal house style)
-    description: |
-      Run a one-shot web search:
-        "<journal> author guidelines submission checklist"
-      and apply venue-specific checks that go beyond the
-      general list:
-        - word count caps for the manuscript (some journals
-          cap article length; supplements move overflow there)
-        - figure count caps (many journals cap main figures —
-          read the venue's number)
-        - colour print fees vs greyscale
-        - submission file format (LaTeX template vs Word vs
-          PDF)
-        - graphical abstract / highlights / structured abstract
-          required
-        - specific reporting-standard form required (e.g.
-          STROBE-MR for Mendelian randomisation)
+- id: venue_specific_checks
+  name: Venue-specific checks (per journal house style)
+  description: |
+    Run a one-shot web search:
+      "<journal> author guidelines submission checklist"
+    and apply venue-specific checks that go beyond the
+    general list:
+      - word count caps for the manuscript (some journals
+        cap article length; supplements move overflow there)
+      - figure count caps (many journals cap main figures —
+        read the venue's number)
+      - colour print fees vs greyscale
+      - submission file format (LaTeX template vs Word vs
+        PDF)
+      - graphical abstract / highlights / structured abstract
+        required
+      - specific reporting-standard form required (e.g.
+        STROBE-MR for Mendelian randomisation)
 
-      The general checklist passes 90% of what every journal
-      wants; this step covers the last 10% that varies.
+    The general checklist passes 90% of what every journal
+    wants; this step covers the last 10% that varies.
 
-  - id: revision_addendum
-    name: Revision addendum (revisions only)
-    description: |
-      For REVISIONS (not new submissions):
-        - response_to_reviewers.md exists per
-          guidance/peer_review_response
-        - every reviewer comment has a response + an edit
-          locator (line / section reference)
-        - revised manuscript carries change marks (track
-          changes / coloured diff) per journal preference
-        - new analyses / new figures since the original
-          submission are clearly flagged
+- id: revision_addendum
+  name: Revision addendum (revisions only)
+  description: |
+    For REVISIONS (not new submissions):
+      - response_to_reviewers.md exists per
+        guidance/peer_review_response
+      - every reviewer comment has a response + an edit
+        locator (line / section reference)
+      - revised manuscript carries change marks (track
+        changes / coloured diff) per journal preference
+      - new analyses / new figures since the original
+        submission are clearly flagged
 
-      Skip this step for new submissions.
+    Skip this step for new submissions.
 
-  - id: server_enforced_ship_gate
-    name: Server-enforced ship gate
-    description: |
-      Every check above is advisory — the AI could, in principle,
-      proceed past any of them. This step is the one gate that can
-      actually refuse to mark the deliverable done.
+- id: server_enforced_ship_gate
+  name: Server-enforced ship gate
+  description: |
+    Every check above is advisory — the AI could, in principle,
+    proceed past any of them. This step is the one gate that can
+    actually refuse to mark the deliverable done.
 
-      Run tool_finalize_project(operation='check') first to see the
-      aggregated blocker report (unresolved audit blockers, cited-but-
-      invalid PDFs that fail the %PDF- magic check, ungrounded numeric
-      claims, and stub/placeholder sections). Read
-      workspace/logs/ship_gate.md.
+    Run tool_finalize_project(operation='check') first to see the
+    aggregated blocker report (unresolved audit blockers, cited-but-
+    invalid PDFs that fail the %PDF- magic check, ungrounded numeric
+    claims, and stub/placeholder sections). Read
+    workspace/logs/ship_gate.md.
 
-      Then run tool_finalize_project(operation='finalize') as the true
-      pre-ship gate. If it returns clear, the deliverable may ship. If
-      it BLOCKS, do not declare done: surface the blocker list to the
-      researcher and either resolve each blocker or — only with the
-      researcher's explicit authorization — re-run with override=true
-      and a substantive override_rationale (logged). The decision of
-      whether a residual blocker is acceptable is the researcher's, not
-      the AI's; this step refuses to make it silently.
+    Then run tool_finalize_project(operation='finalize') as the true
+    pre-ship gate. If it returns clear, the deliverable may ship. If
+    it BLOCKS, do not declare done: surface the blocker list to the
+    researcher and either resolve each blocker or — only with the
+    researcher's explicit authorization — re-run with override=true
+    and a substantive override_rationale (logged). The decision of
+    whether a residual blocker is acceptable is the researcher's, not
+    the AI's; this step refuses to make it silently.
 
-  - id: produce_the_verdict
-    name: Produce the verdict
-    description: |
-      sys_file_write filepath="workspace/logs/pre_submission_check.md":
+- id: produce_the_verdict
+  name: Produce the verdict
+  description: |
+    sys_file_write filepath="workspace/logs/pre_submission_check.md":
 
-        # Pre-submission check — <YYYYMMDD>
-        Target venue: <name>
-        Deadline: <when set>
+      # Pre-submission check — <YYYYMMDD>
+      Target venue: <name>
+      Deadline: <when set>
 
-        ## Verdict: GREEN | YELLOW | RED
+      ## Verdict: GREEN | YELLOW | RED
 
-        GREEN  — every required check passes; submit
-        YELLOW — submission viable; address the punch list
-                 below first (none would prevent submission;
-                 all would strengthen it)
-        RED    — at least one BLOCKER; do NOT submit until
-                 resolved
+      GREEN  — every required check passes; submit
+      YELLOW — submission viable; address the punch list
+               below first (none would prevent submission;
+               all would strengthen it)
+      RED    — at least one BLOCKER; do NOT submit until
+               resolved
 
-        ## Punch list (prioritised)
-        1. <item> — <severity> — <suggested fix> — <est. time>
-        2. ...
+      ## Punch list (prioritised)
+      1. <item> — <severity> — <suggested fix> — <est. time>
+      2. ...
 
-        ## Things checked + passing (the bulk of it)
-        - <quick bulleted list — gives confidence the check
-           actually ran>
+      ## Things checked + passing (the bulk of it)
+      - <quick bulleted list — gives confidence the check
+         actually ran>
 
-        ## Generated by Research-OS pre_submission_checklist
-        Re-run after addressing the punch list.
+      ## Generated by Research-OS pre_submission_checklist
+      Re-run after addressing the punch list.
 
-      Surface the verdict to the researcher inline:
-        "Pre-submission verdict: <GREEN | YELLOW | RED>. <One-
-         sentence summary>. Full check at
-         workspace/logs/pre_submission_check.md."
+    Surface the verdict to the researcher inline:
+      "Pre-submission verdict: <GREEN | YELLOW | RED>. <One-
+       sentence summary>. Full check at
+       workspace/logs/pre_submission_check.md."
 
 expected_outputs:
-  - workspace/logs/pre_submission_check.md
+- workspace/logs/pre_submission_check.md
 
 quality_bar:
   every_required_artefact_inventoried: true
@@ -404,6 +394,28 @@ quality_bar:
   punch_list_actionable: true
   venue_specific_checks_run: true
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: audit_wrap
+sub_intent: submission
+triggers:
+- is this ready to submit
+- pre-submission checklist
+- pre submission checklist
+- final check before submission
+- ready to submit
+- submission readiness
+- what's left before submission
+- submit audit
+- final gate before journal submission
+summary: Final ready-to-submit gate (GREEN / YELLOW / RED + punch list).
+token_estimate: 1700
+decomposition:
+- protocol: audit/pre_submission_checklist
+  purpose: Artefact + paper + figure + end-matter + cover-letter + ethics + repro + claims + venue checks.
+- tool: tool_audit
+  purpose: Full synthesis audit pass (scope='synthesis', dimension='all').
+- tool: tool_audit
+  purpose: Audit every number traces to a workspace output (scope='project', dimension='claims').
+- tool: tool_citations_verify

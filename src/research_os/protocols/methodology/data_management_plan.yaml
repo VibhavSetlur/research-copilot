@@ -2,15 +2,15 @@ id: data_management_plan
 tier: 'plan'
 name: Data Management Plan (DMP) — funder-compliant, FAIR-aligned
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor, maintainer]
   workflow_shape: [experiment_pipeline]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/data_ethics_review       # consent + sharing constraints feed the DMP
-  - audit/pre_submission_checklist       # the DMP is a first-class deliverable to gate
+- methodology/data_ethics_review         # consent + sharing constraints feed the DMP
+- audit/pre_submission_checklist         # the DMP is a first-class deliverable to gate
 description: |
   A Data Management Plan (DMP) is a standalone document — distinct from
   a paper's "Data Availability Statement" — that funders (NIH DMSP,
@@ -37,190 +37,178 @@ trigger: |
     - sys_boot sees a grant-deadline pause in the project state.
 
 prerequisites:
-  - Project has a research_question (or a draft one — DMPs can be
-    drafted before the question is fully locked).
-  - The specific funder + call is identified (or the researcher
-    confirms "general / FAIR baseline" if no specific funder yet).
+- Project has a research_question (or a draft one — DMPs can be drafted before the question is fully locked).
+- The specific funder + call is identified (or the researcher confirms "general / FAIR baseline" if no specific funder yet).
 
 editorial_voice:
   rules:
-    - "The DMP is a COMMITMENT, not a wish list. Don't promise data
-       sharing in formats your lab can't actually produce. Reviewers
-       will check at the renewal."
-    - "Funder-specific section names + word limits matter. NIH DMSP
-       is six required elements; NSF DMP is two pages; ERC DMP is the
-       Horizon Europe template. Surface the live requirements from the
-       call, don't guess from memory."
-    - "FAIR is a posture, not a checkbox. State concretely: where the
-       data lives (repository name), what identifier it gets (DOI vs
-       accession), what metadata standard describes it (e.g.
-       MIAME / MINSEQE / Dublin Core / Darwin Core), what license."
-    - "Sensitive data needs a real plan — IRB-restricted, PHI, PII,
-       consent-limited, embargoed. The DMP must say how access is
-       brokered (controlled-access repository, DUA, data enclave)."
+  - "The DMP is a COMMITMENT, not a wish list. Don't promise data sharing in formats your lab can't actually produce. Reviewers will check at the renewal."
+  - "Funder-specific section names + word limits matter. NIH DMSP is six required elements; NSF DMP is two pages; ERC DMP is the Horizon Europe template. Surface the live requirements from the call, don't guess from memory."
+  - "FAIR is a posture, not a checkbox. State concretely: where the data lives (repository name), what identifier it gets (DOI vs accession), what metadata standard describes it (e.g. MIAME / MINSEQE / Dublin Core / Darwin Core), what license."
+  - "Sensitive data needs a real plan — IRB-restricted, PHI, PII, consent-limited, embargoed. The DMP must say how access is brokered (controlled-access repository, DUA, data enclave)."
 
 steps:
-  - id: identify_funder_template
-    name: Identify the funder DMP template + word limits
-    description: |
-      Confirm WHICH funder template applies. If unclear, ask the
-      researcher once. Then surface the live requirements:
+- id: identify_funder_template
+  name: Identify the funder DMP template + word limits
+  description: |
+    Confirm WHICH funder template applies. If unclear, ask the
+    researcher once. Then surface the live requirements:
 
-        tool_research_method query="<funder> data management plan
-                            template <year>"
+      tool_research_method query="<funder> data management plan
+                          template <year>"
 
-      Capture: the section names, word/page limits, required artefacts
-      (e.g. NIH DMSP needs the 6 elements + budget justification; NSF
-      varies by directorate; UKRI uses the Concordat on Open Research
-      Data sections).
+    Capture: the section names, word/page limits, required artefacts
+    (e.g. NIH DMSP needs the 6 elements + budget justification; NSF
+    varies by directorate; UKRI uses the Concordat on Open Research
+    Data sections).
 
-      Write the funder + template name + retrieval URL to
-      workspace/.dmp/funder_template.md so the rest of the protocol
-      branches on it. If no specific funder, default to the FAIR
-      baseline + flag that the document is generic.
+    Write the funder + template name + retrieval URL to
+    workspace/.dmp/funder_template.md so the rest of the protocol
+    branches on it. If no specific funder, default to the FAIR
+    baseline + flag that the document is generic.
 
-  - id: enumerate_data_types
-    name: Enumerate every data type the project will produce or use
-    description: |
-      For each distinct data type, capture:
-        - source (collected? acquired? simulated? re-used?)
-        - format (raw + processed)
-        - estimated volume (GB / TB / # samples)
-        - sensitivity tier (open / restricted / consent-limited / PHI)
-        - whether re-identification risk exists
-        - the analysis it feeds
+- id: enumerate_data_types
+  name: Enumerate every data type the project will produce or use
+  description: |
+    For each distinct data type, capture:
+      - source (collected? acquired? simulated? re-used?)
+      - format (raw + processed)
+      - estimated volume (GB / TB / # samples)
+      - sensitivity tier (open / restricted / consent-limited / PHI)
+      - whether re-identification risk exists
+      - the analysis it feeds
 
-      Use the project's inputs/raw_data/ profile via tool_data(operation='profile')
-      when data is already present; reason from the research design
-      otherwise.
+    Use the project's inputs/raw_data/ profile via tool_data(operation='profile')
+    when data is already present; reason from the research design
+    otherwise.
 
-      Write to workspace/.dmp/data_inventory.md as a table.
+    Write to workspace/.dmp/data_inventory.md as a table.
 
-  - id: storage_and_backup
-    name: Storage + backup strategy
-    description: |
-      For each data tier in the inventory, specify:
-        - active storage location (institutional cluster, cloud,
-          local) + capacity
-        - backup strategy (3-2-1 rule is a common reference; verify
-          the institution's policy actually requires it)
-        - encryption at rest + in transit (mandatory for PHI / PII
-          under HIPAA / GDPR — surface the specific regime that
-          applies)
-        - access control mechanism (LDAP / 2FA / signed DUA)
+- id: storage_and_backup
+  name: Storage + backup strategy
+  description: |
+    For each data tier in the inventory, specify:
+      - active storage location (institutional cluster, cloud,
+        local) + capacity
+      - backup strategy (3-2-1 rule is a common reference; verify
+        the institution's policy actually requires it)
+      - encryption at rest + in transit (mandatory for PHI / PII
+        under HIPAA / GDPR — surface the specific regime that
+        applies)
+      - access control mechanism (LDAP / 2FA / signed DUA)
 
-      Don't invent infrastructure. If the institution doesn't have a
-      data enclave, the DMP must say what BROKERED access path is
-      used (e.g. dbGaP, EGA, FAIR4Health).
+    Don't invent infrastructure. If the institution doesn't have a
+    data enclave, the DMP must say what BROKERED access path is
+    used (e.g. dbGaP, EGA, FAIR4Health).
 
-  - id: metadata_and_documentation
-    name: Metadata standard + documentation
-    description: |
-      What standard describes the data so a third party can use it?
-      Examples (research the field-appropriate one):
-        - Biomedical sequencing: MINSEQE, BioSample, dbGaP
-        - Imaging: DICOM, OME-XML, BIDS for neuroimaging
-        - Ecology: Darwin Core
-        - Social science: DDI (Data Documentation Initiative)
-        - Chemistry: ChEBI, InChI
-        - Generic: Dublin Core, schema.org/Dataset
+- id: metadata_and_documentation
+  name: Metadata standard + documentation
+  description: |
+    What standard describes the data so a third party can use it?
+    Examples (research the field-appropriate one):
+      - Biomedical sequencing: MINSEQE, BioSample, dbGaP
+      - Imaging: DICOM, OME-XML, BIDS for neuroimaging
+      - Ecology: Darwin Core
+      - Social science: DDI (Data Documentation Initiative)
+      - Chemistry: ChEBI, InChI
+      - Generic: Dublin Core, schema.org/Dataset
 
-      tool_research_method query="metadata standard <field> data
-                           sharing" if not obvious.
+    tool_research_method query="metadata standard <field> data
+                         sharing" if not obvious.
 
-      Also commit to: a README per dataset, a codebook for tabular
-      data (variable names, units, missing-data codes), software
-      versions (env_snapshot at release time).
+    Also commit to: a README per dataset, a codebook for tabular
+    data (variable names, units, missing-data codes), software
+    versions (env_snapshot at release time).
 
-  - id: sharing_and_access
-    name: Sharing + access plan (the FAIR commitment)
-    description: |
-      For each data type, declare:
-        - target repository (named, not generic — "Dryad", "Zenodo",
-          "GEO", "GenBank", "ICPSR", "Qualitative Data Repository").
-        - identifier type (DOI for general; field-specific accession
-          for biomedical).
-        - license (CC0 / CC-BY / CC-BY-NC / custom DUA / restricted).
-        - timing (at submission / at publication / at end-of-grant /
-          embargo period + justification).
-        - access tier (open / registered / controlled / closed).
+- id: sharing_and_access
+  name: Sharing + access plan (the FAIR commitment)
+  description: |
+    For each data type, declare:
+      - target repository (named, not generic — "Dryad", "Zenodo",
+        "GEO", "GenBank", "ICPSR", "Qualitative Data Repository").
+      - identifier type (DOI for general; field-specific accession
+        for biomedical).
+      - license (CC0 / CC-BY / CC-BY-NC / custom DUA / restricted).
+      - timing (at submission / at publication / at end-of-grant /
+        embargo period + justification).
+      - access tier (open / registered / controlled / closed).
 
-      If the data CANNOT be shared (consent, regulatory, commercial),
-      state WHY explicitly. "We will share on request" is NOT a
-      sharing plan — funders read it as "we won't share". Specify the
-      mechanism (request review committee, sample-only-aggregate,
-      synthetic surrogate).
+    If the data CANNOT be shared (consent, regulatory, commercial),
+    state WHY explicitly. "We will share on request" is NOT a
+    sharing plan — funders read it as "we won't share". Specify the
+    mechanism (request review committee, sample-only-aggregate,
+    synthetic surrogate).
 
-  - id: retention_and_disposal
-    name: Retention + disposal
-    description: |
-      How long is the data kept? Institution-specific (commonly 5-10
-      years post-publication for federally-funded US research; 10
-      years for clinical trials under FDA 21 CFR). What happens at
-      end of retention? Who is responsible?
+- id: retention_and_disposal
+  name: Retention + disposal
+  description: |
+    How long is the data kept? Institution-specific (commonly 5-10
+    years post-publication for federally-funded US research; 10
+    years for clinical trials under FDA 21 CFR). What happens at
+    end of retention? Who is responsible?
 
-      For consent-limited data, the retention MUST match what the
-      consent form authorised. Surface mismatches as blockers.
+    For consent-limited data, the retention MUST match what the
+    consent form authorised. Surface mismatches as blockers.
 
-  - id: roles_and_responsibilities
-    name: Roles + responsibilities
-    description: |
-      Name a Data Steward (often the PI, sometimes a designated
-      lab member or institutional Research Data Manager). Name a
-      backup. State who is responsible for:
-        - quality control during collection
-        - long-term curation
-        - access-request review (for controlled-access)
-        - DMP updates (the DMP is a living document — funders expect
-          updates at renewal)
+- id: roles_and_responsibilities
+  name: Roles + responsibilities
+  description: |
+    Name a Data Steward (often the PI, sometimes a designated
+    lab member or institutional Research Data Manager). Name a
+    backup. State who is responsible for:
+      - quality control during collection
+      - long-term curation
+      - access-request review (for controlled-access)
+      - DMP updates (the DMP is a living document — funders expect
+        updates at renewal)
 
-  - id: budget_implications
-    name: Budget implications (when the DMP commitment costs money)
-    description: |
-      Some funders require DMP costs to be itemised in the budget
-      (NIH DMSP since 2023; UKRI). Capture:
-        - repository deposit fees (e.g. Dryad ~$120, Zenodo free,
-          field-specific can be higher) — VERIFY current pricing
-          via tool_research_method, do not quote from memory.
-        - personnel time for curation
-        - storage costs over the retention window
-        - access-broker costs for controlled access
+- id: budget_implications
+  name: Budget implications (when the DMP commitment costs money)
+  description: |
+    Some funders require DMP costs to be itemised in the budget
+    (NIH DMSP since 2023; UKRI). Capture:
+      - repository deposit fees (e.g. Dryad ~$120, Zenodo free,
+        field-specific can be higher) — VERIFY current pricing
+        via tool_research_method, do not quote from memory.
+      - personnel time for curation
+      - storage costs over the retention window
+      - access-broker costs for controlled access
 
-      Write the cost summary to workspace/.dmp/budget_notes.md for
-      the grant-writing protocol to pull into the budget section.
+    Write the cost summary to workspace/.dmp/budget_notes.md for
+    the grant-writing protocol to pull into the budget section.
 
-  - id: assemble_draft
-    name: Assemble the DMP draft against the funder template
-    description: |
-      Compose workspace/.dmp/dmp_v<n>.md against the funder's section
-      names from step 1. Use the per-section outputs from steps 2-8
-      as raw material; do NOT pad with generic FAIR boilerplate when
-      the template asks for specifics.
+- id: assemble_draft
+  name: Assemble the DMP draft against the funder template
+  description: |
+    Compose workspace/.dmp/dmp_v<n>.md against the funder's section
+    names from step 1. Use the per-section outputs from steps 2-8
+    as raw material; do NOT pad with generic FAIR boilerplate when
+    the template asks for specifics.
 
-      For NIH DMSP (the most common US case), produce the six
-      required elements:
-        1. Data type
-        2. Related tools, software, code
-        3. Standards
-        4. Data preservation, access, timelines
-        5. Access, distribution, reuse considerations
-        6. Oversight of data management
+    For NIH DMSP (the most common US case), produce the six
+    required elements:
+      1. Data type
+      2. Related tools, software, code
+      3. Standards
+      4. Data preservation, access, timelines
+      5. Access, distribution, reuse considerations
+      6. Oversight of data management
 
-      Word counts matter. Surface character/word totals per section.
+    Word counts matter. Surface character/word totals per section.
 
-  - id: route_to_review
-    name: Route to grant_writing or pre_submission_checklist
-    description: |
-      If the DMP is part of an active grant draft, route to
-      synthesis/synthesis_grant for budget + narrative integration.
-      Otherwise route to audit/pre_submission_checklist so the DMP
-      is treated as a first-class deliverable.
+- id: route_to_review
+  name: Route to grant_writing or pre_submission_checklist
+  description: |
+    If the DMP is part of an active grant draft, route to
+    synthesis/synthesis_grant for budget + narrative integration.
+    Otherwise route to audit/pre_submission_checklist so the DMP
+    is treated as a first-class deliverable.
 
 expected_outputs:
-  - workspace/.dmp/funder_template.md
-  - workspace/.dmp/data_inventory.md
-  - workspace/.dmp/dmp_v<n>.md
-  - workspace/.dmp/budget_notes.md   # optional, when funder requires
+- workspace/.dmp/funder_template.md
+- workspace/.dmp/data_inventory.md
+- workspace/.dmp/dmp_v<n>.md
+- workspace/.dmp/budget_notes.md     # optional, when funder requires
 
 quality_bar:
   funder_template_explicitly_identified: true
@@ -235,3 +223,17 @@ quality_bar:
 next_protocol: audit/pre_submission_checklist
 next_protocol_kind: forward_default
 on_failure: guidance/scope_clarification
+intent_class: methodology
+sub_intent: dmp
+triggers:
+- dmp
+- data management plan
+- data sharing plan
+- dmsp
+- fair plan
+- data management
+- data sharing requirement
+- where my data lives
+- register my data
+- data plan for the funder
+summary: Funder-compliant Data Management Plan (NIH DMSP, NSF, Wellcome, ERC) with FAIR alignment.

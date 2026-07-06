@@ -2,17 +2,17 @@ id: deliverable_design
 tier: 'synthesize'
 name: Deliverable Design (the visual-design skill — dashboards / posters / slides)
 version: '4.4.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [naive_ai, auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-19'
 see_also:
-  - synthesis/synthesis_dashboard     # orchestrates the dashboard; delegates design here
-  - synthesis/printable               # orchestrates poster / handout; delegates design here
-  - synthesis/synthesis_slides        # orchestrates the deck; delegates design here
-  - visualization/figure_guidelines   # figure-level design (this is deliverable-level)
+- synthesis/synthesis_dashboard       # orchestrates the dashboard; delegates design here
+- synthesis/printable                 # orchestrates poster / handout; delegates design here
+- synthesis/synthesis_slides          # orchestrates the deck; delegates design here
+- visualization/figure_guidelines     # figure-level design (this is deliverable-level)
 description: |
   The design SKILL for shareable research deliverables — the deliverable-level
   analog of figure_guidelines. A reader (peer, reviewer, program officer, a
@@ -66,97 +66,97 @@ design_principles: |
      numbers carry uncertainty (CI / n); limitations get their own block.
 
 steps:
-  - id: audience_and_artifact
-    name: Who receives this, and what ONE thing must they leave with?
-    description: |
-      Name the reader (peer / reviewer / program officer / poster passer-by) and
-      the SINGLE finding they must carry away. This drives every later choice.
-      Branch:
-        - One striking result → favour a hero / single-viewport archetype.
-        - Several sequential claims → favour a narrative / scorecard archetype.
-        - The comparison IS the story → favour a comparison archetype.
-      If the deliverable kind itself isn't settled, that's the orchestrating
-      protocol's job (synthesis_dashboard / printable / synthesis_slides) — this
-      step assumes the kind and designs it.
+- id: audience_and_artifact
+  name: Who receives this, and what ONE thing must they leave with?
+  description: |
+    Name the reader (peer / reviewer / program officer / poster passer-by) and
+    the SINGLE finding they must carry away. This drives every later choice.
+    Branch:
+      - One striking result → favour a hero / single-viewport archetype.
+      - Several sequential claims → favour a narrative / scorecard archetype.
+      - The comparison IS the story → favour a comparison archetype.
+    If the deliverable kind itself isn't settled, that's the orchestrating
+    protocol's job (synthesis_dashboard / printable / synthesis_slides) — this
+    step assumes the kind and designs it.
 
-  - id: pick_archetype
-    name: Select a layout archetype from the menu (don't invent a one-off)
-    description: |
-      Choose ONE composable archetype for the kind, then RECORD the choice +
-      a one-line rationale (the scaffold stamps it into the output so the audit
-      verifies shape-vs-declared). Menus:
+- id: pick_archetype
+  name: Select a layout archetype from the menu (don't invent a one-off)
+  description: |
+    Choose ONE composable archetype for the kind, then RECORD the choice +
+    a one-line rationale (the scaffold stamps it into the output so the audit
+    verifies shape-vs-declared). Menus:
 
-      DASHBOARD (tool_synthesis_scaffold kind='dashboard' archetype=...):
-        - single-viewport-brief  → one finding; <=30s read; "something to email".
-                                    Fits ~1 screen, NO nav.
-        - scroll-lite-narrative  → 3-6 sequential claims (default). In-page nav
-                                    REQUIRED; <=8 claim-titled sections, bounded scroll.
-        - comparison-scorecard   → the story is adopted-vs-ruled-out / ablation /
-                                    bake-off. A dominant comparison table or
-                                    small-multiples on a shared axis.
-        - multi-panel-exploratory→ parallel facets compared at a glance. A bounded
-                                    panel grid on ONE shared scale.
+    DASHBOARD (tool_synthesis_scaffold kind='dashboard' archetype=...):
+      - single-viewport-brief  → one finding; <=30s read; "something to email".
+                                  Fits ~1 screen, NO nav.
+      - scroll-lite-narrative  → 3-6 sequential claims (default). In-page nav
+                                  REQUIRED; <=8 claim-titled sections, bounded scroll.
+      - comparison-scorecard   → the story is adopted-vs-ruled-out / ablation /
+                                  bake-off. A dominant comparison table or
+                                  small-multiples on a shared axis.
+      - multi-panel-exploratory→ parallel facets compared at a glance. A bounded
+                                  panel grid on ONE shared scale.
 
-      POSTER (tool_synthesis_scaffold kind='poster' archetype=...):
-        - classic   → 3-column IMRaD; multi-result, expert reviewers (safe default).
-        - billboard → Better-Poster: big plain-English headline + focal figure in a
-                      dominant centre, narrow sidebar. Default for ONE clear result.
-        - hero      → single striking figure that speaks for itself; centre-weighted.
-        - portrait  → 2-column for tall boards (geometry-forced, not a preference).
+    POSTER (tool_synthesis_scaffold kind='poster' archetype=...):
+      - classic   → 3-column IMRaD; multi-result, expert reviewers (safe default).
+      - billboard → Better-Poster: big plain-English headline + focal figure in a
+                    dominant centre, narrow sidebar. Default for ONE clear result.
+      - hero      → single striking figure that speaks for itself; centre-weighted.
+      - portrait  → 2-column for tall boards (geometry-forced, not a preference).
 
-      SLIDES: per-slide layouts (title / section / big-number / quote /
-        two-column-compare / full-bleed-image) chosen per slide for its job.
+    SLIDES: per-slide layouts (title / section / big-number / quote /
+      two-column-compare / full-bleed-image) chosen per slide for its job.
 
-      Do NOT hand-roll a bespoke layout when an archetype fits — the archetypes
-      encode the budgets + structure the audit checks.
+    Do NOT hand-roll a bespoke layout when an archetype fits — the archetypes
+    encode the budgets + structure the audit checks.
 
-  - id: pick_palette_and_type
-    name: Choose ONE professional palette + the type roles
-    description: |
-      Pick ONE palette (tool_synthesis_scaffold palette=...): ro_house (warm
-      editorial; default, cohesive with apply_research_os_style figures),
-      okabe_ito (max CVD safety; many categories), or clinical (formal venue).
-      A CUSTOM-but-professional palette is allowed and is judged on QUALITY
-      (restraint, AA contrast, CVD-safe, no neon, consistent meaning) — never on
-      membership. Embedded figures should use the SAME palette so the page reads
-      as one document. Type: a FEW sizes; hierarchy from size + weight + colour,
-      not many fonts. Posters need true poster scale (the bundled presets handle this).
+- id: pick_palette_and_type
+  name: Choose ONE professional palette + the type roles
+  description: |
+    Pick ONE palette (tool_synthesis_scaffold palette=...): ro_house (warm
+    editorial; default, cohesive with apply_research_os_style figures),
+    okabe_ito (max CVD safety; many categories), or clinical (formal venue).
+    A CUSTOM-but-professional palette is allowed and is judged on QUALITY
+    (restraint, AA contrast, CVD-safe, no neon, consistent meaning) — never on
+    membership. Embedded figures should use the SAME palette so the page reads
+    as one document. Type: a FEW sizes; hierarchy from size + weight + colour,
+    not many fonts. Posters need true poster scale (the bundled presets handle this).
 
-  - id: set_the_budget
-    name: Declare the scroll / page / word budget
-    description: |
-      State the budget the archetype implies and that the audit will check:
-        - dashboard: which archetype's scroll bound (single-viewport ~1 screen;
-          scroll-lite <=8 sections / a few screens; multi-panel <=6-8 panels).
-        - poster: ONE board; word budget the density check enforces.
-        - slides: one idea per slide.
-      The budget is a design commitment — "no endless scroll" is a measured limit,
-      not a vibe.
+- id: set_the_budget
+  name: Declare the scroll / page / word budget
+  description: |
+    State the budget the archetype implies and that the audit will check:
+      - dashboard: which archetype's scroll bound (single-viewport ~1 screen;
+        scroll-lite <=8 sections / a few screens; multi-panel <=6-8 panels).
+      - poster: ONE board; word budget the density check enforces.
+      - slides: one idea per slide.
+    The budget is a design commitment — "no endless scroll" is a measured limit,
+    not a vibe.
 
-  - id: compose_and_author
-    name: Scaffold the archetype, then author claims + curated figures
-    description: |
-      tool_synthesis_scaffold writes the chosen archetype + palette skeleton.
-      Then AUTHOR: claim-titled sections (sentences, not containers), 5-8
-      load-bearing figures with interpretive captions, the palette applied
-      consistently, the hero answering in the first viewport. Strip every
-      workspace path / step number / tool name / raw column name — the reader
-      has no workspace.
+- id: compose_and_author
+  name: Scaffold the archetype, then author claims + curated figures
+  description: |
+    tool_synthesis_scaffold writes the chosen archetype + palette skeleton.
+    Then AUTHOR: claim-titled sections (sentences, not containers), 5-8
+    load-bearing figures with interpretive captions, the palette applied
+    consistently, the hero answering in the first viewport. Strip every
+    workspace path / step number / tool name / raw column name — the reader
+    has no workspace.
 
-  - id: design_review
-    name: Run the design audit; iterate until the layered read lands
-    description: |
-      Run the design audit:
-        - dashboard: tool_audit(scope='synthesis', dimension='dashboard_content')
-          + tool_synthesis_check.
-        - poster / slides: tool_synthesis_check.
-        - figures: tool_audit(scope='step', dimension='figure_full').
-      It reviews stylistic choices — scroll budget, in-page nav, claim (not step)
-      headings, professional colour (neon / restraint / contrast), captioned +
-      curated figures, archetype-vs-declared shape. Resolve blockers; confirm the
-      LAYERED read works: 3s headline / 30s structure / 3min detail. A
-      custom-but-professional palette passes; a generic, neon, endless-scroll, or
-      step-recap deliverable does not.
+- id: design_review
+  name: Run the design audit; iterate until the layered read lands
+  description: |
+    Run the design audit:
+      - dashboard: tool_audit(scope='synthesis', dimension='dashboard_content')
+        + tool_synthesis_check.
+      - poster / slides: tool_synthesis_check.
+      - figures: tool_audit(scope='step', dimension='figure_full').
+    It reviews stylistic choices — scroll budget, in-page nav, claim (not step)
+    headings, professional colour (neon / restraint / contrast), captioned +
+    curated figures, archetype-vs-declared shape. Resolve blockers; confirm the
+    LAYERED read works: 3s headline / 30s structure / 3min detail. A
+    custom-but-professional palette passes; a generic, neon, endless-scroll, or
+    step-recap deliverable does not.
 
 anti_patterns: |
   - Endless / too-much scroll; an unbounded vertical section stack with no in-page nav.
@@ -179,9 +179,29 @@ tools: |
   tool_figure_palette — CVD-safe palette source for embedded figures.
 
 expected_outputs:
-  - A deliverable whose layout archetype + palette are a recorded, defended choice.
-  - A clean design audit (no blockers; the layered 3s / 30s / 3min read works).
+- A deliverable whose layout archetype + palette are a recorded, defended choice.
+- A clean design audit (no blockers; the layered 3s / 30s / 3min read works).
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: synthesis/synthesis_dashboard
+intent_class: synthesize
+sub_intent: deliverable_design
+triggers:
+- design my dashboard
+- make this look professional
+- make this professional
+- poster design
+- lay out my dashboard
+- design the deliverable
+- make a custom dashboard
+- design review
+- how should this look
+- style my poster
+- professional research dashboard
+- redesign the dashboard
+- the dashboard looks generic
+- dashboard design
+- visual design
+summary: 'The visual-design skill: design a custom shareable deliverable (dashboard/poster/slides) — pick + compose a layout archetype + professional palette + type system for an external reader. Not one fixed template.'
+shortcut_tool: tool_synthesis_scaffold

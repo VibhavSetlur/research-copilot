@@ -2,15 +2,15 @@ id: casual_exploration
 tier: 'plan'
 name: Casual Exploration
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai]
   workflow_shape: [any]
 see_also:
-  - guidance/analysis_plan                    # where a promoted exploration graduates to
-  - methodology/exploratory_data_analysis     # distinct: pre-registered EDA vs a casual sandbox
+- guidance/analysis_plan                      # where a promoted exploration graduates to
+- methodology/exploratory_data_analysis       # distinct: pre-registered EDA vs a casual sandbox
 description: |
   Lightweight mode for "I just want to poke at this." Skips reproducibility
   formalisation, hypothesis registration, and publication-grade synthesis.
@@ -36,61 +36,61 @@ trigger: |
   configuration sets ``research_goal.output_types: [exploratory]`` with no
   publication target.
 prerequisites:
-  - session_boot has completed this session
+- session_boot has completed this session
 
 steps:
-  - id: confirm_casual_mode
-    name: Confirm Casual Mode
-    description: |
-      Say ONE line: "Casual mode — I'll skip the reproducibility paperwork.
-      You can upgrade any step to a real experiment with one word ('promote
-      this'). OK?"
-      If yes, proceed. If no, route to guidance/analysis_plan.
+- id: confirm_casual_mode
+  name: Confirm Casual Mode
+  description: |
+    Say ONE line: "Casual mode — I'll skip the reproducibility paperwork.
+    You can upgrade any step to a real experiment with one word ('promote
+    this'). OK?"
+    If yes, proceed. If no, route to guidance/analysis_plan.
 
-  - id: lightweight_path
-    name: Create Lightweight Workspace Folder
-    description: |
-      sys_path name="explore_<short_topic>" hypothesis="(exploratory)".
-      The numbered step folder still exists for reproducibility if work is
-      later promoted, but README + conclusions get the "(exploratory)" stamp
-      so it's clear at a glance.
+- id: lightweight_path
+  name: Create Lightweight Workspace Folder
+  description: |
+    sys_path name="explore_<short_topic>" hypothesis="(exploratory)".
+    The numbered step folder still exists for reproducibility if work is
+    later promoted, but README + conclusions get the "(exploratory)" stamp
+    so it's clear at a glance.
 
-  - id: scratch_first
-    name: Default to Scratch Sandbox
-    description: |
-      Prefer tool_scratch(operation='write') + tool_scratch(operation='run')
-      for one-off code instead of versioned step scripts. Keep iteration
-      cheap. Only graduate a scratch file into the step's scripts/ when the
-      researcher says "save this" or "let's keep that".
+- id: scratch_first
+  name: Default to Scratch Sandbox
+  description: |
+    Prefer tool_scratch(operation='write') + tool_scratch(operation='run')
+    for one-off code instead of versioned step scripts. Keep iteration
+    cheap. Only graduate a scratch file into the step's scripts/ when the
+    researcher says "save this" or "let's keep that".
 
-  - id: minimal_logging
-    name: Minimal Logging
-    description: |
-      Skip mem_log. Use mem_log ONLY for surprising
-      findings or decisions the researcher endorsed. Do NOT register
-      hypotheses unless the researcher says so explicitly.
+- id: minimal_logging
+  name: Minimal Logging
+  description: |
+    Skip mem_log. Use mem_log ONLY for surprising
+    findings or decisions the researcher endorsed. Do NOT register
+    hypotheses unless the researcher says so explicitly.
 
-  - id: present_findings
-    name: Present Findings Conversationally
-    description: |
-      No formal report. Three bullets max:
-        - What you tried
-        - What you saw (one chart if useful, saved to outputs/figures/)
-        - What would be worth a real experiment next, if anything
-      Offer: "Want me to promote this into a proper analysis_plan step?"
+- id: present_findings
+  name: Present Findings Conversationally
+  description: |
+    No formal report. Three bullets max:
+      - What you tried
+      - What you saw (one chart if useful, saved to outputs/figures/)
+      - What would be worth a real experiment next, if anything
+    Offer: "Want me to promote this into a proper analysis_plan step?"
 
-  - id: optional_promotion
-    name: Promote to Proper Research (on request)
-    description: |
-      If the researcher says "promote", call:
-        - mem_log (back-fill the method)
-        - mem_hypothesis_add (back-fill the hypothesis if any)
-        - sys_protocol_log status="completed" for casual_exploration
-      Then route to guidance/analysis_plan with the existing step as the
-      starting point. Casual artifacts are kept; nothing is rewritten.
+- id: optional_promotion
+  name: Promote to Proper Research (on request)
+  description: |
+    If the researcher says "promote", call:
+      - mem_log (back-fill the method)
+      - mem_hypothesis_add (back-fill the hypothesis if any)
+      - sys_protocol_log status="completed" for casual_exploration
+    Then route to guidance/analysis_plan with the existing step as the
+    starting point. Casual artifacts are kept; nothing is rewritten.
 
 expected_outputs:
-  - workspace/<NN>_explore_<topic>/outputs/figures/ (only if a figure was made)
+- workspace/<NN>_explore_<topic>/outputs/figures/ (only if a figure was made)
 
 quality_bar: |
   - No hallucinated stats: even casual numbers must come from data the AI
@@ -100,6 +100,22 @@ quality_bar: |
   - Audit + publication-grade tools are NOT called in this mode unless the
     researcher upgrades the step.
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: plan
+sub_intent: casual
+triggers:
+- just poke
+- casual
+- quick look
+- exploratory only
+- no publication
+- sanity check
+- just curious
+- totally side thing
+summary: Lightweight mode — skip reproducibility paperwork, sandbox-first.
+token_estimate: 600
+decomposition:
+- protocol: guidance/casual_exploration
+  purpose: Confirm casual mode + create lightweight step.

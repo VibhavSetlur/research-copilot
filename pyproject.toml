@@ -39,6 +39,9 @@ dependencies = [
     "httpx>=0.25",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
+    # P1 Protocol Unification: the compiled _protocols.bundle is msgpack
+    # (fast, compact binary — read on the sys_boot / tool_route hot path).
+    "msgpack>=1.0",
     "pandas>=1.5",
     "numpy>=1.23",
     # Full research experience ships in the base install — `pip install

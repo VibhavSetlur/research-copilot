@@ -2,16 +2,16 @@ id: printable
 tier: 'synthesize'
 name: Synthesis — Printable Deliverable (poster | handout | one-pager)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - synthesis/deliverable_design      # the design skill: poster archetype + palette selection
-  - synthesis/synthesis_lay_summary   # public-facing handout profiles overlap
-  - synthesis/synthesis_paper         # the poster/handout points back at the paper
+- synthesis/deliverable_design        # the design skill: poster archetype + palette selection
+- synthesis/synthesis_lay_summary     # public-facing handout profiles overlap
+- synthesis/synthesis_paper           # the poster/handout points back at the paper
 description: |
   Guide the AI to author a printable deliverable directly. One
   protocol covers three print-first formats:
@@ -37,13 +37,8 @@ trigger: |
   Pick format from wording (poster vs handout/one-pager).
 
 prerequisites:
-  - At least one workspace step has substantive conclusions OR a
-    synthesis/* deliverable exists.
-  - "Researcher's `research_goal.output_types`
-    (inputs/researcher_config.yaml) includes the chosen format's
-    keyword (`poster` or `handout`). If it doesn't,
-    tool_synthesis_scaffold returns status=ask — confirm with the
-    researcher first. Empty output_types is treated as 'open'."
+- At least one workspace step has substantive conclusions OR a synthesis/* deliverable exists.
+- "Researcher's `research_goal.output_types` (inputs/researcher_config.yaml) includes the chosen format's keyword (`poster` or `handout`). If it doesn't, tool_synthesis_scaffold returns status=ask — confirm with the researcher first. Empty output_types is treated as 'open'."
 
 design_principles: |
   - One headline dominates. Anything competing with the headline
@@ -112,53 +107,53 @@ audience_guidance: |
     Quote / Visual / Embargo_or_release / Contact.
 
 steps:
-  - id: pick_format
-    name: Pick format + audience profile
-    description: |
-      Pick from researcher wording or redirect_params (poster vs
-      handout vs one_pager).
+- id: pick_format
+  name: Pick format + audience profile
+  description: |
+    Pick from researcher wording or redirect_params (poster vs
+    handout vs one_pager).
 
-  - id: curate_headline
-    name: Curate headline asset(s)
-    description: |
-      Posters — the few figures with the clearest message, at print
-      resolution. Handouts — exactly ONE figure that carries the
-      headline. If no publication-grade figure exists, STOP and ask.
+- id: curate_headline
+  name: Curate headline asset(s)
+  description: |
+    Posters — the few figures with the clearest message, at print
+    resolution. Handouts — exactly ONE figure that carries the
+    headline. If no publication-grade figure exists, STOP and ask.
 
-  - id: scaffold
-    name: Scaffold the .typ
-    description: |
-      tool_synthesis_scaffold(kind='poster') for posters. For
-      handouts, author synthesis/handout.typ directly.
+- id: scaffold
+  name: Scaffold the .typ
+  description: |
+    tool_synthesis_scaffold(kind='poster') for posters. For
+    handouts, author synthesis/handout.typ directly.
 
-  - id: author_text
-    name: Author text per block / section
-    description: |
-      POSTER — a few sentences per block, bullets for Methods /
-      Results; cut, don't shrink. HANDOUT — one or two sentences per
-      section so the whole page is skimmable in well under two minutes.
+- id: author_text
+  name: Author text per block / section
+  description: |
+    POSTER — a few sentences per block, bullets for Methods /
+    Results; cut, don't shrink. HANDOUT — one or two sentences per
+    section so the whole page is skimmable in well under two minutes.
 
-  - id: generate_qr
-    name: Generate the QR (mandatory)
-    description: |
-      Point at the paper preprint / DOI / dashboard URL / lab page.
-      Author a short script with whatever QR library is on hand to
-      render the code. Bottom-right placement. SCAN before printing —
-      a QR to a dead or paywalled URL costs trust.
+- id: generate_qr
+  name: Generate the QR (mandatory)
+  description: |
+    Point at the paper preprint / DOI / dashboard URL / lab page.
+    Author a short script with whatever QR library is on hand to
+    render the code. Bottom-right placement. SCAN before printing —
+    a QR to a dead or paywalled URL costs trust.
 
-  - id: audit
-    name: Audit + across-the-room test
-    description: |
-      tool_synthesis_check(file='synthesis/poster.typ') (or
-      handout.typ) catches over-cap citations, short sections, path
-      leaks. Combine with the headline test (print at physical scale,
-      stand 1.5m back).
+- id: audit
+  name: Audit + across-the-room test
+  description: |
+    tool_synthesis_check(file='synthesis/poster.typ') (or
+    handout.typ) catches over-cap citations, short sections, path
+    leaks. Combine with the headline test (print at physical scale,
+    stand 1.5m back).
 
-  - id: compile
-    name: Compile to PDF
-    description: |
-      tool_typst_compile renders synthesis/poster.pdf (or
-      handout.pdf).
+- id: compile
+  name: Compile to PDF
+  description: |
+    tool_typst_compile renders synthesis/poster.pdf (or
+    handout.pdf).
 
 tools: |
   - tool_synthesis_scaffold(kind='poster') — seed poster.typ
@@ -168,13 +163,24 @@ tools: |
   - tool_typst_compile — render poster.pdf / handout.pdf
 
 expected_outputs:
-  - synthesis/poster.typ            # when format=poster
-  - synthesis/poster.pdf            # when format=poster
-  - synthesis/poster_qr.png         # when format=poster
-  - synthesis/handout.typ           # when format=handout / one_pager
-  - synthesis/handout.pdf           # when format=handout / one_pager
-  - synthesis/handout_qr.png        # when format=handout / one_pager
+- synthesis/poster.typ              # when format=poster
+- synthesis/poster.pdf              # when format=poster
+- synthesis/poster_qr.png           # when format=poster
+- synthesis/handout.typ             # when format=handout / one_pager
+- synthesis/handout.pdf             # when format=handout / one_pager
+- synthesis/handout_qr.png          # when format=handout / one_pager
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: printable
+triggers:
+- printable deliverable
+- make something printable
+- design a printable
+summary: Print-first deliverable (poster | handout | one_pager). Replaces synthesis_handout + synthesis_poster via the `format` parameter.
+token_estimate: 1700
+decomposition:
+- protocol: synthesis/printable
+  purpose: Pick format (poster | handout), audience, headline, figure(s), QR, build, audit.

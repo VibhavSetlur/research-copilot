@@ -2,15 +2,15 @@ id: fairness_audit
 tier: 'plan'
 name: Fairness Audit (ML / decision systems / clinical AI)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/machine_learning          # the model whose fairness is audited
-  - methodology/data_ethics_review         # group-attribute collection lawfulness
+- methodology/machine_learning            # the model whose fairness is audited
+- methodology/data_ethics_review           # group-attribute collection lawfulness
 description: |
   When a predictive model or decision system will be used in a
   context where outcomes affect people differently across groups
@@ -45,224 +45,204 @@ trigger: |
       study.
 
 prerequisites:
-  - A model has been trained OR is being designed (this protocol
-    runs at design time AND post-training).
-  - Group attributes the audit will be conducted across are
-    available (or a proxy / acquisition plan exists).
-  - The intended use + decision context is documented.
+- A model has been trained OR is being designed (this protocol runs at design time AND post-training).
+- Group attributes the audit will be conducted across are available (or a proxy / acquisition plan exists).
+- The intended use + decision context is documented.
 
 editorial_voice:
   rules:
-    - "Fairness is a value choice, not a math problem. Demographic
-       parity, equalised odds, predictive parity, and calibration
-       are mutually incompatible in general (Chouldechova 2017;
-       Kleinberg et al. 2017). The choice must be justified by the
-       harm structure + stakeholder input, not by which metric the
-       model happens to satisfy."
-    - "Group attributes are sensitive data. Collection, storage, and
-       use of race, gender, disability, age, religion, sexual
-       orientation, immigration status, etc. is governed by the
-       regulatory regime (US Title VII, ECOA, FHA, ADA; EU GDPR
-       special categories; UK Equality Act; jurisdiction-specific
-       healthcare regulations). The audit plan MUST address
-       collection lawfulness BEFORE any group-level analysis."
-    - "Subgroup harm is not the only harm. Allocative harms (denied
-       services) and representational harms (stereotyping,
-       under-representation, dignity violations) differ. The audit
-       must consider both."
-    - "Mitigation has costs. Pre-processing, in-processing, and
-       post-processing fairness interventions all have utility costs
-       on at least some groups. The 'fair' model is rarely the
-       maximum-utility model. The trade-off must be made transparent
-       to decision-makers."
+  - "Fairness is a value choice, not a math problem. Demographic parity, equalised odds, predictive parity, and calibration are mutually incompatible in general (Chouldechova 2017; Kleinberg et al. 2017). The choice must be justified by the harm structure + stakeholder input, not by which metric the model happens to satisfy."
+  - "Group attributes are sensitive data. Collection, storage, and use of race, gender, disability, age, religion, sexual orientation, immigration status, etc. is governed by the regulatory regime (US Title VII, ECOA, FHA, ADA; EU GDPR special categories; UK Equality Act; jurisdiction-specific healthcare regulations). The audit plan MUST address collection lawfulness BEFORE any group-level analysis."
+  - "Subgroup harm is not the only harm. Allocative harms (denied services) and representational harms (stereotyping, under-representation, dignity violations) differ. The audit must consider both."
+  - "Mitigation has costs. Pre-processing, in-processing, and post-processing fairness interventions all have utility costs on at least some groups. The 'fair' model is rarely the maximum-utility model. The trade-off must be made transparent to decision-makers."
 
 steps:
-  - id: characterize_decision_context
-    name: Characterise the decision context + harm structure
-    description: |
-      Document:
-        - WHAT decision does the model inform (binary classification,
-          ranking, score, recommendation, generation)?
-        - WHO is affected by a positive / negative decision (the
-          decision subject, downstream parties)?
-        - WHAT is the harm of a false positive vs false negative
-          for each affected party? (asymmetric — a false-positive
-          fraud flag harms the customer; a false-negative loan
-          denial harms the bank.)
-        - WHAT is the regulatory regime (EEO, ECOA, FHA, GDPR,
-          jurisdiction-specific clinical AI rules)?
-        - WHAT existing disparities exist in the OUTCOME the model
-          predicts (historical bias) — and would predicting that
-          outcome perfectly perpetuate them?
+- id: characterize_decision_context
+  name: Characterise the decision context + harm structure
+  description: |
+    Document:
+      - WHAT decision does the model inform (binary classification,
+        ranking, score, recommendation, generation)?
+      - WHO is affected by a positive / negative decision (the
+        decision subject, downstream parties)?
+      - WHAT is the harm of a false positive vs false negative
+        for each affected party? (asymmetric — a false-positive
+        fraud flag harms the customer; a false-negative loan
+        denial harms the bank.)
+      - WHAT is the regulatory regime (EEO, ECOA, FHA, GDPR,
+        jurisdiction-specific clinical AI rules)?
+      - WHAT existing disparities exist in the OUTCOME the model
+        predicts (historical bias) — and would predicting that
+        outcome perfectly perpetuate them?
 
-      Write workspace/.fairness/context.md. This grounds every
-      downstream choice.
+    Write workspace/.fairness/context.md. This grounds every
+    downstream choice.
 
-  - id: identify_groups
-    name: Identify groups for analysis (protected + intersectional)
-    description: |
-      Specify the groups across which fairness will be assessed:
-        - protected attributes legally / ethically relevant (race,
-          sex, age, disability, religion, sexual orientation;
-          jurisdiction-specific)
-        - intersectional groups (race × sex, age × disability) —
-          single-axis fairness misses intersectional disparities
-          (Buolamwini & Gebru 2018)
-        - proxies when direct measurement is unavailable / unlawful
-          (zip code as race proxy is itself a bias source —
-          document the proxy + its limitations)
+- id: identify_groups
+  name: Identify groups for analysis (protected + intersectional)
+  description: |
+    Specify the groups across which fairness will be assessed:
+      - protected attributes legally / ethically relevant (race,
+        sex, age, disability, religion, sexual orientation;
+        jurisdiction-specific)
+      - intersectional groups (race × sex, age × disability) —
+        single-axis fairness misses intersectional disparities
+        (Buolamwini & Gebru 2018)
+      - proxies when direct measurement is unavailable / unlawful
+        (zip code as race proxy is itself a bias source —
+        document the proxy + its limitations)
 
-      Sample size in subgroups matters. If a subgroup has too few
-      cases for reliable disparity estimates, the audit reports
-      this rather than estimating from noise.
+    Sample size in subgroups matters. If a subgroup has too few
+    cases for reliable disparity estimates, the audit reports
+    this rather than estimating from noise.
 
-      Document attribute provenance: how was it collected? Self-
-      reported? Inferred? With consent? Specify the lawful basis.
+    Document attribute provenance: how was it collected? Self-
+    reported? Inferred? With consent? Specify the lawful basis.
 
-  - id: pick_fairness_criteria
-    name: Pick the fairness criteria — and acknowledge trade-offs
-    description: |
-      Reason explicitly through the candidate criteria + their
-      trade-offs:
+- id: pick_fairness_criteria
+  name: Pick the fairness criteria — and acknowledge trade-offs
+  description: |
+    Reason explicitly through the candidate criteria + their
+    trade-offs:
 
-        DEMOGRAPHIC PARITY (statistical parity) — P(Ŷ=1|A=a) equal
-          across groups. Ignores ground truth; appropriate when the
-          DECISION distribution should be representative (e.g.
-          job-candidate shortlists) and ground-truth labels are
-          themselves suspect.
+      DEMOGRAPHIC PARITY (statistical parity) — P(Ŷ=1|A=a) equal
+        across groups. Ignores ground truth; appropriate when the
+        DECISION distribution should be representative (e.g.
+        job-candidate shortlists) and ground-truth labels are
+        themselves suspect.
 
-        EQUALISED ODDS — P(Ŷ=1|Y=y, A=a) equal across groups for
-          y∈{0,1} (Hardt et al. 2016). Requires equal TPR and FPR
-          across groups. Appropriate when accuracy CONDITIONAL on
-          truth must be equal.
+      EQUALISED ODDS — P(Ŷ=1|Y=y, A=a) equal across groups for
+        y∈{0,1} (Hardt et al. 2016). Requires equal TPR and FPR
+        across groups. Appropriate when accuracy CONDITIONAL on
+        truth must be equal.
 
-        EQUAL OPPORTUNITY — equalised TPR only (relaxation of
-          equalised odds). Appropriate when false negatives are the
-          primary harm (e.g. missed disease).
+      EQUAL OPPORTUNITY — equalised TPR only (relaxation of
+        equalised odds). Appropriate when false negatives are the
+        primary harm (e.g. missed disease).
 
-        PREDICTIVE PARITY — P(Y=1|Ŝ=s, A=a) equal across groups —
-          a given score means the same probability of outcome across
-          groups. Appropriate when downstream decisions use the
-          score as a calibrated probability.
+      PREDICTIVE PARITY — P(Y=1|Ŝ=s, A=a) equal across groups —
+        a given score means the same probability of outcome across
+        groups. Appropriate when downstream decisions use the
+        score as a calibrated probability.
 
-        CALIBRATION WITHIN GROUPS — model is calibrated within each
-          group (well-calibrated subgroup risk scores). Often a
-          MINIMUM bar in clinical settings.
+      CALIBRATION WITHIN GROUPS — model is calibrated within each
+        group (well-calibrated subgroup risk scores). Often a
+        MINIMUM bar in clinical settings.
 
-      Pick + justify. State which other criteria you are NOT
-      satisfying and the trade-off you are accepting. Cite the
-      impossibility result (Chouldechova 2017; Kleinberg et al.
-      2017) if applicable.
+    Pick + justify. State which other criteria you are NOT
+    satisfying and the trade-off you are accepting. Cite the
+    impossibility result (Chouldechova 2017; Kleinberg et al.
+    2017) if applicable.
 
-  - id: compute_disparity_metrics
-    name: Compute the disparity metrics on test + held-out data
-    description: |
-      Write the audit script via tool_python_exec (or tool_r_exec).
-      Fairness toolkits exist in both ecosystems; surface the one the
-      field's recent fairness literature uses for THIS criterion (e.g.
-      via tool_research_method) rather than defaulting — toolkits
-      differ in which metrics and mitigations they implement.
+- id: compute_disparity_metrics
+  name: Compute the disparity metrics on test + held-out data
+  description: |
+    Write the audit script via tool_python_exec (or tool_r_exec).
+    Fairness toolkits exist in both ecosystems; surface the one the
+    field's recent fairness literature uses for THIS criterion (e.g.
+    via tool_research_method) rather than defaulting — toolkits
+    differ in which metrics and mitigations they implement.
 
-      Compute the chosen criterion's metrics per group + per
-      intersectional subgroup. Persist:
-        - per-group confusion-matrix rates the criterion needs (TPR,
-          FPR, TNR, FNR, PPV, NPV), base rate, prediction rate
-        - the chosen-criterion disparity (ratio + difference)
-        - calibration plots per group
-        - confidence intervals (bootstrap when not analytic)
-        - if a regulatory disparate-impact test applies in the
-          jurisdiction, run it and report the outcome + cite the
-          governing rule
+    Compute the chosen criterion's metrics per group + per
+    intersectional subgroup. Persist:
+      - per-group confusion-matrix rates the criterion needs (TPR,
+        FPR, TNR, FNR, PPV, NPV), base rate, prediction rate
+      - the chosen-criterion disparity (ratio + difference)
+      - calibration plots per group
+      - confidence intervals (bootstrap when not analytic)
+      - if a regulatory disparate-impact test applies in the
+        jurisdiction, run it and report the outcome + cite the
+        governing rule
 
-      Save to workspace/.fairness/disparity_report.md.
+    Save to workspace/.fairness/disparity_report.md.
 
-  - id: consider_mitigations
-    name: Consider mitigations + their trade-offs
-    description: |
-      If disparities exceed tolerance:
+- id: consider_mitigations
+  name: Consider mitigations + their trade-offs
+  description: |
+    If disparities exceed tolerance:
 
-        PRE-PROCESSING — re-weight or transform training data
-          (e.g. Kamiran & Calders 2012). Pros: works with any
-          model. Cons: may not transfer to deployment.
+      PRE-PROCESSING — re-weight or transform training data
+        (e.g. Kamiran & Calders 2012). Pros: works with any
+        model. Cons: may not transfer to deployment.
 
-        IN-PROCESSING — fairness-constrained training (e.g.
-          adversarial debiasing, fairness regularisers, Agarwal
-          et al. 2018 reductions approach). Pros: directly
-          optimises trade-off. Cons: requires model-specific work.
+      IN-PROCESSING — fairness-constrained training (e.g.
+        adversarial debiasing, fairness regularisers, Agarwal
+        et al. 2018 reductions approach). Pros: directly
+        optimises trade-off. Cons: requires model-specific work.
 
-        POST-PROCESSING — adjust thresholds or scores per group
-          (e.g. Hardt et al. 2016). Pros: no re-training. Cons:
-          legally fraught (group-specific thresholds may itself be
-          unlawful in some jurisdictions / contexts — surface this
-          explicitly).
+      POST-PROCESSING — adjust thresholds or scores per group
+        (e.g. Hardt et al. 2016). Pros: no re-training. Cons:
+        legally fraught (group-specific thresholds may itself be
+        unlawful in some jurisdictions / contexts — surface this
+        explicitly).
 
-        NON-ML INTERVENTIONS — change the decision process so the
-          model is one input among many; add human review; lower
-          stakes of automated decisions; collect more data on
-          under-represented groups; rethink the prediction task.
+      NON-ML INTERVENTIONS — change the decision process so the
+        model is one input among many; add human review; lower
+        stakes of automated decisions; collect more data on
+        under-represented groups; rethink the prediction task.
 
-      For each candidate mitigation: document the utility cost,
-      the residual disparity, the legal viability, and the
-      stakeholder buy-in question.
+    For each candidate mitigation: document the utility cost,
+    the residual disparity, the legal viability, and the
+    stakeholder buy-in question.
 
-  - id: model_card_and_intended_use
-    name: Write the Model Card (Mitchell et al. 2019) + intended-use
-    description: |
-      Draft workspace/.fairness/model_card.md following the
-      Mitchell et al. (2019) template:
-        - model details (architecture, training data, version)
-        - intended use (in-scope + out-of-scope)
-        - evaluation data + factors
-        - metrics (overall + by group)
-        - ethical considerations + caveats + recommendations
+- id: model_card_and_intended_use
+  name: Write the Model Card (Mitchell et al. 2019) + intended-use
+  description: |
+    Draft workspace/.fairness/model_card.md following the
+    Mitchell et al. (2019) template:
+      - model details (architecture, training data, version)
+      - intended use (in-scope + out-of-scope)
+      - evaluation data + factors
+      - metrics (overall + by group)
+      - ethical considerations + caveats + recommendations
 
-      The intended-use section is load-bearing. It defines what
-      uses the model IS validated for; uses outside that scope
-      are not endorsed.
+    The intended-use section is load-bearing. It defines what
+    uses the model IS validated for; uses outside that scope
+    are not endorsed.
 
-  - id: monitoring_plan
-    name: Define a production monitoring plan
-    description: |
-      Fairness measured at training time can degrade in deployment
-      (covariate shift, label shift, feedback loops). Define:
-        - which disparity metrics will be monitored at what cadence
-        - thresholds that trigger review / re-training
-        - subgroup sample-size minimums before metrics are reported
-          (don't trigger on noise)
-        - the human-in-the-loop escalation when thresholds breach
-        - the consent + transparency plan for the deployment context
+- id: monitoring_plan
+  name: Define a production monitoring plan
+  description: |
+    Fairness measured at training time can degrade in deployment
+    (covariate shift, label shift, feedback loops). Define:
+      - which disparity metrics will be monitored at what cadence
+      - thresholds that trigger review / re-training
+      - subgroup sample-size minimums before metrics are reported
+        (don't trigger on noise)
+      - the human-in-the-loop escalation when thresholds breach
+      - the consent + transparency plan for the deployment context
 
-      Write to workspace/.fairness/monitoring_plan.md.
+    Write to workspace/.fairness/monitoring_plan.md.
 
-  - id: stakeholder_review
-    name: Stakeholder review (where context demands it)
-    description: |
-      For high-impact deployments (clinical AI, hiring, lending,
-      criminal justice), the fairness analysis should be reviewed by
-      affected-community representatives + domain ethicists, not just
-      the modelling team. Document who reviewed, what was raised, and
-      how it was addressed. When such review is not feasible at the
-      project scale, state the limitation in the model card.
+- id: stakeholder_review
+  name: Stakeholder review (where context demands it)
+  description: |
+    For high-impact deployments (clinical AI, hiring, lending,
+    criminal justice), the fairness analysis should be reviewed by
+    affected-community representatives + domain ethicists, not just
+    the modelling team. Document who reviewed, what was raised, and
+    how it was addressed. When such review is not feasible at the
+    project scale, state the limitation in the model card.
 
-  - id: report_in_methods_and_paper
-    name: Report in Methods + Limitations
-    description: |
-      Methods section: groups assessed, fairness criterion + why,
-      metrics + thresholds, mitigations applied + utility cost,
-      monitoring plan.
+- id: report_in_methods_and_paper
+  name: Report in Methods + Limitations
+  description: |
+    Methods section: groups assessed, fairness criterion + why,
+    metrics + thresholds, mitigations applied + utility cost,
+    monitoring plan.
 
-      Limitations: which fairness criteria are NOT satisfied + why
-      that trade-off was accepted; sample-size limits on rare
-      subgroups; data-provenance caveats.
+    Limitations: which fairness criteria are NOT satisfied + why
+    that trade-off was accepted; sample-size limits on rare
+    subgroups; data-provenance caveats.
 
-      mem_log + writing/writing_limitations integration.
+    mem_log + writing/writing_limitations integration.
 
 expected_outputs:
-  - workspace/.fairness/context.md
-  - workspace/.fairness/disparity_report.md
-  - workspace/.fairness/model_card.md
-  - workspace/.fairness/monitoring_plan.md
-  - (entries appended to methods.md + limitations.md)
+- workspace/.fairness/context.md
+- workspace/.fairness/disparity_report.md
+- workspace/.fairness/model_card.md
+- workspace/.fairness/monitoring_plan.md
+- (entries appended to methods.md + limitations.md)
 
 quality_bar:
   decision_context_and_harm_structure_documented: true
@@ -276,6 +256,21 @@ quality_bar:
 
 # Route via the dispatcher when uncertainty work is needed after the
 # fairness analysis (no back-edge here, to keep the graph acyclic).
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/scope_clarification
+intent_class: methodology
+sub_intent: fairness
+triggers:
+- fairness
+- bias audit
+- disparate impact
+- demographic parity
+- equalized odds
+- equalised odds
+- equal opportunity
+- calibration across groups
+- model card
+- fair ml
+- algorithmic fairness
+summary: Group / intersectional fairness audit for ML + decision systems.

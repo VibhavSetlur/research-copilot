@@ -2,14 +2,14 @@ id: writing_analysis_log
 tier: 'plan'
 name: Writing — Analysis Log
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [naive_ai]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - writing/writing_conclusions        # the per-step finding artefact this log summarises
+- writing/writing_conclusions          # the per-step finding artefact this log summarises
 description: |
   Format for structured entries appended to `workspace/analysis.md` —
   the project-wide narrative log a fresh AI session reads top-to-bottom
@@ -26,29 +26,36 @@ entry_template: |
   - warnings: {warnings or "none"}
 
 steps:
-  - id: pick_status
-    name: Pick a Status
-    description: |
-      One of: STARTED · COMPLETED · ABANDONED · PAUSED · BLOCKED.
+- id: pick_status
+  name: Pick a Status
+  description: |
+    One of: STARTED · COMPLETED · ABANDONED · PAUSED · BLOCKED.
 
-  - id: log
-    name: Log the Entry
-    description: |
-      mem_log entry=<formatted entry from template>
-      The mem_log handler timestamps automatically; you only need to
-      provide the {step_id} {status} ... portion.
+- id: log
+  name: Log the Entry
+  description: |
+    mem_log entry=<formatted entry from template>
+    The mem_log handler timestamps automatically; you only need to
+    provide the {step_id} {status} ... portion.
 
-  - id: refresh_workflow_diagram
-    name: Refresh Workflow Diagram
-    description: |
-      mem_log automatically regenerates workspace/workflow.mermaid.
-      Spot-check that your new step node appears with the right colour
-      (active=yellow, completed=green, dead_end=red).
+- id: refresh_workflow_diagram
+  name: Refresh Workflow Diagram
+  description: |
+    mem_log automatically regenerates workspace/workflow.mermaid.
+    Spot-check that your new step node appears with the right colour
+    (active=yellow, completed=green, dead_end=red).
 
 expected_outputs:
-  - workspace/analysis.md
-  - workspace/workflow.mermaid
+- workspace/analysis.md
+- workspace/workflow.mermaid
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: memory
+sub_intent: hypothesis
+triggers:
+- analysis log
+- narrative log
+- log entry
+summary: Format for structured entries in workspace/analysis.md.

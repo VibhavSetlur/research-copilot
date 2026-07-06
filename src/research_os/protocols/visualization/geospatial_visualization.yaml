@@ -2,15 +2,15 @@ id: geospatial_visualization
 tier: 'synthesize'
 name: Geospatial Visualization (choropleth, points, flow, raster)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - visualization/color_accessibility_audit   # palette + CVD check before finalising the map
-  - visualization/uncertainty_visualization    # showing estimate reliability on the map
+- visualization/color_accessibility_audit     # palette + CVD check before finalising the map
+- visualization/uncertainty_visualization      # showing estimate reliability on the map
 description: |
   Data with a location dimension — counties, countries, points,
   trajectories, satellite pixels — needs a map, not a bar chart.
@@ -34,211 +34,197 @@ trigger: |
       countries) and a non-spatial plot would lose the story.
 
 prerequisites:
-  - Geographic data is staged (GeoDataFrame, shapefile, GeoJSON,
-    or lat/lon columns).
-  - The unit of analysis (point, polygon, raster pixel) is documented.
-  - The projection is known OR the AI will pick one with a stated
-    rationale.
+- Geographic data is staged (GeoDataFrame, shapefile, GeoJSON, or lat/lon columns).
+- The unit of analysis (point, polygon, raster pixel) is documented.
+- The projection is known OR the AI will pick one with a stated rationale.
 
 editorial_voice:
   rules:
-    - "RAW COUNTS lie on a map. Population-dense counties look
-       worse / better on raw counts simply because more people live
-       there. Use RATES per population (or any sensible denominator)
-       OR use bivariate maps that show both rate and reliability."
-    - "Mercator distorts areas. Greenland is not the size of Africa.
-       Use equal-area projections (Albers, Eckert IV, Robinson) for
-       choropleths; use Web Mercator ONLY for interactive web tiles
-       that need raster compatibility."
-    - "Choropleth bin breaks are a researcher degree of freedom.
-       Equal-interval, quantile, Jenks natural breaks, manual —
-       each tells a different story. Pre-specify + cite. NEVER pick
-       breaks AFTER seeing the map to make the result look better."
-    - "Colour schemes encode data type. Sequential (one-direction
-       intensity), diverging (above/below a meaningful midpoint),
-       qualitative (categories). Mismatch warps perception.
-       ColorBrewer is the reference."
+  - "RAW COUNTS lie on a map. Population-dense counties look worse / better on raw counts simply because more people live there. Use RATES per population (or any sensible denominator) OR use bivariate maps that show both rate and reliability."
+  - "Mercator distorts areas. Greenland is not the size of Africa. Use equal-area projections (Albers, Eckert IV, Robinson) for choropleths; use Web Mercator ONLY for interactive web tiles that need raster compatibility."
+  - "Choropleth bin breaks are a researcher degree of freedom. Equal-interval, quantile, Jenks natural breaks, manual — each tells a different story. Pre-specify + cite. NEVER pick breaks AFTER seeing the map to make the result look better."
+  - "Colour schemes encode data type. Sequential (one-direction intensity), diverging (above/below a meaningful midpoint), qualitative (categories). Mismatch warps perception. ColorBrewer is the reference."
 
 steps:
-  - id: characterize_data
-    name: Characterise the geographic data
-    description: |
-      Document:
-        - GEOMETRY TYPE — points, polygons (admin units), polylines
-          (routes), raster pixels?
-        - SCALE — global, national, regional, urban, building-level?
-        - VARIABLE TYPE — count, rate, ratio, category, continuous,
-          time-varying?
-        - DENOMINATOR — if the variable is a count, what's the right
-          denominator (population, area, income, exposure)?
-        - PROJECTION — what CRS is the data in? (EPSG:4326 lat/lon
-          is the most common starting point; document.)
+- id: characterize_data
+  name: Characterise the geographic data
+  description: |
+    Document:
+      - GEOMETRY TYPE — points, polygons (admin units), polylines
+        (routes), raster pixels?
+      - SCALE — global, national, regional, urban, building-level?
+      - VARIABLE TYPE — count, rate, ratio, category, continuous,
+        time-varying?
+      - DENOMINATOR — if the variable is a count, what's the right
+        denominator (population, area, income, exposure)?
+      - PROJECTION — what CRS is the data in? (EPSG:4326 lat/lon
+        is the most common starting point; document.)
 
-      Write to workspace/.geo/data_profile.md.
+    Write to workspace/.geo/data_profile.md.
 
-  - id: pick_map_type
-    name: Pick the map type by what is being shown
-    description: |
-      Common types + when each fits:
+- id: pick_map_type
+  name: Pick the map type by what is being shown
+  description: |
+    Common types + when each fits:
 
-        CHOROPLETH (filled polygons) — rate or category per admin
-          unit. Best for "how does X vary across regions?". Avoid
-          on raw counts (always use a rate).
+      CHOROPLETH (filled polygons) — rate or category per admin
+        unit. Best for "how does X vary across regions?". Avoid
+        on raw counts (always use a rate).
 
-        DOT DENSITY — counts represented as dots scattered within
-          the polygon. Good for "where are the events" without
-          masking spatial heterogeneity within an admin unit.
-          Be honest about dot placement (random within polygon).
+      DOT DENSITY — counts represented as dots scattered within
+        the polygon. Good for "where are the events" without
+        masking spatial heterogeneity within an admin unit.
+        Be honest about dot placement (random within polygon).
 
-        PROPORTIONAL SYMBOL — circles sized by value at a point or
-          polygon centroid. Best for raw counts that vary
-          dramatically; avoids the area-distortion of choropleths.
-          Cap maximum size; use root-scaling to make differences
-          legible.
+      PROPORTIONAL SYMBOL — circles sized by value at a point or
+        polygon centroid. Best for raw counts that vary
+        dramatically; avoids the area-distortion of choropleths.
+        Cap maximum size; use root-scaling to make differences
+        legible.
 
-        HEATMAP / KERNEL DENSITY — point clouds smoothed into a
-          continuous surface. Best for "where are events
-          concentrated?". Choose bandwidth deliberately + report it.
+      HEATMAP / KERNEL DENSITY — point clouds smoothed into a
+        continuous surface. Best for "where are events
+        concentrated?". Choose bandwidth deliberately + report it.
 
-        ISOPLETH / CONTOUR — continuous surface (elevation,
-          temperature, rainfall) with contour lines.
+      ISOPLETH / CONTOUR — continuous surface (elevation,
+        temperature, rainfall) with contour lines.
 
-        FLOW MAP — movement between origins and destinations.
-          Curved Bezier lines; bundle when many cross. Use sparingly.
+      FLOW MAP — movement between origins and destinations.
+        Curved Bezier lines; bundle when many cross. Use sparingly.
 
-        TRAJECTORY MAP — single moving object (GPS track). Use
-          alpha to show density / repetition; colour by time.
+      TRAJECTORY MAP — single moving object (GPS track). Use
+        alpha to show density / repetition; colour by time.
 
-        RASTER / SATELLITE — pixel-level continuous data (NDVI,
-          land cover). Often a base layer with a vector overlay.
+      RASTER / SATELLITE — pixel-level continuous data (NDVI,
+        land cover). Often a base layer with a vector overlay.
 
-        DOT MAP (event-level) — one dot per event when the spatial
-          granularity is meaningful (crime, accidents). Beware of
-          point pile-up; jitter or alpha-blend.
+      DOT MAP (event-level) — one dot per event when the spatial
+        granularity is meaningful (crime, accidents). Beware of
+        point pile-up; jitter or alpha-blend.
 
-      Document + cite (Slocum 2009 Thematic Cartography is a
-      standard reference).
+    Document + cite (Slocum 2009 Thematic Cartography is a
+    standard reference).
 
-  - id: pick_projection
-    name: Pick the map projection — equal-area for choropleths
-    description: |
-      For STATISTICAL maps (areas matter):
-        - Global: Eckert IV, Robinson (compromise), Equal Earth.
-        - North America: Albers Equal Area Conic.
-        - Europe: ETRS89 / LAEA Europe (EPSG:3035).
-        - National (US): EPSG:5070, EPSG:2163; (UK) EPSG:27700.
+- id: pick_projection
+  name: Pick the map projection — equal-area for choropleths
+  description: |
+    For STATISTICAL maps (areas matter):
+      - Global: Eckert IV, Robinson (compromise), Equal Earth.
+      - North America: Albers Equal Area Conic.
+      - Europe: ETRS89 / LAEA Europe (EPSG:3035).
+      - National (US): EPSG:5070, EPSG:2163; (UK) EPSG:27700.
 
-      For INTERACTIVE WEB maps with raster tiles:
-        - Web Mercator (EPSG:3857) — required for OSM/Stamen/Mapbox
-          compatibility; choropleth analysis on it is misleading at
-          high latitudes.
+    For INTERACTIVE WEB maps with raster tiles:
+      - Web Mercator (EPSG:3857) — required for OSM/Stamen/Mapbox
+        compatibility; choropleth analysis on it is misleading at
+        high latitudes.
 
-      For LOCAL maps (city-scale):
-        - Use the local projected CRS (UTM zone, state plane).
-          Lat/lon distortion at city scale is tolerable but a
-          proper projected CRS gives accurate distances.
+    For LOCAL maps (city-scale):
+      - Use the local projected CRS (UTM zone, state plane).
+        Lat/lon distortion at city scale is tolerable but a
+        proper projected CRS gives accurate distances.
 
-      Document the EPSG code + why.
+    Document the EPSG code + why.
 
-  - id: pick_classification_and_palette
-    name: Pick the classification breaks + colour palette
-    description: |
-      Classification choices for choropleths (pre-specify, then
-      compare):
+- id: pick_classification_and_palette
+  name: Pick the classification breaks + colour palette
+  description: |
+    Classification choices for choropleths (pre-specify, then
+    compare):
 
-        EQUAL INTERVAL — same numeric range per bin. Good for
-          uniformly-distributed data; misleading on skewed data.
-        QUANTILE — same count per bin. Good for ranking;
-          misleading on skewed data because adjacent bins may have
-          very different values.
-        NATURAL BREAKS (Jenks) — minimises variance within bins.
-          Good general-purpose; harder to compare across maps
-          (breaks differ by dataset).
-        STANDARD DEVIATIONS — bins centred on the mean.
-          Good for diverging maps (above/below average).
-        MANUAL — researcher-defined breaks. Best when domain has
-          meaningful thresholds (e.g. legal pollution limits).
+      EQUAL INTERVAL — same numeric range per bin. Good for
+        uniformly-distributed data; misleading on skewed data.
+      QUANTILE — same count per bin. Good for ranking;
+        misleading on skewed data because adjacent bins may have
+        very different values.
+      NATURAL BREAKS (Jenks) — minimises variance within bins.
+        Good general-purpose; harder to compare across maps
+        (breaks differ by dataset).
+      STANDARD DEVIATIONS — bins centred on the mean.
+        Good for diverging maps (above/below average).
+      MANUAL — researcher-defined breaks. Best when domain has
+        meaningful thresholds (e.g. legal pollution limits).
 
-      Palette type by data:
-        - Sequential (ColorBrewer 'Blues', 'YlOrRd') for ordered.
-        - Diverging ('RdBu', 'PuOr') for above/below midpoint.
-        - Qualitative ('Set1', 'Set2') for unordered categories.
+    Palette type by data:
+      - Sequential (ColorBrewer 'Blues', 'YlOrRd') for ordered.
+      - Diverging ('RdBu', 'PuOr') for above/below midpoint.
+      - Qualitative ('Set1', 'Set2') for unordered categories.
 
-      Run through visualization/color_accessibility_audit BEFORE
-      finalising — many default palettes fail deuteranopia.
+    Run through visualization/color_accessibility_audit BEFORE
+    finalising — many default palettes fail deuteranopia.
 
-  - id: implement_and_render
-    name: Implement + render
-    description: |
-      Libraries (Python):
-        - geopandas (vector); rasterio (raster); xarray + rioxarray
-          (gridded climate / earth obs).
-        - Static: matplotlib + contextily (basemaps).
-        - Interactive baseline: folium (Leaflet-backed), plotly
-          choropleth_mapbox.
-        - TOP-TIER interactive: pydeck / deck.gl (WebGL,
-          publication-grade 3D + heatmap + arc layers),
-          kepler.gl (Uber's flagship — beats Tableau out of the
-          box for spatial), Mapbox GL JS (custom styling).
-        - Specialised: cartopy (cartographic projections),
-          datashader (massive points).
+- id: implement_and_render
+  name: Implement + render
+  description: |
+    Libraries (Python):
+      - geopandas (vector); rasterio (raster); xarray + rioxarray
+        (gridded climate / earth obs).
+      - Static: matplotlib + contextily (basemaps).
+      - Interactive baseline: folium (Leaflet-backed), plotly
+        choropleth_mapbox.
+      - TOP-TIER interactive: pydeck / deck.gl (WebGL,
+        publication-grade 3D + heatmap + arc layers),
+        kepler.gl (Uber's flagship — beats Tableau out of the
+        box for spatial), Mapbox GL JS (custom styling).
+      - Specialised: cartopy (cartographic projections),
+        datashader (massive points).
 
-      R: sf, leaflet, tmap, ggspatial, mapview; for showcase
-      interactive use rdeck (deck.gl from R) or mapdeck.
+    R: sf, leaflet, tmap, ggspatial, mapview; for showcase
+    interactive use rdeck (deck.gl from R) or mapdeck.
 
-      For showcase / dashboard-tier output route to
-      visualization/interactive_dashboard_design (kepler-style
-      multi-layer) or visualization/showcase_visualization
-      (custom MapboxGL / deck.gl with hand-tuned palette + copy)
-      — basic choropleth maps rarely earn a paper cover.
+    For showcase / dashboard-tier output route to
+    visualization/interactive_dashboard_design (kepler-style
+    multi-layer) or visualization/showcase_visualization
+    (custom MapboxGL / deck.gl with hand-tuned palette + copy)
+    — basic choropleth maps rarely earn a paper cover.
 
-      The script must:
-        - load data + reproject to the chosen CRS
-        - apply the chosen classification + palette
-        - render to PNG (300 DPI) + SVG + (if interactive) HTML
-        - emit the standard sidecars including .prov.json with the
-          EPSG code, classification method, breaks, palette name
-        - include a scale bar + north arrow + caption-friendly
-          legend
-        - persist the GeoDataFrame + classification output to
-          data/next_step_output/ so reruns are deterministic.
+    The script must:
+      - load data + reproject to the chosen CRS
+      - apply the chosen classification + palette
+      - render to PNG (300 DPI) + SVG + (if interactive) HTML
+      - emit the standard sidecars including .prov.json with the
+        EPSG code, classification method, breaks, palette name
+      - include a scale bar + north arrow + caption-friendly
+        legend
+      - persist the GeoDataFrame + classification output to
+        data/next_step_output/ so reruns are deterministic.
 
-  - id: legibility_and_honesty_audit
-    name: Audit for legibility + honesty
-    description: |
-      Checks:
-        - is the projection appropriate (areas not lying)?
-        - is a denominator used when the variable is a count?
-        - are the breaks pre-specified or post-hoc?
-        - does the colour palette match the data type
-          (sequential / diverging / qualitative)?
-        - is the palette colour-vision-safe?
-        - is the missing-data class visually distinguishable
-          (hatched / grey) from low values?
-        - scale bar + north arrow + source attribution
-          (especially for OSM-derived basemaps — attribution is
-          required by the OSM licence)?
-        - if interactive, do tooltips show the full data context
-          (raw count + rate + admin name)?
+- id: legibility_and_honesty_audit
+  name: Audit for legibility + honesty
+  description: |
+    Checks:
+      - is the projection appropriate (areas not lying)?
+      - is a denominator used when the variable is a count?
+      - are the breaks pre-specified or post-hoc?
+      - does the colour palette match the data type
+        (sequential / diverging / qualitative)?
+      - is the palette colour-vision-safe?
+      - is the missing-data class visually distinguishable
+        (hatched / grey) from low values?
+      - scale bar + north arrow + source attribution
+        (especially for OSM-derived basemaps — attribution is
+        required by the OSM licence)?
+      - if interactive, do tooltips show the full data context
+        (raw count + rate + admin name)?
 
-  - id: caption_and_methods
-    name: Caption + methods entry
-    description: |
-      Caption must state:
-        - geographic unit + N units + variable
-        - denominator (if any) + transformation
-        - projection (EPSG)
-        - classification method + N classes + breaks
-        - palette + data source attribution
+- id: caption_and_methods
+  name: Caption + methods entry
+  description: |
+    Caption must state:
+      - geographic unit + N units + variable
+      - denominator (if any) + transformation
+      - projection (EPSG)
+      - classification method + N classes + breaks
+      - palette + data source attribution
 
-      mem_log the cartographic choices for the audit
-      trail.
+    mem_log the cartographic choices for the audit
+    trail.
 
 expected_outputs:
-  - workspace/.geo/data_profile.md
-  - workspace/<step>/outputs/figures/map_<topic>.{png,svg}
-  - workspace/<step>/outputs/figures/map_<topic>.{caption.md,summary.md,prov.json}
-  - workspace/<step>/data/next_step_output/geo_processed.{gpkg,parquet}
+- workspace/.geo/data_profile.md
+- workspace/<step>/outputs/figures/map_<topic>.{png,svg}
+- workspace/<step>/outputs/figures/map_<topic>.{caption.md,summary.md,prov.json}
+- workspace/<step>/data/next_step_output/geo_processed.{gpkg,parquet}
 
 quality_bar:
   denominator_used_for_counts: true
@@ -252,3 +238,29 @@ quality_bar:
 next_protocol: visualization/figure_critique
 next_protocol_kind: forward_default
 on_failure: visualization/figure_guidelines
+intent_class: synthesize
+sub_intent: geo
+triggers:
+- make a map
+- plot a map
+- draw a map
+- map of
+- choropleth
+- geospatial
+- shapefile
+- geojson
+- lat/lon
+- gis
+- trajectory map
+- geographic
+- spatial visualization
+- satellite imagery
+- raster map
+- leaflet
+- tile map
+- proportional symbol
+- remote sensing
+- remote-sensing
+- change detection
+- raster time series
+summary: Plot a map (choropleth, points, raster); projection + classification + palette.

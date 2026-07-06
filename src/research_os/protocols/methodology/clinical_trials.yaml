@@ -3,15 +3,15 @@ tier: 'plan'
 name: Clinical Trial Analysis (CONSORT family)
 version: '3.0.0'
 last_reviewed: '2026-06-16'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [biology, wet_lab]
   audience: [researcher]
   workflow_shape: [experiment_pipeline]
 see_also:
-  - methodology/preregistration          # the SAP is the trial's frozen plan
-  - methodology/missing_data_strategy    # missingness handling is SAP-driven
-  - methodology/cox_ph_diagnostics       # time-to-event endpoints need the PH check
+- methodology/preregistration            # the SAP is the trial's frozen plan
+- methodology/missing_data_strategy      # missingness handling is SAP-driven
+- methodology/cox_ph_diagnostics         # time-to-event endpoints need the PH check
 description: |
   Reasoning scaffold for analysing a randomised clinical trial. Names
   the analytical decisions an RCT must reason through (balance,
@@ -25,120 +25,121 @@ description: |
 trigger: Trial registry + raw trial data provided; design is randomised (with or without blinding).
 
 prerequisites:
-  - Trial protocol + registry number are in docs/research_design.md
-  - Raw randomisation table + outcomes data in inputs/raw_data/
-  - A pre-registered SAP (Statistical Analysis Plan) is on file OR
-    `methodology/preregistration` is run first
+- Trial protocol + registry number are in docs/research_design.md
+- Raw randomisation table + outcomes data in inputs/raw_data/
+- A pre-registered SAP (Statistical Analysis Plan) is on file OR `methodology/preregistration` is run first
 
 editorial_voice:
   mode: guidance
   rules:
-    - "The SAP is canon. This protocol does NOT override it — it
-       supplies the questions a competent reader would expect any
-       trial analysis to answer."
-    - "Reporting standard names the structure (CONSORT 2010 for
-       parallel-group RCTs, CONSORT extensions for cluster /
-       crossover / Bayesian / N-of-1). The AI must look up the
-       correct extension from the trial's design, not assume CONSORT
-       2010 by default."
-    - "Every effect estimate ships with its uncertainty interval.
-       Bare p-values without effect sizes are insufficient."
+  - "The SAP is canon. This protocol does NOT override it — it supplies the questions a competent reader would expect any trial analysis to answer."
+  - "Reporting standard names the structure (CONSORT 2010 for parallel-group RCTs, CONSORT extensions for cluster / crossover / Bayesian / N-of-1). The AI must look up the correct extension from the trial's design, not assume CONSORT 2010 by default."
+  - "Every effect estimate ships with its uncertainty interval. Bare p-values without effect sizes are insufficient."
 
 steps:
-  - id: align_with_sap
-    name: Align with the pre-registered SAP
-    description: |
-      Read the SAP (or, if absent, freeze one first via
-      `methodology/preregistration`). Restate, in your own words, the:
-        - primary outcome + analysis population
-        - secondary outcomes + the multiple-testing strategy
-        - missing-data plan (mechanism assumed + handling)
-        - any pre-specified subgroup or sensitivity analyses
-      Any deviation from the SAP later in the analysis must be
-      logged via `mem_log` AND surfaced at synthesis.
+- id: align_with_sap
+  name: Align with the pre-registered SAP
+  description: |
+    Read the SAP (or, if absent, freeze one first via
+    `methodology/preregistration`). Restate, in your own words, the:
+      - primary outcome + analysis population
+      - secondary outcomes + the multiple-testing strategy
+      - missing-data plan (mechanism assumed + handling)
+      - any pre-specified subgroup or sensitivity analyses
+    Any deviation from the SAP later in the analysis must be
+    logged via `mem_log` AND surfaced at synthesis.
 
-  - id: characterise_randomisation
-    name: Characterise randomisation + baseline balance
-    description: |
-      Reason about whether randomisation worked AS-EXECUTED, not just
-      as-designed:
-        - How was concealment maintained?
-        - Were there any post-randomisation exclusions?
-        - On which baseline characteristics could imbalance still
-          confound the effect?
-      The literature for the disease area names which baseline
-      characteristics matter; surface them via `tool_research_method`
-      and tabulate by arm. Document the comparison strategy + any
-      flagged imbalances. The threshold for "concerning imbalance"
-      is field-specific — cite the source for whichever cutoff is
-      used.
+- id: characterise_randomisation
+  name: Characterise randomisation + baseline balance
+  description: |
+    Reason about whether randomisation worked AS-EXECUTED, not just
+    as-designed:
+      - How was concealment maintained?
+      - Were there any post-randomisation exclusions?
+      - On which baseline characteristics could imbalance still
+        confound the effect?
+    The literature for the disease area names which baseline
+    characteristics matter; surface them via `tool_research_method`
+    and tabulate by arm. Document the comparison strategy + any
+    flagged imbalances. The threshold for "concerning imbalance"
+    is field-specific — cite the source for whichever cutoff is
+    used.
 
-  - id: define_analysis_populations
-    name: Define the analysis populations
-    description: |
-      The SAP names which population is primary. Document each
-      population (everyone-assigned, per-protocol, modified ITT,
-      safety) with its inclusion logic + N. Justify any deviation
-      from the SAP's primary choice.
+- id: define_analysis_populations
+  name: Define the analysis populations
+  description: |
+    The SAP names which population is primary. Document each
+    population (everyone-assigned, per-protocol, modified ITT,
+    safety) with its inclusion logic + N. Justify any deviation
+    from the SAP's primary choice.
 
-  - id: missing_data_reasoning
-    name: Reason about missing data BEFORE handling it
-    description: |
-      Before applying any imputation or model-based handling:
-        - Quantify missingness per outcome, per arm, per timepoint.
-        - State the assumed mechanism (MCAR / MAR / MNAR) with
-          evidence — patterns over time, predictors of missingness.
-        - The handling strategy follows from the mechanism. The
-          literature for this trial's disease area names the
-          conventional handling + the sensitivity analyses expected
-          by reviewers. Cite the source for whichever strategy is
-          chosen.
-        - At least one sensitivity analysis under a DIFFERENT
-          plausible mechanism is required.
+- id: missing_data_reasoning
+  name: Reason about missing data BEFORE handling it
+  description: |
+    Before applying any imputation or model-based handling:
+      - Quantify missingness per outcome, per arm, per timepoint.
+      - State the assumed mechanism (MCAR / MAR / MNAR) with
+        evidence — patterns over time, predictors of missingness.
+      - The handling strategy follows from the mechanism. The
+        literature for this trial's disease area names the
+        conventional handling + the sensitivity analyses expected
+        by reviewers. Cite the source for whichever strategy is
+        chosen.
+      - At least one sensitivity analysis under a DIFFERENT
+        plausible mechanism is required.
 
-  - id: primary_effect_estimate
-    name: Estimate the primary effect (per the SAP)
-    description: |
-      Implement the SAP's pre-specified analysis. Report the effect
-      estimate, its uncertainty interval, and the exact p-value (or
-      posterior summary if Bayesian). The analytic method is the
-      SAP's; if the SAP is silent on a choice (covariate adjustment,
-      link function, error structure), document and justify each
-      decision via `mem_log`.
+- id: primary_effect_estimate
+  name: Estimate the primary effect (per the SAP)
+  description: |
+    Implement the SAP's pre-specified analysis. Report the effect
+    estimate, its uncertainty interval, and the exact p-value (or
+    posterior summary if Bayesian). The analytic method is the
+    SAP's; if the SAP is silent on a choice (covariate adjustment,
+    link function, error structure), document and justify each
+    decision via `mem_log`.
 
-  - id: safety_signal_review
-    name: Adverse-event analysis
-    description: |
-      Reason about adverse events by arm and severity using whatever
-      grading system the field uses (e.g. CTCAE in oncology, MedDRA
-      coding in pharmacovigilance — the AI must surface which from
-      the literature, not assume). Distinguish SAEs separately. Do
-      not perform inferential testing on AE rates unless the SAP
-      pre-specified it.
+- id: safety_signal_review
+  name: Adverse-event analysis
+  description: |
+    Reason about adverse events by arm and severity using whatever
+    grading system the field uses (e.g. CTCAE in oncology, MedDRA
+    coding in pharmacovigilance — the AI must surface which from
+    the literature, not assume). Distinguish SAEs separately. Do
+    not perform inferential testing on AE rates unless the SAP
+    pre-specified it.
 
-  - id: participant_flow
-    name: Participant flow diagram
-    description: |
-      Build the participant-flow diagram in whichever form the
-      trial's reporting standard requires (CONSORT 2010 is the
-      default for parallel-group RCTs; cluster / crossover / N-of-1
-      / Bayesian designs have their own CONSORT extensions). Save
-      to `outputs/figures/<step>_participant_flow.png`.
+- id: participant_flow
+  name: Participant flow diagram
+  description: |
+    Build the participant-flow diagram in whichever form the
+    trial's reporting standard requires (CONSORT 2010 is the
+    default for parallel-group RCTs; cluster / crossover / N-of-1
+    / Bayesian designs have their own CONSORT extensions). Save
+    to `outputs/figures/<step>_participant_flow.png`.
 
-  - id: log_deviations_from_sap
-    name: Log every deviation from the SAP
-    description: |
-      `mem_log` for each: context = "SAP deviation —
-      <where>", rationale = "<why>", flagged_for_synthesis = true.
-      The synthesis step diffs the final analysis against the SAP
-      and surfaces every deviation in the methods narrative.
+- id: log_deviations_from_sap
+  name: Log every deviation from the SAP
+  description: |
+    `mem_log` for each: context = "SAP deviation —
+    <where>", rationale = "<why>", flagged_for_synthesis = true.
+    The synthesis step diffs the final analysis against the SAP
+    and surfaces every deviation in the methods narrative.
 
 expected_outputs:
-  - workspace/*/outputs/reports/primary_analysis.md
-  - workspace/*/outputs/reports/missing_data.md
-  - workspace/*/outputs/reports/safety.md
-  - workspace/*/outputs/figures/<step>_participant_flow.png
+- workspace/*/outputs/reports/primary_analysis.md
+- workspace/*/outputs/reports/missing_data.md
+- workspace/*/outputs/reports/safety.md
+- workspace/*/outputs/figures/<step>_participant_flow.png
 
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: rct
+triggers:
+- rct
+- randomised
+- randomized
+- consort
+- clinical trial
+summary: CONSORT-compliant RCT analysis.

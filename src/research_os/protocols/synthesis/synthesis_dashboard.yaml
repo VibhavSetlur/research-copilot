@@ -2,17 +2,17 @@ id: synthesis_dashboard
 tier: 'synthesize'
 name: Synthesis — Dashboard (custom, story-driven, self-contained HTML)
 version: '4.4.2'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - synthesis/deliverable_design                  # the design skill: archetype + palette selection
-  - visualization/interactive_dashboard_design   # multi-page interactive variant
-  - synthesis/synthesis_paper                     # the linear argument the dashboard skims
-  - synthesis/synthesis_lay_summary               # non-expert sibling deliverable
+- synthesis/deliverable_design                    # the design skill: archetype + palette selection
+- visualization/interactive_dashboard_design     # multi-page interactive variant
+- synthesis/synthesis_paper                       # the linear argument the dashboard skims
+- synthesis/synthesis_lay_summary                 # non-expert sibling deliverable
 description: |
   Guide the AI to author `synthesis/dashboard.html` as a **custom,
   story-driven, single-file HTML** that summarises the project's
@@ -61,17 +61,9 @@ trigger: |
   research_goal.output_types includes "dashboard".
 
 prerequisites:
-  - At least one workspace/<step>/conclusions.md with substantive
-    Findings, OR an existing synthesis/* deliverable to derive from.
-  - Step figures have `.caption.md` sidecars (visualization_workflow
-    enforces this). If they're missing, route there first — the
-    dashboard needs interpretive captions for every embedded figure.
-  - "Researcher's `research_goal.output_types` (in
-    inputs/researcher_config.yaml) includes `dashboard`. If it
-    doesn't, tool_synthesis_scaffold returns status=ask instead of
-    writing — surface the message to the researcher and re-call with
-    confirmed=true only after they say yes. Empty output_types is
-    treated as 'open' so unfilled projects don't trip the gate."
+- At least one workspace/<step>/conclusions.md with substantive Findings, OR an existing synthesis/* deliverable to derive from.
+- Step figures have `.caption.md` sidecars (visualization_workflow enforces this). If they're missing, route there first — the dashboard needs interpretive captions for every embedded figure.
+- "Researcher's `research_goal.output_types` (in inputs/researcher_config.yaml) includes `dashboard`. If it doesn't, tool_synthesis_scaffold returns status=ask instead of writing — surface the message to the researcher and re-call with confirmed=true only after they say yes. Empty output_types is treated as 'open' so unfilled projects don't trip the gate."
 
 design_principles: |
   - **Design to the argument — pick an archetype + palette, don't pour
@@ -187,121 +179,121 @@ quality_standards: |
     over-resolution or too numerous).
 
 steps:
-  - id: verify_intent
-    name: Confirm the researcher actually wants a dashboard
-    description: |
-      Read `inputs/researcher_config.yaml#research_goal.output_types`.
-      - Empty list: the researcher hasn't declared preferences; proceed
-        (and consider asking them to add `dashboard` so the intent
-        is explicit for future sessions).
-      - List includes `dashboard`: proceed silently.
-      - List does NOT include `dashboard`: STOP. Ask the researcher
-        whether they want to add it or use one of their declared
-        deliverables instead. Do NOT scaffold until they confirm.
+- id: verify_intent
+  name: Confirm the researcher actually wants a dashboard
+  description: |
+    Read `inputs/researcher_config.yaml#research_goal.output_types`.
+    - Empty list: the researcher hasn't declared preferences; proceed
+      (and consider asking them to add `dashboard` so the intent
+      is explicit for future sessions).
+    - List includes `dashboard`: proceed silently.
+    - List does NOT include `dashboard`: STOP. Ask the researcher
+      whether they want to add it or use one of their declared
+      deliverables instead. Do NOT scaffold until they confirm.
 
-  - id: walk_workspace
-    name: Walk the workspace + audit readiness
-    description: |
-      tool_synthesize_plan returns what's ready (per-step findings,
-      curated focal figures, citations). Also call
-      tool_synthesis_curate_figures to ensure synthesis/figures/ is
-      populated with every step's figure(s) AND `.caption.md`
-      sidecars. If captions are missing, route to
-      visualization_workflow before authoring the dashboard.
+- id: walk_workspace
+  name: Walk the workspace + audit readiness
+  description: |
+    tool_synthesize_plan returns what's ready (per-step findings,
+    curated focal figures, citations). Also call
+    tool_synthesis_curate_figures to ensure synthesis/figures/ is
+    populated with every step's figure(s) AND `.caption.md`
+    sidecars. If captions are missing, route to
+    visualization_workflow before authoring the dashboard.
 
-  - id: pick_mode
-    name: Plan-mode or autopilot?
-    description: |
-      Ask the researcher (unless autopilot is the configured default):
-        "Dashboard mode? Plan-mode lets us draft an outline together
-        before authoring; autopilot has me pick the headline finding
-        and structure on my own."
-      In plan-mode, do NOT scaffold dashboard.html yet — propose the
-      outline (steps 3-4 below) and iterate.
+- id: pick_mode
+  name: Plan-mode or autopilot?
+  description: |
+    Ask the researcher (unless autopilot is the configured default):
+      "Dashboard mode? Plan-mode lets us draft an outline together
+      before authoring; autopilot has me pick the headline finding
+      and structure on my own."
+    In plan-mode, do NOT scaffold dashboard.html yet — propose the
+    outline (steps 3-4 below) and iterate.
 
-  - id: draft_outline
-    name: Draft the dashboard outline (plan-mode) OR pick it autonomously
-    description: |
-      Walk `mem_hypothesis_list status=supported`, the most recent
-      `conclusions.md` per active step, and any
-      `synthesis/synthesis_spec.yaml#findings`. Distil to:
-        - ONE headline finding (the hero claim, as a sentence)
-        - one findings section per supported claim / decision /
-          comparison worth its own block
-        - which figures + tables ground each section (keep it to the
-          one or two that carry the claim; the dashboard is curated,
-          not exhaustive)
-        - whether a comparison / scorecard view is warranted
-      In plan-mode, present this outline as a numbered list and ask
-      for revisions. In autopilot, write the outline to
-      synthesis/scratch/dashboard_outline.md and proceed.
+- id: draft_outline
+  name: Draft the dashboard outline (plan-mode) OR pick it autonomously
+  description: |
+    Walk `mem_hypothesis_list status=supported`, the most recent
+    `conclusions.md` per active step, and any
+    `synthesis/synthesis_spec.yaml#findings`. Distil to:
+      - ONE headline finding (the hero claim, as a sentence)
+      - one findings section per supported claim / decision /
+        comparison worth its own block
+      - which figures + tables ground each section (keep it to the
+        one or two that carry the claim; the dashboard is curated,
+        not exhaustive)
+      - whether a comparison / scorecard view is warranted
+    In plan-mode, present this outline as a numbered list and ask
+    for revisions. In autopilot, write the outline to
+    synthesis/scratch/dashboard_outline.md and proceed.
 
-  - id: pick_audience
-    name: Pick the audience profile
-    description: |
-      academic / executive / technical / teaching — density and
-      ordering adapt. Default academic when `output_types` includes
-      paper, executive otherwise.
+- id: pick_audience
+  name: Pick the audience profile
+  description: |
+    academic / executive / technical / teaching — density and
+    ordering adapt. Default academic when `output_types` includes
+    paper, executive otherwise.
 
-  - id: scaffold
-    name: Scaffold dashboard.html (in synthesis/scratch — never a numbered step)
-    description: |
-      A dashboard is a SYNTHESIS deliverable, not an analysis step — do
-      NOT create a numbered workspace step for it. Iterate it in the
-      synthesis draft area, then land the finished file in its proper home:
+- id: scaffold
+  name: Scaffold dashboard.html (in synthesis/scratch — never a numbered step)
+  description: |
+    A dashboard is a SYNTHESIS deliverable, not an analysis step — do
+    NOT create a numbered workspace step for it. Iterate it in the
+    synthesis draft area, then land the finished file in its proper home:
 
-        tool_synthesis_scaffold(kind='dashboard', scratch=true)
-          → synthesis/scratch/dashboard.html  (gitignored draft; iterate here)
+      tool_synthesis_scaffold(kind='dashboard', scratch=true)
+        → synthesis/scratch/dashboard.html  (gitignored draft; iterate here)
 
-      Build + refine here until it's done. When the dashboard is for a
-      MEETING (lab meeting, committee, PI sync), scaffold it straight into
-      that meeting's folder instead so everything the meeting needs lives
-      together:
+    Build + refine here until it's done. When the dashboard is for a
+    MEETING (lab meeting, committee, PI sync), scaffold it straight into
+    that meeting's folder instead so everything the meeting needs lives
+    together:
 
-        tool_synthesis_scaffold(kind='dashboard', meeting='<YYYY-MM-DD>')
-          → synthesis/meetings/<date>/dashboard.html  (+ its figures/tables)
+      tool_synthesis_scaffold(kind='dashboard', meeting='<YYYY-MM-DD>')
+        → synthesis/meetings/<date>/dashboard.html  (+ its figures/tables)
 
-      For the project's single canonical dashboard, omit both → the flat
-      synthesis/dashboard.html. The skeleton is a minimal story-arc (hero /
-      findings / comparison / methods / limitations / references) with
-      `<!-- AI: ... -->` markers. Idempotent — refuses overwrite without
-      `overwrite=true`. When a scratch draft is finished, move it to the
-      final synthesis location (flat or meetings/<date>/).
+    For the project's single canonical dashboard, omit both → the flat
+    synthesis/dashboard.html. The skeleton is a minimal story-arc (hero /
+    findings / comparison / methods / limitations / references) with
+    `<!-- AI: ... -->` markers. Idempotent — refuses overwrite without
+    `overwrite=true`. When a scratch draft is finished, move it to the
+    final synthesis location (flat or meetings/<date>/).
 
-  - id: author
-    name: Author the content (story before structure)
-    description: |
-      Fill each section. For figures, embed via either base64 inline
-      OR `<figure><img src="figures/..." alt="..."><figcaption>
-      ...</figcaption></figure>` referencing synthesis/figures/.
-      Pick ONE embedding style and stick with it. Captions interpret
-      figures (what to see + why it matters), not just label them.
-      Do NOT structure findings by workspace step.
+- id: author
+  name: Author the content (story before structure)
+  description: |
+    Fill each section. For figures, embed via either base64 inline
+    OR `<figure><img src="figures/..." alt="..."><figcaption>
+    ...</figcaption></figure>` referencing synthesis/figures/.
+    Pick ONE embedding style and stick with it. Captions interpret
+    figures (what to see + why it matters), not just label them.
+    Do NOT structure findings by workspace step.
 
-  - id: audit
-    name: Audit (offline, accessibility, story structure)
-    description: |
-      tool_synthesis_check(file='synthesis/dashboard.html') catches
-      missing alt-text, external scripts, placeholders, path leaks,
-      AND the per-step recap antipattern (≥4 consecutive `Step NN`
-      headings). Address blockers before sharing.
+- id: audit
+  name: Audit (offline, accessibility, story structure)
+  description: |
+    tool_synthesis_check(file='synthesis/dashboard.html') catches
+    missing alt-text, external scripts, placeholders, path leaks,
+    AND the per-step recap antipattern (≥4 consecutive `Step NN`
+    headings). Address blockers before sharing.
 
-  - id: cross_check_paper
-    name: Cross-check against paper + lay summary (when present)
-    description: |
-      tool_audit(scope='project', dimension='cross_deliverable')
-      catches drift between the dashboard's headline numbers and the
-      paper / lay summary. A reader who reads both should see the
-      same finding stated the same way.
+- id: cross_check_paper
+  name: Cross-check against paper + lay summary (when present)
+  description: |
+    tool_audit(scope='project', dimension='cross_deliverable')
+    catches drift between the dashboard's headline numbers and the
+    paper / lay summary. A reader who reads both should see the
+    same finding stated the same way.
 
-  - id: share
-    name: Share
-    description: |
-      The file IS the deliverable — no compilation step. Hand the
-      path to the researcher and remind them it's portable
-      (emailable, attachable, single-file). For multi-page
-      interactive variants, route to
-      visualization/interactive_dashboard_design.
+- id: share
+  name: Share
+  description: |
+    The file IS the deliverable — no compilation step. Hand the
+    path to the researcher and remind them it's portable
+    (emailable, attachable, single-file). For multi-page
+    interactive variants, route to
+    visualization/interactive_dashboard_design.
 
 tools: |
   - tool_synthesize_plan — what's ready in the workspace
@@ -312,10 +304,19 @@ tools: |
   - tool_figure_palette — colour-blind-safe palette for any inline charts
 
 expected_outputs:
-  - synthesis/dashboard.html       # AI-authored, story-driven, self-contained
-  - synthesis/figures/             # shared with paper.typ when both exist
-  - workspace/scratch/dashboard_outline.md   # autopilot only
+- synthesis/dashboard.html         # AI-authored, story-driven, self-contained
+- synthesis/figures/               # shared with paper.typ when both exist
+- workspace/scratch/dashboard_outline.md     # autopilot only
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: visualization/interactive_dashboard_design
+intent_class: synthesize
+sub_intent: dashboard
+triggers:
+- dashboard
+- executive summary
+- html report
+- lab meeting
+summary: AI authors single-file offline dashboard.html.
+shortcut_tool: tool_synthesis_scaffold

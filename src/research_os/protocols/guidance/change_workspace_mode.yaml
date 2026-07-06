@@ -7,68 +7,80 @@ sub_intent: intake
 tier: plan
 last_reviewed: '2026-06-26'
 
-summary: |
-  A project's shape can change: a scratch exploration earns its way into rigorous
-  analysis; an analysis needs a real tool built; a single study grows into a
-  program. The workspace mode is NOT frozen at init — this protocol makes the
-  move first-class, additive, and recorded, so the scaffold + routing + state all
-  follow the new shape instead of silently disagreeing.
+summary: |-
+  Change a project's workspace mode after init (additive, recorded): exploration→analysis, analysis→hybrid/tool_build/multi_study, etc.
 
 see_also:
-  - exploration/exploration_promote
-  - notebook/notebook_promote
-  - hybrid/tool_to_analysis_handoff
-  - program/program_setup
+- exploration/exploration_promote
+- notebook/notebook_promote
+- hybrid/tool_to_analysis_handoff
+- program/program_setup
 
-triggers: |
-  "switch to analysis mode", "move to tool build", "this is a real project now",
-  "promote my exploration to analysis", "turn this into a program", "change the
-  mode", "we need to build a tool for this", "this grew into multiple studies"
-
+triggers:
+- switch to analysis mode
+- switch modes
+- change the workspace mode
+- change the mode
+- move to tool build mode
+- move to tool build
+- promote my exploration to analysis
+- promote this to analysis
+- this is a real project now
+- this grew into a program
+- turn this into a program
+- turn this into multiple studies
+- we need to build a tool for this
+- make this a hybrid project
 steps:
-  - id: read_current_shape
-    name: See where the project is and where it could go
-    description: |
-      Call sys_workspace_mode(operation='status'). It returns the current mode
-      (config + on-disk state), a drift flag (if a past raw config edit left them
-      disagreeing), and the supported transitions from here. If the project's
-      shape has clearly outgrown its mode (an exploration with many finalized
-      probes; an analysis that now needs a library), name that to the researcher.
+- id: read_current_shape
+  name: See where the project is and where it could go
+  description: |
+    Call sys_workspace_mode(operation='status'). It returns the current mode
+    (config + on-disk state), a drift flag (if a past raw config edit left them
+    disagreeing), and the supported transitions from here. If the project's
+    shape has clearly outgrown its mode (an exploration with many finalized
+    probes; an analysis that now needs a library), name that to the researcher.
 
-  - id: plan_the_move
-    name: Plan the transition (dry-run first)
-    description: |
-      sys_workspace_mode(operation='transition', to=<mode>) PLANS by default:
-      it reports the transition kind (promote / augment / reframe), the
-      promotion/handoff protocol for the crossing, and exactly which scaffold
-      dirs the target mode needs that are missing. A transition is ADDITIVE —
-      it never deletes the prior mode's work (your analysis steps, notebooks,
-      probes all stay). Show the plan to the researcher.
+- id: plan_the_move
+  name: Plan the transition (dry-run first)
+  description: |
+    sys_workspace_mode(operation='transition', to=<mode>) PLANS by default:
+    it reports the transition kind (promote / augment / reframe), the
+    promotion/handoff protocol for the crossing, and exactly which scaffold
+    dirs the target mode needs that are missing. A transition is ADDITIVE —
+    it never deletes the prior mode's work (your analysis steps, notebooks,
+    probes all stay). Show the plan to the researcher.
 
-      AUTONOMY GATE:
-        Risk: a mode change reshapes scaffold + routing — consequential but
-        reversible (additive only; prior work is never removed).
-        proceed (adaptive default, autopilot) → for a clearly-signalled, supported
-          move (e.g. exploration→analysis after probes earned it), plan then
-          apply, recording the rationale.
-        confirm first (manual / supervised) → present the plan (kind + new surface
-          + handoff protocol) and confirm before applying.
+    AUTONOMY GATE:
+      Risk: a mode change reshapes scaffold + routing — consequential but
+      reversible (additive only; prior work is never removed).
+      proceed (adaptive default, autopilot) → for a clearly-signalled, supported
+        move (e.g. exploration→analysis after probes earned it), plan then
+        apply, recording the rationale.
+      confirm first (manual / supervised) → present the plan (kind + new surface
+        + handoff protocol) and confirm before applying.
 
-  - id: apply_and_handoff
-    name: Apply, then cross via the handoff protocol
-    description: |
-      sys_workspace_mode(operation='transition', to=<mode>, confirm=true,
-      rationale='<why>') applies it: creates the missing surface, syncs config +
-      state (fixing any drift), and records the move to .os_state/mode_history.jsonl
-      (provenance — "started as exploration, became analysis on <date>"). Then
-      route into the crossing's handoff protocol (the response's next_protocol):
-      exploration→analysis promotes earned probes into numbered steps; notebook→
-      analysis promotes a trusted notebook; analysis/tool_build→hybrid wires the
-      tool into the analysis spine; analysis→multi_study reframes the current work
-      as study 01 and seeds the program commons.
+- id: apply_and_handoff
+  name: Apply, then cross via the handoff protocol
+  description: |
+    sys_workspace_mode(operation='transition', to=<mode>, confirm=true,
+    rationale='<why>') applies it: creates the missing surface, syncs config +
+    state (fixing any drift), and records the move to .os_state/mode_history.jsonl
+    (provenance — "started as exploration, became analysis on <date>"). Then
+    route into the crossing's handoff protocol (the response's next_protocol):
+    exploration→analysis promotes earned probes into numbered steps; notebook→
+    analysis promotes a trusted notebook; analysis/tool_build→hybrid wires the
+    tool into the analysis spine; analysis→multi_study reframes the current work
+    as study 01 and seeds the program commons.
 
 expected_outputs:
-  - .os_state/mode_history.jsonl  (the recorded transition)
+- .os_state/mode_history.jsonl  (the recorded transition)
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
+decomposition:
+- tool: sys_workspace_mode
+  purpose: status to see current mode + supported moves; transition (plan then confirm) to apply additively.
+- protocol: guidance/change_workspace_mode
+  purpose: Plan the move, apply it (sync config+state, record history), then cross via the handoff protocol.
+schema_version: '3.0'

@@ -2,15 +2,15 @@ id: synthesis_title_workshop
 tier: 'synthesize'
 name: Synthesis — Title Workshop (the single most-read sentence)
 version: '3.8.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - synthesis/synthesis_paper
-  - synthesis/synthesis_abstract
+- synthesis/synthesis_paper
+- synthesis/synthesis_abstract
 description: |
   Generate, iterate, and pick a title for a paper / abstract /
   preprint / poster / grant / dissertation. The title is the
@@ -32,8 +32,7 @@ trigger: |
   title".
 
 prerequisites:
-  - synthesis/abstract.md exists (or workspace has a substantive
-    paper draft / discussion / conclusion to title from).
+- synthesis/abstract.md exists (or workspace has a substantive paper draft / discussion / conclusion to title from).
 
 quality_bar:
   several_alternatives_across_archetypes: true   # expand the option space
@@ -49,54 +48,39 @@ quality_bar:
 editorial_voice:
   mode: prescription
   rules:
-    - "A great title CARRIES the finding. 'X reduces Y in Z' beats
-       'A study of X effects on Y in a Z cohort'. Titles that
-       describe the topic but withhold the finding lose readers
-       who scan."
-    - "Specificity > cleverness. A clever title that doesn't index
-       on the field's search terms costs citations; a specific
-       title that uses the field's terms earns them."
-    - "Search-engine readers see the FIRST 60 characters of a title
-       before truncation. Front-load the keywords."
-    - "Conventions vary by field — clinical journals expect study
-       design in the title; ML journals tolerate puns; humanities
-       use a colon (':') for the framing-followed-by-specifics
-       pattern. Match the field."
+  - "A great title CARRIES the finding. 'X reduces Y in Z' beats 'A study of X effects on Y in a Z cohort'. Titles that describe the topic but withhold the finding lose readers who scan."
+  - "Specificity > cleverness. A clever title that doesn't index on the field's search terms costs citations; a specific title that uses the field's terms earns them."
+  - "Search-engine readers see the FIRST 60 characters of a title before truncation. Front-load the keywords."
+  - "Conventions vary by field — clinical journals expect study design in the title; ML journals tolerate puns; humanities use a colon (':') for the framing-followed-by-specifics pattern. Match the field."
 
 style_archetypes:
   finding_first:
-    pattern: "<verb / claim about the finding> [in <population /
-              setting>]"
+    pattern: "<verb / claim about the finding> [in <population / setting>]"
     example: "Vaccination cut hospital admissions in over-65s"
     notes: |
       The strongest pattern for high-impact journals + news
       coverage. Make the title CLAIM the finding.
   method_finding:
     pattern: "<method> <finding> in <setting>"
-    example: "A causal-forest analysis of treatment heterogeneity
-              in observational claims data"
+    example: "A causal-forest analysis of treatment heterogeneity in observational claims data"
     notes: |
       Common in methods-leaning papers. Lead with the methodology
       when the methodology IS the contribution.
   framing_colon_specifics:
     pattern: "<framing or theme>: <specifics or finding>"
-    example: "Beyond accuracy: a calibration audit of clinical
-              prediction models"
+    example: "Beyond accuracy: a calibration audit of clinical prediction models"
     notes: |
       Humanities + qualitative + perspective pieces. The colon
       lets you sell the frame and the specifics in one line.
   question_title:
     pattern: "Does X <verb> Y?"
-    example: "Does sleep restriction impair cardiovascular
-              function?"
+    example: "Does sleep restriction impair cardiovascular function?"
     notes: |
       Use sparingly. Question titles only work when the answer
       is genuinely surprising; otherwise they read as didactic.
   clinical_design:
-    pattern: "<intervention> for <population>: a <design> [in
-              <setting>]"
-    example: "Tirzepatide for type 2 diabetes: a phase 3
-              randomised trial in primary care"
+    pattern: "<intervention> for <population>: a <design> [in <setting>]"
+    example: "Tirzepatide for type 2 diabetes: a phase 3 randomised trial in primary care"
     notes: |
       Required form for many clinical journals; design tag in the
       title is a checklist item.
@@ -108,148 +92,164 @@ style_archetypes:
       sometimes pun-heavy; defaults are short.
 
 steps:
-  - id: scope_the_workshop
-    name: Scope the workshop
-    description: |
-      Confirm:
-        - artefact being titled: paper / preprint / poster / grant /
-          dissertation / talk
-        - target venue (so the field's title conventions apply)
-        - the headline finding in one sentence (pull from
-          synthesis/abstract.md or synthesis/discussion.md >
-          principal_findings)
-        - the search terms a reader would type to find this work
-          (the AI's job: extract from the field's literature)
+- id: scope_the_workshop
+  name: Scope the workshop
+  description: |
+    Confirm:
+      - artefact being titled: paper / preprint / poster / grant /
+        dissertation / talk
+      - target venue (so the field's title conventions apply)
+      - the headline finding in one sentence (pull from
+        synthesis/abstract.md or synthesis/discussion.md >
+        principal_findings)
+      - the search terms a reader would type to find this work
+        (the AI's job: extract from the field's literature)
 
-  - id: extract_search_terms_the_field_uses
-    name: Extract the search terms the field uses
-    description: |
-      Pull from workspace/citations.md the recurring terminology
-      across the cited papers (titles + abstracts). These are the
-      KEYWORDS the field's readers use to search; the winning
-      title aligns on them.
+- id: extract_search_terms_the_field_uses
+  name: Extract the search terms the field uses
+  description: |
+    Pull from workspace/citations.md the recurring terminology
+    across the cited papers (titles + abstracts). These are the
+    KEYWORDS the field's readers use to search; the winning
+    title aligns on them.
 
-      For unfamiliar subfields:
-        tool_search query="<headline finding
-        rewritten in field-neutral terms>"
-        — read the returned titles; the recurring terms are the
-        search-vocabulary.
+    For unfamiliar subfields:
+      tool_search query="<headline finding
+      rewritten in field-neutral terms>"
+      — read the returned titles; the recurring terms are the
+      search-vocabulary.
 
-      Save to workspace/scratch/title_search_terms.md.
+    Save to workspace/scratch/title_search_terms.md.
 
-  - id: generate_alternatives
-    name: Generate title alternatives (across archetypes)
-    description: |
-      Generate several candidate titles, deliberately spanning the
-      archetypes above. The point is to expand the option space, not to
-      converge prematurely — enough candidates that more than one
-      archetype is genuinely represented.
+- id: generate_alternatives
+  name: Generate title alternatives (across archetypes)
+  description: |
+    Generate several candidate titles, deliberately spanning the
+    archetypes above. The point is to expand the option space, not to
+    converge prematurely — enough candidates that more than one
+    archetype is genuinely represented.
 
-      For each candidate:
-        - the title text
-        - the archetype it uses
-        - the char count (shorter is safer — citation strings and
-          search results truncate; check how the target venue displays
-          titles)
-        - the search terms from the inventory it includes
-        - one-sentence why it works (or why it doesn't)
+    For each candidate:
+      - the title text
+      - the archetype it uses
+      - the char count (shorter is safer — citation strings and
+        search results truncate; check how the target venue displays
+        titles)
+      - the search terms from the inventory it includes
+      - one-sentence why it works (or why it doesn't)
 
-      Save to workspace/scratch/title_alternatives.md.
+    Save to workspace/scratch/title_alternatives.md.
 
-      Generation prompts to feed the AI's own variation:
-        - "rewrite finding-first"
-        - "rewrite with the method front-loaded"
-        - "rewrite as a colon-framing pattern"
-        - "rewrite under 80 characters"
-        - "rewrite without using the word 'novel'"
-        - "rewrite using the field's preferred outcome phrasing"
+    Generation prompts to feed the AI's own variation:
+      - "rewrite finding-first"
+      - "rewrite with the method front-loaded"
+      - "rewrite as a colon-framing pattern"
+      - "rewrite under 80 characters"
+      - "rewrite without using the word 'novel'"
+      - "rewrite using the field's preferred outcome phrasing"
 
-  - id: substring_test
-    name: Substring test (search-result preview)
-    description: |
-      For each candidate, render the FIRST 60 characters as a
-      reader would see it in a Google Scholar / PubMed / search-
-      results preview:
+- id: substring_test
+  name: Substring test (search-result preview)
+  description: |
+    For each candidate, render the FIRST 60 characters as a
+    reader would see it in a Google Scholar / PubMed / search-
+    results preview:
 
-        candidate: "Vaccination cut hospital admissions in over-65s during the 2024 winter wave"
-        preview:   "Vaccination cut hospital admissions in over-65s during"
+      candidate: "Vaccination cut hospital admissions in over-65s during the 2024 winter wave"
+      preview:   "Vaccination cut hospital admissions in over-65s during"
 
-      Question: does the preview alone communicate the finding?
-      If a reader who saw ONLY the preview would understand the
-      gist, the title passes. If the preview cuts at "A multi-
-      centre observational study of …", the title fails — the
-      important content is past the truncation point.
+    Question: does the preview alone communicate the finding?
+    If a reader who saw ONLY the preview would understand the
+    gist, the title passes. If the preview cuts at "A multi-
+    centre observational study of …", the title fails — the
+    important content is past the truncation point.
 
-      Drop candidates that fail the substring test or rewrite to
-      front-load the substance.
+    Drop candidates that fail the substring test or rewrite to
+    front-load the substance.
 
-  - id: shortlist_three
-    name: Shortlist a few (across archetypes)
-    description: |
-      Pick a small shortlist for a final vote — spanning at least two
-      different archetypes. This prevents the workshop from collapsing
-      on one style and surfaces the trade-offs.
+- id: shortlist_three
+  name: Shortlist a few (across archetypes)
+  description: |
+    Pick a small shortlist for a final vote — spanning at least two
+    different archetypes. This prevents the workshop from collapsing
+    on one style and surfaces the trade-offs.
 
-      Present to the researcher:
-        Option A (finding-first):   "<title A>"  — pros / cons
-        Option B (method-finding):  "<title B>"  — pros / cons
-        Option C (clinical-design): "<title C>"  — pros / cons
+    Present to the researcher:
+      Option A (finding-first):   "<title A>"  — pros / cons
+      Option B (method-finding):  "<title B>"  — pros / cons
+      Option C (clinical-design): "<title C>"  — pros / cons
 
-      For each: name 2 pros + 1 con. Recommend ONE with rationale.
+    For each: name 2 pros + 1 con. Recommend ONE with rationale.
 
-      AUTONOMY GATE:
-        Risk: reversible — a title is trivially changed later.
-        proceed (adaptive default, autopilot) → pick the recommended option; tell the
-                              researcher in one line.
-        confirm first (manual / supervised) → wait for the researcher to pick.
+    AUTONOMY GATE:
+      Risk: reversible — a title is trivially changed later.
+      proceed (adaptive default, autopilot) → pick the recommended option; tell the
+                            researcher in one line.
+      confirm first (manual / supervised) → wait for the researcher to pick.
 
-  - id: stress_test_the_winner
-    name: Stress-test the winning title
-    description: |
-      Walk the winning title through:
-        - SEARCH — would a reader unfamiliar with the work find it
-          via the search terms in the inventory?
-        - SPEAK — read it out loud; if it has tongue-twisters or
-          awkward parsing, rewrite
-        - CITE — what would the title look like in a citation
-          string (Author et al, Year, Journal)?
-        - TRANSLATE — would a non-native English reader parse it?
-          (over-clever idioms fail here)
-        - TIME — would the title still be accurate / relevant in
-          5 years? (avoid time-bound framings like "recent
-          advances" or "novel approach")
+- id: stress_test_the_winner
+  name: Stress-test the winning title
+  description: |
+    Walk the winning title through:
+      - SEARCH — would a reader unfamiliar with the work find it
+        via the search terms in the inventory?
+      - SPEAK — read it out loud; if it has tongue-twisters or
+        awkward parsing, rewrite
+      - CITE — what would the title look like in a citation
+        string (Author et al, Year, Journal)?
+      - TRANSLATE — would a non-native English reader parse it?
+        (over-clever idioms fail here)
+      - TIME — would the title still be accurate / relevant in
+        5 years? (avoid time-bound framings like "recent
+        advances" or "novel approach")
 
-      When the title fails any of these, return to generate more
-      alternatives.
+    When the title fails any of these, return to generate more
+    alternatives.
 
-  - id: commit_and_propagate
-    name: Commit + propagate
-    description: |
-      sys_file_write filepath="synthesis/title.md" — the winning
-      title, the runner-up, and a one-paragraph rationale.
+- id: commit_and_propagate
+  name: Commit + propagate
+  description: |
+    sys_file_write filepath="synthesis/title.md" — the winning
+    title, the runner-up, and a one-paragraph rationale.
 
-      Propagate to:
-        - synthesis/paper.md (replace title)
-        - synthesis/cover_letter.md (when present — update the
-          referenced title)
-        - synthesis/slides_spec.yaml (when present — update
-          `title:` field)
-        - synthesis/synthesis_spec.yaml (when present — update
-          `title:` field)
-        - synthesis/poster.tex (when present — update poster
-          title)
+    Propagate to:
+      - synthesis/paper.md (replace title)
+      - synthesis/cover_letter.md (when present — update the
+        referenced title)
+      - synthesis/slides_spec.yaml (when present — update
+        `title:` field)
+      - synthesis/synthesis_spec.yaml (when present — update
+        `title:` field)
+      - synthesis/poster.tex (when present — update poster
+        title)
 
-      Log via mem_log:
-        context="title workshop"
-        selected="<winning title>"
-        rationale="<one paragraph>"
-        options_considered=[<other shortlisted titles>]
+    Log via mem_log:
+      context="title workshop"
+      selected="<winning title>"
+      rationale="<one paragraph>"
+      options_considered=[<other shortlisted titles>]
 
 expected_outputs:
-  - workspace/scratch/title_search_terms.md
-  - workspace/scratch/title_alternatives.md
-  - synthesis/title.md
+- workspace/scratch/title_search_terms.md
+- workspace/scratch/title_alternatives.md
+- synthesis/title.md
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: title
+triggers:
+- workshop the title
+- i need a title
+- pick a title
+- the title needs work
+- title options
+- is this a good title
+- give me title alternatives
+- workshop my paper title
+summary: Workshop a title (≥6 alternatives across archetypes, substring test, shortlist).
+token_estimate: 1200
+decomposition:
+- protocol: synthesis/synthesis_title_workshop
+  purpose: Extract search terms, generate alternatives, substring-test, shortlist, stress-test.

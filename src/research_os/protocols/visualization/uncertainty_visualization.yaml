@@ -2,15 +2,15 @@ id: uncertainty_visualization
 tier: 'synthesize'
 name: Uncertainty Visualization (intervals, fans, ensembles, posteriors)
 version: '3.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/uncertainty_quantification    # the companion that fits the uncertainty this shows
-  - visualization/distribution_comparison      # shares the violin/raincloud/halfeye idioms
+- methodology/uncertainty_quantification      # the companion that fits the uncertainty this shows
+- visualization/distribution_comparison        # shares the violin/raincloud/halfeye idioms
 description: |
   Point estimates without uncertainty mislead. A bar with no error,
   a forecast line with no fan, a prediction with no calibration —
@@ -39,201 +39,186 @@ trigger: |
       display.
 
 prerequisites:
-  - The data is an INTERVAL, DISTRIBUTION, ENSEMBLE, or SAMPLE — not
-    a point estimate. (If only points exist, route back to the
-    methodology protocol to compute uncertainty first.)
-  - The kind of uncertainty (aleatoric / epistemic / both) is
-    documented; affects how it's communicated.
+- The data is an INTERVAL, DISTRIBUTION, ENSEMBLE, or SAMPLE — not a point estimate. (If only points exist, route back to the methodology protocol to compute uncertainty first.)
+- The kind of uncertainty (aleatoric / epistemic / both) is documented; affects how it's communicated.
 
 editorial_voice:
   rules:
-    - "Show the WHOLE distribution when you have it. A 95% interval
-       hides everything outside the tails; show the full posterior,
-       the ensemble, the bootstrap distribution. Point + interval is
-       a summary, not a display."
-    - "Error bars on bar charts are read as additive ranges and
-       under-perceived (Correll & Gleicher 2014). For comparisons of
-       means, prefer gradient bands, violin / strip overlays, or
-       dot-and-whisker plots."
-    - "Cone-of-uncertainty / fan charts must label the percentile
-       bands EXPLICITLY. An unlabelled fan reads as 'the data does
-       this' rather than 'we're 80% confident the data does this
-       within this band'."
-    - "Subgroup calibration matters. A model that is well-calibrated
-       in aggregate can be badly miscalibrated in important
-       subgroups. Show the reliability curve PER SUBGROUP when the
-       analysis demands it (route to methodology/fairness_audit)."
+  - "Show the WHOLE distribution when you have it. A 95% interval hides everything outside the tails; show the full posterior, the ensemble, the bootstrap distribution. Point + interval is a summary, not a display."
+  - "Error bars on bar charts are read as additive ranges and under-perceived (Correll & Gleicher 2014). For comparisons of means, prefer gradient bands, violin / strip overlays, or dot-and-whisker plots."
+  - "Cone-of-uncertainty / fan charts must label the percentile bands EXPLICITLY. An unlabelled fan reads as 'the data does this' rather than 'we're 80% confident the data does this within this band'."
+  - "Subgroup calibration matters. A model that is well-calibrated in aggregate can be badly miscalibrated in important subgroups. Show the reliability curve PER SUBGROUP when the analysis demands it (route to methodology/fairness_audit)."
 
 steps:
-  - id: characterize_uncertainty
-    name: Characterise the uncertainty
-    description: |
-      Document:
-        - SHAPE — symmetric (Gaussian-ish) or skewed?
-        - SOURCE — measurement (aleatoric) or model (epistemic) or
-          both? They may need separate channels.
-        - REPRESENTATION — interval, distribution, ensemble samples,
-          posterior samples, Bayesian credible bands, frequentist
-          confidence bands?
-        - GRANULARITY — one quantity, a few, or many (whole forecast
-          curve, image-pixel-level)?
+- id: characterize_uncertainty
+  name: Characterise the uncertainty
+  description: |
+    Document:
+      - SHAPE — symmetric (Gaussian-ish) or skewed?
+      - SOURCE — measurement (aleatoric) or model (epistemic) or
+        both? They may need separate channels.
+      - REPRESENTATION — interval, distribution, ensemble samples,
+        posterior samples, Bayesian credible bands, frequentist
+        confidence bands?
+      - GRANULARITY — one quantity, a few, or many (whole forecast
+        curve, image-pixel-level)?
 
-      Write workspace/.uq_viz/uncertainty_profile.md.
+    Write workspace/.uq_viz/uncertainty_profile.md.
 
-  - id: pick_visual_idiom
-    name: Pick the visual idiom by what is being shown
-    description: |
-      A non-exhaustive map from data type to recommended idiom:
+- id: pick_visual_idiom
+  name: Pick the visual idiom by what is being shown
+  description: |
+    A non-exhaustive map from data type to recommended idiom:
 
-        SINGLE INTERVAL — dot + whisker (preferred to bar + error
-          bar; Cleveland 1985). Add the raw N + p-value / CI bound
-          in the caption.
+      SINGLE INTERVAL — dot + whisker (preferred to bar + error
+        bar; Cleveland 1985). Add the raw N + p-value / CI bound
+        in the caption.
 
-        MULTIPLE INTERVALS (forest plot) — horizontal dot-whisker
-          per group; pooled estimate at the bottom; vertical line
-          at null. Standard in meta-analysis + clinical trials.
+      MULTIPLE INTERVALS (forest plot) — horizontal dot-whisker
+        per group; pooled estimate at the bottom; vertical line
+        at null. Standard in meta-analysis + clinical trials.
 
-        FULL DISTRIBUTION — VIOLIN PLOT (kernel density),
-          RAINCLOUD (violin + box + strip; Allen et al. 2019),
-          BEESWARM (each point shown, jittered to avoid overlap),
-          RIDGELINE PLOT / JOY DIVISION (many distributions stacked).
+      FULL DISTRIBUTION — VIOLIN PLOT (kernel density),
+        RAINCLOUD (violin + box + strip; Allen et al. 2019),
+        BEESWARM (each point shown, jittered to avoid overlap),
+        RIDGELINE PLOT / JOY DIVISION (many distributions stacked).
 
-        TIME-SERIES FORECAST — FAN CHART (multiple percentile
-          bands shaded with decreasing alpha by extremity); MUST
-          label which bands (e.g. 50% / 80% / 95%); cite ECMWF /
-          Bank of England as standard references for fan
-          conventions.
+      TIME-SERIES FORECAST — FAN CHART (multiple percentile
+        bands shaded with decreasing alpha by extremity); MUST
+        label which bands (e.g. 50% / 80% / 95%); cite ECMWF /
+        Bank of England as standard references for fan
+        conventions.
 
-        ENSEMBLE / SPAGHETTI — overlay all member curves with low
-          alpha and the median in bold. Works while the members stay
-          individually distinguishable; once they overplot into an
-          indistinct band, switch to a fan + median.
+      ENSEMBLE / SPAGHETTI — overlay all member curves with low
+        alpha and the median in bold. Works while the members stay
+        individually distinguishable; once they overplot into an
+        indistinct band, switch to a fan + median.
 
-        POSTERIOR DENSITY — solid curve with HDI (highest density
-          interval) shaded; mark the posterior mean / median; add a
-          ROPE band when defined (Bayesian decision context). arviz
-          (Python) and bayesplot (R) are the standard libraries.
+      POSTERIOR DENSITY — solid curve with HDI (highest density
+        interval) shaded; mark the posterior mean / median; add a
+        ROPE band when defined (Bayesian decision context). arviz
+        (Python) and bayesplot (R) are the standard libraries.
 
-        PREDICTIVE PROBABILITY ATLAS — pixel-level uncertainty on
-          a map / image. Bivariate colour scheme (value + uncertainty)
-          OR separate maps side-by-side OR hatching density.
+      PREDICTIVE PROBABILITY ATLAS — pixel-level uncertainty on
+        a map / image. Bivariate colour scheme (value + uncertainty)
+        OR separate maps side-by-side OR hatching density.
 
-        CALIBRATION (RELIABILITY DIAGRAM) — predicted-probability
-          bins on x, observed frequency on y, with diagonal reference;
-          bin counts as histogram below or as point size. Don't
-          forget the bin count.
+      CALIBRATION (RELIABILITY DIAGRAM) — predicted-probability
+        bins on x, observed frequency on y, with diagonal reference;
+        bin counts as histogram below or as point size. Don't
+        forget the bin count.
 
-        ECE / SHARPNESS BARS — paired bar chart showing both
-          calibration error (lower = better) AND sharpness (mean
-          interval width, lower = sharper). A perfectly calibrated
-          useless model wins on ECE but loses on sharpness.
+      ECE / SHARPNESS BARS — paired bar chart showing both
+        calibration error (lower = better) AND sharpness (mean
+        interval width, lower = sharper). A perfectly calibrated
+        useless model wins on ECE but loses on sharpness.
 
-        HYPOTHETICAL OUTCOME PLOT (HOP) — animated frames each
-          drawing one possible outcome from the predictive
-          distribution. Hullman et al. (2015) showed HOPs aid
-          uncertainty cognition. Route to
-          visualization/animation_design.
+      HYPOTHETICAL OUTCOME PLOT (HOP) — animated frames each
+        drawing one possible outcome from the predictive
+        distribution. Hullman et al. (2015) showed HOPs aid
+        uncertainty cognition. Route to
+        visualization/animation_design.
 
-      Document the choice + citation justifying it for the audience.
+    Document the choice + citation justifying it for the audience.
 
-  - id: encode_uncertainty_visually
-    name: Encode uncertainty in the right visual channel
-    description: |
-      Channels for uncertainty (and what they cost):
+- id: encode_uncertainty_visually
+  name: Encode uncertainty in the right visual channel
+  description: |
+    Channels for uncertainty (and what they cost):
 
-        WIDTH / EXTENT — error bars, fan widths. Most familiar but
-          under-perceived for differences.
-        SHADING / OPACITY — alpha-blended density. Works when
-          continuous; harder to compare across plots.
-        SHAPE / TEXTURE — hatching, stippling. Good for maps with
-          missing/low-confidence regions.
-        ANIMATION — frame-sampled outcomes (HOP). Most cognitively
-          honest; only works in animatable deliverables.
-        EXPLICIT QUANTILE BANDS — labelled percentiles in a fan.
-          Best for forecast time-series.
-        TWO-VARIABLE (BIVARIATE) COLOUR — encodes value and
-          uncertainty in one channel; powerful but hard to learn.
+      WIDTH / EXTENT — error bars, fan widths. Most familiar but
+        under-perceived for differences.
+      SHADING / OPACITY — alpha-blended density. Works when
+        continuous; harder to compare across plots.
+      SHAPE / TEXTURE — hatching, stippling. Good for maps with
+        missing/low-confidence regions.
+      ANIMATION — frame-sampled outcomes (HOP). Most cognitively
+        honest; only works in animatable deliverables.
+      EXPLICIT QUANTILE BANDS — labelled percentiles in a fan.
+        Best for forecast time-series.
+      TWO-VARIABLE (BIVARIATE) COLOUR — encodes value and
+        uncertainty in one channel; powerful but hard to learn.
 
-      Pick channel by the deliverable + audience expertise + the
-      kind of uncertainty (frequentist intervals vs Bayesian
-      posteriors get different conventional encodings).
+    Pick channel by the deliverable + audience expertise + the
+    kind of uncertainty (frequentist intervals vs Bayesian
+    posteriors get different conventional encodings).
 
-  - id: implement_and_render
-    name: Implement + render
-    description: |
-      Libraries (Python):
-        - matplotlib + seaborn (errorbar, fill_between, violinplot,
-          boxenplot)
-        - arviz (Bayesian posteriors + HDI + ROPE — the standard)
-        - plotnine (ggplot2-in-python — great for raincloud /
-          ridgeline via plotnine.themes + raincloud add-on)
-        - probscale (calibration + reliability)
-        - matplotlib-ext for fan charts
-      R: ggplot2 + ggridges, ggdist (for dot/interval, halfeye,
-        slabinterval), bayesplot.
+- id: implement_and_render
+  name: Implement + render
+  description: |
+    Libraries (Python):
+      - matplotlib + seaborn (errorbar, fill_between, violinplot,
+        boxenplot)
+      - arviz (Bayesian posteriors + HDI + ROPE — the standard)
+      - plotnine (ggplot2-in-python — great for raincloud /
+        ridgeline via plotnine.themes + raincloud add-on)
+      - probscale (calibration + reliability)
+      - matplotlib-ext for fan charts
+    R: ggplot2 + ggridges, ggdist (for dot/interval, halfeye,
+      slabinterval), bayesplot.
 
-      Interactive / top-tier:
-        - Vega-Lite errorband + ridgeline (declarative; great
-          for embedded paper figures)
-        - Observable Plot (concise, polished, integrates with
-          notebooks + Framework)
-        - bokeh / holoviews for interactive ribbon + ensemble
-          plots
-        - For Hypothetical Outcome Plots that need animation:
-          route to visualization/animation_design
-        - For interactive uncertainty exploration (slider over
-          confidence levels, brush-and-filter on subgroups):
-          route to visualization/interactive_dashboard_design
+    Interactive / top-tier:
+      - Vega-Lite errorband + ridgeline (declarative; great
+        for embedded paper figures)
+      - Observable Plot (concise, polished, integrates with
+        notebooks + Framework)
+      - bokeh / holoviews for interactive ribbon + ensemble
+        plots
+      - For Hypothetical Outcome Plots that need animation:
+        route to visualization/animation_design
+      - For interactive uncertainty exploration (slider over
+        confidence levels, brush-and-filter on subgroups):
+        route to visualization/interactive_dashboard_design
 
-      The script must:
-        - load the distribution / interval source data
-        - compute the chosen summary statistics + intervals with
-          documented method (analytic vs bootstrap vs Bayesian
-          posterior); cite the method
-        - render to png + svg
-        - emit sidecars including .prov.json with the interval
-          method + percentage band convention
-        - include the bin counts / N / posterior draws on the
-          figure (or in the caption).
+    The script must:
+      - load the distribution / interval source data
+      - compute the chosen summary statistics + intervals with
+        documented method (analytic vs bootstrap vs Bayesian
+        posterior); cite the method
+      - render to png + svg
+      - emit sidecars including .prov.json with the interval
+        method + percentage band convention
+      - include the bin counts / N / posterior draws on the
+        figure (or in the caption).
 
-  - id: legibility_and_honesty_audit
-    name: Audit for legibility + honesty
-    description: |
-      Checks:
-        - are the interval percentages LABELLED on the figure (not
-          just the caption)?
-        - is the missing-data / out-of-distribution region marked?
-        - for calibration: are bin counts visible?
-        - for ensemble: is N members stated?
-        - for posterior: is HDI shaded vs just lines + numbers?
-        - does the figure pair calibration with sharpness when both
-          matter?
-        - does the colour encoding survive grayscale printing
-          (route to visualization/color_accessibility_audit)?
-        - is the visual idiom familiar to the target audience
-          (clinical readers expect forest plots; ML readers expect
-          reliability diagrams; lay readers may need annotated
-          fan charts)?
+- id: legibility_and_honesty_audit
+  name: Audit for legibility + honesty
+  description: |
+    Checks:
+      - are the interval percentages LABELLED on the figure (not
+        just the caption)?
+      - is the missing-data / out-of-distribution region marked?
+      - for calibration: are bin counts visible?
+      - for ensemble: is N members stated?
+      - for posterior: is HDI shaded vs just lines + numbers?
+      - does the figure pair calibration with sharpness when both
+        matter?
+      - does the colour encoding survive grayscale printing
+        (route to visualization/color_accessibility_audit)?
+      - is the visual idiom familiar to the target audience
+        (clinical readers expect forest plots; ML readers expect
+        reliability diagrams; lay readers may need annotated
+        fan charts)?
 
-  - id: caption_and_methods
-    name: Caption + methods entry
-    description: |
-      Caption must state:
-        - the uncertainty source (CI / posterior / bootstrap /
-          ensemble / conformal coverage)
-        - the percentage bands shown + their construction method
-        - N (sample size, ensemble members, posterior draws)
-        - any reference line (calibration diagonal, null effect)
-        - the citation for any non-obvious idiom (raincloud,
-          halfeye, dot-interval)
+- id: caption_and_methods
+  name: Caption + methods entry
+  description: |
+    Caption must state:
+      - the uncertainty source (CI / posterior / bootstrap /
+        ensemble / conformal coverage)
+      - the percentage bands shown + their construction method
+      - N (sample size, ensemble members, posterior draws)
+      - any reference line (calibration diagonal, null effect)
+      - the citation for any non-obvious idiom (raincloud,
+        halfeye, dot-interval)
 
-      mem_log the uncertainty representation choices so
-      the audit trail is intact.
+    mem_log the uncertainty representation choices so
+    the audit trail is intact.
 
 expected_outputs:
-  - workspace/.uq_viz/uncertainty_profile.md
-  - workspace/<step>/outputs/figures/uncertainty_<topic>.{png,svg}
-  - workspace/<step>/outputs/figures/uncertainty_<topic>.{caption.md,summary.md,prov.json}
+- workspace/.uq_viz/uncertainty_profile.md
+- workspace/<step>/outputs/figures/uncertainty_<topic>.{png,svg}
+- workspace/<step>/outputs/figures/uncertainty_<topic>.{caption.md,summary.md,prov.json}
 
 quality_bar:
   uncertainty_source_and_method_named: true
@@ -246,3 +231,26 @@ quality_bar:
 next_protocol: methodology/uncertainty_quantification
 next_protocol_kind: forward_default
 on_failure: visualization/figure_guidelines
+intent_class: synthesize
+sub_intent: uncertainty
+triggers:
+- uncertainty visualization
+- fan chart
+- confidence band
+- credible band
+- posterior plot
+- plot the posterior
+- plot my posterior
+- spaghetti
+- ensemble plot
+- calibration plot
+- reliability diagram
+- forest plot
+- predictive interval plot
+- error band
+- plot intervals
+- hdi plot
+- visualize uncertainty
+- show the uncertainty
+- draw the fan
+summary: Visualize intervals / fans / ensembles / posteriors / calibration honestly.

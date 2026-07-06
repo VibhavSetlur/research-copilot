@@ -3,14 +3,14 @@ tier: 'plan'
 name: Ablation Study
 version: '3.0.0'
 last_reviewed: '2026-06-16'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering]
   audience: [researcher]
   workflow_shape: [experiment_pipeline]
 see_also:
-  - methodology/evaluation_design        # ablations are measured under an eval regime
-  - methodology/uncertainty_quantification  # the Δ needs an uncertainty estimate
+- methodology/evaluation_design          # ablations are measured under an eval regime
+- methodology/uncertainty_quantification    # the Δ needs an uncertainty estimate
 description: |
   Systematic removal / replacement of model or pipeline components to
   attribute performance to specific design choices. Standard practice for
@@ -27,73 +27,70 @@ trigger: |
 editorial_voice:
   mode: guidance
   rules:
-    - "Ablation establishes attribution, not improvement. Frame
-       conclusions in those terms — 'component X is doing the work',
-       not 'we proved component X is best'."
-    - "Same data, same splits, same seeds as the baseline — variation
-       isolates the ablated component, nothing else."
-    - "Report uncertainty on the Δ, not just the point."
+  - "Ablation establishes attribution, not improvement. Frame conclusions in those terms — 'component X is doing the work', not 'we proved component X is best'."
+  - "Same data, same splits, same seeds as the baseline — variation isolates the ablated component, nothing else."
+  - "Report uncertainty on the Δ, not just the point."
 
 steps:
-  - id: create_step
-    name: Create Ablation Step
-    description: sys_path name="ablation_<base_model>"
+- id: create_step
+  name: Create Ablation Step
+  description: sys_path name="ablation_<base_model>"
 
-  - id: enumerate_components
-    name: Enumerate Components Under Test
-    description: |
-      In outputs/reports/ablation_plan.md list:
-        - The base model / pipeline (with its exact configuration)
-        - Each component that can be ablated: name, why it might matter,
-          how it will be removed/replaced (zero-out | random | swap | omit)
-        - Whether ablations are one-at-a-time (additive) or factorial
-        - The metric(s) that decide whether the change is material
+- id: enumerate_components
+  name: Enumerate Components Under Test
+  description: |
+    In outputs/reports/ablation_plan.md list:
+      - The base model / pipeline (with its exact configuration)
+      - Each component that can be ablated: name, why it might matter,
+        how it will be removed/replaced (zero-out | random | swap | omit)
+      - Whether ablations are one-at-a-time (additive) or factorial
+      - The metric(s) that decide whether the change is material
 
-  - id: baseline_lock
-    name: Lock the Baseline
-    description: |
-      Re-fit the base model with frozen seeds; save predictions + metrics to
-      outputs/data/baseline.parquet. Every ablation is measured against THIS
-      run, not against a new draw — eliminates seed noise as a confound.
+- id: baseline_lock
+  name: Lock the Baseline
+  description: |
+    Re-fit the base model with frozen seeds; save predictions + metrics to
+    outputs/data/baseline.parquet. Every ablation is measured against THIS
+    run, not against a new draw — eliminates seed noise as a confound.
 
-  - id: run_ablations
-    name: Run Ablations
-    description: |
-      For each component, fit the model with the component ablated. Use the
-      SAME train/val/test split, SAME seeds, SAME pre-processing pipeline
-      (except for the ablated piece). Save each run's predictions +
-      metrics under outputs/data/ablation_<component>.parquet.
+- id: run_ablations
+  name: Run Ablations
+  description: |
+    For each component, fit the model with the component ablated. Use the
+    SAME train/val/test split, SAME seeds, SAME pre-processing pipeline
+    (except for the ablated piece). Save each run's predictions +
+    metrics under outputs/data/ablation_<component>.parquet.
 
-  - id: build_table
-    name: Ablation Table
-    description: |
-      outputs/reports/ablation_table.md with columns:
-        | Variant | <metric_1> | Δ vs baseline | <metric_2> | Δ vs baseline |
-      Highlight rows where Δ exceeds the run-to-run noise floor. The
-      "exceeds noise" rule is a decision about Monte Carlo / resampling
-      error on the Δ — name the rule you use (e.g. Δ outside the
-      bootstrap CI on the difference) and cite the source for it; do not
-      assert a fixed multiple of the SE. Tag rows as
-      essential | helpful | neutral | harmful.
+- id: build_table
+  name: Ablation Table
+  description: |
+    outputs/reports/ablation_table.md with columns:
+      | Variant | <metric_1> | Δ vs baseline | <metric_2> | Δ vs baseline |
+    Highlight rows where Δ exceeds the run-to-run noise floor. The
+    "exceeds noise" rule is a decision about Monte Carlo / resampling
+    error on the Δ — name the rule you use (e.g. Δ outside the
+    bootstrap CI on the difference) and cite the source for it; do not
+    assert a fixed multiple of the SE. Tag rows as
+    essential | helpful | neutral | harmful.
 
-  - id: pair_with_qualitative
-    name: Qualitative Examples (optional but recommended)
-    description: |
-      For 2-3 ablations with the largest performance hit, show example
-      predictions where baseline succeeded and the ablated variant failed.
-      Save under outputs/reports/ablation_examples.md.
+- id: pair_with_qualitative
+  name: Qualitative Examples (optional but recommended)
+  description: |
+    For 2-3 ablations with the largest performance hit, show example
+    predictions where baseline succeeded and the ablated variant failed.
+    Save under outputs/reports/ablation_examples.md.
 
-  - id: report
-    name: Per-step Conclusions
-    description: |
-      conclusions.md identifies which components are doing the work, which
-      are decorative, and whether the headline claim of the parent paper
-      survives the ablations. Be conservative — small Δs across noisy
-      metrics rarely justify removing a component.
+- id: report
+  name: Per-step Conclusions
+  description: |
+    conclusions.md identifies which components are doing the work, which
+    are decorative, and whether the headline claim of the parent paper
+    survives the ablations. Be conservative — small Δs across noisy
+    metrics rarely justify removing a component.
 
 expected_outputs:
-  - workspace/*/outputs/reports/ablation_plan.md
-  - workspace/*/outputs/reports/ablation_table.md
+- workspace/*/outputs/reports/ablation_plan.md
+- workspace/*/outputs/reports/ablation_table.md
 
 quality_bar: |
   - Every ablation uses the SAME data + SAME splits + SAME seeds as the
@@ -107,3 +104,11 @@ quality_bar: |
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: ablation
+triggers:
+- ablate
+- ablation
+- which part matters
+- remove component
+summary: Component-by-component ablation of a model or pipeline.

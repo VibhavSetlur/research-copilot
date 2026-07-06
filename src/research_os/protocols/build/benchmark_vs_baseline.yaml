@@ -2,16 +2,16 @@ id: benchmark_vs_baseline
 tier: 'execute'
 name: Benchmark vs Baseline (fair measurement against the right comparator)
 version: '3.8.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]
   audience: [naive_ai, auditor]
   workflow_shape: [tool_build]
 last_reviewed: '2026-06-16'
 see_also:
-  - build/test_strategy          # correctness checks, the sibling of this performance pass
-  - build/tool_evaluation_loop   # the iterative evaluate→improve loop that runs this repeatedly + acts on it
-  - build/implement_iteration    # where a missed bar routes back as the next increment
+- build/test_strategy            # correctness checks, the sibling of this performance pass
+- build/tool_evaluation_loop     # the iterative evaluate→improve loop that runs this repeatedly + acts on it
+- build/implement_iteration      # where a missed bar routes back as the next increment
 description: |
   Reason about how to measure the tool honestly against the right
   baseline(s): which comparator a claim should be made against, the
@@ -32,104 +32,129 @@ description: |
       performance/quality measurement.
 trigger: When a performance, accuracy, or efficiency claim needs evidence — "is it faster", "benchmark this", "compare against X", "how does it do vs the baseline", "did the optimization help".
 prerequisites:
-  - The tool (or the increment under evaluation) builds and passes its tests
-  - spec/requirements.md states the non-functional acceptance the benchmark substantiates
+- The tool (or the increment under evaluation) builds and passes its tests
+- spec/requirements.md states the non-functional acceptance the benchmark substantiates
 
 steps:
-  - id: claim_and_baseline
-    name: State the claim, then choose the right baseline(s)
-    description: |
-      First state the claim precisely ("faster than", "more accurate than",
-      "uses less memory than" — at what, under what conditions). A vague
-      claim can't be fairly tested.
+- id: claim_and_baseline
+  name: State the claim, then choose the right baseline(s)
+  description: |
+    First state the claim precisely ("faster than", "more accurate than",
+    "uses less memory than" — at what, under what conditions). A vague
+    claim can't be fairly tested.
 
-      Then reason about the comparator the claim should be made against —
-      the choice that makes the result meaningful, not the one that makes
-      the tool look best:
-        - the prior version of THIS tool (did the change actually help?);
-        - the incumbent the tool aims to replace or beat;
-        - a naive/trivial baseline (proves the tool beats "do nothing");
-        - the field-standard tool for this job, when there is one.
+    Then reason about the comparator the claim should be made against —
+    the choice that makes the result meaningful, not the one that makes
+    the tool look best:
+      - the prior version of THIS tool (did the change actually help?);
+      - the incumbent the tool aims to replace or beat;
+      - a naive/trivial baseline (proves the tool beats "do nothing");
+      - the field-standard tool for this job, when there is one.
 
-      A benchmark against a strawman baseline is worse than none — it
-      manufactures false confidence. Justify the baseline(s); record them.
+    A benchmark against a strawman baseline is worse than none — it
+    manufactures false confidence. Justify the baseline(s); record them.
 
-  - id: choose_metric
-    name: Pick the metric that matches the tool's purpose
-    description: |
-      The metric must reflect what the tool is FOR. Reason about which
-      dimension the claim lives on and how to measure it well:
-        - throughput vs latency vs tail latency — they diverge, and which
-          matters depends on the consumer;
-        - peak vs steady-state memory;
-        - accuracy/quality measured the way this tool's domain measures it,
-          not a generic proxy;
-        - cost (compute, $, energy) when that's the real constraint.
+- id: choose_metric
+  name: Pick the metric that matches the tool's purpose
+  description: |
+    The metric must reflect what the tool is FOR. Reason about which
+    dimension the claim lives on and how to measure it well:
+      - throughput vs latency vs tail latency — they diverge, and which
+        matters depends on the consumer;
+      - peak vs steady-state memory;
+      - accuracy/quality measured the way this tool's domain measures it,
+        not a generic proxy;
+      - cost (compute, $, energy) when that's the real constraint.
 
-      Do NOT default to "wall-clock time" reflexively. State what the metric
-      captures and what it omits. Where the field has a canonical metric for
-      this kind of tool, use it and cite why (surface it via tool_search /
-      tool_research_tool rather than asserting from memory).
+    Do NOT default to "wall-clock time" reflexively. State what the metric
+    captures and what it omits. Where the field has a canonical metric for
+    this kind of tool, use it and cite why (surface it via tool_search /
+    tool_research_tool rather than asserting from memory).
 
-  - id: fair_conditions
-    name: Hold the conditions fair across every comparator
-    description: |
-      A comparison only means something when everything except the thing
-      under test is held constant. Reason about and FIX:
-        - the same inputs / workloads for every comparator (real or
-          representative, not cherry-picked);
-        - the same hardware / environment / resource limits;
-        - the same seeds for any stochastic component, and warm-up handling
-          for measurements sensitive to cold start / JIT / caches;
-        - isolation from noise (other load on the machine, network jitter).
+- id: fair_conditions
+  name: Hold the conditions fair across every comparator
+  description: |
+    A comparison only means something when everything except the thing
+    under test is held constant. Reason about and FIX:
+      - the same inputs / workloads for every comparator (real or
+        representative, not cherry-picked);
+      - the same hardware / environment / resource limits;
+      - the same seeds for any stochastic component, and warm-up handling
+        for measurements sensitive to cold start / JIT / caches;
+      - isolation from noise (other load on the machine, network jitter).
 
-      Record the exact conditions alongside the result — a benchmark you
-      can't reproduce is an anecdote. Pin the versions of the tool and every
-      baseline you compared.
+    Record the exact conditions alongside the result — a benchmark you
+    can't reproduce is an anecdote. Pin the versions of the tool and every
+    baseline you compared.
 
-  - id: measure_with_uncertainty
-    name: Measure with repetition + report uncertainty
-    description: |
-      A single run is a data point, not a measurement. Run each comparator
-      enough times to characterise variation, and report the distribution —
-      central tendency AND spread — not just a best-case number. For
-      performance, prefer robust summaries when the distribution is skewed
-      (tail behaviour often matters more than the mean).
+- id: measure_with_uncertainty
+  name: Measure with repetition + report uncertainty
+  description: |
+    A single run is a data point, not a measurement. Run each comparator
+    enough times to characterise variation, and report the distribution —
+    central tendency AND spread — not just a best-case number. For
+    performance, prefer robust summaries when the distribution is skewed
+    (tail behaviour often matters more than the mean).
 
-      Run the harness via the exec tools (tool_bash_exec / the language exec
-      tools; tool_task for long benchmark sweeps). Write the harness +
-      results into eval/ so the comparison is part of the governance record,
-      not a one-off in a terminal. A difference within noise is NOT a win;
-      say so honestly when the result doesn't clear the uncertainty band.
+    Run the harness via the exec tools (tool_bash_exec / the language exec
+    tools; tool_task for long benchmark sweeps). Write the harness +
+    results into eval/ so the comparison is part of the governance record,
+    not a one-off in a terminal. A difference within noise is NOT a win;
+    say so honestly when the result doesn't clear the uncertainty band.
 
-  - id: interpret_and_record
-    name: Interpret against acceptance + record the verdict
-    description: |
-      Compare the result to the non-functional acceptance criterion from
-      spec/requirements.md: did the tool meet the bar, beat the baseline by
-      a margin that exceeds the noise, or fall short? State the verdict
-      plainly, including when it's "no detectable difference" or "regressed".
+- id: interpret_and_record
+  name: Interpret against acceptance + record the verdict
+  description: |
+    Compare the result to the non-functional acceptance criterion from
+    spec/requirements.md: did the tool meet the bar, beat the baseline by
+    a margin that exceeds the noise, or fall short? State the verdict
+    plainly, including when it's "no detectable difference" or "regressed".
 
-      Record in eval/ (results + conditions + verdict) and mem_log the
-      claim-with-evidence so build/release_and_changelog can cite a real
-      benchmark rather than an unverified boast. If the result misses the
-      bar, route back to build/implement_iteration with the gap as the next
-      increment's objective.
+    Record in eval/ (results + conditions + verdict) and mem_log the
+    claim-with-evidence so build/release_and_changelog can cite a real
+    benchmark rather than an unverified boast. If the result misses the
+    bar, route back to build/implement_iteration with the gap as the next
+    increment's objective.
 
-      AUTONOMY GATE:
-        Risk: reversible — recording a verdict changes no artefact that
-        can't be re-judged; the real hazard is overclaiming on noise.
-        proceed (adaptive default, autopilot) → record the verdict with its evidence and flag
-          any claim that rests on a within-noise difference; surface the
-          call to the researcher when the result reverses a prior claim or
-          drives an irreversible downstream decision.
-        confirm first (manual / supervised) → present the result + uncertainty + your
-          read; let the researcher judge whether the claim holds.
+    AUTONOMY GATE:
+      Risk: reversible — recording a verdict changes no artefact that
+      can't be re-judged; the real hazard is overclaiming on noise.
+      proceed (adaptive default, autopilot) → record the verdict with its evidence and flag
+        any claim that rests on a within-noise difference; surface the
+        call to the researcher when the result reverses a prior claim or
+        drives an irreversible downstream decision.
+      confirm first (manual / supervised) → present the result + uncertainty + your
+        read; let the researcher judge whether the claim holds.
 
 expected_outputs:
-  - eval/ benchmark harness + results (with conditions + versions pinned)
-  - A logged performance/quality claim-with-evidence (baseline + metric + uncertainty)
+- eval/ benchmark harness + results (with conditions + versions pinned)
+- A logged performance/quality claim-with-evidence (baseline + metric + uncertainty)
 
 next_protocol: build/implement_iteration
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: execute
+sub_intent: build_benchmark
+triggers:
+- benchmark
+- benchmark this
+- benchmark vs
+- benchmark against
+- is it faster
+- is it slower
+- compare against the baseline
+- vs baseline
+- performance comparison
+- did the optimization help
+- did the optimisation help
+- measure performance
+- how fast is it
+summary: 'Measure the tool honestly against the right baseline(s): the metric that matches its purpose, fair fixed conditions (same inputs/hardware/seeds), and reported uncertainty.'
+token_estimate: 1700
+decomposition:
+- protocol: build/benchmark_vs_baseline
+  purpose: State the claim, pick the baseline + metric, hold conditions fair, measure with uncertainty, interpret against acceptance.
+- tool: tool_bash_exec
+  purpose: Run the benchmark harness (tool_task for long sweeps); write harness + results into eval/.
+- tool: mem_log
+  purpose: Log the performance claim-with-evidence (baseline + metric + uncertainty).

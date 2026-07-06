@@ -2,16 +2,16 @@ id: codebook_governance
 tier: 'plan'
 name: Codebook Governance (amend the program commons without breaking the roll-up)
 version: '3.12.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai, auditor]
   workflow_shape: [multi_study, program_governance]
 last_reviewed: '2026-06-23'
 see_also:
-  - program/program_setup                        # froze the commons this protocol amends
-  - program/study_register                        # studies bound to the commons being changed
-  - program/cross_study_synthesis                 # the roll-up an amendment must not silently invalidate
+- program/program_setup                          # froze the commons this protocol amends
+- program/study_register                          # studies bound to the commons being changed
+- program/cross_study_synthesis                   # the roll-up an amendment must not silently invalidate
 description: |
   The protocol for the most dangerous moment in a research program: changing
   the shared commons (codebook, prereg, governing protocol) AFTER studies have
@@ -40,88 +40,88 @@ trigger: |
   codebook is wrong", "add a construct to the program", "update the prereg",
   "a new study needs something the commons doesn't have".
 prerequisites:
-  - The program commons exist and at least one study has bound to them (program_setup + study_register run)
-  - workspace.mode is multi_study (sys_boot reports workspace_mode), OR the researcher is governing a research program
+- The program commons exist and at least one study has bound to them (program_setup + study_register run)
+- workspace.mode is multi_study (sys_boot reports workspace_mode), OR the researcher is governing a research program
 
 steps:
-  - id: name_the_change_and_force
-    name: Name the change and the force driving it
-    description: |
-      If you haven't called sys_boot this session, do so once. Then state
-      precisely WHAT in the commons must change (which variable / definition /
-      prereg commitment / protocol step) and WHY now (the force: a definition
-      that proved unmeasurable, a new study's genuine need, an error in the
-      original codebook). A vague "improve the codebook" is not a change
-      request — name the exact edit and the concrete problem it solves, so the
-      amendment can be judged on whether it actually solves it.
+- id: name_the_change_and_force
+  name: Name the change and the force driving it
+  description: |
+    If you haven't called sys_boot this session, do so once. Then state
+    precisely WHAT in the commons must change (which variable / definition /
+    prereg commitment / protocol step) and WHY now (the force: a definition
+    that proved unmeasurable, a new study's genuine need, an error in the
+    original codebook). A vague "improve the codebook" is not a change
+    request — name the exact edit and the concrete problem it solves, so the
+    amendment can be judged on whether it actually solves it.
 
-  - id: assess_blast_radius
-    name: Assess which studies the change touches
-    description: |
-      The critical analysis: classify the change by its blast radius.
-        - SHARED-VARIABLE change (touches a construct studies pool on) → this
-          can retroactively make completed studies incommensurable. Identify
-          EVERY study that has already coded to the old definition; the
-          amendment is only safe if those studies can be re-mapped, re-coded,
-          or explicitly excluded from the affected roll-up.
-        - ADDITIVE change (a new optional variable, a clarification that
-          doesn't alter existing data) → low blast radius; existing studies
-          are unaffected.
-        - PREREG/POOLING-PLAN change → touches what the roll-up may claim
-          confirmatorily; anything decided after seeing results is exploratory.
-      Read studies/ and roll_up/ to ground this in the studies that actually
-      exist, not a guess.
+- id: assess_blast_radius
+  name: Assess which studies the change touches
+  description: |
+    The critical analysis: classify the change by its blast radius.
+      - SHARED-VARIABLE change (touches a construct studies pool on) → this
+        can retroactively make completed studies incommensurable. Identify
+        EVERY study that has already coded to the old definition; the
+        amendment is only safe if those studies can be re-mapped, re-coded,
+        or explicitly excluded from the affected roll-up.
+      - ADDITIVE change (a new optional variable, a clarification that
+        doesn't alter existing data) → low blast radius; existing studies
+        are unaffected.
+      - PREREG/POOLING-PLAN change → touches what the roll-up may claim
+        confirmatorily; anything decided after seeing results is exploratory.
+    Read studies/ and roll_up/ to ground this in the studies that actually
+    exist, not a guess.
 
-  - id: decide_amend_or_branch
-    name: Decide how to apply it (amend in place, version, or branch)
-    description: |
-      Given the blast radius, choose the safe mechanism:
-        - For an additive or clarifying change → amend shared/codebook.md in
-          place, as a new versioned entry (never silently overwrite the old
-          text; the published commons is what studies coded to).
-        - For a shared-variable change that affects completed studies → do NOT
-          overwrite the definition. Introduce a VERSIONED definition (v2) so
-          old studies remain valid under v1 and new studies use v2, and record
-          in roll_up/ that v1 and v2 results pool only after an explicit
-          harmonisation (or not at all). Versioning preserves the audit trail;
-          overwriting destroys it.
-      The principle: a reader must always be able to see what definition each
-      study coded to. Never edit a published commons such that you can no
-      longer tell what a completed study actually used.
+- id: decide_amend_or_branch
+  name: Decide how to apply it (amend in place, version, or branch)
+  description: |
+    Given the blast radius, choose the safe mechanism:
+      - For an additive or clarifying change → amend shared/codebook.md in
+        place, as a new versioned entry (never silently overwrite the old
+        text; the published commons is what studies coded to).
+      - For a shared-variable change that affects completed studies → do NOT
+        overwrite the definition. Introduce a VERSIONED definition (v2) so
+        old studies remain valid under v1 and new studies use v2, and record
+        in roll_up/ that v1 and v2 results pool only after an explicit
+        harmonisation (or not at all). Versioning preserves the audit trail;
+        overwriting destroys it.
+    The principle: a reader must always be able to see what definition each
+    study coded to. Never edit a published commons such that you can no
+    longer tell what a completed study actually used.
 
-      AUTONOMY GATE:
-        Risk: irreversible / high — amending a shared variable can retroactively
-        invalidate completed studies and the roll-up; this is among the most
-        consequential program decisions.
-        proceed (adaptive default, autopilot) → for an additive/clarifying change, amend as a
-          versioned entry and log it; for a SHARED-VARIABLE change that touches
-          completed studies, STOP and present the blast radius +
-          versioning/harmonisation plan for confirmation even under autopilot
-          — this is too consequential to apply unsupervised.
-        confirm first (manual / supervised) → present the change, its blast radius, and the
-          chosen mechanism; confirm before touching the commons.
+    AUTONOMY GATE:
+      Risk: irreversible / high — amending a shared variable can retroactively
+      invalidate completed studies and the roll-up; this is among the most
+      consequential program decisions.
+      proceed (adaptive default, autopilot) → for an additive/clarifying change, amend as a
+        versioned entry and log it; for a SHARED-VARIABLE change that touches
+        completed studies, STOP and present the blast radius +
+        versioning/harmonisation plan for confirmation even under autopilot
+        — this is too consequential to apply unsupervised.
+      confirm first (manual / supervised) → present the change, its blast radius, and the
+        chosen mechanism; confirm before touching the commons.
 
-  - id: propagate_and_record
-    name: Propagate the change + record the amendment
-    description: |
-      Apply the change through the chosen mechanism and make its consequences
-      explicit:
-        - Write the amendment into shared/codebook.md / shared/preregistration.md
-          as a dated, versioned entry with the force and the decision.
-        - For each affected study, record in studies/<slug>/ which definition
-          version it used and what (if anything) it must do (re-code, re-map,
-          or be excluded from the v2 roll-up).
-        - Update roll_up/README.md if the study output contract or pooling
-          eligibility changed.
-      mem_log "codebook amendment: <change> (vN), blast radius <studies>,
-      mechanism <amend/version/branch>" so the program's evolution is
-      auditable. The whole point is that six months later, anyone can
-      reconstruct exactly what changed, when, why, and which studies it touched.
+- id: propagate_and_record
+  name: Propagate the change + record the amendment
+  description: |
+    Apply the change through the chosen mechanism and make its consequences
+    explicit:
+      - Write the amendment into shared/codebook.md / shared/preregistration.md
+        as a dated, versioned entry with the force and the decision.
+      - For each affected study, record in studies/<slug>/ which definition
+        version it used and what (if anything) it must do (re-code, re-map,
+        or be excluded from the v2 roll-up).
+      - Update roll_up/README.md if the study output contract or pooling
+        eligibility changed.
+    mem_log "codebook amendment: <change> (vN), blast radius <studies>,
+    mechanism <amend/version/branch>" so the program's evolution is
+    auditable. The whole point is that six months later, anyone can
+    reconstruct exactly what changed, when, why, and which studies it touched.
 
 expected_outputs:
-  - shared/codebook.md and/or shared/preregistration.md  (dated versioned amendment)
-  - per-study notes recording the definition version each used
-  - updated roll_up/README.md when pooling eligibility changed
+- shared/codebook.md and/or shared/preregistration.md  (dated versioned amendment)
+- per-study notes recording the definition version each used
+- updated roll_up/README.md when pooling eligibility changed
 
 quality_bar: |
   - The exact change + the force driving it are named; no vague "improvements".
@@ -132,6 +132,26 @@ quality_bar: |
   - A consequential shared-variable change is confirmed (even under autopilot)
     and its effect on the roll-up's poolability is recorded.
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: program/program_setup
+intent_class: plan
+sub_intent: codebook_governance
+triggers:
+- change the codebook
+- amend the codebook
+- update the shared codebook
+- the codebook is wrong
+- add a code to the program
+- the studies coded differently
+- harmonize the codes
+- harmonise the codes
+summary: 'Amend the shared commons safely after studies have started coding: assess blast radius across studies, version the change, and decide re-coding vs crosswalk so the codebook stays a true common denominator.'
+token_estimate: 1600
+decomposition:
+- protocol: program/codebook_governance
+  purpose: Assess blast radius, version the change, decide re-code vs crosswalk, propagate to studies.
+- tool: sys_file_write
+  purpose: Write the versioned codebook amendment + changelog into shared/.
+- tool: mem_log
+  purpose: Record the codebook amendment (version + affected studies + decision).

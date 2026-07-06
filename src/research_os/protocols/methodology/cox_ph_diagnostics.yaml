@@ -2,15 +2,15 @@ id: cox_ph_diagnostics
 tier: 'plan'
 name: Cox PH Diagnostics (Proportional Hazards check + fallback routing)
 version: '3.5.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [experiment_pipeline]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/clinical_trials          # time-to-event trial endpoints route here
-  - methodology/bootstrapping_design     # the diagnostic's CIs are often resampled
+- methodology/clinical_trials            # time-to-event trial endpoints route here
+- methodology/bootstrapping_design       # the diagnostic's CIs are often resampled
 description: |
   Whenever a Cox proportional-hazards model is fit (lifelines `CoxPHFitter`,
   R `survival::coxph`, statsmodels PH regression, sksurv `CoxPHSurvivalAnalysis`,
@@ -48,195 +48,176 @@ trigger: |
       survival regression and routes here for the PH-specific checks.
 
 prerequisites:
-  - A Cox model has been fit (or is about to be fit) on a survival dataset
-    with `duration` + `event` columns.
-  - The covariate set is documented (in methods.md or the script).
-  - Residuals are computable (the model object must be retained, OR the
-    script must be re-run with `residuals=True`).
+- A Cox model has been fit (or is about to be fit) on a survival dataset with `duration` + `event` columns.
+- The covariate set is documented (in methods.md or the script).
+- Residuals are computable (the model object must be retained, OR the script must be re-run with `residuals=True`).
 
 editorial_voice:
   rules:
-    - "Every Cox PH model SHIPS WITH a Schoenfeld test + a log-log plot
-       + a per-covariate result table. The mechanism by which the test
-       is reported (p-value vs effect-size vs visual) follows the
-       field's reporting convention — but the assumption check is
-       non-negotiable."
-    - "A violated PH assumption is not a paper-killer — it is a routing
-       signal. Stratify, interact-with-time, switch to AFT, or split
-       follow-up. Pick the strategy by the DAG and the question, not
-       from a menu. Document the choice, do NOT silently ignore."
-    - "The global Schoenfeld test alone is insufficient — global non-
-       rejection can mask covariate-specific violations and vice versa.
-       Report BOTH global + per-covariate results."
-    - "Visual inspection complements the test. Schoenfeld p-values
-       depend on the chosen transformation of time; the scaled-
-       residuals plot is the assumption-free check."
-    - "The decision threshold (p-value cutoff or effect-size threshold)
-       must be PRE-SPECIFIED. Cite the field convention you adopt
-       (clinical journals often p<0.05; some methodological work uses
-       a higher bar to avoid false alarms in large covariate sets).
-       Do not pick the threshold after seeing the result."
-    - "Reproducibility: the test + plot script is committed to
-       `workspace/<step>/scripts/`, not to scratch/. The audit consumes
-       the on-disk artefacts."
+  - "Every Cox PH model SHIPS WITH a Schoenfeld test + a log-log plot + a per-covariate result table. The mechanism by which the test is reported (p-value vs effect-size vs visual) follows the field's reporting convention — but the assumption check is non-negotiable."
+  - "A violated PH assumption is not a paper-killer — it is a routing signal. Stratify, interact-with-time, switch to AFT, or split follow-up. Pick the strategy by the DAG and the question, not from a menu. Document the choice, do NOT silently ignore."
+  - "The global Schoenfeld test alone is insufficient — global non- rejection can mask covariate-specific violations and vice versa. Report BOTH global + per-covariate results."
+  - "Visual inspection complements the test. Schoenfeld p-values depend on the chosen transformation of time; the scaled- residuals plot is the assumption-free check."
+  - "The decision threshold (p-value cutoff or effect-size threshold) must be PRE-SPECIFIED. Cite the field convention you adopt (clinical journals often p<0.05; some methodological work uses a higher bar to avoid false alarms in large covariate sets). Do not pick the threshold after seeing the result."
+  - "Reproducibility: the test + plot script is committed to `workspace/<step>/scripts/`, not to scratch/. The audit consumes the on-disk artefacts."
 
 steps:
-  - id: detect_cox_fit
-    name: Detect that a Cox PH model has been (or will be) fit
-    description: |
-      Confirm one of the following before proceeding:
-        - methods.md names "Cox PH" / "proportional hazards" with the
-          covariate list,
-        - a script imports `lifelines.CoxPHFitter` or equivalent,
-        - the researcher answered "yes, a Cox PH model".
-      If none holds, exit and route back. Do NOT diagnose a non-Cox
-      survival model with this protocol (parametric AFT, Aalen
-      additive, Royston-Parmar all have their own diagnostics).
+- id: detect_cox_fit
+  name: Detect that a Cox PH model has been (or will be) fit
+  description: |
+    Confirm one of the following before proceeding:
+      - methods.md names "Cox PH" / "proportional hazards" with the
+        covariate list,
+      - a script imports `lifelines.CoxPHFitter` or equivalent,
+      - the researcher answered "yes, a Cox PH model".
+    If none holds, exit and route back. Do NOT diagnose a non-Cox
+    survival model with this protocol (parametric AFT, Aalen
+    additive, Royston-Parmar all have their own diagnostics).
 
-  - id: write_diagnostics_script
-    name: Write the PH-diagnostics script
-    description: |
-      sys_file_write a script at
-      `workspace/<step>/scripts/<NN>_cox_ph_diagnostics_v1.py`
-      (or `.R`). The script must perform:
+- id: write_diagnostics_script
+  name: Write the PH-diagnostics script
+  description: |
+    sys_file_write a script at
+    `workspace/<step>/scripts/<NN>_cox_ph_diagnostics_v1.py`
+    (or `.R`). The script must perform:
 
-        1) Grambsch-Therneau / Schoenfeld-residual test, GLOBAL
-           + PER-COVARIATE results.
-        2) Scaled-Schoenfeld residual plot per covariate (the
-           assumption-free visual).
-        3) Log-log survival plot per stratifying categorical
-           covariate.
-        4) A per-covariate result table persisted as CSV
-           (columns: covariate, test_statistic, decision_metric,
-           transformation).
-        5) A human-readable interpretation in
-           `outputs/reports/cox_ph_diagnostics.md` that names
-           the pre-specified threshold + the verdict per covariate.
-        6) `.prov.json` sidecars for every figure + CSV.
+      1) Grambsch-Therneau / Schoenfeld-residual test, GLOBAL
+         + PER-COVARIATE results.
+      2) Scaled-Schoenfeld residual plot per covariate (the
+         assumption-free visual).
+      3) Log-log survival plot per stratifying categorical
+         covariate.
+      4) A per-covariate result table persisted as CSV
+         (columns: covariate, test_statistic, decision_metric,
+         transformation).
+      5) A human-readable interpretation in
+         `outputs/reports/cox_ph_diagnostics.md` that names
+         the pre-specified threshold + the verdict per covariate.
+      6) `.prov.json` sidecars for every figure + CSV.
 
-      Pre-specify the decision threshold BEFORE running. Common
-      field conventions to choose between (cite which you adopt):
-        - p < 0.05 (common in clinical / applied work)
-        - p < 0.05 with multiplicity correction across covariates
-          (when k is large; see methodology/multiple_comparisons)
-        - effect-size + visual judgment (when sample size is large
-          enough that statistical significance ≠ assumption
-          violation in practice)
+    Pre-specify the decision threshold BEFORE running. Common
+    field conventions to choose between (cite which you adopt):
+      - p < 0.05 (common in clinical / applied work)
+      - p < 0.05 with multiplicity correction across covariates
+        (when k is large; see methodology/multiple_comparisons)
+      - effect-size + visual judgment (when sample size is large
+        enough that statistical significance ≠ assumption
+        violation in practice)
 
-      Library choice is up to the AI based on what is already in
-      the project's environment. lifelines (Python), survival
-      (R), statsmodels, sksurv, SAS PROC PHREG, and Stata stcox
-      all implement the test; pick what the team uses + log the
-      version via sys_env(operation='snapshot').
+    Library choice is up to the AI based on what is already in
+    the project's environment. lifelines (Python), survival
+    (R), statsmodels, sksurv, SAS PROC PHREG, and Stata stcox
+    all implement the test; pick what the team uses + log the
+    version via sys_env(operation='snapshot').
 
-      Use a deterministic RNG seed even though Cox is not
-      stochastic — many downstream bootstrap CI calculations are.
+    Use a deterministic RNG seed even though Cox is not
+    stochastic — many downstream bootstrap CI calculations are.
 
-  - id: run_and_read
-    name: Run the script + read the report
-    description: |
-      tool_python_exec script=<path-from-step-2> (or `tool_r_exec`).
-      Then sys_file_read `outputs/reports/cox_ph_diagnostics.md` and
-      surface to the researcher:
-        - the global Grambsch-Therneau p-value,
-        - the per-covariate p-values (the table),
-        - the SCALED-SCHOENFELD figure path (the assumption-free
-          visual),
-        - one log-log path per stratifying categorical covariate,
-        - a one-line verdict: "PH assumption holds" |
-          "global violation" | "violation in <covariate>".
+- id: run_and_read
+  name: Run the script + read the report
+  description: |
+    tool_python_exec script=<path-from-step-2> (or `tool_r_exec`).
+    Then sys_file_read `outputs/reports/cox_ph_diagnostics.md` and
+    surface to the researcher:
+      - the global Grambsch-Therneau p-value,
+      - the per-covariate p-values (the table),
+      - the SCALED-SCHOENFELD figure path (the assumption-free
+        visual),
+      - one log-log path per stratifying categorical covariate,
+      - a one-line verdict: "PH assumption holds" |
+        "global violation" | "violation in <covariate>".
 
-  - id: route_on_violation
-    name: Route on violation — pick a fallback by reasoning, not menu
-    description: |
-      Violation detected if: any per-covariate result crosses the
-      pre-specified threshold, OR the global test crosses it, OR the
-      scaled-Schoenfeld plot shows a systematic non-flat trend.
+- id: route_on_violation
+  name: Route on violation — pick a fallback by reasoning, not menu
+  description: |
+    Violation detected if: any per-covariate result crosses the
+    pre-specified threshold, OR the global test crosses it, OR the
+    scaled-Schoenfeld plot shows a systematic non-flat trend.
 
-      The choice of remedy depends on the QUESTION the model is
-      answering and the SHAPE of the violation. Reason through:
+    The choice of remedy depends on the QUESTION the model is
+    answering and the SHAPE of the violation. Reason through:
 
-        - IS THE VIOLATING COVARIATE A NUISANCE OR THE EXPOSURE OF
-          INTEREST? Stratification removes its hazard ratio; only
-          appropriate when it is a nuisance / adjustment variable.
-        - DOES THE EFFECT GENUINELY CHANGE OVER TIME? Time-varying
-          coefficients preserve interpretability when the underlying
-          effect is time-dependent (e.g. treatment wanes).
-        - IS THE HAZARD-RATIO INTERPRETATION ESSENTIAL, OR WOULD A
-          TIME-RATIO BE EQUALLY ACCEPTABLE? AFT models replace HR
-          with TR; viable when the field accepts either.
-        - IS THE VIOLATION A SINGLE KINK (interpretable threshold)
-          OR A CONTINUOUS DRIFT? A kink suggests piecewise / split
-          follow-up; a continuous drift suggests time-varying.
+      - IS THE VIOLATING COVARIATE A NUISANCE OR THE EXPOSURE OF
+        INTEREST? Stratification removes its hazard ratio; only
+        appropriate when it is a nuisance / adjustment variable.
+      - DOES THE EFFECT GENUINELY CHANGE OVER TIME? Time-varying
+        coefficients preserve interpretability when the underlying
+        effect is time-dependent (e.g. treatment wanes).
+      - IS THE HAZARD-RATIO INTERPRETATION ESSENTIAL, OR WOULD A
+        TIME-RATIO BE EQUALLY ACCEPTABLE? AFT models replace HR
+        with TR; viable when the field accepts either.
+      - IS THE VIOLATION A SINGLE KINK (interpretable threshold)
+        OR A CONTINUOUS DRIFT? A kink suggests piecewise / split
+        follow-up; a continuous drift suggests time-varying.
 
-      Candidate remedies (pick + justify; NOT an ordered menu):
+    Candidate remedies (pick + justify; NOT an ordered menu):
 
-        STRATIFY by the violating covariate — when it is a nuisance
-          adjustment variable and you can sacrifice its HR estimate.
-        TIME-VARYING COEFFICIENT — when the underlying effect genuinely
-          varies with time and the HR-at-anchor-time interpretation is
-          acceptable.
-        ACCELERATED FAILURE TIME (AFT) MODEL — when a parametric
-          time-ratio is acceptable. Justify the parametric family
-          choice via AIC / BIC / visual fit, NOT default.
-        SPLIT FOLLOW-UP at a substantively meaningful kink — when
-          the violation is visibly a single inflection and the kink
-          time has an interpretation (treatment cessation, disease
-          progression milestone).
-        OTHER MODEL FAMILIES — Royston-Parmar flexible parametric,
-          Aalen additive, restricted mean survival time, machine-
-          learning survival — surface these when none of the above
-          fits; cite a methodology reference for the choice.
+      STRATIFY by the violating covariate — when it is a nuisance
+        adjustment variable and you can sacrifice its HR estimate.
+      TIME-VARYING COEFFICIENT — when the underlying effect genuinely
+        varies with time and the HR-at-anchor-time interpretation is
+        acceptable.
+      ACCELERATED FAILURE TIME (AFT) MODEL — when a parametric
+        time-ratio is acceptable. Justify the parametric family
+        choice via AIC / BIC / visual fit, NOT default.
+      SPLIT FOLLOW-UP at a substantively meaningful kink — when
+        the violation is visibly a single inflection and the kink
+        time has an interpretation (treatment cessation, disease
+        progression milestone).
+      OTHER MODEL FAMILIES — Royston-Parmar flexible parametric,
+        Aalen additive, restricted mean survival time, machine-
+        learning survival — surface these when none of the above
+        fits; cite a methodology reference for the choice.
 
-      Library specifics (Python lifelines / sksurv / statsmodels;
-      R survival / flexsurv / rms; Stata; SAS) follow the project's
-      existing tooling — do not re-platform mid-analysis just to
-      access a specific function unless necessary.
+    Library specifics (Python lifelines / sksurv / statsmodels;
+    R survival / flexsurv / rms; Stata; SAS) follow the project's
+    existing tooling — do not re-platform mid-analysis just to
+    access a specific function unless necessary.
 
-      Use `mem_log` to record:
-        - which covariate(s) violated,
-        - which strategy was chosen,
-        - why (the trade-off explicit),
-        - the new model's per-covariate PH test (re-run this
-          protocol's step 2-3 on the new fit).
+    Use `mem_log` to record:
+      - which covariate(s) violated,
+      - which strategy was chosen,
+      - why (the trade-off explicit),
+      - the new model's per-covariate PH test (re-run this
+        protocol's step 2-3 on the new fit).
 
-      If NO violation, append a one-line note to conclusions.md:
-      "PH assumption supported (global Grambsch-Therneau p=<value>,
-      all per-covariate results within the pre-specified threshold;
-      see outputs/reports/cox_ph_diagnostics.md)."
+    If NO violation, append a one-line note to conclusions.md:
+    "PH assumption supported (global Grambsch-Therneau p=<value>,
+    all per-covariate results within the pre-specified threshold;
+    see outputs/reports/cox_ph_diagnostics.md)."
 
-  - id: append_to_methods_and_conclusions
-    name: Append to methods.md + conclusions.md
-    description: |
-      mem_log should already have documented the Cox model;
-      now append a method line for the diagnostic:
+- id: append_to_methods_and_conclusions
+  name: Append to methods.md + conclusions.md
+  description: |
+    mem_log should already have documented the Cox model;
+    now append a method line for the diagnostic:
 
-        method="Schoenfeld residual test (Grambsch-Therneau)"
-        implementation="lifelines==<version>" (or survival package)
-        parameters="decision_threshold=<pre-specified value + citation>;
-                    transformation=<identity / km / rank>"
-        justification="proportional-hazards assumption check
-                       required for any reported Cox hazard ratio
-                       (Grambsch & Therneau 1994, Biometrika)."
-        assumptions=["scaled Schoenfeld residuals constant over time"]
+      method="Schoenfeld residual test (Grambsch-Therneau)"
+      implementation="lifelines==<version>" (or survival package)
+      parameters="decision_threshold=<pre-specified value + citation>;
+                  transformation=<identity / km / rank>"
+      justification="proportional-hazards assumption check
+                     required for any reported Cox hazard ratio
+                     (Grambsch & Therneau 1994, Biometrika)."
+      assumptions=["scaled Schoenfeld residuals constant over time"]
 
-      And in `conclusions.md > ## Limitations` add the diagnostic
-      verdict + any chosen fallback rationale.
+    And in `conclusions.md > ## Limitations` add the diagnostic
+    verdict + any chosen fallback rationale.
 
-  - id: cross_check_with_audit
-    name: Cross-check with audit_and_validation
-    description: |
-      `audit/audit_and_validation` step 3 (audit_assumptions) routes
-      here when it sees a Cox fit. After this protocol finishes,
-      return control so the master audit can record the PH-check as
-      satisfied (and the report path).
+- id: cross_check_with_audit
+  name: Cross-check with audit_and_validation
+  description: |
+    `audit/audit_and_validation` step 3 (audit_assumptions) routes
+    here when it sees a Cox fit. After this protocol finishes,
+    return control so the master audit can record the PH-check as
+    satisfied (and the report path).
 
 expected_outputs:
-  - workspace/<step>/scripts/<NN>_cox_ph_diagnostics_v1.py
-  - workspace/<step>/data/next_step_output/cox_ph_test.csv
-  - workspace/<step>/outputs/figures/cox_scaled_schoenfeld.png
-  - workspace/<step>/outputs/figures/cox_loglog_<covariate>.png
-  - workspace/<step>/outputs/reports/cox_ph_diagnostics.md
+- workspace/<step>/scripts/<NN>_cox_ph_diagnostics_v1.py
+- workspace/<step>/data/next_step_output/cox_ph_test.csv
+- workspace/<step>/outputs/figures/cox_scaled_schoenfeld.png
+- workspace/<step>/outputs/figures/cox_loglog_<covariate>.png
+- workspace/<step>/outputs/reports/cox_ph_diagnostics.md
 
 quality_bar:
   schoenfeld_grambsch_therneau_test_run: true
@@ -255,3 +236,37 @@ quality_bar:
 next_protocol: audit/audit_and_validation
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: pick
+triggers:
+- cox
+- cox ph
+- coxph
+- proportional hazards
+- ph assumption
+- schoenfeld
+- schoenfeld residuals
+- grambsch-therneau
+- grambsch therneau
+- log-log plot
+- log log survival
+- hazard ratio check
+- survival analysis
+- kaplan-meier
+- kaplan meier
+- time-to-event
+- time to event
+- cox regression
+- cox.zph
+- phreg
+- stcox
+- time-varying coefficient
+summary: Cox PH diagnostics — Schoenfeld residual test (Grambsch-Therneau) + log-log plot + per-covariate p-values + fallback strategy if violated.
+token_estimate: 1500
+decomposition:
+- protocol: methodology/cox_ph_diagnostics
+  purpose: Detect Cox fit, run Schoenfeld + log-log + per-covariate tests, route to fallback on violation.
+- tool: tool_python_exec
+  purpose: Run the diagnostics script (lifelines / sksurv / statsmodels) or tool_r_exec for survival::coxph.
+- tool: tool_audit
+  purpose: Record the PH-assumption verdict alongside the other assumption checks (scope='step', dimension='assumptions').
