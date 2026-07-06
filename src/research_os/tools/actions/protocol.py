@@ -673,7 +673,7 @@ def load_protocol(
             step_id=step_id,
             _redirect_chain=chain,
         )
-        if isinstance(resolved, dict):
+        if isinstance(resolved, dict) and format != "ref":
             resolved.setdefault("_redirected_from", name)
             if params:
                 resolved.setdefault("_redirect_params", params)
@@ -723,20 +723,42 @@ def load_protocol(
             )
         except Exception:
             registry_summary = ""
+        _raw_summary = (
+            data.get("summary")
+            or registry_summary
+            or (data.get("description") or "").split("\n")[0]
+        )
+        # Truncate by JSON-encoded length to guarantee ≤75 tokens regardless
+        # of Unicode content (non-ASCII chars expand in ASCII JSON).
+        # Budget: 300 bytes total; fixed overhead ~209 bytes (keys + id + path
+        # + hint + step_count); remaining 91 bytes split as name≤35, summary≤56.
+        import json as _json
+
+        def _jtrunc(s: str, json_cap: int) -> str:
+            """Truncate *s* so its JSON-encoded content fits in *json_cap* chars."""
+            s = s or ""
+            encoded_len = len(_json.dumps(s)) - 2  # strip surrounding quotes
+            if encoded_len <= json_cap:
+                return s
+            # Binary-search the cut point; reserve 3 chars for trailing "..."
+            lo, hi = 0, len(s)
+            while lo < hi:
+                mid = (lo + hi + 1) // 2
+                if len(_json.dumps(s[:mid])) - 2 <= json_cap - 3:
+                    lo = mid
+                else:
+                    hi = mid - 1
+            return s[:lo] + "..." if lo < len(s) else s
+
+        _name = _jtrunc(data.get("name", ""), 35)
+        _summary = _jtrunc(_raw_summary, 56)
         return {
             "id": data.get("id", name.split("/")[-1]),
-            "name": data.get("name", ""),
-            "summary": (
-                data.get("summary")
-                or registry_summary
-                or (data.get("description") or "").split("\n")[0]
-            ),
+            "name": _name,
+            "summary": _summary,
             "step_count": len([s for s in steps if isinstance(s, dict)]),
             "_path": data.get("_path"),
-            "_load_hint": (
-                "Loaded as ref (~50 tok). For step headings call format='summary'; "
-                "for the full body call format='full'."
-            ),
+            "_load_hint": "ref only; use format='summary' or 'full' for more",
         }
 
     if format == "summary":

@@ -157,6 +157,15 @@ def _handle_mem_retrieve(name, arguments, root):
         query = (arguments.get("query") or "").strip()
 
         if pointer:
+            # ── Blob pointer (highest priority) ───────────────────────────
+            from research_os.context.blobstore import is_blob_pointer, get_blob
+            if is_blob_pointer(pointer):
+                try:
+                    data = get_blob(Path(root), pointer)
+                    return _text(_success({"pointer": pointer, "kind": "blob", "data": data}))
+                except (FileNotFoundError, ValueError) as e:
+                    return _text(_error(f"blob pointer resolution failed: {e}"))
+
             import re
             # Hypothesis id pointer (e.g. "H1", "H12")
             if re.fullmatch(r"H\d+", pointer, re.IGNORECASE):

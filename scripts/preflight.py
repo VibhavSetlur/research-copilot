@@ -1307,6 +1307,29 @@ def check_tool_short_field_length():
     return True, f"{len(TOOL_DEFINITIONS)} tool(s) have valid 'short' fields"
 
 
+def check_tool_description_lengths():
+    """Every tool's 'short' must be <=80 chars and 'description' <=200 chars."""
+    from research_os.server import TOOL_DEFINITIONS
+
+    short_too_long: list[str] = []
+    desc_too_long: list[str] = []
+    for name, defn in TOOL_DEFINITIONS.items():
+        short = defn.get("short")
+        if isinstance(short, str) and len(short) > 80:
+            short_too_long.append(f"{name} (short {len(short)} chars)")
+        description = defn.get("description")
+        if isinstance(description, str) and len(description) > 200:
+            desc_too_long.append(f"{name} (description {len(description)} chars)")
+    problems: list[str] = []
+    if short_too_long:
+        problems.append(f"short>80: {', '.join(short_too_long)}")
+    if desc_too_long:
+        problems.append(f"description>200: {', '.join(desc_too_long)}")
+    if problems:
+        return False, "; ".join(problems)
+    return True, f"{len(TOOL_DEFINITIONS)} tool(s) within 80/200 char caps"
+
+
 def check_packs_in_both_lists():
     """Every src/research_os_* pack/adapter directory must be referenced
     in BOTH pack_loader.py bundled list AND pyproject.toml packages list.
@@ -1551,6 +1574,7 @@ def main() -> int:
     tally.check("TOOLS.md vs TOOL_DEFINITIONS round-trip", check_tools_md_roundtrip)
     tally.check("CITATION.cff cff-version valid", check_citation_cff_valid)
     tally.check("Every tool definition has 'short' field <=120 chars", check_tool_short_field_length)
+    tally.check("Tool description lengths (80/200 caps)", check_tool_description_lengths)
     tally.check("Tool short<=80 / description<=200 caps", check_tool_description_caps)
     tally.check("Reasoning layer independent of daemon (v4 arrow)", check_reasoning_layer_independent_of_daemon)
     tally.check("Daemon endpoints documented ⇆ registered (no drift)", check_daemon_endpoints_documented)
