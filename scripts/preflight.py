@@ -880,6 +880,7 @@ def check_daemon_contract_paths_agree():
     try:
         from research_os.daemon import consent as _dc
         from research_os.daemon import discovery as _ddisc
+        from research_os.daemon import gates as _dg
         from research_os.daemon import health_notes as _dh
         from research_os.daemon import notifications as _dn
         from research_os.daemon import runstore as _dr
@@ -898,6 +899,8 @@ def check_daemon_contract_paths_agree():
                                    _db.state_path(r, _db.STALENESS_VERDICT)),
         "runs/": (r / ".os_state" / _dr.RUNS_DIRNAME,
                   _db.state_path(r, _db.RUNS_DIR)),
+        "gates/": (_dg.gates_dir(r),
+                   _db.state_path(r, _db.GATES_DIR)),
         # F-1 (stress): cover the daemon descriptor + the startup self-check
         # notes — both daemon-written files the bridge reads by-shape.
         "daemon.json": (_ddisc.discovery_path(r),

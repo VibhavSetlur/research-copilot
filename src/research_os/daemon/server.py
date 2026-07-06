@@ -32,10 +32,14 @@ Read-only endpoints (no auth beyond the 127.0.0.1 bind):
   GET  /v1/jobs/{job_id}   one job
   GET  /v1/runs            durable run journal (the permanent archive)
   GET  /v1/runs/{run_id}   one run manifest (?log=1&tail=N for output)
+  GET  /v1/stream          SSE stream of the 7 core event kinds (run.started/
+                           completed/failed, protocol.step_started, gate.pending/
+                           resolved, memory.stored); ?since=<iso> resumes by time
   GET  /v1/events          SSE stream of daemon events
   GET  /v1/events/recent   poll-friendly recent-events snapshot
   GET  /v1/consent/pending pending consent requests awaiting a human verdict
   GET  /v1/consent/grants  minted consent grants (?include_spent=true)
+  GET  /v1/gates/pending   pending HITL gates awaiting a human decision
   GET  /v1/notifications   the notification outbox — what the daemon told the
                            researcher + delivery outcome (?undelivered=true)
 
@@ -43,6 +47,7 @@ Mutating endpoints (require enable_gateway + a per-session bearer token,
 the consent/staleness authority surface; off by default):
   POST /v1/jobs            submit a journaled background run (agent-initiated
                            execution → one journal/provenance/lineage path) (auth)
+  POST /v1/runs            submit a journaled run (canonical exec-tool path) (auth)
   POST /v1/runs/{run_id}/resume  resume an interrupted/paused run from its
                            recorded spec (checkpoint-aware) (auth)
   GET  /v1/continuation     current autonomous goal-loop state (goal/hops/active)
@@ -52,6 +57,7 @@ the consent/staleness authority surface; off by default):
   POST /v1/consent/approve mints a one-shot, TTL'd, arg-bound token (auth)
   POST /v1/consent/deny    rejects a pending request (auth)
   POST /v1/consent/consume burns a token (auth)
+  POST /v1/gates/respond   resolve a pending HITL gate {gate_id, decision} (auth)
   POST /v1/staleness/verdict  assess freshness + persist the verdict sidecar
                               the floor gate reads (auth)
 
@@ -1004,6 +1010,209 @@ def build_app(daemon: "Daemon"):
         ok = store.consume(str(token))
         return JSONResponse({"consumed": ok})
 
+    async def stream_v1(request):
+        # SSE stream with optional ?since=<iso> backfill by wall-clock time.
+        # Mirrors stream_events exactly, adding time-based resume on top of the
+        # existing sequence-number resume so reconnecting clients can catch up
+        # using a stored ISO timestamp instead of an opaque seq number.
+        import anyio
+        from datetime import datetime, timezone
+
+        kinds = _parse_kinds(request.query_params.get("kinds"))
+        root = request.query_params.get("root")
+
+        # Sequence-based resume (parity with stream_events).
+        last_event_id = request.headers.get("last-event-id")
+        after_q = request.query_params.get("after")
+        after_seq = 0
+        for candidate in (last_event_id, after_q):
+            if candidate:
+                try:
+                    after_seq = int(candidate)
+                    break
+                except ValueError:
+                    pass
+
+        # Time-based resume via ?since=<iso>.
+        since_epoch: float | None = None
+        since_raw = request.query_params.get("since")
+        if since_raw:
+            try:
+                dt = datetime.fromisoformat(since_raw)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                since_epoch = dt.timestamp()
+            except (ValueError, TypeError):
+                pass
+
+        # When using time-based backfill, pull recent events and drop those
+        # at or before the since timestamp, yielding remaining first.
+        backfill = 0 if after_seq else 20
+
+        send_stream, receive_stream = anyio.create_memory_object_stream(64)
+
+        def _pump():
+            # Time-based backfill: fetch up to 200 recent events, filter by ts.
+            backfill_events = []
+            if since_epoch is not None:
+                try:
+                    candidates = daemon.events.recent(limit=200, kinds=kinds, root=root)
+                    backfill_events = [e for e in candidates if e.ts > since_epoch]
+                except Exception:  # noqa: BLE001
+                    pass
+
+            gen = daemon.events.subscribe(
+                kinds=kinds, root=root, backfill=backfill, after_seq=after_seq
+            )
+            try:
+                for ev in backfill_events:
+                    anyio.from_thread.run(send_stream.send, ev)
+                for event in gen:
+                    anyio.from_thread.run(send_stream.send, event)
+            except anyio.BrokenResourceError:
+                pass  # client disconnected
+            finally:
+                gen.close()
+                anyio.from_thread.run_sync(send_stream.close)
+
+        async def event_publisher():
+            async with anyio.create_task_group() as tg:
+                tg.start_soon(anyio.to_thread.run_sync, _pump)
+                async with receive_stream:
+                    async for event in receive_stream:
+                        if event.kind == "heartbeat":
+                            yield ": keepalive\n\n"
+                            continue
+                        payload = json.dumps(event.to_dict())
+                        yield f"event: {event.kind}\ndata: {payload}\n\n"
+
+        return StreamingResponse(
+            event_publisher(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
+    async def get_gates_pending(request):
+        # READ-ONLY: list all gates currently awaiting a human decision.
+        if daemon.gates is None:
+            return JSONResponse({"gates": [], "available": False})
+        return JSONResponse({"gates": [g.to_dict() for g in daemon.gates.pending()], "available": True})
+
+    async def post_gates_respond(request):
+        # MUTATING: resolve a pending HITL gate. Auth-gated like post_jobs.
+        denied = _consent_auth_error(request)
+        if denied is not None:
+            return denied
+        try:
+            body = await request.json()
+        except Exception:
+            return JSONResponse(
+                {"error": "request body must be valid JSON", "code": "bad_request"},
+                status_code=400,
+            )
+        if not isinstance(body, dict):
+            return JSONResponse(
+                {"error": "body must be a JSON object", "code": "bad_request"},
+                status_code=400,
+            )
+        gate_id = body.get("gate_id")
+        decision = body.get("decision")
+        if not gate_id or not isinstance(gate_id, str):
+            return JSONResponse(
+                {"error": "body must include 'gate_id' (a string)", "code": "bad_request"},
+                status_code=400,
+            )
+        if not decision or not isinstance(decision, str):
+            return JSONResponse(
+                {"error": "body must include 'decision' (a string)", "code": "bad_request"},
+                status_code=400,
+            )
+        # FIX 5: validate the decision value — only "approve" or "reject" are
+        # accepted. Anything else would silently map to rejected (resolve()
+        # maps != "approve" → rejected), turning a typo into a silent denial.
+        decision_normalized = decision.strip().lower()
+        if decision_normalized not in {"approve", "reject"}:
+            return JSONResponse(
+                {
+                    "error": "decision must be 'approve' or 'reject'",
+                    "code": "bad_request",
+                },
+                status_code=400,
+            )
+        if daemon.gates is None:
+            return JSONResponse(
+                {"error": "gate queue unavailable", "code": "unavailable"},
+                status_code=503,
+            )
+        if daemon.gates.get(gate_id) is None:
+            return JSONResponse(
+                {"error": "gate not found", "code": "not_found"},
+                status_code=404,
+            )
+        approved = daemon.gates.resolve(gate_id, decision_normalized)
+        return JSONResponse({"gate_id": gate_id, "decision": decision_normalized, "approved": approved, "status": "resolved"})
+
+    async def post_runs(request):
+        # MUTATING: submit a journaled run — the canonical exec-tool path.
+        # Mirrors post_jobs body validation + run_command call, but returns
+        # run_id (not job_id) at 201. Auth-gated like post_jobs.
+        denied = _consent_auth_error(request)
+        if denied is not None:
+            return denied
+        try:
+            body = await request.json()
+        except Exception:
+            return JSONResponse(
+                {"error": "request body must be valid JSON", "code": "bad_request"},
+                status_code=400,
+            )
+        if not isinstance(body, dict):
+            return JSONResponse(
+                {"error": "body must be a JSON object", "code": "bad_request"},
+                status_code=400,
+            )
+        cmd = body.get("cmd")
+        if not cmd or not isinstance(cmd, (str, list)):
+            return JSONResponse(
+                {"error": "body must include 'cmd' (a string or argv list)",
+                 "code": "bad_request"},
+                status_code=400,
+            )
+        env = body.get("env")
+        if env is not None and not isinstance(env, dict):
+            return JSONResponse(
+                {"error": "'env' must be an object of string overrides",
+                 "code": "bad_request"},
+                status_code=400,
+            )
+        inputs = body.get("inputs")
+        if inputs is not None and not (
+            isinstance(inputs, list) and all(isinstance(x, str) for x in inputs)
+        ):
+            return JSONResponse(
+                {"error": "'inputs' must be a list of path strings",
+                 "code": "bad_request"},
+                status_code=400,
+            )
+        try:
+            job_id = daemon.run_command(
+                cmd,
+                name=body.get("name"),
+                cwd=body.get("cwd"),
+                env={str(k): str(v) for k, v in env.items()} if env else None,
+                root=body.get("root"),
+                shell=bool(body.get("shell", False)),
+                inputs=inputs,
+                track_packages=body.get("track_packages"),
+                track_artifacts=bool(body.get("track_artifacts", True)),
+            )
+        except Exception as exc:  # noqa: BLE001 - surface submit failure as 500
+            return JSONResponse(
+                {"error": f"failed to submit run: {exc}", "code": "submit_failed"},
+                status_code=500,
+            )
+        return JSONResponse({"run_id": job_id, "status": "submitted"}, status_code=201)
+
     routes = [
         Route("/healthz", healthz, methods=["GET"]),
         Route("/v1/state", get_state, methods=["GET"]),
@@ -1028,6 +1237,10 @@ def build_app(daemon: "Daemon"):
         Route("/v1/continuation", get_continuation, methods=["GET"]),
         Route("/v1/continuation/start", post_continuation_start, methods=["POST"]),
         Route("/v1/continuation/stop", post_continuation_stop, methods=["POST"]),
+        Route("/v1/stream", stream_v1, methods=["GET"]),
+        Route("/v1/gates/pending", get_gates_pending, methods=["GET"]),
+        Route("/v1/gates/respond", post_gates_respond, methods=["POST"]),
+        Route("/v1/runs", post_runs, methods=["POST"]),
         Route("/v1/events", stream_events, methods=["GET"]),
         Route("/v1/events/recent", get_events_recent, methods=["GET"]),
         Route("/v1/consent/pending", get_consent_pending, methods=["GET"]),

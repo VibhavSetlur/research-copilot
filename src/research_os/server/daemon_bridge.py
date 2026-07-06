@@ -35,6 +35,7 @@ NOTIFICATIONS_OUTBOX = "notifications/outbox.jsonl"
 STALENESS_VERDICT = "staleness/verdict.json"
 DAEMON_NOTES = "daemon_notes.json"
 RUNS_DIR = "runs"
+GATES_DIR = "gates"  # HITL gate queue (§12.4)
 
 
 def state_path(root: str | Path, *parts: str) -> Path:
@@ -122,28 +123,43 @@ def daemon_base_url(root: str | Path) -> str | None:
     return None
 
 
-def http_get(base_url: str, path: str, timeout: float = 2.0) -> dict[str, Any] | None:
-    """GET base_url+path and return parsed JSON, or None on any failure.
+def http_get(
+    base_url: str,
+    path: str,
+    timeout: float = 2.0,
+    headers: "dict[str, str] | None" = None,
+) -> "tuple[int | None, dict[str, Any] | None]":
+    """GET base_url+path and return (status_code, parsed_json_or_None).
 
     Pure stdlib (urllib). Probes a running daemon's read-only HTTP surface
     WITHOUT importing the daemon package — the daemon is treated as an
     opaque local service, exactly as an external client would. Localhost
     only by design (the daemon binds 127.0.0.1).
+
+    Returns ``(None, None)`` on any transport failure (fail-safe, never raises).
+    ``headers`` merges extra HTTP headers (e.g. ``Authorization: Bearer …``).
     """
     import urllib.request
 
     url = base_url.rstrip("/") + path
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as resp:  # noqa: S310 - localhost only
-            if resp.status != 200:
-                return None
-            return json.loads(resp.read().decode("utf-8"))
-    except Exception:  # noqa: BLE001 - any probe failure → None (fail-safe)
-        return None
+        req = urllib.request.Request(url, method="GET")  # noqa: S310 - localhost only
+        if headers:
+            for k, v in headers.items():
+                req.add_header(k, v)
+        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+            body = json.loads(resp.read().decode("utf-8"))
+            return resp.status, body
+    except Exception:  # noqa: BLE001 - any probe failure → (None, None) (fail-safe)
+        return None, None
 
 
 def http_post(
-    base_url: str, path: str, payload: dict[str, Any], timeout: float = 2.0
+    base_url: str,
+    path: str,
+    payload: dict[str, Any],
+    timeout: float = 2.0,
+    headers: dict[str, str] | None = None,
 ) -> tuple[int | None, dict[str, Any] | None]:
     """POST JSON to base_url+path. Returns (status_code, parsed_json_or_None).
 
@@ -151,14 +167,23 @@ def http_post(
     code so a caller can distinguish 201 (created) from 4xx (bad request) —
     the consent-request flow needs that. On a transport failure returns
     (None, None) — fail-safe, never raises.
+
+    ``headers`` (optional) merges extra HTTP headers into the request;
+    ``Content-Type: application/json`` is always set and cannot be overridden.
+    Intended for adding an ``Authorization: Bearer <token>`` header when
+    calling auth-gated daemon endpoints (e.g. ``POST /v1/runs``).
     """
     import urllib.error
     import urllib.request
 
     url = base_url.rstrip("/") + path
     data = json.dumps(payload).encode("utf-8")
+    merged_headers: dict[str, str] = {}
+    if headers:
+        merged_headers.update(headers)
+    merged_headers["Content-Type"] = "application/json"  # always last → wins
     req = urllib.request.Request(  # noqa: S310 - localhost only
-        url, data=data, headers={"Content-Type": "application/json"}, method="POST"
+        url, data=data, headers=merged_headers, method="POST"
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 - localhost only
@@ -173,6 +198,24 @@ def http_post(
         return exc.code, (parsed if isinstance(parsed, dict) else None)
     except Exception:  # noqa: BLE001 - transport failure → (None, None)
         return None, None
+
+
+def gateway_bearer(root: str | Path) -> str | None:
+    """Return the daemon's gateway bearer token if the operator exported it.
+
+    Reads the descriptor's advertised ``gateway_token_env`` field (falling
+    back to the documented default env-var name
+    ``RESEARCH_OS_GATEWAY_TOKEN``) and returns the value of that env-var,
+    or ``None`` when the token isn't set.
+
+    Call-site convention: if the return is ``None`` the caller degrades to
+    native execution (unauthenticated POST → 401 / 503 → degrade-open).
+    No daemon import — reads only the on-disk descriptor by shape.
+    """
+    desc = read_descriptor(root)
+    env_name = (desc or {}).get("gateway_token_env") or "RESEARCH_OS_GATEWAY_TOKEN"
+    token = os.environ.get(env_name)
+    return token or None
 
 
 def read_daemon_notes(root: str | Path) -> dict[str, Any] | None:

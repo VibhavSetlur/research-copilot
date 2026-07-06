@@ -25,10 +25,12 @@ Consumers filter by kind/root; the bus itself stays domain-ignorant
 """
 from __future__ import annotations
 
+import json
 import threading
 import time
 from collections import deque
 from dataclasses import dataclass, field
+from pathlib import Path
 from queue import Empty, Queue
 from typing import Generator
 
@@ -55,6 +57,41 @@ class Event:
             "root": self.root,
             "data": _jsonsafe(self.data),
         }
+
+
+# ── Phase-6 canonical event kinds ────────────────────────────────────────────
+# Callers must reference these constants, not string literals, so a rename
+# stays a one-line fix and static analysis catches typos.
+#
+# kind                   payload fields
+# ---                    --------------
+# run.started            {run_id, command, cwd}
+# run.completed          {run_id, exit_code, duration, artifacts}
+# run.failed             {run_id, error, exit_code}
+# protocol.step_started  {plan_id, step_id, protocol_id}
+# gate.pending           {gate_id, protocol_id, step_id, question}
+# gate.resolved          {gate_id, decision}
+# memory.stored          {record_id, kind}
+
+RUN_STARTED: str = "run.started"
+RUN_COMPLETED: str = "run.completed"
+RUN_FAILED: str = "run.failed"
+PROTOCOL_STEP_STARTED: str = "protocol.step_started"
+GATE_PENDING: str = "gate.pending"
+GATE_RESOLVED: str = "gate.resolved"
+MEMORY_STORED: str = "memory.stored"
+
+PHASE6_EVENT_KINDS: frozenset[str] = frozenset(
+    {
+        RUN_STARTED,
+        RUN_COMPLETED,
+        RUN_FAILED,
+        PROTOCOL_STEP_STARTED,
+        GATE_PENDING,
+        GATE_RESOLVED,
+        MEMORY_STORED,
+    }
+)
 
 
 class _Subscriber:
@@ -111,12 +148,37 @@ class EventBus:
     optional backfill of recent history.
     """
 
-    def __init__(self, history: int = 1000, subscriber_buffer: int = 256) -> None:
+    def __init__(
+        self,
+        history: int = 1000,
+        subscriber_buffer: int = 256,
+        persist_path: Path | None = None,
+    ) -> None:
         self._history = deque(maxlen=history)
         self._sub_buffer = subscriber_buffer
         self._subscribers: list[_Subscriber] = []
         self._lock = threading.RLock()
         self._seq = 0
+        self._persist_path: Path | None = None
+        if persist_path is not None:
+            try:
+                persist_path.parent.mkdir(parents=True, exist_ok=True)
+                self._persist_path = persist_path
+            except Exception:
+                # Best-effort: if we can't create the directory, skip persistence
+                # silently so the bus is always usable (fail-safe open).
+                pass
+
+    # ── internal helpers ──────────────────────────────────────────────
+    def _append_persist(self, event: Event) -> None:
+        """Append one event as a JSONL line. Best-effort: never raises."""
+        if self._persist_path is None:
+            return
+        try:
+            with self._persist_path.open("a", encoding="utf-8") as fh:
+                fh.write(json.dumps(event.to_dict()) + "\n")
+        except Exception:
+            pass  # full disk, permission error, etc. — never wedge a job thread
 
     # ── publish ───────────────────────────────────────────────────────
     def publish(self, kind: str, data: dict | None = None, root: str | None = None) -> Event:
@@ -128,6 +190,7 @@ class EventBus:
         for sub in subs:
             if sub.wants(event):
                 sub.offer(event)
+        self._append_persist(event)
         return event
 
     # ── read history ──────────────────────────────────────────────────
@@ -211,3 +274,48 @@ class EventBus:
                 "history_cap": self._history.maxlen,
                 "subscribers": len(self._subscribers),
             }
+
+
+# ── Replay helper (§12 stream(since=...) semantics) ───────────────────────────
+
+
+def replay(persist_path: Path, since: float | None = None) -> list[dict]:
+    """Read a JSONL persist file and return event dicts.
+
+    Args:
+        persist_path: Path to the JSONL file written by EventBus.
+        since: If set, only return events with ``ts > since``
+               (wall-clock seconds, same unit as ``Event.ts``).
+
+    Returns:
+        List of event dicts in the order they appear in the file.
+        Missing file → []. Malformed lines are skipped silently.
+    """
+    try:
+        text = persist_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return []
+    except Exception:
+        return []
+
+    out: list[dict] = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rec = json.loads(line)
+        except Exception:
+            continue  # malformed — skip
+        if since is not None:
+            try:
+                if rec.get("ts", 0.0) <= since:
+                    continue
+            except Exception:
+                continue
+        out.append(rec)
+    # Sort by seq so reconnecting subscribers get events in order regardless
+    # of any write-order variation in the JSONL file. Best-effort: records
+    # missing a seq key sort to the front (seq=0) rather than raising.
+    out.sort(key=lambda e: e.get("seq", 0) or 0)
+    return out
