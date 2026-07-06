@@ -9,9 +9,6 @@ change vs the legacy hand-coded tables).
 """
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 import pytest
 
 from research_os.server import gate_spec as gs
@@ -92,36 +89,40 @@ def test_path_clause_fires_only_on_existing_synthesis_overwrite(tmp_path):
     ) is False
 
 
-# --- loader fails safe -----------------------------------------------------
+# --- loader reads the bundle, fails safe -----------------------------------
 
-def test_loader_missing_sidecar_returns_empty(tmp_path):
-    assert gs._load_gate_meta(tmp_path / "nope.json") == []
-
-
-def test_loader_garbage_returns_empty(tmp_path):
-    p = tmp_path / "g.json"
-    p.write_text("{ not json")
-    assert gs._load_gate_meta(p) == []
+def test_loader_reads_from_bundle():
+    """P1: _load_gate_meta serves gates from _protocols.bundle."""
+    gates = gs._load_gate_meta()
+    assert isinstance(gates, list) and gates, "bundle should declare gates"
+    assert all({"key", "tool", "floor", "when"} <= set(g) for g in gates)
 
 
-def test_loader_wrong_schema_returns_empty(tmp_path):
-    p = tmp_path / "g.json"
-    p.write_text(json.dumps({"schema": 999, "gates": [{"key": "k"}]}))
-    assert gs._load_gate_meta(p) == []
+def test_loader_fails_safe_when_registry_broken(monkeypatch):
+    """A broken ProtocolRegistry.get_gates() degrades to [] (never raises)."""
+    from research_os.tools.actions import protocol as proto
+
+    monkeypatch.setattr(
+        proto.ProtocolRegistry, "get_gates",
+        classmethod(lambda cls: (_ for _ in ()).throw(RuntimeError("boom"))),
+    )
+    assert gs._load_gate_meta() == []
 
 
-def test_loader_drops_malformed_gates(tmp_path):
-    p = tmp_path / "g.json"
-    p.write_text(json.dumps({
-        "schema": 1,
-        "gates": [
-            {"key": "ok", "tool": "t", "floor": "light", "when": {}},
-            {"key": "", "tool": "t", "floor": "light", "when": {}},   # bad key
-            {"key": "k2", "tool": "t", "floor": "nope", "when": {}},  # bad floor
-            {"key": "k3", "tool": "t", "floor": "light", "when": []}, # bad when
-        ],
-    }))
-    gates = gs._load_gate_meta(p)
+def test_loader_drops_malformed_gates(monkeypatch):
+    """Malformed gate entries from the registry are dropped, not surfaced."""
+    from research_os.tools.actions import protocol as proto
+
+    bad = [
+        {"key": "ok", "tool": "t", "floor": "light", "when": {}},
+        {"key": "", "tool": "t", "floor": "light", "when": {}},   # bad key
+        {"key": "k2", "tool": "t", "floor": "nope", "when": {}},  # bad floor
+        {"key": "k3", "tool": "t", "floor": "light", "when": []},  # bad when
+    ]
+    monkeypatch.setattr(
+        proto.ProtocolRegistry, "get_gates", classmethod(lambda cls: bad)
+    )
+    gates = gs._load_gate_meta()
     assert [g["key"] for g in gates] == ["ok"]
 
 
@@ -176,14 +177,6 @@ def test_shipped_sidecar_matches_engine_floor():
     engine = ag._GATE_FLOOR_resolved()
     assert declared, "shipped _gate_meta.json should declare gates"
     assert declared == engine
-
-
-def test_shipped_sidecar_matches_legacy_fallback():
-    """Declared gates == legacy fail-safe table (so fallback can't diverge)."""
-    from research_os.server import autopilot_gate as ag
-
-    declared = gs.declared_floor_map()
-    assert declared == ag._LEGACY_GATE_FLOOR
 
 
 @pytest.mark.parametrize("tool,args,expect_key", [

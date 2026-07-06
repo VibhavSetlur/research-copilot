@@ -154,7 +154,7 @@ def test_sys_protocol_get_schema_enumerates_formats():
     schema = TOOL_DEFINITIONS["sys_protocol_get"]["inputSchema"]
     fmt = schema["properties"]["format"]
     assert "enum" in fmt
-    assert set(fmt["enum"]) == {"summary", "step", "full", "lean", "dryrun"}
+    assert set(fmt["enum"]) == {"ref", "summary", "step", "full", "lean", "dryrun"}
     assert schema.get("additionalProperties") is False
 
 

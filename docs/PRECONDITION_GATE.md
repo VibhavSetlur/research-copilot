@@ -85,13 +85,16 @@ Check kinds (deliberately small, mechanical only):
 Every check carries `because:` — the reason surfaced to the AI when it
 fails, so the next action is obvious ("run literature_search first").
 
-## The compiler — `_precondition_meta.json`
+## The compiler — `_protocols.bundle`
 
-`scripts/build_precondition_meta.py` scans every protocol's `requires.checks`,
-validates, and emits `protocols/_precondition_meta.json` (schema + source_hash,
-exactly like `_gate_meta.json`). Preflight `check_precondition_meta` guards
-freshness + that every referenced `protocol_completed` target is a real
-protocol (no dangling references).
+`scripts/build_protocols.py` scans every protocol's `requires.checks`,
+validates, and folds them into the `preconditions` block of the single
+`protocols/_protocols.bundle` (P1 — the same build that compiles routing
++ gates). It also verifies every referenced `protocol_completed` target
+is a real protocol (no dangling references). `server/preconditions.py`
+reads them via `ProtocolRegistry.get_preconditions()`. Preflight
+`check_bundle_fresh` + `check_protocols_validate` guard freshness +
+validity.
 
 ## The verifier — `server/preconditions.py` (reasoning side, no daemon import)
 
@@ -133,9 +136,10 @@ verdict into the declared-gate `world_state` predicate family
 1. This doc.
 2. `server/preconditions.py`: check evaluator + `unmet_preconditions`
    (pure, stdlib, no daemon import).
-3. `scripts/build_precondition_meta.py` + `_precondition_meta.json`.
+3. `scripts/build_protocols.py` → `preconditions` block in
+   `_protocols.bundle`.
 4. Wire `load_protocol` to surface `unmet_preconditions` (tier 1).
-5. Preflight `check_precondition_meta` (freshness + dangling refs).
+5. Preflight `check_bundle_fresh` + `check_protocols_validate`.
 6. Declare `requires:` on a high-traffic protocol (analysis_plan) as the
    first real example; verify surfacing works end to end.
 7. Tier 2: `world_state: preconditions_met` predicate so a daemon can gate

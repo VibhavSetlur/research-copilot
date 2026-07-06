@@ -734,8 +734,8 @@ def load_protocol(
             "step_count": len([s for s in steps if isinstance(s, dict)]),
             "_path": data.get("_path"),
             "_load_hint": (
-                f"Loaded as ref (~50 tok). For step headings call format='summary'; "
-                f"for the full body call format='full'."
+                "Loaded as ref (~50 tok). For step headings call format='summary'; "
+                "for the full body call format='full'."
             ),
         }
 

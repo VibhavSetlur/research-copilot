@@ -259,7 +259,7 @@ def test_reviewer_response_protocol_yaml_parses():
     assert proto_path.exists()
     data = yaml.safe_load(proto_path.read_text(encoding="utf-8"))
     assert data["id"] == "reviewer_response"
-    assert data["schema_version"] == "2.0"
+    assert data["schema_version"] == "3.0"
     assert "steps" in data and len(data["steps"]) >= 5
     # Every step has an id + description.
     for s in data["steps"]:
