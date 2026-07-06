@@ -661,10 +661,14 @@ def _daemon_http_get(base_url, path, timeout):
     local name so existing tests that monkeypatch ``mw._daemon_http_get``
     keep working). Pure stdlib; the daemon is an opaque local HTTP service —
     the reasoning layer never imports research_os.daemon.
+
+    Unwraps the (status_code, body) tuple returned by http_get and returns
+    only the body (or None on failure) so existing call-sites are unchanged.
     """
     from research_os.server import daemon_bridge as _bridge
 
-    return _bridge.http_get(base_url, path, timeout)
+    _status, body = _bridge.http_get(base_url, path, timeout)
+    return body
 
 
 def _handle_sys_daemon(name, arguments, root):
@@ -857,8 +861,10 @@ def _handle_sys_consent(name, arguments, root):
         ))
 
     if action == "status":
-        pending = _bridge.http_get(base_url, "/v1/consent/pending", timeout) or {}
-        grants = _bridge.http_get(base_url, "/v1/consent/grants", timeout) or {}
+        _, pending = _bridge.http_get(base_url, "/v1/consent/pending", timeout)
+        pending = pending or {}
+        _, grants = _bridge.http_get(base_url, "/v1/consent/grants", timeout)
+        grants = grants or {}
         return _text(_success({
             "available": True,
             "pending": pending.get("requests") or pending.get("pending") or [],
@@ -872,7 +878,8 @@ def _handle_sys_consent(name, arguments, root):
             return _text(_error(
                 "gate_key and arg_fingerprint are required for action='token'"
             ))
-        grants = _bridge.http_get(base_url, "/v1/consent/grants", timeout) or {}
+        _, grants = _bridge.http_get(base_url, "/v1/consent/grants", timeout)
+        grants = grants or {}
         token = None
         for g in (grants.get("grants") or []):
             if not isinstance(g, dict):

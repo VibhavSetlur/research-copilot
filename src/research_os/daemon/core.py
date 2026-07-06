@@ -20,6 +20,7 @@ from pathlib import Path
 
 from .config import DaemonConfig
 from .events import EventBus
+from .gates import GateQueue
 from .registry import WorkspaceRegistry
 from .runstore import RunStore
 from .tasks import TaskQueue
@@ -94,6 +95,8 @@ class Daemon:
         # off the event bus so the queue stays journal-agnostic. Only active
         # when we have a concrete root to write under.
         self.runstore = RunStore(root) if root is not None else None
+        # Persistent HITL gate queue (§12.4), None when no root, like runstore.
+        self.gates = GateQueue(root, event_bus=self.events) if root is not None else None
         self._journal = None
         self._journal_thread = None
         if root is not None:
@@ -246,7 +249,7 @@ class Daemon:
         # without a full serve() (programmatic use + the HTTP POST /v1/jobs
         # path), and submit() refuses on a cold queue. start() is idempotent.
         self.tasks.start()
-        return self.tasks.submit(
+        job_id = self.tasks.submit(
             runner,
             name=job_name[:120],
             root=effective_root,
@@ -254,6 +257,22 @@ class Daemon:
             spec=spec,
             provenance=prov,
         )
+        try:
+            from .events import RUN_STARTED
+            # FIX 4: cap the command representation in the event payload to
+            # ~512 chars so event JSONL stays bounded. The full argv lives in
+            # the run manifest/spec — this is observability only.
+            _cmd_repr = cmd if isinstance(cmd, str) else " ".join(str(a) for a in cmd)
+            if len(_cmd_repr) > 512:
+                _cmd_repr = _cmd_repr[:509] + "..."
+            self.events.publish(
+                RUN_STARTED,
+                {"run_id": job_id, "command": _cmd_repr, "cwd": effective_cwd},
+                root=effective_root,
+            )
+        except Exception:  # noqa: BLE001 - a bus failure must never break submit
+            pass
+        return job_id
 
     def run_container(
         self,
@@ -429,7 +448,7 @@ class Daemon:
             except Exception:  # noqa: BLE001 - notification must never block startup
                 logger.debug("interrupted-runs notification failed", exc_info=True)
 
-        journal = RunJournal(self.runstore)
+        journal = RunJournal(self.runstore, bus=self.events)
         self._journal = journal
 
         # Wire the autonomous-continuation hook (opt-in via config.continue_

@@ -174,6 +174,60 @@ def hash_fn_for_root(root: str | Path | None):
     return _hash
 
 
+def capture_environment() -> dict:
+    """Capture a restorable environment snapshot (schema_version 1.0).
+
+    Best-effort; never raises.  ``pip freeze`` and ``conda env export`` are
+    invoked via subprocess (timeout 30 s each) and omitted silently on any
+    error (missing binary, timeout, non-zero exit, permission denied).
+
+    Returns a dict with at least::
+
+        {
+            "schema_version": "1.0",
+            "platform": "<sys.platform>-<machine>",
+            "python_version": "<full sys.version>",
+            # optional, present only when captured successfully:
+            "pip_freeze": ["pkg==ver", ...],
+            "conda_export": ["- pkg=ver=build", ...],   # lines from stdout
+        }
+
+    This is CAPTURE-ONLY (observational). No restore logic is provided here.
+    The existing env_provenance / capture functions are unchanged.
+    """
+    snap: dict = {
+        "schema_version": "1.0",
+        "platform": f"{sys.platform}-{platform.machine()}",
+        "python_version": sys.version,
+    }
+
+    # ── pip freeze ──────────────────────────────────────────────────────────
+    try:
+        out = subprocess.check_output(
+            [sys.executable, "-m", "pip", "freeze"],
+            text=True,
+            timeout=10,
+            stderr=subprocess.DEVNULL,
+        )
+        snap["pip_freeze"] = out.splitlines()
+    except Exception:  # noqa: BLE001 - omit on any failure (binary, timeout, etc.)
+        pass
+
+    # ── conda env export --no-builds ────────────────────────────────────────
+    try:
+        out = subprocess.check_output(
+            ["conda", "env", "export", "--no-builds"],
+            text=True,
+            timeout=10,
+            stderr=subprocess.DEVNULL,
+        )
+        snap["conda_export"] = out.splitlines()
+    except Exception:  # noqa: BLE001 - omit on any failure
+        pass
+
+    return snap
+
+
 def capture(
     root: str | Path,
     *,

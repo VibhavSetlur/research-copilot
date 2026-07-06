@@ -87,12 +87,12 @@ def test_request_surfaces_server_error(tmp_path, monkeypatch):
 def test_status_lists_pending_and_grants(tmp_path, monkeypatch):
     _live_descriptor(tmp_path)
 
-    def fake_get(base_url, path, timeout=2.0):
+    def fake_get(base_url, path, timeout=2.0, headers=None):
         if path == "/v1/consent/pending":
-            return {"requests": [{"id": "r1"}]}
+            return 200, {"requests": [{"id": "r1"}]}
         if path == "/v1/consent/grants":
-            return {"grants": [{"token": "t", "gate_key": "g"}]}
-        return None
+            return 200, {"grants": [{"token": "t", "gate_key": "g"}]}
+        return None, None
 
     monkeypatch.setattr(_bridge_mod(), "http_get", fake_get)
     r = _payload(mw._handle_sys_consent("sys_consent", {"action": "status"}, tmp_path))
@@ -102,9 +102,9 @@ def test_status_lists_pending_and_grants(tmp_path, monkeypatch):
 
 def test_token_returns_matching_unconsumed_grant(tmp_path, monkeypatch):
     _live_descriptor(tmp_path)
-    monkeypatch.setattr(_bridge_mod(), "http_get", lambda b, p, t=2.0: {"grants": [
-        {"token": "TOK", "gate_key": "g", "arg_fingerprint": "f", "consumed": False},
-    ]} if p == "/v1/consent/grants" else None)
+    monkeypatch.setattr(_bridge_mod(), "http_get", lambda b, p, t=2.0, headers=None: (
+        200, {"grants": [{"token": "TOK", "gate_key": "g", "arg_fingerprint": "f", "consumed": False}]}
+    ) if p == "/v1/consent/grants" else (None, None))
     r = _payload(mw._handle_sys_consent("sys_consent", {
         "action": "token", "gate_key": "g", "arg_fingerprint": "f",
     }, tmp_path))
@@ -113,10 +113,12 @@ def test_token_returns_matching_unconsumed_grant(tmp_path, monkeypatch):
 
 def test_token_skips_consumed_and_mismatched(tmp_path, monkeypatch):
     _live_descriptor(tmp_path)
-    monkeypatch.setattr(_bridge_mod(), "http_get", lambda b, p, t=2.0: {"grants": [
-        {"token": "OLD", "gate_key": "g", "arg_fingerprint": "f", "consumed": True},
-        {"token": "OTHER", "gate_key": "g", "arg_fingerprint": "zzz", "consumed": False},
-    ]} if p == "/v1/consent/grants" else None)
+    monkeypatch.setattr(_bridge_mod(), "http_get", lambda b, p, t=2.0, headers=None: (
+        200, {"grants": [
+            {"token": "OLD", "gate_key": "g", "arg_fingerprint": "f", "consumed": True},
+            {"token": "OTHER", "gate_key": "g", "arg_fingerprint": "zzz", "consumed": False},
+        ]}
+    ) if p == "/v1/consent/grants" else (None, None))
     r = _payload(mw._handle_sys_consent("sys_consent", {
         "action": "token", "gate_key": "g", "arg_fingerprint": "f",
     }, tmp_path))

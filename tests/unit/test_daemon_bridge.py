@@ -107,5 +107,7 @@ def test_base_url_none_when_pid_dead(tmp_path):
 # --- http_get fail-safe ----------------------------------------------------
 
 def test_http_get_returns_none_on_unreachable():
-    # Nothing listening on this port → None, never raises.
-    assert db.http_get("http://127.0.0.1:1", "/v1/orient", timeout=0.2) is None
+    # Nothing listening on this port → (None, None), never raises.
+    status, body = db.http_get("http://127.0.0.1:1", "/v1/orient", timeout=0.2)
+    assert status is None
+    assert body is None
