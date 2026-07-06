@@ -1,10 +1,17 @@
 """Interactive scaffolding wizard for ``research-os init``.
 
-Walks researchers through a 7-step setup in under a minute: project
-location, name, optional research metadata, AI IDE wiring, an *optional*
-"bring in your inputs" loop (paste a Slack message, drop in paper URLs,
-attach screenshots, symlink existing data), an *optional* API-keys
-collection step, and a post-scaffold verification pass.
+Walks researchers through a 3-step setup in under a minute:
+
+1. **Project location + name** — directory, auto-suggested name, and
+   workspace mode.
+2. **Output types + venue** — deliverables, target venue, and optional
+   research metadata (domain + questions).
+3. **Environment confirmation** — auto-detected compute, Python, IDE
+   client, and git identity; user confirms or overrides.
+
+Optional flows that run after the 3 steps (skip-able, no step header):
+bring in your inputs, API keys, researcher identity, Hermes wiring, and
+post-scaffold verification.
 
 Arrow-key navigation, multi-select with Space, Tab path completion, and
 paper URL auto-download. Pure stdlib + ``requests`` (already a dep).
@@ -164,6 +171,9 @@ class WizardResult:
     # from `ides` because Hermes integrates via `research-os hermes add`, not
     # per-IDE template files.
     wire_hermes: bool = False
+    # Step 2 additions — written to researcher_config.yaml#research_goal.
+    output_types: list[str] = field(default_factory=lambda: ["paper", "figures"])
+    target_venue: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -213,11 +223,11 @@ def run_wizard(args) -> WizardResult:
     the command line by skipping the matching question."""
     print(logo.render(width=68, version=__version__))
 
-    total = 7
+    total = 3
 
-    # ── Step 1: Location ────────────────────────────────────────────────
-    section(1, total, "Project location",
-            "Where should your research workspace live?")
+    # ── Step 1/3: Project location + name ───────────────────────────────
+    section(1, total, "Project location + name",
+            "Where should your research workspace live, and what is it called?")
     cwd = Path.cwd().resolve()
     if args.directory:
         target_dir = Path(os.path.expanduser(args.directory)).resolve()
@@ -263,18 +273,17 @@ def run_wizard(args) -> WizardResult:
              "or choose a different location.")
         raise SystemExit(1)
 
-    # ── Step 2: Project name ────────────────────────────────────────────
-    section(2, total, "Project name",
-            "A human-readable title. Used in docs/intake.md and dashboards.")
+    # ── Project name (sub-prompt within Step 1) ─────────────────────────
     if args.name:
         project_name = args.name
         ok(f"Name: {project_name}")
     else:
+        # Auto-suggest from basename — researcher usually just hits Enter.
         default_name = target_dir.name.replace("-", " ").replace("_", " ").title()
         project_name = tui.text("Project name", default=default_name)
         ok(f"Name: {project_name}")
 
-    # ── What are you building? (workspace mode) ─────────────────────────
+    # ── What are you building? (workspace mode, still Step 1) ───────────
     # Set early — it shapes the whole scaffold. Honors --workspace-mode if
     # already passed on the command line; mixed/unsure → analysis.
     workspace_mode = _ask_workspace_mode(getattr(args, "workspace_mode", None))
@@ -287,10 +296,46 @@ def run_wizard(args) -> WizardResult:
         "multi_study": "Mode: multi_study (program / portfolio)",
     }.get(workspace_mode, f"Mode: {workspace_mode}"))
 
-    # ── Step 3: Research details (optional, menu-driven) ────────────────
-    section(3, total, "Research details (optional)",
-            "Helps the AI orient. Skip anything you're not sure about — "
-            "the AI infers what's missing from your data and notes.")
+    # ── Step 2/3: Output types + venue ──────────────────────────────────
+    section(2, total, "Output types + venue",
+            "What will you produce, and where is it going? "
+            "Helps the AI choose protocols and format the right deliverables.")
+
+    # Output types — multi-select; defaults: paper + figures.
+    output_type_choices = [
+        ("paper",     "Journal / conference paper"),
+        ("figures",   "Figures / plots (standalone)"),
+        ("report",    "Technical report / white paper"),
+        ("notebook",  "Jupyter notebook (reproducible analysis)"),
+        ("dashboard", "Interactive dashboard"),
+        ("software",  "Software / tool / library"),
+        ("dataset",   "Curated dataset / data release"),
+        ("thesis",    "Thesis / dissertation chapter"),
+    ]
+    output_types = tui.select_many(
+        "Output type(s):",
+        output_type_choices,
+        preselected=["paper", "figures"],
+        help_line="Space to toggle · 'a' for all · 'n' for none · Enter to confirm",
+    )
+    if not output_types:
+        output_types = ["paper", "figures"]
+    ok(f"Outputs: {', '.join(output_types)}")
+
+    # Target venue — optional free-text (e.g. "Nature Methods", "NeurIPS 2025").
+    venue_raw = tui.text(
+        "Target venue / journal / conference (optional)",
+        default="",
+        placeholder="e.g. Nature Methods, NeurIPS 2025, internal report",
+        allow_empty=True,
+    ).strip()
+    if venue_raw:
+        ok(f"Venue: {venue_raw}")
+    else:
+        ok("Venue: not specified (fill later in researcher_config.yaml)")
+
+    # Research metadata — domain + questions (optional sub-prompts).
+    info("Research details (optional) — helps the AI orient:")
     domain = args.domain or _ask_domain()
     questions = list(args.questions or [])
     if args.question and args.question not in questions:
@@ -308,10 +353,39 @@ def run_wizard(args) -> WizardResult:
     if not domain and not questions:
         ok("Skipped — AI will infer from inputs/.")
 
-    # ── Step 4: AI IDE wiring ───────────────────────────────────────────
-    section(4, total, "AI IDE wiring",
-            "Pick only the IDE(s) you actually use. Add more later with "
-            "`research-os ide add <name>`.")
+    # ── Step 3/3: Environment confirmation ──────────────────────────────
+    from research_os.config import detect_environment
+    detected_env = detect_environment(root=target_dir if target_dir.exists() else cwd)
+
+    section(3, total, "Environment confirmation",
+            "Auto-detected your setup. Confirm or override below.")
+
+    # Show what was detected.
+    info(f"Compute backend : {detected_env.get('compute', 'local')}")
+    info(f"Python          : {detected_env.get('python', '?')}")
+    info(f"Package manager : {detected_env.get('package_manager', 'pip')}")
+    if detected_env.get("inferred_client"):
+        info(f"Inferred IDE    : {detected_env['inferred_client']}")
+    if detected_env.get("user_name"):
+        info(f"Git name        : {detected_env['user_name']}")
+    if detected_env.get("user_email"):
+        info(f"Git email       : {detected_env['user_email']}")
+
+    env_ok = tui.confirm("Does this look right?", default=True)
+    if not env_ok:
+        info("You can adjust compute + Python settings in researcher_config.yaml after init.")
+
+    # ── IDE wiring (sub-prompt within Step 3) ───────────────────────────
+    # Pre-select from detect_environment when possible.
+    _marker_to_ide: dict[str, str] = {
+        "CLAUDE.md":    "claude",
+        ".cursorrules": "cursor",
+        ".cursor":      "cursor",
+        "AGENTS.md":    "opencode",
+        "GEMINI.md":    "antigravity",
+    }
+    _inferred_ide = _marker_to_ide.get(detected_env.get("inferred_client", ""), "claude")
+
     if args.ide and args.ide.strip().lower() == "none":
         # Explicit opt-out — skip all IDE wiring (matches cli._ide_choice).
         ides = []
@@ -322,7 +396,7 @@ def run_wizard(args) -> WizardResult:
             ides = ["claude"]
         ok(f"IDEs (from --ide): {', '.join(ides)}")
     else:
-        preselected = ["claude"]  # The sensible single default.
+        preselected = [_inferred_ide]
         ides = tui.select_many(
             "Wire up these IDEs:",
             IDE_CHOICES,
@@ -334,8 +408,7 @@ def run_wizard(args) -> WizardResult:
             ides = ["claude"]
 
     # Model-profile selector — tunes how the AI batches steps, loads
-    # protocols, and how aggressive optional audits are. Single most
-    # important knob if not on a frontier model.
+    # protocols, and how aggressive optional audits are.
     print()
     model_profile_choices = [
         ("medium", "medium  — Sonnet 4.5/4.6, GPT-4o/4.1, Gemini 2.5 Pro (default)"),
@@ -349,12 +422,16 @@ def run_wizard(args) -> WizardResult:
         help_line="Sets `model_profile` in researcher_config.yaml. Change anytime later.",
     )
 
+    # ── Optional extras (no step number) ────────────────────────────────
+    print()
+    print(f"  {_C.BOLD}Optional extras{_C.RESET}  {_C.GREY}— skip any with Enter{_C.RESET}")
+    print(f"  {_C.GREY}{_hr()}{_C.RESET}")
+    print()
+
     # ── Hermes: the self-improving agent layer (recommended) ────────────
     # Distinct from per-IDE wiring: Hermes sits ABOVE whatever model the
     # researcher uses, with persistent memory + a skill ecosystem, and RO
-    # plugs in as an MCP server. This is the setup the guidance/agent_setup
-    # protocol recommends. Offer it explicitly; it's opt-in and reversible.
-    print()
+    # plugs in as an MCP server.
     try:
         from research_os import hermes_integration as _hermes
 
@@ -386,20 +463,21 @@ def run_wizard(args) -> WizardResult:
             "Wire Research-OS into Hermes now?", default=hermes_present
         )
 
-    # ── Step 5: Bring in your inputs ────────────────────────────────────
-    section(5, total, "Bring in your inputs (optional)",
-            "Add any data, papers, notes, or images you already have.")
+    # ── Bring in your inputs (optional) ─────────────────────────────────
+    print()
+    info("Bring in your inputs (optional) — data, papers, notes, images.")
     pending_notes, pending_papers, detected_inputs, pending_attachments = \
         _collect_inputs(target_dir)
 
-    # ── Step 6: API keys (optional) ─────────────────────────────────────
-    section(6, total, "API keys (optional)",
-            "Used only for literature search + web scraping. NO LLM keys — "
-            "your AI IDE owns model access. Skip to fill in later via "
-            "inputs/researcher_config.yaml (chmod 600).")
+    # ── API keys (optional) ──────────────────────────────────────────────
+    print()
+    info("API keys (optional) — literature search + web scraping only. "
+         "NO LLM keys — your IDE owns model access.")
     api_keys = _collect_api_keys()
 
-    # ── Step 6b: Researcher identity (defaults from cross-project profile)─
+    # ── Researcher identity (defaults from cross-project profile + git) ──
+    # Seed defaults from detect_environment first (git name/email),
+    # then overlay the saved profile if one exists (profile wins).
     from research_os.tools.actions.state.config import load_profile
     profile = load_profile()
     profile_researcher = profile.get("researcher") if isinstance(profile.get("researcher"), dict) else {}
@@ -411,6 +489,9 @@ def run_wizard(args) -> WizardResult:
         researcher_orcid = profile_researcher.get("orcid", "") or ""
         save_as_profile = False
     else:
+        # Pre-fill from git identity detected in Step 3.
+        git_name_default = detected_env.get("user_name", "")
+        git_email_default = detected_env.get("user_email", "")
         print()
         skip_id = tui.confirm(
             f"Set your researcher identity? "
@@ -418,9 +499,9 @@ def run_wizard(args) -> WizardResult:
             default=False,
         )
         if skip_id:
-            researcher_name = tui.text("Name", default="", allow_empty=True)
+            researcher_name = tui.text("Name", default=git_name_default, allow_empty=True)
             researcher_email = _prompt_validated(
-                "Email", _EMAIL_RE, "you@university.edu",
+                "Email", _EMAIL_RE, git_email_default or "you@university.edu",
             )
             researcher_institution = tui.text("Institution", default="", allow_empty=True)
             researcher_orcid = _prompt_validated(
@@ -435,9 +516,9 @@ def run_wizard(args) -> WizardResult:
             researcher_name = researcher_email = researcher_institution = researcher_orcid = ""
             save_as_profile = False
 
-    # ── Step 7: Post-init actions ───────────────────────────────────────
-    section(7, total, "After scaffolding",
-            "Final touches. Defaults are safe — Enter to accept.")
+    # ── After scaffolding — final prompts (no step number) ───────────────
+    print()
+    info("After scaffolding — final touches (defaults are safe):")
     run_verify = tui.confirm("Run a smoke check on the new workspace?", default=True)
     start_server = tui.confirm(
         f"Start the MCP server now? {_C.GREY}(usually no — IDE auto-launches){_C.RESET}",
@@ -469,6 +550,8 @@ def run_wizard(args) -> WizardResult:
         researcher_orcid=researcher_orcid,
         save_as_profile=save_as_profile,
         wire_hermes=wire_hermes,
+        output_types=output_types,
+        target_venue=venue_raw,
     )
 
 

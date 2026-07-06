@@ -272,6 +272,26 @@ def cmd_init(args: argparse.Namespace) -> None:
     if getattr(args, "no_color", False):
         wizard.disable_color()
 
+    # ── --migrate: upgrade an existing project to the v5 config layout ──
+    if getattr(args, "migrate", False):
+        # Resolve target root with the same logic as the non-interactive path.
+        if getattr(args, "directory", None):
+            migrate_root = Path(os.path.expanduser(args.directory)).resolve()
+        else:
+            migrate_root = Path.cwd().resolve()
+
+        from research_os.config.migrate_config import migrate_project_to_v5
+        summary = migrate_project_to_v5(migrate_root)
+
+        print(f"  research-os migrate → v5 config written for: {migrate_root}")
+        print(f"    project config : {summary['project_config']}")
+        print(f"    user profile   : {summary['user_profile']}")
+        if summary["migrated_keys"]:
+            print(f"    migrated keys  : {', '.join(summary['migrated_keys'])}")
+        else:
+            print("    migrated keys  : (none — old config absent; v5 defaults written)")
+        return
+
     interactive = wizard.should_run_wizard(args)
 
     if interactive:
@@ -403,6 +423,15 @@ def _execute(r, run_preflight_repo: bool = False, quiet_banner: bool = False) ->
         "model_profile": getattr(r, "model_profile", "medium"),
         "researcher": researcher_block,
     }
+    # Wire Step-2 output_types + target_venue into research_goal block.
+    _output_types = list(getattr(r, "output_types", None) or [])
+    _target_venue = getattr(r, "target_venue", "") or ""
+    if _output_types or _target_venue:
+        rg: dict = config_overrides.setdefault("research_goal", {})
+        if _output_types:
+            rg["output_types"] = _output_types
+        if _target_venue:
+            rg["target_venue"] = _target_venue
     # Workspace mode (analysis | tool_build | exploration). Threaded into
     # config_overrides so init_config stamps it AND the scaffold selects
     # the matching profile. Default analysis keeps the classic surface.
@@ -2821,6 +2850,14 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Disable ANSI styling. Auto-disabled when NO_COLOR is set.")
     p_init.add_argument("--preflight", action="store_true",
                         help="After scaffolding, run the repo's preflight (dev only).")
+    p_init.add_argument("--migrate", action="store_true",
+                        help=(
+                            "Migrate an existing project to the v5 config layout. "
+                            "Reads inputs/researcher_config.yaml (if present) and writes "
+                            ".os_state/config.yaml + ~/.research-os/profile.yaml. "
+                            "Idempotent and safe — the old config is never modified. "
+                            "Does NOT run the scaffold wizard."
+                        ))
 
     # ── ide ─────────────────────────────────────────────────────────────
     p_ide = sub.add_parser(
