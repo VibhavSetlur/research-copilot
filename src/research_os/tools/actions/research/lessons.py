@@ -2,9 +2,24 @@
 
 After each step / failure / completed plan, record a one-paragraph
 "what worked, what didn't, what to do differently next time" entry
-into ``workspace/.lessons/lessons.jsonl``. On future turns, the
-top-K most-relevant lessons are surfaced via ``lessons_consult`` so
-the AI doesn't make the same mistake twice.
+into ``.os_state/lessons/lessons.jsonl`` (new canonical path). On
+future turns, the top-K most-relevant lessons are surfaced via
+``lessons_consult`` so the AI doesn't make the same mistake twice.
+
+Backward-compatible path resolution
+------------------------------------
+* **New canonical path**: ``.os_state/lessons/lessons.jsonl``
+* **Legacy path**: ``workspace/.lessons/lessons.jsonl``
+
+On **write**: if the new path does not exist yet but the legacy path
+does, the legacy file's contents are migrated (appended) to the new
+path first (idempotent: running twice never duplicates records, because
+the new file is created during migration). Writes then go to the new
+path.
+
+On **read**: use the new path if it exists; otherwise fall back to the
+legacy path so projects that have never written since upgrading still
+return their old lessons.
 
 This is the verbal-reinforcement loop Reflexion describes: the
 trace becomes a textual lesson that feeds the next attempt's prompt.
@@ -24,15 +39,63 @@ from typing import Any
 
 logger = logging.getLogger("research_os.lessons")
 
+# ---------------------------------------------------------------------------
+# Path constants
+# ---------------------------------------------------------------------------
+
+_NEW_LESSONS_SUBPATH = Path(".os_state") / "lessons" / "lessons.jsonl"
+_OLD_LESSONS_SUBPATH = Path("workspace") / ".lessons" / "lessons.jsonl"
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _migrate_lessons_if_needed(root: Path, new_path: Path) -> None:
+    """One-time migration: copy legacy records to the new path.
+
+    Idempotent — if the new path already exists (even empty) we skip,
+    so a second call never duplicates records.
+    """
+    old_path = root / _OLD_LESSONS_SUBPATH
+    if not old_path.exists() or new_path.exists():
+        return
+    try:
+        content = old_path.read_text(encoding="utf-8", errors="replace")
+        new_path.parent.mkdir(parents=True, exist_ok=True)
+        new_path.write_text(content, encoding="utf-8")
+        logger.debug(
+            "lessons: migrated %s → %s", old_path.relative_to(root),
+            new_path.relative_to(root),
+        )
+    except Exception as exc:  # pragma: no cover — best-effort migration
+        logger.warning("lessons: migration failed (%s); writes go to new path anyway", exc)
+        # Ensure the new path exists so subsequent writes don't re-trigger migration.
+        new_path.parent.mkdir(parents=True, exist_ok=True)
+        new_path.touch()
+
+
+def _lessons_write_path(root: Path) -> Path:
+    """Return the path to write lessons to, running migration first if needed."""
+    new_path = root / _NEW_LESSONS_SUBPATH
+    _migrate_lessons_if_needed(root, new_path)
+    new_path.parent.mkdir(parents=True, exist_ok=True)
+    return new_path
+
+
+def _lessons_read_path(root: Path) -> Path:
+    """Return the path to read lessons from (new if exists, else legacy)."""
+    new_path = root / _NEW_LESSONS_SUBPATH
+    if new_path.exists():
+        return new_path
+    old_path = root / _OLD_LESSONS_SUBPATH
+    return old_path
+
+
+# Legacy internal name kept so callers that imported it directly (e.g. tests)
+# continue to work — it now always returns the canonical write path.
 def _lessons_log(root: Path) -> Path:
-    p = root / "workspace" / ".lessons" / "lessons.jsonl"
-    p.parent.mkdir(parents=True, exist_ok=True)
-    return p
+    return _lessons_write_path(root)
 
 
 def lessons_record(
@@ -83,14 +146,15 @@ def lessons_record(
         "what_didnt": what_didnt.strip(),
         "recommendation": recommendation.strip(),
     }
-    with open(_lessons_log(root), "a") as f:
+    log_path = _lessons_log(root)
+    with open(log_path, "a") as f:
         f.write(json.dumps(rec, default=str) + "\n")
     return {"status": "success", **rec,
-            "log_path": str(_lessons_log(root).relative_to(root))}
+            "log_path": str(log_path.relative_to(root))}
 
 
 def _read_lessons(root: Path) -> list[dict[str, Any]]:
-    p = _lessons_log(root)
+    p = _lessons_read_path(root)
     if not p.exists():
         return []
     out: list[dict[str, Any]] = []

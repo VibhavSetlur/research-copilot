@@ -25,6 +25,29 @@ __all__ = [
     "_handle_tool_citations_verify",
 ]
 
+def _search_pointer_envelope(root, full_payload, results_list):
+    """Store *full_payload* in the blob store and return a small pointer envelope.
+
+    Falls back to returning the full payload inline if the blob store is
+    unavailable (degrade-open behaviour — no daemon required).
+    """
+    import json as _json
+
+    try:
+        from research_os.context.blobstore import put_blob
+        pointer = put_blob(root, full_payload)
+        summary = _json.dumps(results_list, default=str)[:500]
+        return _text(_success({
+            "pointer": pointer,
+            "summary": summary,
+            "count": len(results_list) if isinstance(results_list, list) else 1,
+            "hint": "Full results stored as a blob. Call mem_retrieve(pointer=...) to fetch them.",
+        }))
+    except Exception:
+        # Blob store unavailable — return inline (degrade-open)
+        return _text(_success(full_payload))
+
+
 def _handle_tool_search(name, arguments, root):
     """Unified search dispatcher (this-release consolidation of 5 search tools).
 
@@ -100,8 +123,8 @@ def _handle_tool_search(name, arguments, root):
                     merged.append(sub)
             except Exception as e:
                 merged.append({"_source": src, "_error": str(e)})
-        return _text(_success({"results": merged[:limit], "sources": picks,
-                               "mode": "auto"}))
+        full_payload = {"results": merged[:limit], "sources": picks, "mode": "auto"}
+        return _search_pointer_envelope(root, full_payload, merged[:limit])
 
     if source not in provider_fn:
         return _text(_error(
@@ -111,7 +134,13 @@ def _handle_tool_search(name, arguments, root):
     fn = provider_fn[source]
     _log_search(root, f"tool_search:{source}", q, 0)
     res = fn(q, limit)
-    return _text(_success(res))
+    if isinstance(res, list):
+        results_list = res
+    elif isinstance(res, dict):
+        results_list = res.get("results", [])
+    else:
+        results_list = [res]
+    return _search_pointer_envelope(root, res, results_list)
 
 
 def _handle_tool_web_scrape(name, arguments, root):

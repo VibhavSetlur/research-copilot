@@ -52,7 +52,9 @@ def _now() -> str:
 
 
 def _lessons_log(root: Path) -> Path:
-    return root / "workspace" / ".lessons" / "lessons.jsonl"
+    """Return the path to read lessons from (new canonical path, or legacy fallback)."""
+    from research_os.tools.actions.research.lessons import _lessons_read_path
+    return _lessons_read_path(root)
 
 
 def _skills_dir(root: Path) -> Path:
