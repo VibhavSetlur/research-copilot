@@ -1,0 +1,73 @@
+# Sharing this project
+
+**What this is for.** Two safe ways to send this project to a
+collaborator (or your PI / advisor / Argonne team) without leaking
+AI-internal config or large raw data. Both excludes `.os_state/`,
+the IDE MCP configs, `AGENTS.md`, and `CLAUDE.md` by default — what
+your collaborator opens looks like a finished research workspace,
+not an in-progress AI session.
+
+Pick the one that matches how you collaborate:
+
+* **Option 1** — bundle a zip you can email or upload anywhere.
+  No git knowledge required.
+* **Option 2** — push to a private GitHub repo so your team can
+  pull, contribute, and see the project's `CONTRIBUTORS.md` history.
+
+---
+
+## Option 1 — Zip archive
+
+```sh
+python scripts/export_share_archive.py
+# → <project>_share_<YYYY-MM-DD>.zip in the project root
+```
+
+What's included: `inputs/` (minus raw data unless you pass
+`--include-raw-data`), `workspace/`, `synthesis/`, `docs/`, `environment/`,
+and a top-level `README.md` if present.
+
+What's excluded (always): `AGENTS.md`, `CLAUDE.md`, `GETTING_STARTED.md`,
+`.os_state/`, `.claude/`, `.cursor/`, `.vscode/`, `.antigravity/`,
+`.opencode/`, MCP configs, `__pycache__/`, virtualenvs, `node_modules/`.
+
+Pass `--out PATH` to override the destination, e.g.
+
+```sh
+python scripts/export_share_archive.py --out /tmp/myproj.zip
+```
+
+## Option 2 — GitHub repo
+
+```sh
+./scripts/init_github.sh                  # private repo named after the project
+./scripts/init_github.sh my-repo-name     # custom repo name
+./scripts/init_github.sh my-repo --public # public repo
+```
+
+This script:
+
+1. Initialises `git` if needed.
+2. Appends the share-safe exclusions to `.gitignore` (idempotent).
+3. Commits if there are any new changes.
+4. Creates the GitHub repo via the `gh` CLI and pushes the first commit.
+
+Requires the [GitHub CLI](https://cli.github.com/) authenticated
+(`gh auth login`). If `gh` is not installed, the local commit still
+happens — push manually afterward.
+
+## What collaborators get
+
+A clean research workspace they can read without any Research-OS context:
+
+* `synthesis/dashboard.html` — the polished single-file dashboard
+  (open in any browser; self-contained).
+* `synthesis/figures/` — every curated figure with its caption sidecar.
+* `synthesis/paper.typ` (→ `paper.pdf`) / `synthesis/REPORT.md` — the narrative deliverable.
+* `workspace/NN_*/conclusions.md` — the per-step reasoning chain.
+* `workspace/NN_*/scripts/` — the actual analysis code (reproducible).
+* `workspace/NN_*/data/next_step_output/` — derived artefacts each step persisted.
+* `docs/` — research question, glossary, workflow diagram.
+
+The AI-side configuration is intentionally excluded, so the share
+reads as a finished research project, not an in-progress AI workspace.
