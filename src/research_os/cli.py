@@ -57,32 +57,7 @@ IDE_CHOICES_FOR_COMPLETION = (*VALID_IDES, "auto", "all", "none")
 # Helpers
 # ---------------------------------------------------------------------------
 
-
-def _supports_utf8() -> bool:
-    """True when stdout encoding looks like UTF-* (else ASCII fallback)."""
-    enc = (getattr(sys.stdout, "encoding", "") or "").lower()
-    return "utf" in enc
-
-
-def _glyph(unicode_char: str, ascii_fallback: str) -> str:
-    """Return the unicode glyph when stdout is UTF-*, else the ASCII fallback.
-
-    Used so messages render correctly on terminals whose encoding doesn't
-    cover ✓/✗/⚠ (e.g. C locale, Windows cp1252, some piped contexts).
-    """
-    return unicode_char if _supports_utf8() else ascii_fallback
-
-
-def _check() -> str:
-    return _glyph("✓", "[+]")
-
-
-def _cross() -> str:
-    return _glyph("✗", "[x]")
-
-
-def _warn_glyph() -> str:
-    return _glyph("⚠", "[!]")
+from research_os._cli.term import _check, _cross, _warn_glyph
 
 
 def _detect_ide() -> list[str]:
