@@ -50,9 +50,18 @@ def test_mode_detected_from_config_when_quoted():
     assert _read_mode(root) == "exploration"
 
 
-def test_analysis_mode_has_no_mode_specific_findings():
+def test_analysis_mode_intake_without_steps_flags_info():
+    # Track B added _check_analysis: a fresh scaffold has intake.md but no
+    # numbered steps, so the checker emits one info finding. An empty
+    # workspace (no intake) stays silent.
     root = _proj("analysis")
-    assert mode_health_findings(root) == []
+    codes = _codes(mode_health_findings(root))
+    assert codes == ["analysis_no_steps"]
+
+    # Silence when intake is absent (truly blank project).
+    root2 = _proj("analysis")
+    (root2 / "inputs" / "intake.md").unlink()
+    assert mode_health_findings(root2) == []
 
 
 def test_daemon_self_check_surfaces_mode_health():
