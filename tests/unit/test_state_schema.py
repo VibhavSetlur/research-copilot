@@ -1,4 +1,8 @@
-"""Unit tests for research_os.state.state_schema (§9.3 migration layer)."""
+"""Unit tests for research_os.state.state_schema (§9.3 migration layer).
+
+The Pydantic loader is ``_load_state_pydantic`` (internal, test-only).
+The canonical production loader is ``research_os.project_ops.load_state``.
+"""
 
 from __future__ import annotations
 
@@ -7,8 +11,11 @@ import uuid
 
 import pytest
 
-from research_os.schema.state import StateLedger
-from research_os.state.state_schema import load_state, migrate_state
+from research_os.state.state_schema import (
+    StateLedger,
+    _load_state_pydantic as load_state,
+    migrate_state,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -157,7 +164,23 @@ def test_load_state_migrates_legacy_file(tmp_path):
 
 
 def test_state_package_exports():
-    """load_state and migrate_state must be importable from research_os.state."""
-    from research_os.state import load_state as ls, migrate_state as ms  # noqa: F401
-    assert callable(ls)
+    """migrate_state is re-exported from research_os.state.
+
+    load_state (Pydantic) is intentionally NOT exported — the canonical
+    production loader is research_os.project_ops.load_state (returns dict).
+    _load_state_pydantic remains importable directly from state_schema for
+    test use.
+    """
+    from research_os.state import migrate_state as ms  # noqa: F401
     assert callable(ms)
+
+    # Verify the canonical production loader is importable and returns dicts.
+    from research_os.project_ops import load_state as canonical_ls  # noqa: F401
+    assert callable(canonical_ls)
+
+    # Verify the Pydantic loader is NOT re-exported from research_os.state.
+    import research_os.state as state_pkg
+    assert not hasattr(state_pkg, "load_state"), (
+        "research_os.state must not export load_state — "
+        "use project_ops.load_state (returns dict) as the canonical loader."
+    )

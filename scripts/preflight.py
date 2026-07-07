@@ -1545,6 +1545,143 @@ def check_reasoning_layer_independent_of_daemon():
     return True, "server/ + tools/ never import daemon/ (arrow points daemon→server)"
 
 
+def check_one_state_loader() -> tuple[bool, str]:
+    """Guard: ``state_schema.load_state`` must not exist or be used in src/.
+
+    The canonical production state loader is ``project_ops.load_state``
+    (returns a plain dict via ResearchLedger).  ``state_schema.load_state``
+    was the competing Pydantic loader; it has been renamed to
+    ``_load_state_pydantic`` and scoped to unit tests only.
+
+    This guard fails if:
+    1. The public name ``load_state`` still exists in ``state_schema`` (i.e.
+       the rename was reverted or a new alias was added).
+    2. Any file in ``src/`` calls or imports ``state_schema.load_state``
+       (case-sensitive; excludes the guard definition itself in preflight.py).
+    """
+    import re as _re
+
+    # ── Part 1: inspect state_schema module for the public name ──────────
+    schema_path = REPO_ROOT / "src" / "research_os" / "state" / "state_schema.py"
+    if schema_path.exists():
+        src_text = schema_path.read_text()
+        # Detect a top-level ``def load_state(`` (not ``_load_state_pydantic``).
+        # We accept private variants (leading underscore) and reject the bare name.
+        public_def_pat = _re.compile(r"^\s*def\s+load_state\s*\(", _re.MULTILINE)
+        if public_def_pat.search(src_text):
+            return False, (
+                "state/state_schema.py still defines a public `load_state` "
+                "function — rename it to `_load_state_pydantic` (test-only). "
+                "The canonical loader is project_ops.load_state."
+            )
+
+    # ── Part 2: scan src/ for usage of state_schema.load_state ──────────
+    # Patterns that indicate re-introduction of the competing loader:
+    #   from research_os.state.state_schema import load_state
+    #   from research_os.state import load_state        (from state/__init__.py re-export)
+    #   state_schema.load_state(                        (attribute call)
+    usage_pat = _re.compile(
+        r"(?:"
+        r"from\s+research_os\.state(?:\.state_schema)?\s+import\b[^#\n]*\bload_state\b"
+        r"|"
+        r"\bstate_schema\.load_state\s*\("
+        r")"
+    )
+    offenders: list[str] = []
+    src_dir = REPO_ROOT / "src"
+    if src_dir.exists():
+        for py in src_dir.rglob("*.py"):
+            try:
+                for i, line in enumerate(py.read_text().splitlines(), 1):
+                    stripped = line.strip()
+                    if stripped.startswith("#"):
+                        continue
+                    if usage_pat.search(line):
+                        rel = py.relative_to(REPO_ROOT)
+                        offenders.append(f"{rel}:{i}: {stripped}")
+            except Exception:
+                continue
+    if offenders:
+        return False, (
+            "state_schema.load_state re-introduced in src/ — use "
+            "project_ops.load_state instead: " + "; ".join(offenders[:5])
+        )
+
+    return True, (
+        "One state loader: project_ops.load_state is canonical; "
+        "state_schema._load_state_pydantic is test-only and absent from src/"
+    )
+
+
+def check_max_file_size() -> tuple[bool, str]:
+    """Guard: key source files must not exceed size thresholds.
+
+    ``project_ops.py`` is the compatibility facade for the project package.
+    Keep it small so substantive implementation continues to live in
+    ``research_os.project`` modules rather than re-inflating the facade.
+    """
+    thresholds: dict[str, int] = {
+        "src/research_os/project_ops.py": 1_200,
+    }
+    failures: list[str] = []
+    for rel, limit in thresholds.items():
+        path = REPO_ROOT / rel
+        if not path.exists():
+            continue  # file absent = not our concern here
+        lines = len(path.read_text(encoding="utf-8", errors="replace").splitlines())
+        if lines > limit:
+            failures.append(f"{rel}: {lines} lines > limit {limit}")
+    if failures:
+        return False, "; ".join(failures)
+    return True, "All monitored files within size limits"
+
+
+def check_no_duplicate_base_model() -> tuple[bool, str]:
+    """Guard: research_os.schema must not exist as an importable package.
+
+    The schema/ sub-package was a dead duplicate of models defined in their
+    canonical locations (protocols/schema/, state/state_schema.py, memory/).
+    If it is ever re-introduced, imports from research_os.schema.*  will
+    silently shadow the authoritative definitions and cause identity mismatches
+    between isinstance checks.
+
+    Allowed exception: none. StateLedger now lives in
+    research_os.state.state_schema.  Any new BaseModel must go into its
+    owning sub-package, not into research_os.schema.
+    """
+    import re as _re
+
+    schema_dir = REPO_ROOT / "src" / "research_os" / "schema"
+    if schema_dir.exists():
+        py_files = list(schema_dir.rglob("*.py"))
+        return False, (
+            f"research_os/schema/ still exists with {len(py_files)} .py file(s); "
+            "delete it — canonical models live in protocols/schema/, "
+            "state/state_schema.py, and memory/."
+        )
+
+    # Also scan src/ and tests/ for any import from research_os.schema.*
+    # (catches cases where schema/ is gone but stale imports linger).
+    pat = _re.compile(r"from\s+research_os\.schema(?:\.\w+)*\s+import|import\s+research_os\.schema")
+    offenders: list[str] = []
+    for search_dir in [REPO_ROOT / "src", REPO_ROOT / "tests", REPO_ROOT / "scripts"]:
+        if not search_dir.exists():
+            continue
+        for py in search_dir.rglob("*.py"):
+            try:
+                for i, line in enumerate(py.read_text().splitlines(), 1):
+                    if pat.search(line) and not line.strip().startswith("#"):
+                        rel = py.relative_to(REPO_ROOT)
+                        offenders.append(f"{rel}:{i}: {line.strip()}")
+            except Exception:
+                continue
+    if offenders:
+        return False, (
+            "stale research_os.schema imports found: " + "; ".join(offenders[:5])
+        )
+    return True, "research_os.schema package absent; no stale schema imports"
+
+
 def main() -> int:
     # Make src importable when called from a clean checkout.
     sys.path.insert(0, str(REPO_ROOT / "src"))
@@ -1584,6 +1721,9 @@ def main() -> int:
     tally.check("Tool short<=80 / description<=200 caps", check_tool_description_caps)
     tally.check("Reasoning layer independent of daemon (v4 arrow)", check_reasoning_layer_independent_of_daemon)
     tally.check("Daemon endpoints documented ⇆ registered (no drift)", check_daemon_endpoints_documented)
+    tally.check("No duplicate BaseModel schema package (schema/ deleted)", check_no_duplicate_base_model)
+    tally.check("One canonical state loader (no state_schema.load_state in src/)", check_one_state_loader)
+    tally.check("Key source files within size limits (project_ops.py split guard)", check_max_file_size)
 
     print()
     print(f"Summary: {tally.passed} passed · {tally.failed} failed")

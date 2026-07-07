@@ -1,9 +1,13 @@
-"""State ledger migration layer.
+"""State ledger schema and migration layer.
 
-Provides :func:`migrate_state` and :func:`load_state` to read a
-``state_ledger.json`` file from disk, auto-upgrade it when its
-``schema_version`` is older than :data:`StateLedger.SCHEMA_VERSION`, and
-return a validated :class:`~research_os.schema.state.StateLedger` instance.
+Provides :class:`StateLedger`, :func:`migrate_state`, and
+:func:`_load_state_pydantic` (internal, test-only Pydantic loader).
+
+The **canonical production loader** is ``project_ops.load_state``, which
+returns a plain ``dict`` (ResearchLedger v4.0 shape) and is backed by
+:class:`~research_os.state.state_ledger.ResearchLedger`.  Do NOT call
+:func:`_load_state_pydantic` from production code — it is scoped to
+unit tests of the Pydantic migration layer only.
 
 Design notes
 ------------
@@ -24,9 +28,32 @@ from __future__ import annotations
 import json
 import uuid
 from pathlib import Path
-from typing import Callable
+from typing import Callable, ClassVar
 
-from research_os.schema.state import StateLedger
+from pydantic import BaseModel, Field
+
+
+class StateLedger(BaseModel):
+    """A versioned, append-only ledger of state entries."""
+
+    #: Current schema version.  Increment whenever a field is added or
+    #: removed so that ``migrate_state`` can upgrade older serialised ledgers.
+    #: This is distinct from the per-append ``version`` counter which tracks
+    #: the number of entries.
+    SCHEMA_VERSION: ClassVar[int] = 1
+
+    id: str
+    version: int = 1
+    schema_version: int = 1
+    entries: list[dict] = Field(default_factory=list)
+    created_at: str | None = None
+    updated_at: str | None = None
+    metadata: dict = Field(default_factory=dict)
+
+    def append(self, entry: dict) -> None:
+        """Append ``entry`` to the ledger and bump the version."""
+        self.entries.append(entry)
+        self.version += 1
 
 # ---------------------------------------------------------------------------
 # Internal migration registry
@@ -103,8 +130,12 @@ def migrate_state(raw: dict) -> dict:
     return raw
 
 
-def load_state(root: Path) -> StateLedger:
-    """Read the state ledger for the project rooted at *root*.
+def _load_state_pydantic(root: Path) -> StateLedger:
+    """Internal Pydantic loader — for unit tests of the migration layer only.
+
+    **Do not call from production code.** The canonical production loader is
+    ``research_os.project_ops.load_state``, which returns a plain ``dict``
+    (ResearchLedger v4.0 shape) via :class:`~research_os.state.state_ledger.ResearchLedger`.
 
     Looks for ``<root>/.os_state/state_ledger.json``.
 

@@ -1,0 +1,324 @@
+"""Bundle this Research OS project for a collaborator.
+
+Builds a zip that contains a clean, share-safe view of your project —
+the inputs you've collected, the analyses you've run, the synthesis
+artefacts, and the docs — WITHOUT any AI configuration. The recipient
+opens the zip and sees a normal research workspace; they do NOT need
+Research OS installed to read it.
+
+What is included:
+  inputs/, workspace/, synthesis/, docs/, environment/, README.md (if present)
+What is EXCLUDED (always):
+  AGENTS.md, CLAUDE.md, GETTING_STARTED.md, CONTRIBUTORS.md,
+  .os_state/, .claude/, .cursor/, .vscode/, .antigravity/, .opencode/,
+  MCP configs, __pycache__/, .pytest_cache/, .DS_Store, virtualenvs,
+  node_modules/.
+
+The zip is written to <project>_share_<YYYY-MM-DD>.zip in the project
+root. Use --out PATH to override.
+
+Usage:
+    python scripts/export_share_archive.py                    # default zip
+    python scripts/export_share_archive.py --out /tmp/x.zip   # custom path
+    python scripts/export_share_archive.py --include-raw-data # include raw data
+"""
+from __future__ import annotations
+import argparse
+import datetime as _dt
+import sys
+import zipfile
+from pathlib import Path
+
+EXCLUDE_NAMES = {
+    "AGENTS.md", "CLAUDE.md", "GETTING_STARTED.md",
+    ".os_state", ".claude", ".cursor", ".vscode",
+    ".antigravity", ".opencode",
+    "mcp_config.json", ".mcp.json", "opencode.json",
+    # Secret-bearing: holds plaintext api_keys + author PII. NEVER ship it.
+    "researcher_config.yaml",
+    "__pycache__", ".pytest_cache", ".DS_Store",
+    "node_modules", "venv", ".venv", "env",
+}
+
+INCLUDE_DIRS = ("inputs", "workspace", "synthesis", "docs", "environment")
+
+
+def _excluded(path: Path) -> bool:
+    parts = path.parts
+    for part in parts:
+        if part in EXCLUDE_NAMES:
+            return True
+        if part.startswith(".") and part not in {".gitignore", ".gitkeep"}:
+            return True
+    return False
+
+
+def _read(p: Path, limit: int = 4000) -> str:
+    try:
+        return p.read_text(errors="replace")[:limit]
+    except Exception:
+        return ""
+
+
+def _project_title(root: Path) -> str:
+    """Researcher-chosen project_name, falling back to the folder name.
+
+    Reads ``inputs/researcher_config.yaml`` with a minimal line parser so the
+    exported script stays dependency-free (no PyYAML on the recipient side,
+    and the source side may not have it either). Looks for a top-level
+    ``project_name:`` key. Returns ``root.name`` when absent/unreadable.
+    """
+    cfg = root / "inputs" / "researcher_config.yaml"
+    try:
+        for raw in cfg.read_text(errors="replace").splitlines():
+            # Top-level key only (no leading whitespace) so a nested
+            # `project_name:` under some other block can't hijack the title.
+            if raw[:1].isspace():
+                continue
+            if raw.lstrip().lower().startswith("project_name:"):
+                val = raw.split(":", 1)[1].strip().strip("\"'")
+                if val:
+                    return val
+    except OSError:
+        pass
+    return root.name
+
+
+def _build_recipient_readme(root: Path) -> str:
+    """A human front-door for whoever OPENS the shared archive.
+
+    A collaborator / PI / reviewer who unzips this has none of the AI-facing
+    files (they're excluded) and shouldn't have to spelunk numbered folders to
+    learn what the project is, what was done, and whether they can trust it.
+    This stitches the human-readable status + structure into one overview.
+    """
+    import datetime as _dt
+
+    # Prefer the researcher-chosen project_name over the on-disk folder name.
+    # The directory is often a terse slug ("myproj"); researcher_config.yaml
+    # carries the real title ("Quantum Coherence In Photosynthesis"). That
+    # config is EXCLUDED from the archive, but it is readable at export time
+    # on the source root, and the RO-Crate / CodeMeta manifests already use
+    # it — so the human front-door must agree with the machine metadata, or a
+    # reviewer sees two different project names and distrusts the bundle.
+    name = _project_title(root)
+    lines = [
+        f"# {name} — shared research archive",
+        "",
+        f"*Self-contained snapshot, exported {_dt.date.today().isoformat()}. "
+        "You do NOT need Research-OS installed to read it — everything below "
+        "is plain files.*",
+        "",
+    ]
+
+    # What this project is — pull from research_overview / STATE / intake.
+    # Prefer a candidate that actually names the research question; fall back
+    # to the first non-trivial one. (Threshold is low: a 3-line overview with
+    # the question + domain is perfectly good and may be < 80 chars.)
+    overview = ""
+    for cand in ("docs/research_overview.md", "STATE.md", "inputs/intake.md"):
+        txt = _read(root / cand)
+        if not txt or len(txt.strip()) < 30:
+            continue
+        if "research question" in txt.lower() and "not yet set" not in txt.lower():
+            overview = txt
+            break
+        if not overview:
+            overview = txt
+    lines.append("## What this is")
+    lines.append("")
+    if overview:
+        # Lift the question + domain + hypothesis content. Markdown often puts
+        # the heading on one line and the value on the next, so when a line is
+        # just a heading, pull the following non-empty line as its value.
+        olines = overview.splitlines()
+        picked: list[str] = []
+        for i, ln in enumerate(olines):
+            low = ln.lower()
+            if any(k in low for k in
+                   ("research question", "domain", "hypoth")):
+                stripped = ln.strip()
+                is_heading_only = (
+                    stripped.startswith("#")
+                    or stripped.rstrip(":*").lower() in (
+                        "research question", "domain", "hypotheses",
+                    )
+                )
+                if is_heading_only:
+                    label = stripped.lstrip("#").strip().rstrip(":*").strip()
+                    for nxt in olines[i + 1:i + 4]:
+                        if nxt.strip():
+                            picked.append(f"- **{label.title()}:** "
+                                          f"{nxt.strip().strip('*_')}")
+                            break
+                else:
+                    picked.append(stripped if stripped.startswith("-")
+                                  else f"- {stripped}")
+            if len(picked) >= 5:
+                break
+        seen = set()
+        picked = [p for p in picked if not (p in seen or seen.add(p))]
+        if picked:
+            lines.extend(picked)
+        else:
+            lines.append(overview.strip()[:600])
+    else:
+        lines.append("_(No overview was recorded. See `docs/` and the numbered "
+                     "`workspace/` folders for the work itself.)_")
+    lines.append("")
+
+    # What was done — the numbered analysis steps + their conclusions.
+    ws = root / "workspace"
+    steps = []
+    if ws.is_dir():
+        for d in sorted(ws.iterdir()):
+            if (d.is_dir() and d.name[:2].isdigit()
+                    and not d.name.endswith("__DEAD_END")):
+                concl = d / "conclusions.md"
+                summary = ""
+                if concl.exists():
+                    body = _read(concl, 400).strip()
+                    first = next((ln.strip("# ").strip()
+                                  for ln in body.splitlines() if ln.strip()), "")
+                    summary = first
+                steps.append((d.name, summary))
+    if steps:
+        lines.append("## What was done")
+        lines.append("")
+        for sname, ssum in steps:
+            lines.append(f"- **{sname}**" + (f" — {ssum}" if ssum else ""))
+        lines.append("")
+
+    # Deliverables — what's in synthesis/.
+    syn = root / "synthesis"
+    deliverables = []
+    if syn.is_dir():
+        for p in sorted(syn.rglob("*")):
+            if p.is_file() and p.suffix.lower() in {
+                ".pdf", ".html", ".typ", ".docx", ".pptx", ".md"
+            }:
+                deliverables.append(p.relative_to(syn).as_posix())
+    if deliverables:
+        lines.append("## Deliverables (`synthesis/`)")
+        lines.append("")
+        for d in deliverables[:20]:
+            lines.append(f"- `synthesis/{d}`")
+        lines.append("")
+
+    # Trust + reproduce.
+    lines.extend([
+        "## How to read & trust this",
+        "",
+        "- `workspace/<NN_slug>/` — each numbered folder is one analysis step: "
+        "the script(s) that ran, the data they produced, and a `conclusions.md`.",
+        "- `workspace/methods.md`, `analysis.md`, `citations.md` — the project's "
+        "narrative logs (what was done, in order; the bibliography).",
+        "- `environment/requirements.txt` — the exact package versions, so the "
+        "analyses can be re-run.",
+        "- `CITATION.cff` + `ro-crate-metadata.json` — machine-readable "
+        "provenance + citation metadata (open standards; optional to read).",
+        "- Every quantitative claim in the write-up is meant to trace to an "
+        "artefact in `workspace/`. To reproduce: install the pinned "
+        "environment, then re-run the scripts in step order.",
+        "",
+        "_Generated by Research-OS at export time. Edit freely._",
+        "",
+    ])
+    return "\n".join(lines)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--out", type=Path, default=None,
+                    help="Output zip path. Default: <project>_share_<date>.zip")
+    ap.add_argument("--include-raw-data", action="store_true",
+                    help="Include inputs/raw_data/ (default: skipped to keep "
+                    "the archive small and avoid PII leaks).")
+    args = ap.parse_args()
+
+    root = Path(__file__).resolve().parents[1]
+    today = _dt.date.today().isoformat()
+    out = args.out or (root / f"{root.name}_share_{today}.zip")
+    out = out.resolve()
+
+    # Refresh open-science manifests just before zipping so the
+    # archive carries the latest RO-Crate 1.1 + CodeMeta 2.0 view.
+    try:
+        from research_os.tools.actions.state.ro_crate import (
+            build_codemeta as _build_codemeta,
+            build_ro_crate as _build_ro_crate,
+        )
+        _build_ro_crate(root)
+        _build_codemeta(root)
+    except Exception as _e:
+        print(f"[warn] could not refresh RO-Crate / CodeMeta: {_e}")
+
+    files_added = 0
+    bytes_added = 0
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
+        # A human front-door for the recipient: what this is, what was done,
+        # what's here, how to trust + reproduce it. The AI-facing orientation
+        # files (GETTING_STARTED, AGENTS) are excluded from the archive, so
+        # without this a collaborator opens raw folders with no guide.
+        #
+        # We write the SAME share-safe front-door to both README_SHARED.md
+        # (the documented name) AND README.md. We deliberately do NOT ship the
+        # project's own root README.md: that file is the GitHub/repo-browser
+        # page and it points the reader at STATE.md, AGENTS.md, and
+        # GETTING_STARTED.md — all of which are EXCLUDED from this archive. A
+        # recipient who opened it would be sent to three files that aren't in
+        # the bundle. Overwriting README.md with the recipient front-door keeps
+        # the repo-browser landing page honest (every link it makes resolves).
+        recipient_readme = None
+        try:
+            recipient_readme = _build_recipient_readme(root)
+            zf.writestr(f"{root.name}/README_SHARED.md", recipient_readme)
+            files_added += 1
+            zf.writestr(f"{root.name}/README.md", recipient_readme)
+            files_added += 1
+        except Exception as _e:
+            print(f"[warn] could not generate recipient README: {_e}")
+        # Top-level files we DO want shipped to collaborators. The
+        # open-science manifests (RO-Crate + CodeMeta + CITATION.cff)
+        # MUST live at archive root so ro-crate-py + cffconvert can
+        # auto-discover them. README.md is intentionally NOT in this list —
+        # it is replaced by the share-safe recipient front-door above. If the
+        # recipient README failed to generate, fall back to the project's own
+        # README.md so the archive isn't left without a landing page.
+        top_files = ["CONTRIBUTORS.md", "CITATION.cff",
+                     "ro-crate-metadata.json", "codemeta.json"]
+        if recipient_readme is None:
+            top_files.insert(0, "README.md")
+        for top in top_files:
+            tp = root / top
+            if tp.exists():
+                zf.write(tp, arcname=f"{root.name}/{top}")
+                files_added += 1
+                bytes_added += tp.stat().st_size
+        for sub in INCLUDE_DIRS:
+            base = root / sub
+            if not base.exists():
+                continue
+            for p in base.rglob("*"):
+                if not p.is_file():
+                    continue
+                if not args.include_raw_data and "raw_data" in p.relative_to(root).parts:
+                    continue
+                rel = p.relative_to(root)
+                if _excluded(rel):
+                    continue
+                arc = f"{root.name}/{rel.as_posix()}"
+                zf.write(p, arcname=arc)
+                files_added += 1
+                bytes_added += p.stat().st_size
+
+    print(f"[done] {out}")
+    print(f"       {files_added} files, {bytes_added / 1024:.1f} KB compressed "
+          f"({out.stat().st_size / 1024:.1f} KB on disk)")
+    if not args.include_raw_data:
+        print("       NOTE: inputs/raw_data/ skipped. Pass --include-raw-data to bundle it.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
