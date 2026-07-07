@@ -57,9 +57,10 @@ def workspace_mode_status(root: Path) -> dict[str, Any]:
 
 
 def _all_transitions_from(frm: str):
-    from research_os.tools.actions.router import _MODE_TRANSITIONS
-
-    return [((f, t), s) for (f, t), s in _MODE_TRANSITIONS.items() if f == frm]
+    # Use the registry's default-allow logic so available_transitions reflects
+    # ALL non-forbidden moves, not just the explicitly-declared subset.
+    from research_os.state.mode_registry import all_transitions_from as _reg_all
+    return _reg_all(frm)
 
 
 def transition_workspace_mode(

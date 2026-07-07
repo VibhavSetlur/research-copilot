@@ -68,37 +68,37 @@ def _input_required_fields(schema: dict | None) -> list[str]:
 # mode needs (routing, files, state, config, the gradient on-ramps in
 # `interaction`, …). Each mode adds its own working categories on top.
 
-# Categories surfaced in EVERY mode — the plumbing + universal on-ramps.
+# ---------------------------------------------------------------------------
+# Mode-scoped category views — derived from ModeMeta (single source of truth).
+# _MODE_CATEGORIES and VALID_LISTING_MODES are now thin derived views of the
+# mode_registry so they can never drift to a stale subset of modes.
+# ---------------------------------------------------------------------------
+from research_os.state.mode_registry import (  # noqa: E402
+    MODE_REGISTRY as _MODE_REGISTRY,
+    mode_listing_categories as _registry_mode_listing_categories,
+    ALL_MODES as _ALL_MODES,
+)
+
+# Core categories constant re-exported for back-compat with any importer.
 _CORE_CATEGORIES: frozenset[str] = frozenset({
     "routing", "system", "protocol", "file", "state", "config",
     "checkpoint", "workspace", "interaction", "environment", "memory",
 })
 
-# Mode → the EXTRA categories surfaced on top of CORE for that mode.
+# Mode → extra categories (beyond CORE).  Derived from ModeMeta so all 6 modes
+# are covered; the old hard-coded dict only covered 3.
 _MODE_CATEGORIES: dict[str, frozenset[str]] = {
-    "analysis": frozenset({
-        "research", "methodology", "audit", "synthesis", "exec", "execution",
-        "data", "intake", "search", "viz", "path", "tasks", "scratch",
-    }),
-    "tool_build": frozenset({
-        # exec carries tool_git / tool_build; audit carries the scope='tool'
-        # gates; execution for ad-hoc shells; the rest is shared plumbing.
-        "exec", "execution", "audit", "search", "tasks", "scratch", "research",
-    }),
-    "exploration": frozenset({
-        # scratch-first quick work: sample data, search, run code, sketch.
-        "data", "intake", "search", "execution", "exec", "scratch", "viz",
-        "research",
-    }),
+    name: meta.listing_categories
+    for name, meta in _MODE_REGISTRY.items()
 }
 
-VALID_LISTING_MODES = ("analysis", "tool_build", "exploration")
+# All 6 modes are now valid listing targets (was 3 before).
+VALID_LISTING_MODES: tuple[str, ...] = _ALL_MODES
 
 
 def _categories_for_mode(mode: str) -> frozenset[str]:
     """Return CORE ∪ the mode's extra categories. Unknown mode ⇒ analysis."""
-    extra = _MODE_CATEGORIES.get(mode, _MODE_CATEGORIES["analysis"])
-    return _CORE_CATEGORIES | extra
+    return _registry_mode_listing_categories(mode)
 
 
 def _category_for_tool(tool_def: dict[str, Any]) -> str:

@@ -218,7 +218,47 @@ def _check_hybrid(root: Path) -> list[dict]:
     return out
 
 
+def _check_analysis(root: Path) -> list[dict]:
+    """Health checks for the default analysis (numbered-step) mode.
+
+    Checks that the workspace has made meaningful progress: at least one
+    numbered step exists once the project is past the intake stage, and
+    that the synthesis dir hasn't been pre-populated with empty stubs.
+    Fail-open: any missing directory or IO error silently returns nothing.
+    """
+    out: list[dict] = []
+    ws = root / "workspace"
+    if not ws.is_dir():
+        return out
+    try:
+        import re
+        steps = [d for d in ws.iterdir()
+                 if d.is_dir() and re.match(r"^\d{1,3}_", d.name)]
+        # Only warn once the intake exists (project has been started).
+        intake = root / "inputs" / "intake.md"
+        if intake.exists() and not steps:
+            out.append(_f("info", "analysis_no_steps",
+                          "analysis: intake exists but no numbered step "
+                          "(workspace/NN_*) yet — create the first step to "
+                          "start the analysis."))
+        # Synthesis pre-populated before any steps are complete is likely
+        # AI noise — surface it so the researcher can review.
+        synthesis = root / "synthesis"
+        if synthesis.is_dir() and not steps:
+            real_syn = [f for f in synthesis.rglob("*") if f.is_file()
+                        and f.name.lower() not in ("readme.md", ".gitkeep")]
+            if real_syn:
+                out.append(_f("info", "analysis_premature_synthesis",
+                              "analysis: synthesis/ has content but no numbered "
+                              "step has been completed yet — confirm the "
+                              "deliverable is intentional at this stage."))
+    except Exception:
+        pass
+    return out
+
+
 _MODE_CHECKS = {
+    "analysis": _check_analysis,
     "tool_build": _check_tool_build,
     "notebook": _check_notebook,
     "multi_study": _check_multi_study,

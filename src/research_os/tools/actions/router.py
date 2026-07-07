@@ -95,44 +95,21 @@ def _collapse_hyphens(text: str) -> str:
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# UNIFIED MODE REGISTRY — one source of truth for how each workspace mode
-# biases routing. Every mode-aware code path (the trigger-score boost, the
-# semantic-deferral override, the workflow-shape fallback) reads from this
-# table instead of hardcoding per-mode branches. Adding a mode = one entry.
-#
-# Each entry describes the routing posture of a workspace.mode:
-#   sub_intents → the protocol sub-intents NATIVE to this mode. A protocol
-#                 carrying one of these gets `boost` added to its trigger
-#                 score when the workspace is in this mode, so a mode's own
-#                 protocols reliably win over a same-vocabulary analysis
-#                 protocol. It's a thumb on the scale, never an override —
-#                 an explicit cross-mode trigger ("write the paper") still
-#                 out-scores the bias.
-#   boost       → score added to a native sub-intent's trigger score. The
-#                 tool_build family carries real risk (shipping software) so
-#                 it earns a firmer thumb (2 ≈ one extra word match); the
-#                 lighter modes nudge with 1 (a single tie-break point) since
-#                 they overlap heavily with ordinary analysis vocabulary and
-#                 we don't want to over-steer.
-#   shape       → the workspace.workflow_shape this mode implies when the
-#                 project never declares one explicitly, so the WORKFLOW-SHAPE
-#                 tiebreak can still fire. None = no clean 1:1 shape (the
-#                 experiment_pipeline shape is broad and shouldn't be
-#                 force-boosted from the default mode).
-#   override    → when True, a STRONG native-sub-intent trigger match (a
-#                 multi-word trigger, base ≥ _MODE_OVERRIDE_MIN_BASE) defers
-#                 the semantic guess to the mode-biased trigger router, so a
-#                 mode's own protocols can't be hijacked by an embedding that
-#                 leans analysis. Reserved for modes whose protocols share
-#                 vocabulary with analysis but mean something different
-#                 (build "test" ≠ analysis "test").
-#
-# analysis/hybrid carry no entry: analysis is the universal baseline and
-# hybrid deliberately reuses the analysis routing surface (it just ALSO
-# surfaces an inner tool component).
+# UNIFIED MODE REGISTRY — derived from ModeMeta (single source of truth).
+# Every mode-aware code path (the trigger-score boost, the semantic-deferral
+# override, the workflow-shape fallback, _MODE_TRANSITIONS) reads from this
+# table. Adding a mode = one entry in state/mode_registry.py.
 # ═══════════════════════════════════════════════════════════════════════
-_MODE_BUILD_BOOST = 2          # firm thumb: tool_build ships real software
-_MODE_LIGHT_BOOST = 1          # tie-break nudge for the lighter modes
+
+from research_os.state.mode_registry import (  # noqa: E402
+    MODE_REGISTRY as _MODE_REGISTRY,
+    DECLARED_TRANSITIONS as _DECLARED_TRANSITIONS,
+    mode_transition_spec as _registry_mode_transition_spec,
+)
+
+# Boost constants re-exported for back-compat (numeric values live in mode_registry).
+_MODE_BUILD_BOOST = _MODE_REGISTRY["tool_build"].boost   # 3 — firm thumb
+_MODE_LIGHT_BOOST = _MODE_REGISTRY["exploration"].boost  # 1 — tie-break nudge
 _MODE_OVERRIDE_MIN_BASE = 4    # "strong" trigger = multi-word match
 
 
@@ -143,76 +120,17 @@ class _ModeRouting(NamedTuple):
     override: bool
 
 
+# MODE_ROUTING: only the biased modes (analysis is the baseline, no entry).
+# Derived directly from ModeMeta so router.py and mode_registry.py cannot drift.
 MODE_ROUTING: dict[str, _ModeRouting] = {
-    # Building software you iterate on. Native build/* family; firm boost;
-    # overrides the semantic guess on a strong build trigger because build
-    # vocabulary ("test", "release", "benchmark") collides with analysis.
-    "tool_build": _ModeRouting(
-        sub_intents=frozenset({
-            "build_spec", "build_implement", "build_test",
-            "build_benchmark", "build_release", "build_publish",
-            "build_scout", "build_spike", "build_integrate",
-            "build_evaluate", "build_sample_data",
-        }),
-        boost=_MODE_BUILD_BOOST,
-        shape="tool_build",
-        override=True,
-    ),
-    # Scratch-first quick probes. Native exploration/* loop (probe → observe
-    # → decide, triage, promote) plus the analysis-mode lightweight surfaces
-    # (casual / eda) it can fall back to. Light nudge — exploration overlaps
-    # heavily with ordinary analysis vocabulary.
-    "exploration": _ModeRouting(
-        sub_intents=frozenset({
-            "casual", "eda",
-            "explore_probe", "explore_promote", "explore_triage",
-        }),
-        boost=_MODE_LIGHT_BOOST,
-        shape="exploration",
-        override=False,
-    ),
-    # Jupyter-first: the unit of work is a notebook. Native notebook_run plus
-    # the reproduce / promote / synthesize lifecycle, and eda (notebooks are
-    # the natural home for exploratory data analysis). First-class boost so
-    # "run the notebook" leans notebook-shaped rather than dropping into a
-    # numbered analysis step.
-    "notebook": _ModeRouting(
-        sub_intents=frozenset({
-            "notebook_run", "notebook_reproduce", "notebook_promote",
-            "notebook_synthesize", "eda",
-        }),
-        boost=_MODE_LIGHT_BOOST,
-        shape="notebook",
-        override=False,
-    ),
-    # A program of sub-studies sharing a codebook + prereg. Native
-    # program_setup so "set up the program" reliably reaches the program
-    # commons protocol rather than a single-study planning protocol, plus the
-    # study-register / codebook-governance / cross-study-synthesis lifecycle.
-    "multi_study": _ModeRouting(
-        sub_intents=frozenset({
-            "program_setup", "study_register", "codebook_governance",
-            "cross_study_synthesis",
-        }),
-        boost=_MODE_LIGHT_BOOST,
-        shape="multi_study",
-        override=False,
-    ),
-    # Build a tool AND use it for analysis in one project. Native hybrid home
-    # loop + tool↔analysis handoff; it also leans on the full analysis and
-    # build surfaces depending on which half is active, so the boost is light
-    # (it must not fight the analysis/build vocabulary, only nudge the two
-    # hybrid-specific protocols when their triggers fire).
-    "hybrid": _ModeRouting(
-        sub_intents=frozenset({
-            "hybrid_run", "hybrid_handoff",
-            "build_scout", "build_spike", "build_integrate",
-            "build_evaluate", "build_sample_data",
-        }),
-        boost=_MODE_LIGHT_BOOST,
-        shape="hybrid",
-        override=False,
-    ),
+    name: _ModeRouting(
+        sub_intents=meta.sub_intents,
+        boost=meta.boost,
+        shape=meta.shape,
+        override=meta.override,
+    )
+    for name, meta in _MODE_REGISTRY.items()
+    if meta.biased
 }
 
 # Back-compat aliases (external importers may reference the old names).
@@ -225,57 +143,23 @@ _EXPLORATION_BOOST = _MODE_LIGHT_BOOST
 _MODE_TO_SHAPE = {m: r.shape for m, r in MODE_ROUTING.items() if r.shape}
 
 
-# ── Mode lifecycle (B2) ────────────────────────────────────────────────
-# Which workspace.mode → mode moves are supported, and how. A transition is
-# ADDITIVE (never deletes the prior mode's work). `kind`:
-#   promote  — the prior mode's artefacts graduate into the new mode's unit of
-#              work (exploration probes / notebooks → numbered analysis steps).
-#   augment  — the new mode adds a surface alongside the old one (analysis gains
-#              an inner tool repo → hybrid; tool_build gains an analysis spine).
-#   reframe  — the existing work is re-cast (a single analysis becomes study 01
-#              of a program).
-# `protocol` (if any) is the handoff/promotion protocol to route into during the
-# crossing. All six modes can always move to exploration (cheap, additive).
-_MODE_TRANSITIONS: dict[tuple[str, str], dict[str, str]] = {
-    ("exploration", "analysis"): {
-        "kind": "promote", "protocol": "exploration/exploration_promote",
-        "guidance": "Promote earned probes into numbered analysis steps, then run guidance/analysis_plan.",
-    },
-    ("notebook", "analysis"): {
-        "kind": "promote", "protocol": "notebook/notebook_promote",
-        "guidance": "Promote a trusted notebook's result into a durable numbered step.",
-    },
-    ("exploration", "tool_build"): {
-        "kind": "augment", "protocol": "",
-        "guidance": "Graduate a scratch prototype into a governed build (spec/decisions/eval + inner repo).",
-    },
-    ("analysis", "hybrid"): {
-        "kind": "augment", "protocol": "",
-        "guidance": "Add an inner tool/ repo for software the analysis needs; keep the analysis spine.",
-    },
-    ("tool_build", "hybrid"): {
-        "kind": "augment", "protocol": "hybrid/tool_to_analysis_handoff",
-        "guidance": "Keep the built tool; add an analysis spine to USE it on real data.",
-    },
-    ("analysis", "multi_study"): {
-        "kind": "reframe", "protocol": "program/program_setup",
-        "guidance": "Wrap the current work as study 01 of a program; seed shared/ commons.",
-    },
-}
-# Every mode can always move to exploration (cheapest, additive).
-for _m in ("analysis", "notebook", "tool_build", "hybrid", "multi_study"):
-    _MODE_TRANSITIONS.setdefault((_m, "exploration"), {
-        "kind": "augment", "protocol": "",
-        "guidance": "Open a scratch surface for cheap probing alongside the existing work.",
-    })
+# ── Mode lifecycle (B2) — default-allow transitions ────────────────────
+# _MODE_TRANSITIONS is populated from the registry's DECLARED_TRANSITIONS.
+# All non-forbidden pairs are allowed (see mode_registry.FORBIDDEN_TRANSITIONS).
+# Kept as a module-level dict for back-compat with callers that import it
+# directly.  DO NOT add new pairs here — add them to mode_registry.py instead.
+_MODE_TRANSITIONS: dict[tuple[str, str], dict[str, str]] = dict(_DECLARED_TRANSITIONS)
 
 
 def mode_transition_spec(from_mode: str, to_mode: str) -> dict | None:
-    """Return the transition spec for from→to, or None if unsupported.
-    Same-mode is a no-op (returns None)."""
-    if from_mode == to_mode:
-        return None
-    return _MODE_TRANSITIONS.get((from_mode, to_mode))
+    """Return the transition spec for from→to under the default-allow policy.
+
+    Returns None for same-mode no-ops AND for explicitly forbidden pairs.
+    Returns a declared spec or the generic default-augment for any other pair.
+    Delegates entirely to mode_registry.mode_transition_spec so both callers
+    see the same answer from one source of truth.
+    """
+    return _registry_mode_transition_spec(from_mode, to_mode)
 
 
 def _mode_boost_for(workspace_mode: str, sub_intent: str | None) -> int:

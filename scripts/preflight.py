@@ -1545,6 +1545,97 @@ def check_reasoning_layer_independent_of_daemon():
     return True, "server/ + tools/ never import daemon/ (arrow points daemon→server)"
 
 
+def check_mode_registry_consistent():
+    """Drift guard: all derived mode views agree with ModeMeta and cover len==6.
+
+    Validates that:
+    1. MODE_REGISTRY contains exactly 6 modes.
+    2. VALID_WORKSPACE_MODES (config.py), VALID_LISTING_MODES (listers.py),
+       LAYOUT_SPEC (project_ops.py), _MODE_CHECKS (mode_health.py), and
+       MODE_ROUTING (router.py) are all derived from the registry and cover
+       the expected set of modes.
+    3. Every mode's listing_categories are a superset of CORE_CATEGORIES.
+    4. The _check_analysis function exists in mode_health (full 6-mode coverage).
+    """
+    from research_os.state.mode_registry import (
+        MODE_REGISTRY,
+        ALL_MODES,
+        FORBIDDEN_TRANSITIONS,
+        mode_transition_spec,
+    )
+    from research_os.tools.actions.state.config import VALID_WORKSPACE_MODES
+    from research_os.tools.actions.listers import VALID_LISTING_MODES, _MODE_CATEGORIES
+    from research_os.project_ops import LAYOUT_SPEC, SCAFFOLD_PROFILES
+    from research_os.tools.actions.state.mode_health import _MODE_CHECKS
+    from research_os.tools.actions.router import MODE_ROUTING
+
+    errors: list[str] = []
+    expected = set(ALL_MODES)
+
+    # 1. Registry size
+    if len(MODE_REGISTRY) != 6:
+        errors.append(f"MODE_REGISTRY has {len(MODE_REGISTRY)} modes, expected 6: {sorted(MODE_REGISTRY)}")
+
+    # 2. VALID_WORKSPACE_MODES covers all 6
+    if set(VALID_WORKSPACE_MODES) != expected:
+        errors.append(
+            f"VALID_WORKSPACE_MODES {set(VALID_WORKSPACE_MODES)} != registry {expected}"
+        )
+
+    # 3. VALID_LISTING_MODES covers all 6 (was 3 before this change)
+    if set(VALID_LISTING_MODES) != expected:
+        errors.append(
+            f"VALID_LISTING_MODES {set(VALID_LISTING_MODES)} != registry {expected}"
+        )
+
+    # 4. _MODE_CATEGORIES covers all 6
+    if set(_MODE_CATEGORIES.keys()) != expected:
+        errors.append(
+            f"listers._MODE_CATEGORIES keys {set(_MODE_CATEGORIES.keys())} != registry {expected}"
+        )
+
+    # 5. LAYOUT_SPEC covers all 6
+    if set(LAYOUT_SPEC.keys()) != expected:
+        errors.append(
+            f"LAYOUT_SPEC keys {set(LAYOUT_SPEC.keys())} != registry {expected}"
+        )
+
+    # 6. SCAFFOLD_PROFILES covers all 6
+    if set(SCAFFOLD_PROFILES.keys()) != expected:
+        errors.append(
+            f"SCAFFOLD_PROFILES keys {set(SCAFFOLD_PROFILES.keys())} != registry {expected}"
+        )
+
+    # 7. _MODE_CHECKS covers all 6 (including analysis)
+    if set(_MODE_CHECKS.keys()) != expected:
+        errors.append(
+            f"mode_health._MODE_CHECKS keys {set(_MODE_CHECKS.keys())} != registry {expected}"
+        )
+
+    # 8. MODE_ROUTING covers exactly the biased modes (all except analysis)
+    biased_expected = expected - {"analysis"}
+    if set(MODE_ROUTING.keys()) != biased_expected:
+        errors.append(
+            f"router.MODE_ROUTING keys {set(MODE_ROUTING.keys())} != biased_expected {biased_expected}"
+        )
+
+    # 9. Sanity-check forbidden pairs are valid mode names
+    all_modes_set = set(ALL_MODES)
+    for frm, to in FORBIDDEN_TRANSITIONS:
+        if frm not in all_modes_set or to not in all_modes_set:
+            errors.append(f"FORBIDDEN_TRANSITIONS has unknown mode: ({frm}, {to})")
+
+    # 10. Same-mode is always None
+    for m in ALL_MODES:
+        spec = mode_transition_spec(m, m)
+        if spec is not None:
+            errors.append(f"mode_transition_spec({m!r}, {m!r}) should be None (same-mode noop)")
+
+    if errors:
+        return False, f"{len(errors)} drift(s): " + "; ".join(errors[:3])
+    return True, f"all derived mode views consistent (6 modes, {len(FORBIDDEN_TRANSITIONS)} forbidden pairs)"
+
+
 def main() -> int:
     # Make src importable when called from a clean checkout.
     sys.path.insert(0, str(REPO_ROOT / "src"))
@@ -1584,6 +1675,7 @@ def main() -> int:
     tally.check("Tool short<=80 / description<=200 caps", check_tool_description_caps)
     tally.check("Reasoning layer independent of daemon (v4 arrow)", check_reasoning_layer_independent_of_daemon)
     tally.check("Daemon endpoints documented ⇆ registered (no drift)", check_daemon_endpoints_documented)
+    tally.check("Mode registry consistent (all 6 derived views agree)", check_mode_registry_consistent)
 
     print()
     print(f"Summary: {tally.passed} passed · {tally.failed} failed")

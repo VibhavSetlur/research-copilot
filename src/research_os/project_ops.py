@@ -225,66 +225,12 @@ _ENVIRONMENT: tuple[str, ...] = ("environment",)
 #   lazy     — dirs created LAZILY (only when the first artefact lands; tools
 #              must call ``ensure_lazy_dir`` first). Everything else is eager.
 #   summary  — one-line human description (surfaced by ``describe_layout``)
+# LAYOUT_SPEC is a thin derived view of ModeMeta (mode_registry.py).
+# Adding a mode = one entry in state/mode_registry.py — no edit needed here.
+from research_os.state.mode_registry import mode_layout_spec as _mode_layout_spec, ALL_MODES as _ALL_MODES  # noqa: E402, E501
+
 LAYOUT_SPEC: dict[str, dict] = {
-    # analysis → the classic linear numbered-step model. workspace/NN_* +
-    # synthesis/. ``literature/`` is the project-wide corpus of record
-    # (aggregated from every step).
-    "analysis": {
-        "work": ("literature",),
-        "synthesis": True,
-        "lazy": ("synthesis",),
-        "summary": "Linear numbered-step analysis; synthesis/ holds the paper.",
-    },
-    # tool_build → Research OS sits ABOVE as a governance layer: spec/ (what
-    # we're building + design), decisions/ (ADRs), eval/ (the benchmark that
-    # defines "done"). The actual tool lives in an INNER project dir with its
-    # own git init (see scaffold_minimal_workspace). No synthesis/.
-    "tool_build": {
-        "work": ("spec", "decisions", "eval"),
-        "synthesis": False,
-        "lazy": (),
-        "summary": "Governance layer over an inner tool repo: spec/decisions/eval.",
-    },
-    # exploration → scratch-first. workspace/scratch is the home base; the
-    # numbered-step + log surface materialises only once a probe is promoted,
-    # so workspace/logs and synthesis stay lazy.
-    "exploration": {
-        "work": (),
-        "synthesis": True,
-        "lazy": ("workspace/logs", "synthesis"),
-        "summary": "Scratch-first probing; numbered steps appear on promote.",
-    },
-    # notebook → Jupyter-first. The unit of work is a notebook in notebooks/;
-    # data/ holds inputs the notebooks read, outputs/ holds what they emit.
-    "notebook": {
-        "work": ("notebooks", "data", "outputs"),
-        "synthesis": True,
-        "lazy": ("synthesis",),
-        "summary": "Jupyter-first: notebooks/ + data/ + outputs/.",
-    },
-    # multi_study → portfolio / program. studies/ holds each sub-study,
-    # shared/ is the program-wide commons (codebook, prereg, governing
-    # protocol), roll_up/ is where cross-study synthesis + meta-analysis live.
-    "multi_study": {
-        "work": ("studies", "shared", "roll_up"),
-        "synthesis": True,
-        "lazy": ("synthesis",),
-        "summary": "Program/portfolio: studies/ + shared/ + roll_up/.",
-    },
-    # hybrid (research + software) = analysis spine + a first-class home for
-    # the tool half. It keeps the analysis layout (numbered steps + literature
-    # + synthesis) AND declares a lazy ``tool/`` surface: the inner software
-    # repo / package lives there once the build half starts, giving the hybrid
-    # protocols (hybrid_workflow, tool_to_analysis_handoff) a stable path to
-    # point at instead of relying purely on detect_software_components(). The
-    # dir is lazy, so a hybrid project that hasn't built anything yet looks
-    # exactly like an analysis project until the first tool artefact appears.
-    "hybrid": {
-        "work": ("literature", "tool"),
-        "synthesis": True,
-        "lazy": ("tool", "synthesis"),
-        "summary": "Analysis spine + lazy tool/ home for the inner software repo (also auto-detected).",
-    },
+    mode: _mode_layout_spec(mode) for mode in _ALL_MODES
 }
 
 
