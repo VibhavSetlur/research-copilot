@@ -44,7 +44,9 @@ from .lineage import (
     ancestors,
     build_lineage,
     descendants,
+    downstream,
     lineage_to_mermaid,
+    provenance as lineage_provenance,
     topo_order,
 )
 from .registry import Workspace, WorkspaceRegistry
@@ -84,6 +86,8 @@ __all__ = [
     "lineage_to_mermaid",
     "ancestors",
     "descendants",
+    "downstream",
+    "lineage_provenance",
     "topo_order",
     "assess_staleness",
     "check_input_staleness",

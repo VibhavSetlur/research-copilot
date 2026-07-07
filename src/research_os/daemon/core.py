@@ -743,6 +743,102 @@ class Daemon:
             ),
         }
 
+    # ── rerun with overrides (Phase 7 §13.4) ─────────────────────────
+    def rerun_run(
+        self,
+        run_id: str,
+        overrides: dict,
+        *,
+        cwd: str | None = None,
+    ) -> dict:
+        """Re-execute a recorded run with optional spec overrides.
+
+        Reads the original manifest, merges ``overrides`` into its spec, then
+        launches the new run.  The new run records ``spec.rerun_of = run_id``
+        so lineage stays intact — the new run is a descendant of the original
+        in the content-addressed DAG (once it writes its own outputs).
+
+        ``overrides`` may contain any subset of:
+          - ``cmd``   — replace the command entirely
+          - ``cwd``   — change the working directory
+          - ``shell`` — toggle shell mode
+          - ``env``   — add/replace environment variables (merged, not replaced)
+          - any other key is forwarded to ``extra_spec`` verbatim
+
+        The ``cwd`` keyword argument (if provided) takes precedence over
+        ``overrides["cwd"]``.
+
+        Returns::
+
+            {
+              "parent_id":   <original run_id>,
+              "new_run_id":  <str>,
+              "overrides":   <the overrides dict as supplied>,
+              "command":     <merged cmd>,
+              "cwd":         <effective cwd>,
+            }
+
+        Raises ValueError if ``run_id`` is unknown or if the run has no
+        recorded command to re-execute.
+        """
+        if self.runstore is None:
+            raise ValueError("no workspace resolved — cannot rerun a run")
+        manifest = self.runstore.read_manifest(run_id)
+        if manifest is None:
+            raise ValueError(f"no recorded run: {run_id}")
+
+        # Merge overrides into a copy of the original spec.
+        original_spec = dict(manifest.get("spec") or {})
+        merged = dict(original_spec)
+        merged.update(overrides)
+
+        # Extract the well-known run_command kwargs from the merged spec.
+        cmd = merged.pop("cmd", None) or original_spec.get("cmd") or original_spec.get("command")
+        if not cmd:
+            raise ValueError(
+                f"run {run_id} has no recorded command to rerun "
+                "(only subprocess runs are rerunnable)"
+            )
+        # cwd: explicit kwarg > overrides["cwd"] > original spec["cwd"]
+        run_cwd = cwd or merged.pop("cwd", None) or original_spec.get("cwd")
+        shell = bool(merged.pop("shell", original_spec.get("shell", False)))
+        # env: merge override env on top of (or replace) original env tracking
+        env_override = merged.pop("env", None)
+
+        # Re-resolve recorded inputs so the re-run stays in the lineage graph.
+        import os as _os
+        recorded_inputs = ((manifest.get("provenance") or {}).get("inputs") or {})
+        base = run_cwd or "."
+        input_paths = [
+            p if _os.path.isabs(p) else _os.path.join(base, p)
+            for p in recorded_inputs
+        ] or None
+
+        # Any remaining keys in `merged` are forwarded as extra_spec entries.
+        extra: dict = {k: v for k, v in merged.items() if k not in (
+            "env_overrides", "command",  # internal fields — don't re-inject
+        )}
+        extra["rerun_of"] = run_id  # parent link — preserves lineage
+
+        self.tasks.start()
+        self._start_journal()
+        new_id = self.run_command(
+            cmd,
+            name=f"rerun:{run_id}",
+            cwd=run_cwd,
+            shell=shell,
+            env=env_override or None,
+            inputs=input_paths,
+            extra_spec=extra,
+        )
+        return {
+            "parent_id": run_id,
+            "new_run_id": new_id,
+            "overrides": overrides,
+            "command": cmd,
+            "cwd": run_cwd,
+        }
+
     def rebuild_stale(
         self,
         *,
