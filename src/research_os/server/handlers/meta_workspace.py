@@ -66,6 +66,7 @@ __all__ = [
     "_handle_sys_where",
     "_handle_sys_daemon",
     "_handle_sys_consent",
+    "_handle_sys_mode",
 ]
 
 def _handle_sys_workspace_scaffold(name, arguments, root):
@@ -592,6 +593,19 @@ def _handle_sys_where(name, arguments, root):
     except Exception:
         pass
 
+    # §13.1 active_persona — directive returned as MCP context (text only).
+    try:
+        from research_os.server.personas import PERSONAS, get_active_persona
+
+        active = get_active_persona(Path(root))
+        persona = PERSONAS.get(active, PERSONAS["scruffy"])
+        payload["active_persona"] = {
+            "name": active,
+            "directive": persona["directive"],
+        }
+    except Exception:
+        pass
+
     return _text(_success(payload))
 
 
@@ -912,6 +926,54 @@ def _handle_sys_consent(name, arguments, root):
     ))
 
 
+def _handle_sys_mode(name, arguments, root):
+    """Query or switch the active persona (scruffy/neat/critique/delegation).
+
+    Called with no ``persona`` argument: returns the current persona +
+    all available personas.
+    Called with ``persona=<name>``: activates that persona and persists
+    to ``.os_state/config.yaml``.
+    """
+    from research_os.server.personas import (
+        PERSONAS,
+        VALID_PERSONA_NAMES,
+        get_active_persona,
+        set_active_persona,
+    )
+
+    target = (arguments.get("persona") or "").strip()
+    if not target:
+        # Query mode — return current + catalog.
+        active = get_active_persona(Path(root))
+        record = PERSONAS[active]
+        catalog = {
+            n: {
+                "directive": p["directive"],
+                "tool_visibility": p["tool_visibility"],
+                "execution_policy": p["execution_policy"],
+            }
+            for n, p in PERSONAS.items()
+        }
+        return _text(_success({
+            "active_persona": active,
+            "directive": record["directive"],
+            "tool_visibility": record["tool_visibility"],
+            "execution_policy": record["execution_policy"],
+            "available_personas": catalog,
+        }))
+
+    if target not in VALID_PERSONA_NAMES:
+        return _text(_error(
+            what=f"unknown persona {target!r}",
+            why=f"valid persona names are: {list(VALID_PERSONA_NAMES)}",
+            next_action="call sys_mode() with no argument to list available personas",
+        ))
+    result = set_active_persona(Path(root), target)
+    if result.get("status") == "error":
+        return _text(_error(result.get("message", "set_active_persona failed")))
+    return _text(_success(result))
+
+
 def _handle_sys_workspace_mode(name, arguments, root):
     """Report or transition the workspace mode (first-class, additive)."""
     op = (arguments.get("operation") or "status").strip().lower()
@@ -945,4 +1007,5 @@ HANDLERS = {
     "sys_file_read": _handle_sys_file_read,
     "sys_file_write": _handle_sys_file_write,
     "sys_file_list": _handle_sys_file_list,
+    "sys_mode": _handle_sys_mode,
 }

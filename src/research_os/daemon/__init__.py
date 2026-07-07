@@ -44,7 +44,9 @@ from .lineage import (
     ancestors,
     build_lineage,
     descendants,
+    downstream,
     lineage_to_mermaid,
+    provenance as lineage_provenance,
     topo_order,
 )
 from .registry import Workspace, WorkspaceRegistry
@@ -55,6 +57,8 @@ from .schedulers import SchedulerResult, SchedulerRunner, SlurmAdapter, get_adap
 from .staleness import assess as assess_staleness
 from .staleness import check_input_staleness
 from .tasks import Job, JobStatus, TaskQueue
+from .protocol_driver import ProtocolDriver
+from .workflow import DAGExecutor, Digraph
 
 __all__ = [
     "Daemon",
@@ -82,6 +86,8 @@ __all__ = [
     "lineage_to_mermaid",
     "ancestors",
     "descendants",
+    "downstream",
+    "lineage_provenance",
     "topo_order",
     "assess_staleness",
     "check_input_staleness",
@@ -95,4 +101,7 @@ __all__ = [
     "get_profile",
     "all_profiles",
     "GENERIC",
+    "DAGExecutor",
+    "Digraph",
+    "ProtocolDriver",
 ]

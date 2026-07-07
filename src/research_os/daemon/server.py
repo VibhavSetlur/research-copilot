@@ -7,6 +7,7 @@ we raise a clear, actionable error telling the user to install it.
 
 Read-only endpoints (no auth beyond the 127.0.0.1 bind):
   GET  /healthz            liveness + version
+  GET  /v1/healthz         liveness + version (v1-prefixed alias of /healthz)
   GET  /v1/state           multi-root state snapshot (all registered roots)
   GET  /v1/supervision     PI roll-up: health across ALL registered projects
                            (counts + worst findings + needs_attention list)
@@ -32,6 +33,13 @@ Read-only endpoints (no auth beyond the 127.0.0.1 bind):
   GET  /v1/jobs/{job_id}   one job
   GET  /v1/runs            durable run journal (the permanent archive)
   GET  /v1/runs/{run_id}   one run manifest (?log=1&tail=N for output)
+  GET  /v1/runs/{run_id}/artifacts  artifacts list from a run manifest
+  GET  /v1/runs/{run_id}/lineage    per-run lineage subgraph (ancestors + descendants)
+  GET  /v1/plans           list active protocol plans (?root=)
+  GET  /v1/plans/{plan_id} protocol plan details
+  GET  /v1/memory/search   keyword/semantic memory search (?q=, ?k=)
+  GET  /v1/plugins         list registered plugins (empty in this release)
+  GET  /v1/metrics         Prometheus text exposition (hand-rolled; no prometheus_client)
   GET  /v1/stream          SSE stream of the 7 core event kinds (run.started/
                            completed/failed, protocol.step_started, gate.pending/
                            resolved, memory.stored); ?since=<iso> resumes by time
@@ -48,11 +56,16 @@ the consent/staleness authority surface; off by default):
   POST /v1/jobs            submit a journaled background run (agent-initiated
                            execution → one journal/provenance/lineage path) (auth)
   POST /v1/runs            submit a journaled run (canonical exec-tool path) (auth)
+  POST /v1/runs/{run_id}/rerun      re-run with overrides; preserves lineage (auth)
+  POST /v1/runs/{run_id}/reproduce  reproduce verdict: re-execute + compare artifacts (auth)
   POST /v1/runs/{run_id}/resume  resume an interrupted/paused run from its
                            recorded spec (checkpoint-aware) (auth)
   GET  /v1/continuation     current autonomous goal-loop state (goal/hops/active)
   POST /v1/continuation/start  begin an autonomous goal loop toward a goal (auth)
   POST /v1/continuation/stop   end the active autonomous goal loop (auth)
+  POST /v1/plans           start protocol tracking — creates a resumable plan (auth)
+  POST /v1/plans/{plan_id}/step  advance a protocol plan by one step (auth)
+  POST /v1/memory/record   store a memory record in the project memory store (auth)
   POST /v1/consent/request the agent asks for consent (open; cannot grant)
   POST /v1/consent/approve mints a one-shot, TTL'd, arg-bound token (auth)
   POST /v1/consent/deny    rejects a pending request (auth)
@@ -1152,6 +1165,356 @@ def build_app(daemon: "Daemon"):
         approved = daemon.gates.resolve(gate_id, decision_normalized)
         return JSONResponse({"gate_id": gate_id, "decision": decision_normalized, "approved": approved, "status": "resolved"})
 
+    # ── §13.5 v2 surface ─────────────────────────────────────────────────────
+
+    async def get_healthz_v1(request):
+        # Alias of /healthz under the /v1 prefix so spec-compliant clients
+        # that always prepend /v1 can discover liveness without special-casing.
+        return await healthz(request)
+
+    async def get_run_artifacts(request):
+        # READ-ONLY: return the artifacts list from a run manifest.
+        store = _runstore_or_none(request)
+        if store is None:
+            return JSONResponse({"error": "run journal unavailable"}, status_code=404)
+        run_id = request.path_params["run_id"]
+        manifest = store.read_manifest(run_id)
+        if manifest is None:
+            return JSONResponse({"error": "run not found"}, status_code=404)
+        return JSONResponse({"run_id": run_id, "artifacts": manifest.get("artifacts") or []})
+
+    async def get_run_lineage(request):
+        # READ-ONLY: per-run lineage subgraph — the run's ancestors +
+        # descendants in the content-addressed DAG.
+        from .lineage import ancestors, build_lineage, descendants
+
+        store = _runstore_or_none(request)
+        if store is None:
+            return JSONResponse({"available": False,
+                                 "error": "no run journal for this root"})
+        run_id = request.path_params["run_id"]
+        limit, err = _limit_param(request)
+        if err is not None:
+            return err
+        manifests = store.recent_manifests(limit=limit or 200)
+        graph = build_lineage(manifests)
+        graph = dict(graph)
+        graph["focus"] = {
+            "run_id": run_id,
+            "ancestors": sorted(ancestors(graph, run_id)),
+            "descendants": sorted(descendants(graph, run_id)),
+        }
+        graph["available"] = True
+        return JSONResponse(graph)
+
+    def _protocol_driver_for(request):
+        """Resolve a ProtocolDriver from ?root= or the daemon root.
+
+        Returns (driver, error_response|None).
+        """
+        from pathlib import Path as _Path
+        from .protocol_driver import ProtocolDriver
+
+        root_q = request.query_params.get("root")
+        root = _Path(root_q) if root_q else daemon.root
+        if root is None:
+            return None, JSONResponse(
+                {"error": "no project root resolved", "code": "no_root"},
+                status_code=400,
+            )
+        return ProtocolDriver(root), None
+
+    async def get_plans(request):
+        # READ-ONLY: list active protocol plans for this workspace.
+        driver, err = _protocol_driver_for(request)
+        if err is not None:
+            return err
+        return JSONResponse({"plans": driver.list_plans()})
+
+    async def get_plan(request):
+        # READ-ONLY: detail for one plan.
+        driver, err = _protocol_driver_for(request)
+        if err is not None:
+            return err
+        plan_id = request.path_params["plan_id"]
+        plan = driver.get_plan(plan_id)
+        if plan is None:
+            return JSONResponse({"error": "plan not found"}, status_code=404)
+        return JSONResponse(plan)
+
+    async def get_memory_search(request):
+        # READ-ONLY: vector/keyword search over the project memory store.
+        # No LLM — this is retrieval only.
+        from pathlib import Path as _Path
+
+        q = request.query_params.get("q", "").strip()
+        if not q:
+            return JSONResponse(
+                {"error": "query parameter 'q' is required", "code": "bad_request"},
+                status_code=400,
+            )
+        limit, err = _limit_param(request, default=5)
+        if err is not None:
+            return err
+        root_q = request.query_params.get("root")
+        root = _Path(root_q) if root_q else daemon.root
+
+        from research_os.memory import MemoryRetriever  # noqa: PLC0415
+        retriever = MemoryRetriever(root)
+        hits_raw = retriever.search(q, k=limit or 5)
+        hits = []
+        for score, record in hits_raw:
+            try:
+                d = record.model_dump(mode="json")
+            except Exception:  # noqa: BLE001
+                d = {}
+            hits.append({"score": score, **d})
+        return JSONResponse({"query": q, "hits": hits})
+
+    async def get_plugins(request):
+        # READ-ONLY: list registered plugins (empty in this release).
+        from research_os.server.plugin_registry import plugin_registry  # noqa: PLC0415
+        plugins = plugin_registry().discover()
+        # PluginManifest is a dataclass; serialize to dict.
+        import dataclasses as _dc  # noqa: PLC0415
+        result = []
+        for p in plugins:
+            try:
+                result.append(_dc.asdict(p))
+            except Exception:  # noqa: BLE001
+                result.append(str(p))
+        return JSONResponse({"plugins": result})
+
+    async def get_metrics(request):
+        # READ-ONLY: hand-rolled Prometheus text exposition.
+        # prometheus_client is NOT a dependency — we produce the text format
+        # ourselves. Only daemon-state counters/gauges; no model calls.
+        lines = ["# HELP research_os_up Daemon is alive",
+                 "# TYPE research_os_up gauge",
+                 "research_os_up 1"]
+        # Events total (last sequence number as a monotonic counter proxy).
+        try:
+            events_total = daemon.events.last_seq
+        except Exception:  # noqa: BLE001
+            events_total = 0
+        lines += [
+            "# HELP research_os_events_total Total events published on the event bus",
+            "# TYPE research_os_events_total counter",
+            f"research_os_events_total {events_total}",
+        ]
+        # Runs total.
+        try:
+            if daemon.runstore is not None:
+                runs_total = len(daemon.runstore.list_runs(limit=100000))
+            else:
+                runs_total = 0
+        except Exception:  # noqa: BLE001
+            runs_total = 0
+        lines += [
+            "# HELP research_os_runs_total Total durable runs recorded in the journal",
+            "# TYPE research_os_runs_total counter",
+            f"research_os_runs_total {runs_total}",
+        ]
+        # Registered workspaces gauge.
+        try:
+            workspaces = len(daemon.registry.roots())
+        except Exception:  # noqa: BLE001
+            workspaces = 0
+        lines += [
+            "# HELP research_os_workspaces Number of registered project workspaces",
+            "# TYPE research_os_workspaces gauge",
+            f"research_os_workspaces {workspaces}",
+        ]
+        return PlainTextResponse(
+            "\n".join(lines) + "\n",
+            media_type="text/plain; version=0.0.4",
+        )
+
+    async def post_run_rerun(request):
+        # MUTATING: re-run a journaled run with optional spec overrides.
+        # Preserves lineage (new run records spec.rerun_of). Auth-gated.
+        denied = _consent_auth_error(request)
+        if denied is not None:
+            return denied
+        run_id = request.path_params["run_id"]
+        try:
+            body = await request.json()
+        except Exception:
+            return JSONResponse(
+                {"error": "request body must be valid JSON", "code": "bad_request"},
+                status_code=400,
+            )
+        if not isinstance(body, dict):
+            return JSONResponse(
+                {"error": "body must be a JSON object", "code": "bad_request"},
+                status_code=400,
+            )
+        overrides = body.get("overrides") or {}
+        cwd = body.get("cwd") or None
+        try:
+            result = daemon.rerun_run(run_id, overrides, cwd=cwd)
+        except ValueError as exc:
+            msg = str(exc)
+            if "no recorded run" in msg or "no workspace" in msg:
+                return JSONResponse(
+                    {"error": msg, "code": "not_found"}, status_code=404
+                )
+            return JSONResponse({"error": msg, "code": "bad_request"}, status_code=400)
+        return JSONResponse(result)
+
+    async def post_run_reproduce(request):
+        # MUTATING: re-execute a run and compare its artifacts against the
+        # original. Returns a verdict. Auth-gated. No LLM.
+        denied = _consent_auth_error(request)
+        if denied is not None:
+            return denied
+        run_id = request.path_params["run_id"]
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
+        cwd = (body or {}).get("cwd") or None
+        timeout_raw = (body or {}).get("timeout")
+        timeout = float(timeout_raw) if timeout_raw is not None else None
+        try:
+            result = daemon.reproduce_run(run_id, cwd=cwd, timeout=timeout)
+        except ValueError as exc:
+            msg = str(exc)
+            if "no recorded run" in msg or "no workspace" in msg:
+                return JSONResponse(
+                    {"error": msg, "code": "not_found"}, status_code=404
+                )
+            return JSONResponse({"error": msg, "code": "bad_request"}, status_code=400)
+        return JSONResponse(result)
+
+    async def post_plans(request):
+        # MUTATING: start a protocol tracking plan. Auth-gated.
+        denied = _consent_auth_error(request)
+        if denied is not None:
+            return denied
+        try:
+            body = await request.json()
+        except Exception:
+            return JSONResponse(
+                {"error": "request body must be valid JSON", "code": "bad_request"},
+                status_code=400,
+            )
+        if not isinstance(body, dict):
+            return JSONResponse(
+                {"error": "body must be a JSON object", "code": "bad_request"},
+                status_code=400,
+            )
+        protocol_name = body.get("protocol")
+        if not protocol_name or not isinstance(protocol_name, str):
+            return JSONResponse(
+                {"error": "body must include 'protocol' (a string)", "code": "bad_request"},
+                status_code=400,
+            )
+        # Allow body-level root override.
+        from pathlib import Path as _Path
+        from .protocol_driver import ProtocolDriver
+
+        root_q = body.get("root") or request.query_params.get("root")
+        root = _Path(root_q) if root_q else daemon.root
+        if root is None:
+            return JSONResponse(
+                {"error": "no project root resolved", "code": "no_root"},
+                status_code=400,
+            )
+        driver = ProtocolDriver(root)
+        try:
+            plan_id = driver.start(protocol_name)
+        except Exception as exc:  # noqa: BLE001
+            # RoError (unknown protocol) or any other failure -> 400/404.
+            msg = str(exc)
+            # Unknown protocol => 404; other errors => 400.
+            is_not_found = "not found" in msg.lower() or "unknown" in msg.lower()
+            return JSONResponse(
+                {"error": msg, "code": "not_found" if is_not_found else "bad_request"},
+                status_code=404 if is_not_found else 400,
+            )
+        return JSONResponse({"plan_id": plan_id}, status_code=201)
+
+    async def post_plan_step(request):
+        # MUTATING: advance a protocol plan by one step. Auth-gated.
+        denied = _consent_auth_error(request)
+        if denied is not None:
+            return denied
+        driver, err = _protocol_driver_for(request)
+        if err is not None:
+            return err
+        plan_id = request.path_params["plan_id"]
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
+        result = (body or {}).get("result")
+        try:
+            summary = driver.complete_step(plan_id, result)
+        except KeyError as exc:
+            return JSONResponse(
+                {"error": str(exc), "code": "not_found"}, status_code=404
+            )
+        return JSONResponse(summary)
+
+    async def post_memory_record(request):
+        # MUTATING: store a memory record. Auth-gated. No LLM.
+        denied = _consent_auth_error(request)
+        if denied is not None:
+            return denied
+        try:
+            body = await request.json()
+        except Exception:
+            return JSONResponse(
+                {"error": "request body must be valid JSON", "code": "bad_request"},
+                status_code=400,
+            )
+        if not isinstance(body, dict):
+            return JSONResponse(
+                {"error": "body must be a JSON object", "code": "bad_request"},
+                status_code=400,
+            )
+        # Validate required fields.
+        kind = body.get("kind")
+        content = body.get("content")
+        if not kind:
+            return JSONResponse(
+                {"error": "'kind' is required", "code": "bad_request"},
+                status_code=400,
+            )
+        if not content:
+            return JSONResponse(
+                {"error": "'content' is required", "code": "bad_request"},
+                status_code=400,
+            )
+        from pathlib import Path as _Path
+
+        root_q = body.get("root") or request.query_params.get("root")
+        root = _Path(root_q) if root_q else daemon.root
+
+        from research_os.memory import MemoryRecord, MemoryRetriever  # noqa: PLC0415
+        # project field: use root dir name as project slug (matches existing
+        # convention — see memory/retriever.py which scopes by root).
+        project_slug = _Path(root).name if root is not None else "unknown"
+        try:
+            record = MemoryRecord(
+                kind=kind,
+                content=str(content),
+                summary=str(body.get("summary", "")),
+                project=project_slug,
+            )
+        except Exception as exc:
+            return JSONResponse(
+                {"error": f"invalid record: {exc}", "code": "bad_request"},
+                status_code=400,
+            )
+        retriever = MemoryRetriever(root)
+        stored = retriever.store(record)
+        return JSONResponse(
+            {"stored": True, "id": stored.id, "kind": stored.kind},
+            status_code=201,
+        )
+
     async def post_runs(request):
         # MUTATING: submit a journaled run — the canonical exec-tool path.
         # Mirrors post_jobs body validation + run_command call, but returns
@@ -1215,6 +1578,7 @@ def build_app(daemon: "Daemon"):
 
     routes = [
         Route("/healthz", healthz, methods=["GET"]),
+        Route("/v1/healthz", get_healthz_v1, methods=["GET"]),
         Route("/v1/state", get_state, methods=["GET"]),
         Route("/v1/supervision", get_supervision, methods=["GET"]),
         Route("/v1/domain", get_domain, methods=["GET"]),
@@ -1233,6 +1597,10 @@ def build_app(daemon: "Daemon"):
         Route("/v1/jobs/{job_id}", get_job, methods=["GET"]),
         Route("/v1/runs", get_runs, methods=["GET"]),
         Route("/v1/runs/{run_id}", get_run, methods=["GET"]),
+        Route("/v1/runs/{run_id}/artifacts", get_run_artifacts, methods=["GET"]),
+        Route("/v1/runs/{run_id}/lineage", get_run_lineage, methods=["GET"]),
+        Route("/v1/runs/{run_id}/rerun", post_run_rerun, methods=["POST"]),
+        Route("/v1/runs/{run_id}/reproduce", post_run_reproduce, methods=["POST"]),
         Route("/v1/runs/{run_id}/resume", post_run_resume, methods=["POST"]),
         Route("/v1/continuation", get_continuation, methods=["GET"]),
         Route("/v1/continuation/start", post_continuation_start, methods=["POST"]),
@@ -1241,6 +1609,14 @@ def build_app(daemon: "Daemon"):
         Route("/v1/gates/pending", get_gates_pending, methods=["GET"]),
         Route("/v1/gates/respond", post_gates_respond, methods=["POST"]),
         Route("/v1/runs", post_runs, methods=["POST"]),
+        Route("/v1/plans", get_plans, methods=["GET"]),
+        Route("/v1/plans", post_plans, methods=["POST"]),
+        Route("/v1/plans/{plan_id}", get_plan, methods=["GET"]),
+        Route("/v1/plans/{plan_id}/step", post_plan_step, methods=["POST"]),
+        Route("/v1/memory/search", get_memory_search, methods=["GET"]),
+        Route("/v1/memory/record", post_memory_record, methods=["POST"]),
+        Route("/v1/plugins", get_plugins, methods=["GET"]),
+        Route("/v1/metrics", get_metrics, methods=["GET"]),
         Route("/v1/events", stream_events, methods=["GET"]),
         Route("/v1/events/recent", get_events_recent, methods=["GET"]),
         Route("/v1/consent/pending", get_consent_pending, methods=["GET"]),
