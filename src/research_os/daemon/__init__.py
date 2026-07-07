@@ -55,6 +55,7 @@ from .schedulers import SchedulerResult, SchedulerRunner, SlurmAdapter, get_adap
 from .staleness import assess as assess_staleness
 from .staleness import check_input_staleness
 from .tasks import Job, JobStatus, TaskQueue
+from .workflow import DAGExecutor, Digraph
 
 __all__ = [
     "Daemon",
@@ -95,4 +96,6 @@ __all__ = [
     "get_profile",
     "all_profiles",
     "GENERIC",
+    "DAGExecutor",
+    "Digraph",
 ]
