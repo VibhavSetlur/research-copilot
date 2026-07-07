@@ -1545,7 +1545,6 @@ def check_reasoning_layer_independent_of_daemon():
     return True, "server/ + tools/ never import daemon/ (arrow points daemon→server)"
 
 
-<<<<<<< HEAD
 def check_one_state_loader() -> tuple[bool, str]:
     """Guard: ``state_schema.load_state`` must not exist or be used in src/.
 
@@ -1681,7 +1680,6 @@ def check_no_duplicate_base_model() -> tuple[bool, str]:
             "stale research_os.schema imports found: " + "; ".join(offenders[:5])
         )
     return True, "research_os.schema package absent; no stale schema imports"
-=======
 def check_mode_registry_consistent():
     """Drift guard: all derived mode views agree with ModeMeta and cover len==6.
 
@@ -1771,7 +1769,6 @@ def check_mode_registry_consistent():
     if errors:
         return False, f"{len(errors)} drift(s): " + "; ".join(errors[:3])
     return True, f"all derived mode views consistent (6 modes, {len(FORBIDDEN_TRANSITIONS)} forbidden pairs)"
->>>>>>> feat/v5-w0-mode-registry
 
 
 def main() -> int:
