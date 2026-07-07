@@ -1,7 +1,7 @@
 id: change_workspace_mode
 category: guidance
 name: Change Workspace Mode (a project outgrew its starting shape)
-version: '4.0.0'
+version: '5.0.0'
 intent_class: discover
 sub_intent: intake
 tier: plan

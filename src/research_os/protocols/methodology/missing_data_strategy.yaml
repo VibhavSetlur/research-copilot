@@ -1,7 +1,7 @@
 id: missing_data_strategy
 tier: 'plan'
 name: Missing-Data Strategy (MCAR/MAR/MNAR → handling → sensitivity)
-version: '3.5.1'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

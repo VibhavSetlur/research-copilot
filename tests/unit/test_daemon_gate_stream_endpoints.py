@@ -27,8 +27,7 @@ class _FakeConfig:
     host = "127.0.0.1"
     port = 9999
     base_url = "http://127.0.0.1:9999"
-    enable_gateway = True
-    gateway_token_env = "RESEARCH_OS_GATEWAY_TOKEN"
+    auth_token_env = "RESEARCH_OS_DAEMON_TOKEN"
     enable_dashboard = False
     sandbox_mode = "auto"
     task_workers = 1
@@ -77,8 +76,8 @@ class TestGateRespondDecisionValidation:
 
     @pytest.fixture
     def app_and_daemon(self, tmp_path, monkeypatch):
-        """Return (app, daemon) with gateway auth set up."""
-        monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "test-token")
+        """Return (app, daemon) with daemon token auth set up."""
+        monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "test-token")
         daemon = _FakeDaemon(tmp_path)
         app = _make_app(daemon)
         return app, daemon
@@ -118,7 +117,7 @@ class TestGateRespondDecisionValidation:
 
     def test_reject_succeeds(self, app_and_daemon, tmp_path, monkeypatch):
         from research_os.daemon.gates import GateRequest
-        monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "test-token")
+        monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "test-token")
         daemon = _FakeDaemon(tmp_path)
         req = GateRequest(id="", protocol_id="analysis/eval", step_id="s1",
                           question="Proceed?", root=str(tmp_path))
@@ -139,7 +138,7 @@ class TestGateRespondDecisionValidation:
 
     def test_case_insensitive_reject(self, app_and_daemon, tmp_path, monkeypatch):
         from research_os.daemon.gates import GateRequest
-        monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "test-token")
+        monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "test-token")
         daemon = _FakeDaemon(tmp_path)
         req = GateRequest(id="", protocol_id="p", step_id="s",
                           question="?", root=str(tmp_path))
@@ -196,8 +195,8 @@ class TestGateRespondDecisionValidation:
         resp = self._post_respond(app, "no-such-gate", "approve")
         assert resp.status_code == 404
 
-    def test_no_auth_returns_503_or_401(self, app_and_daemon, pending_gate_id):
-        """No bearer token → 503 (gateway not configured) or 401."""
+    def test_no_auth_returns_401(self, app_and_daemon, pending_gate_id):
+        """No bearer token when token is configured → 401."""
         app, _ = app_and_daemon
         from starlette.testclient import TestClient
         client = TestClient(app, raise_server_exceptions=False)
@@ -205,4 +204,4 @@ class TestGateRespondDecisionValidation:
             "/v1/gates/respond",
             json={"gate_id": pending_gate_id, "decision": "approve"},
         )
-        assert resp.status_code in (401, 503)
+        assert resp.status_code == 401

@@ -1,7 +1,7 @@
 id: cox_ph_diagnostics
 tier: 'plan'
 name: Cox PH Diagnostics (Proportional Hazards check + fallback routing)
-version: '3.5.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

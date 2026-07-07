@@ -1,7 +1,7 @@
 id: methodological_consultation
 tier: 'plan'
 name: Methodological Consultation (teach / explain / advise — no project commit)
-version: '3.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

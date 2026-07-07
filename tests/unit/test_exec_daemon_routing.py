@@ -131,7 +131,7 @@ class TestTryDaemonRun:
         with (
             patch("research_os.server.daemon_bridge.daemon_base_url",
                   return_value="http://127.0.0.1:9999"),
-            patch("research_os.server.daemon_bridge.gateway_bearer",
+            patch("research_os.server.daemon_bridge.daemon_bearer",
                   return_value="tok"),
             patch("research_os.server.daemon_bridge.http_post",
                   return_value=(201, body)),
@@ -144,7 +144,7 @@ class TestTryDaemonRun:
         with (
             patch("research_os.server.daemon_bridge.daemon_base_url",
                   return_value="http://127.0.0.1:9999"),
-            patch("research_os.server.daemon_bridge.gateway_bearer",
+            patch("research_os.server.daemon_bridge.daemon_bearer",
                   return_value=None),
             patch("research_os.server.daemon_bridge.http_post",
                   return_value=(503, {"error": "gateway disabled"})),
@@ -157,7 +157,7 @@ class TestTryDaemonRun:
         with (
             patch("research_os.server.daemon_bridge.daemon_base_url",
                   return_value="http://127.0.0.1:9999"),
-            patch("research_os.server.daemon_bridge.gateway_bearer",
+            patch("research_os.server.daemon_bridge.daemon_bearer",
                   return_value=None),
             patch("research_os.server.daemon_bridge.http_post",
                   return_value=(None, None)),
@@ -170,7 +170,7 @@ class TestTryDaemonRun:
         with (
             patch("research_os.server.daemon_bridge.daemon_base_url",
                   return_value="http://127.0.0.1:9999"),
-            patch("research_os.server.daemon_bridge.gateway_bearer",
+            patch("research_os.server.daemon_bridge.daemon_bearer",
                   return_value=None),
             patch("research_os.server.daemon_bridge.http_post",
                   return_value=(401, {"error": "unauthorized"})),
@@ -190,7 +190,7 @@ class TestTryDaemonRun:
         with (
             patch("research_os.server.daemon_bridge.daemon_base_url",
                   return_value="http://127.0.0.1:9999"),
-            patch("research_os.server.daemon_bridge.gateway_bearer",
+            patch("research_os.server.daemon_bridge.daemon_bearer",
                   return_value=None),
             patch("research_os.server.daemon_bridge.http_post", side_effect=fake_post),
         ):
@@ -215,7 +215,7 @@ class TestAwaitDaemonRun:
         with (
             patch("research_os.server.daemon_bridge.daemon_base_url",
                   return_value="http://127.0.0.1:9999"),
-            patch("research_os.server.daemon_bridge.gateway_bearer",
+            patch("research_os.server.daemon_bridge.daemon_bearer",
                   return_value="tok"),
             patch("research_os.server.daemon_bridge.http_get",
                   side_effect=_fake_http_get_terminal),
@@ -242,7 +242,7 @@ class TestAwaitDaemonRun:
         with (
             patch("research_os.server.daemon_bridge.daemon_base_url",
                   return_value="http://127.0.0.1:9999"),
-            patch("research_os.server.daemon_bridge.gateway_bearer",
+            patch("research_os.server.daemon_bridge.daemon_bearer",
                   return_value=None),
             patch("research_os.server.daemon_bridge.http_get",
                   side_effect=_always_running),
@@ -263,7 +263,7 @@ class TestAwaitDaemonRun:
         with (
             patch("research_os.server.daemon_bridge.daemon_base_url",
                   return_value="http://127.0.0.1:9999"),
-            patch("research_os.server.daemon_bridge.gateway_bearer",
+            patch("research_os.server.daemon_bridge.daemon_bearer",
                   return_value=None),
             patch("research_os.server.daemon_bridge.http_get",
                   side_effect=_fake_http_get_none),
@@ -280,7 +280,7 @@ class TestAwaitDaemonRun:
         with (
             patch("research_os.server.daemon_bridge.daemon_base_url",
                   return_value="http://127.0.0.1:9999"),
-            patch("research_os.server.daemon_bridge.gateway_bearer",
+            patch("research_os.server.daemon_bridge.daemon_bearer",
                   return_value=None),
             patch("research_os.server.daemon_bridge.http_get",
                   side_effect=_failed_manifest),
@@ -331,7 +331,7 @@ class TestPythonExecDaemonRouting:
         with (
             patch("research_os.server.daemon_bridge.daemon_base_url",
                   return_value="http://127.0.0.1:9999"),
-            patch("research_os.server.daemon_bridge.gateway_bearer",
+            patch("research_os.server.daemon_bridge.daemon_bearer",
                   return_value="tok"),
             patch("research_os.server.daemon_bridge.http_post",
                   return_value=(201, {"run_id": "abc123", "status": "submitted"})),
@@ -359,7 +359,7 @@ class TestPythonExecDaemonRouting:
         with (
             patch("research_os.server.daemon_bridge.daemon_base_url",
                   return_value="http://127.0.0.1:9999"),
-            patch("research_os.server.daemon_bridge.gateway_bearer",
+            patch("research_os.server.daemon_bridge.daemon_bearer",
                   return_value=None),
             patch("research_os.server.daemon_bridge.http_post",
                   return_value=(503, {"error": "gateway off"})),
@@ -382,7 +382,7 @@ class TestPythonExecDaemonRouting:
         with (
             patch("research_os.server.daemon_bridge.daemon_base_url",
                   return_value="http://127.0.0.1:9999"),
-            patch("research_os.server.daemon_bridge.gateway_bearer",
+            patch("research_os.server.daemon_bridge.daemon_bearer",
                   return_value="tok"),
             patch("research_os.server.daemon_bridge.http_post",
                   return_value=(201, {"run_id": "r-lost", "status": "submitted"})),
@@ -432,7 +432,7 @@ class TestBashExecDaemonRouting:
         with (
             patch("research_os.server.daemon_bridge.daemon_base_url",
                   return_value="http://127.0.0.1:9999"),
-            patch("research_os.server.daemon_bridge.gateway_bearer",
+            patch("research_os.server.daemon_bridge.daemon_bearer",
                   return_value="tok"),
             patch("research_os.server.daemon_bridge.http_post",
                   return_value=(201, {"run_id": "bash-run-1", "status": "submitted"})),
@@ -456,7 +456,7 @@ class TestBashExecDaemonRouting:
         with (
             patch("research_os.server.daemon_bridge.daemon_base_url",
                   return_value="http://127.0.0.1:9999"),
-            patch("research_os.server.daemon_bridge.gateway_bearer",
+            patch("research_os.server.daemon_bridge.daemon_bearer",
                   return_value=None),
             patch("research_os.server.daemon_bridge.http_post",
                   return_value=(503, {})),
@@ -507,7 +507,7 @@ class TestTaskRunDaemonRouting:
         with (
             patch("research_os.server.daemon_bridge.daemon_base_url",
                   return_value="http://127.0.0.1:9999"),
-            patch("research_os.server.daemon_bridge.gateway_bearer",
+            patch("research_os.server.daemon_bridge.daemon_bearer",
                   return_value="tok"),
             patch("research_os.server.daemon_bridge.http_post",
                   return_value=(201, {"run_id": "task-run-1", "status": "submitted"})),
@@ -534,7 +534,7 @@ class TestTaskRunDaemonRouting:
         with (
             patch("research_os.server.daemon_bridge.daemon_base_url",
                   return_value="http://127.0.0.1:9999"),
-            patch("research_os.server.daemon_bridge.gateway_bearer",
+            patch("research_os.server.daemon_bridge.daemon_bearer",
                   return_value=None),
             patch("research_os.server.daemon_bridge.http_post",
                   return_value=(503, {})),
@@ -547,36 +547,38 @@ class TestTaskRunDaemonRouting:
 
 
 # ---------------------------------------------------------------------------
-# daemon_bridge additions: http_post headers + gateway_bearer + http_get sig
+# daemon_bridge additions: http_post headers + daemon_bearer + http_get sig
 # ---------------------------------------------------------------------------
 
 class TestDaemonBridgeExtensions:
-    def test_gateway_bearer_returns_none_when_no_descriptor(self, tmp_path):
+    def test_daemon_bearer_returns_none_when_no_descriptor(self, tmp_path):
         from research_os.server import daemon_bridge as db
-        assert db.gateway_bearer(tmp_path) is None
+        assert db.daemon_bearer(tmp_path) is None
 
-    def test_gateway_bearer_returns_none_when_env_not_set(self, tmp_path, monkeypatch):
+    def test_daemon_bearer_returns_none_when_env_not_set(self, tmp_path, monkeypatch):
         from research_os.server import daemon_bridge as db
+        monkeypatch.delenv("RESEARCH_OS_DAEMON_TOKEN", raising=False)
         monkeypatch.delenv("RESEARCH_OS_GATEWAY_TOKEN", raising=False)
-        assert db.gateway_bearer(tmp_path) is None
+        assert db.daemon_bearer(tmp_path) is None
 
-    def test_gateway_bearer_returns_token_from_default_env(self, tmp_path, monkeypatch):
+    def test_daemon_bearer_returns_token_from_default_env(self, tmp_path, monkeypatch):
         from research_os.server import daemon_bridge as db
-        monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "my-secret-token")
-        token = db.gateway_bearer(tmp_path)
+        monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "my-secret-token")
+        token = db.daemon_bearer(tmp_path)
         assert token == "my-secret-token"
 
-    def test_gateway_bearer_uses_descriptor_env_name(self, tmp_path, monkeypatch):
+    def test_daemon_bearer_uses_descriptor_env_name(self, tmp_path, monkeypatch):
         from research_os.server import daemon_bridge as db
         p = tmp_path / ".os_state" / "daemon.json"
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(
-            json.dumps({"pid": 1, "gateway_token_env": "MY_CUSTOM_TOKEN"}),
+            json.dumps({"pid": 1, "auth_token_env": "MY_CUSTOM_TOKEN"}),
             encoding="utf-8",
         )
         monkeypatch.setenv("MY_CUSTOM_TOKEN", "custom-tok")
+        monkeypatch.delenv("RESEARCH_OS_DAEMON_TOKEN", raising=False)
         monkeypatch.delenv("RESEARCH_OS_GATEWAY_TOKEN", raising=False)
-        assert db.gateway_bearer(tmp_path) == "custom-tok"
+        assert db.daemon_bearer(tmp_path) == "custom-tok"
 
     def test_http_post_with_no_headers(self):
         """http_post with headers=None must accept None without raising."""

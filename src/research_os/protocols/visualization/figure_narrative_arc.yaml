@@ -1,7 +1,7 @@
 id: figure_narrative_arc
 tier: 'synthesize'
 name: Figure Narrative Arc (ordering figures across paper / talk / poster)
-version: '3.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

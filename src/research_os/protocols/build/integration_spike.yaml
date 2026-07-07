@@ -1,7 +1,7 @@
 id: integration_spike
 tier: 'execute'
 name: Integration Spike (prove a candidate works before you build on it)
-version: '3.12.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]

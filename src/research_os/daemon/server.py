@@ -1,9 +1,11 @@
-"""Daemon HTTP server — the lazy ASGI layer (read-only + gateway).
+"""Daemon HTTP server — the lazy ASGI layer (read-only + authed mutating).
 
-This module is the ONLY place that touches starlette/uvicorn, and it does
-so lazily: importing `research_os.daemon.server` must not import the web
-stack. The deps live in the optional `[daemon]` extra; if they're missing
-we raise a clear, actionable error telling the user to install it.
+Research-OS calls no LLM and has NO chat gateway. This server exposes the
+daemon's own read + mutating endpoints; a client / IDE reasons over the MCP
+tools directly. This module is the ONLY place that touches starlette/uvicorn,
+and it does so lazily: importing `research_os.daemon.server` must not import
+the web stack. The deps live in the optional `[daemon]` extra; if they're
+missing we raise a clear, actionable error telling the user to install it.
 
 Read-only endpoints (no auth beyond the 127.0.0.1 bind):
   GET  /healthz            liveness + version
@@ -12,8 +14,8 @@ Read-only endpoints (no auth beyond the 127.0.0.1 bind):
   GET  /v1/supervision     PI roll-up: health across ALL registered projects
                            (counts + worst findings + needs_attention list)
   GET  /v1/domain          detected research field + field-aware defaults
-  GET  /v1/capabilities    agent front door: identity + field + tool/protocol
-                           inventory + work-state freshness + gateway readiness
+   GET  /v1/capabilities    agent front door: identity + field + tool/protocol
+                           inventory + work-state freshness
                            (?tools=full embeds OpenAI tool schemas)
   GET  /v1/orient          "standup": narrative of where the project is +
                            ONE recommended next action (field + run journal
@@ -51,8 +53,8 @@ Read-only endpoints (no auth beyond the 127.0.0.1 bind):
   GET  /v1/notifications   the notification outbox — what the daemon told the
                            researcher + delivery outcome (?undelivered=true)
 
-Mutating endpoints (require enable_gateway + a per-session bearer token,
-the consent/staleness authority surface; off by default):
+Mutating endpoints (require a per-session bearer token when one is
+configured on the daemon — the consent/staleness authority surface):
   POST /v1/jobs            submit a journaled background run (agent-initiated
                            execution → one journal/provenance/lineage path) (auth)
   POST /v1/runs            submit a journaled run (canonical exec-tool path) (auth)
@@ -77,17 +79,6 @@ the consent/staleness authority surface; off by default):
 NOTE: this list is drift-guarded — scripts/preflight.py (check_daemon_
 endpoints_documented) fails the build if a registered Route is missing
 from this docstring or vice versa. Keep them in sync.
-
-Gateway endpoint (Phase 2 — MUTATING, requires a per-session bearer token
-and an explicit enable_gateway flag; off by default):
-  POST /v1/chat/completions  OpenAI-compatible chat completions. Routes the
-                             prompt through the protocol router, injects
-                             domain + freshness + protocol context, forwards
-                             to the configured upstream LLM, and executes
-                             any Research-OS tool calls through the dispatch
-                             seam, looping until the model answers. Supports
-                             stream:true (Server-Sent Events of
-                             chat.completion.chunk frames).
 
 The transport sits behind this thin module by design (docs/ROADMAP.md
 §6) so a judge phase can swap starlette for something else without
@@ -128,45 +119,6 @@ def _bearer_token(authorization: str) -> str:
     if len(parts) == 2 and parts[0].lower() == "bearer":
         return parts[1].strip()
     return authorization.strip()
-
-
-def _make_upstream_forwarder(cfg):
-    """Build the network forwarder the gateway calls to reach the LLM.
-
-    Uses stdlib ``urllib`` (no httpx dependency) to POST the OpenAI-shaped
-    body to the configured upstream. Returns a ``forward_fn(body, headers)``
-    closure so the gateway core stays network-agnostic and testable.
-    """
-    import urllib.error
-    import urllib.request
-
-    base = (getattr(cfg, "gateway_upstream_base_url", "") or "").rstrip("/")
-    url = f"{base}/chat/completions"
-    api_key = os.environ.get(getattr(cfg, "gateway_api_key_env", ""), "")
-    upstream_model = getattr(cfg, "gateway_upstream_model", "") or ""
-    timeout = float(getattr(cfg, "gateway_timeout", 120) or 120)
-
-    def forward(body: dict, headers: dict) -> dict:
-        payload = dict(body)
-        # Force the configured upstream model (the client's model name is a
-        # routing hint to us, not necessarily a valid upstream model id).
-        if upstream_model:
-            payload["model"] = upstream_model
-        data = json.dumps(payload).encode("utf-8")
-        req_headers = {"Content-Type": "application/json", **(headers or {})}
-        if api_key:
-            req_headers["Authorization"] = f"Bearer {api_key}"
-        req = urllib.request.Request(url, data=data, headers=req_headers, method="POST")
-        try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                return json.loads(resp.read().decode("utf-8"))
-        except urllib.error.HTTPError as exc:
-            detail = exc.read().decode("utf-8", "replace")[:500]
-            raise RuntimeError(f"upstream {exc.code}: {detail}") from exc
-        except urllib.error.URLError as exc:
-            raise RuntimeError(f"cannot reach upstream {url}: {exc.reason}") from exc
-
-    return forward
 
 
 def build_app(daemon: "Daemon"):
@@ -235,7 +187,7 @@ def build_app(daemon: "Daemon"):
         # journal + provenance + lineage + reproduce treatment instead of
         # escaping into an untracked inline subprocess. Auth-gated like every
         # mutating endpoint (executes code on the host).
-        denied = _consent_auth_error(request)
+        denied = _mutating_auth_error(request)
         if denied is not None:
             return denied
         try:
@@ -297,7 +249,7 @@ def build_app(daemon: "Daemon"):
         # recorded spec as a fresh journaled run. The recovery lever orient's
         # resume_interrupted recommendation points at. Auth-gated (executes
         # code on the host).
-        denied = _consent_auth_error(request)
+        denied = _mutating_auth_error(request)
         if denied is not None:
             return denied
         run_id = request.path_params["run_id"]
@@ -319,7 +271,7 @@ def build_app(daemon: "Daemon"):
         # reaches terminal AND daemon.continue_command is set, the daemon
         # re-prompts the researcher's agent toward this goal (hop-limited).
         # Auth-gated. No-op-safe: opt-in still requires continue_command.
-        denied = _consent_auth_error(request)
+        denied = _mutating_auth_error(request)
         if denied is not None:
             return denied
         if daemon.root is None:
@@ -353,7 +305,7 @@ def build_app(daemon: "Daemon"):
     async def post_continuation_stop(request):
         # MUTATING: end the active autonomous goal loop (goal met / researcher
         # stopped it). Auth-gated. Idempotent.
-        denied = _consent_auth_error(request)
+        denied = _mutating_auth_error(request)
         if denied is not None:
             return denied
         if daemon.root is None:
@@ -518,9 +470,9 @@ def build_app(daemon: "Daemon"):
     async def get_capabilities(request):
         # The agent front door: one read-only call that fully describes
         # Research-OS to any AI agent — identity, detected field, tool +
-        # protocol inventory, work-state freshness, gateway readiness.
+        # protocol inventory, work-state freshness.
         # ?root= overrides; ?tools=full embeds the OpenAI tool schemas.
-        from . import gateway as _gw
+        from . import capabilities as _caps
 
         want_schemas = request.query_params.get("tools") == "full"
         root_q = request.query_params.get("root")
@@ -528,7 +480,7 @@ def build_app(daemon: "Daemon"):
         if root_q:
             target = daemon.registry.get(root_q) or daemon.registry.register(root_q)
         try:
-            payload = _gw.build_capabilities(target, include_tool_schemas=want_schemas)
+            payload = _caps.build_capabilities(target, include_tool_schemas=want_schemas)
         except Exception as exc:  # noqa: BLE001 - orientation must never 500
             return JSONResponse(
                 {"service": "research-os", "available": False, "error": str(exc)}
@@ -732,10 +684,10 @@ def build_app(daemon: "Daemon"):
     async def post_staleness_verdict(request):
         # MUTATING: assess freshness over the lineage DAG and PERSIST the
         # verdict sidecar (.os_state/staleness/verdict.json) that the
-        # reasoning-side staleness gate reads by shape. Gateway-gated like
+        # reasoning-side staleness gate reads by shape. Bearer-auth-gated like
         # the other mutating endpoints — writing the verdict is an authority
         # action (it can block the final-deliverable compile).
-        denied = _consent_auth_error(request)
+        denied = _mutating_auth_error(request)
         if denied is not None:
             return denied
         from . import provenance as _prov
@@ -766,89 +718,15 @@ def build_app(daemon: "Daemon"):
             {"verdict": verdict, "path": str(path)}, status_code=201
         )
 
-    async def chat_completions(request):
-        # OpenAI-compatible gateway (Phase 2). Mutating surface -> requires
-        # a per-session bearer token. Off unless config.enable_gateway.
-        from . import gateway as _gw
-
-        cfg = daemon.config
-        if not getattr(cfg, "enable_gateway", False):
-            return JSONResponse(
-                _gw.error_response(
-                    "gateway disabled; set daemon.enable_gateway=true to use it",
-                    code="gateway_disabled",
-                ),
-                status_code=503,
-            )
-
-        # Auth: a token MUST be configured, and the client MUST present it.
-        expected = os.environ.get(getattr(cfg, "gateway_token_env", ""), "")
-        if not expected:
-            return JSONResponse(
-                _gw.error_response(
-                    "gateway token not configured; set "
-                    f"${cfg.gateway_token_env} on the daemon",
-                    code="gateway_unconfigured",
-                ),
-                status_code=503,
-            )
-        presented = _bearer_token(request.headers.get("authorization", ""))
-        if presented != expected:
-            return JSONResponse(
-                _gw.error_response("invalid or missing bearer token",
-                                   code="unauthorized"),
-                status_code=401,
-            )
-
-        try:
-            body = await request.json()
-        except Exception:
-            return JSONResponse(
-                _gw.error_response("request body must be valid JSON",
-                                   code="bad_request"),
-                status_code=400,
-            )
-        if not isinstance(body, dict) or not body.get("messages"):
-            return JSONResponse(
-                _gw.error_response("body must include a 'messages' array",
-                                   code="bad_request"),
-                status_code=400,
-            )
-
-        forward = _make_upstream_forwarder(cfg)
-        try:
-            result = _gw.run_completion(
-                body, daemon, forward,
-                max_tool_rounds=getattr(cfg, "gateway_max_tool_rounds", 6),
-            )
-        except Exception as exc:  # noqa: BLE001
-            logger.exception("gateway completion failed")
-            return JSONResponse(
-                _gw.error_response(f"upstream completion failed: {exc}",
-                                   code="upstream_error"),
-                status_code=502,
-            )
-        # Streaming: re-emit the resolved completion as OpenAI-compatible
-        # SSE chunks. The tool-call loop runs to completion first (we can't
-        # honestly stream tokens mid-loop), then the answer streams as
-        # chat.completion.chunk frames every streaming client understands.
-        if body.get("stream"):
-            return StreamingResponse(
-                _gw.to_stream_chunks(result),
-                media_type="text/event-stream",
-                headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-            )
-        return JSONResponse(result)
-
     # ── consent authority (un-skippable gates) ──────────────────────────
     # The daemon is the consent AUTHORITY for floor gates. The reasoning
     # layer reads the granted ledger by shape (server/consent.py) and
     # refuses a gate unless a daemon-minted token is present. Here the
     # daemon mints/approves/denies/consumes those tokens. Read surfaces
     # (pending, grants) are ungated telemetry so a client can show them;
-    # mutating surfaces require the same enable_gateway + bearer auth as
-    # the chat gateway, because they decide whether dangerous actions may
-    # proceed.
+    # mutating surfaces require the daemon's bearer token (see
+    # _mutating_auth_error), because they decide whether dangerous actions
+    # may proceed.
     def _consent_store(request):
         from pathlib import Path as _Path
 
@@ -858,28 +736,26 @@ def build_app(daemon: "Daemon"):
         root = _Path(root_q) if root_q else daemon.root
         return ConsentStore(root)
 
-    def _consent_auth_error(request):
-        """Return a JSONResponse if the mutating consent surface is blocked.
+    def _mutating_auth_error(request):
+        """Return a JSONResponse if a mutating endpoint is not authorized.
 
-        Mirrors chat_completions: enable_gateway must be on and a bearer
-        token matching $gateway_token_env must be presented. Returns None
-        when authorized.
+        Bearer-token auth for the daemon's own mutating endpoints (RO calls
+        no LLM and has no gateway — this only guards local writes). Policy:
+
+        * A token configured on the daemon (``$auth_token_env`` set) → the
+          client MUST present a matching ``Authorization: Bearer`` header;
+          mismatch/absent → 401.
+        * No token configured → open behind the 127.0.0.1 bind (the default
+          local-only research assistant posture; the stdio client degrades
+          to native on any non-201 anyway).
+
+        Returns ``None`` when authorized.
         """
         cfg = daemon.config
-        if not getattr(cfg, "enable_gateway", False):
-            return JSONResponse(
-                {"error": "consent mutation disabled; set "
-                          "daemon.enable_gateway=true to use it",
-                 "code": "gateway_disabled"},
-                status_code=503,
-            )
-        expected = os.environ.get(getattr(cfg, "gateway_token_env", ""), "")
+        expected = os.environ.get(getattr(cfg, "auth_token_env", ""), "")
         if not expected:
-            return JSONResponse(
-                {"error": "gateway token not configured", "code":
-                 "gateway_unconfigured"},
-                status_code=503,
-            )
+            # No token configured → local-only, no bearer required.
+            return None
         presented = _bearer_token(request.headers.get("authorization", ""))
         if presented != expected:
             return JSONResponse(
@@ -957,7 +833,7 @@ def build_app(daemon: "Daemon"):
 
     async def post_consent_approve(request):
         # MUTATING + authority-bearing: mints a token. Requires auth.
-        denied = _consent_auth_error(request)
+        denied = _mutating_auth_error(request)
         if denied is not None:
             return denied
         try:
@@ -988,7 +864,7 @@ def build_app(daemon: "Daemon"):
         return JSONResponse({"grant": grant}, status_code=201)
 
     async def post_consent_deny(request):
-        denied = _consent_auth_error(request)
+        denied = _mutating_auth_error(request)
         if denied is not None:
             return denied
         try:
@@ -1006,7 +882,7 @@ def build_app(daemon: "Daemon"):
         return JSONResponse({"denied": ok})
 
     async def post_consent_consume(request):
-        denied = _consent_auth_error(request)
+        denied = _mutating_auth_error(request)
         if denied is not None:
             return denied
         try:
@@ -1113,7 +989,7 @@ def build_app(daemon: "Daemon"):
 
     async def post_gates_respond(request):
         # MUTATING: resolve a pending HITL gate. Auth-gated like post_jobs.
-        denied = _consent_auth_error(request)
+        denied = _mutating_auth_error(request)
         if denied is not None:
             return denied
         try:
@@ -1333,7 +1209,7 @@ def build_app(daemon: "Daemon"):
     async def post_run_rerun(request):
         # MUTATING: re-run a journaled run with optional spec overrides.
         # Preserves lineage (new run records spec.rerun_of). Auth-gated.
-        denied = _consent_auth_error(request)
+        denied = _mutating_auth_error(request)
         if denied is not None:
             return denied
         run_id = request.path_params["run_id"]
@@ -1365,7 +1241,7 @@ def build_app(daemon: "Daemon"):
     async def post_run_reproduce(request):
         # MUTATING: re-execute a run and compare its artifacts against the
         # original. Returns a verdict. Auth-gated. No LLM.
-        denied = _consent_auth_error(request)
+        denied = _mutating_auth_error(request)
         if denied is not None:
             return denied
         run_id = request.path_params["run_id"]
@@ -1389,7 +1265,7 @@ def build_app(daemon: "Daemon"):
 
     async def post_plans(request):
         # MUTATING: start a protocol tracking plan. Auth-gated.
-        denied = _consent_auth_error(request)
+        denied = _mutating_auth_error(request)
         if denied is not None:
             return denied
         try:
@@ -1437,7 +1313,7 @@ def build_app(daemon: "Daemon"):
 
     async def post_plan_step(request):
         # MUTATING: advance a protocol plan by one step. Auth-gated.
-        denied = _consent_auth_error(request)
+        denied = _mutating_auth_error(request)
         if denied is not None:
             return denied
         driver, err = _protocol_driver_for(request)
@@ -1459,7 +1335,7 @@ def build_app(daemon: "Daemon"):
 
     async def post_memory_record(request):
         # MUTATING: store a memory record. Auth-gated. No LLM.
-        denied = _consent_auth_error(request)
+        denied = _mutating_auth_error(request)
         if denied is not None:
             return denied
         try:
@@ -1519,7 +1395,7 @@ def build_app(daemon: "Daemon"):
         # MUTATING: submit a journaled run — the canonical exec-tool path.
         # Mirrors post_jobs body validation + run_command call, but returns
         # run_id (not job_id) at 201. Auth-gated like post_jobs.
-        denied = _consent_auth_error(request)
+        denied = _mutating_auth_error(request)
         if denied is not None:
             return denied
         try:
@@ -1591,7 +1467,6 @@ def build_app(daemon: "Daemon"):
         Route("/v1/staleness", get_staleness, methods=["GET"]),
         Route("/v1/staleness/verdict", post_staleness_verdict, methods=["POST"]),
         Route("/v1/rebuild/plan", get_rebuild_plan, methods=["GET"]),
-        Route("/v1/chat/completions", chat_completions, methods=["POST"]),
         Route("/v1/jobs", get_jobs, methods=["GET"]),
         Route("/v1/jobs", post_jobs, methods=["POST"]),
         Route("/v1/jobs/{job_id}", get_job, methods=["GET"]),

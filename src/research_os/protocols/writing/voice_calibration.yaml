@@ -1,7 +1,7 @@
 id: voice_calibration
 tier: 'synthesize'
 name: Voice Calibration (learn the researcher's writing voice + apply it)
-version: '3.12.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

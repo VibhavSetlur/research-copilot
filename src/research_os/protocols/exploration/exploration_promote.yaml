@@ -1,7 +1,7 @@
 id: exploration_promote
 tier: 'execute'
 name: Promote a Probe to a Real Step
-version: '3.8.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

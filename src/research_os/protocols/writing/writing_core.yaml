@@ -1,7 +1,7 @@
 id: writing_core
 tier: 'synthesize'
 name: Writing — Core Rules
-version: '3.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

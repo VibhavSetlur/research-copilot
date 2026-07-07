@@ -1,7 +1,7 @@
 id: multiple_comparisons
 tier: 'plan'
 name: Multiple Comparisons / Multiplicity Strategy
-version: '3.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

@@ -20,7 +20,7 @@ def test_defaults_are_localhost_only():
     cfg = DaemonConfig()
     assert cfg.host == DEFAULT_HOST == "127.0.0.1"
     assert cfg.port == DEFAULT_PORT
-    assert cfg.enable_gateway is False
+    assert cfg.auth_token_env == "RESEARCH_OS_DAEMON_TOKEN"
     assert cfg.enable_dashboard is False
     assert cfg.sandbox_mode == "auto"
     assert cfg.base_url == f"http://127.0.0.1:{DEFAULT_PORT}"
@@ -48,18 +48,16 @@ def test_with_overrides_ignores_none():
 
 
 def test_resolve_no_root_uses_defaults_then_overrides():
-    cfg = DaemonConfig.resolve(root=None, port=1234, enable_gateway=True)
+    cfg = DaemonConfig.resolve(root=None, port=1234)
     assert cfg.port == 1234
-    assert cfg.enable_gateway is True
+    assert cfg.auth_token_env == "RESEARCH_OS_DAEMON_TOKEN"
 
 
 def test_env_resolution(monkeypatch):
     monkeypatch.setenv("RESEARCH_OS_DAEMON_PORT", "5555")
-    monkeypatch.setenv("RESEARCH_OS_DAEMON_GATEWAY", "true")
     monkeypatch.setenv("RESEARCH_OS_DAEMON_SANDBOX", "native")
     cfg = DaemonConfig.resolve(root=None)
     assert cfg.port == 5555
-    assert cfg.enable_gateway is True
     assert cfg.sandbox_mode == "native"
 
 

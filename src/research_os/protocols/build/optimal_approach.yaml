@@ -1,7 +1,7 @@
 id: optimal_approach
 tier: 'plan'
 name: Optimal Approach (brain out the candidate approaches before committing to one)
-version: '4.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]

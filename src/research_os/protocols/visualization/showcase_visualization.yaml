@@ -1,7 +1,7 @@
 id: showcase_visualization
 tier: 'synthesize'
 name: Showcase Visualization (the visual IS the contribution)
-version: '3.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

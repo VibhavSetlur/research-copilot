@@ -1,7 +1,7 @@
 id: codebook_governance
 tier: 'plan'
 name: Codebook Governance (amend the program commons without breaking the roll-up)
-version: '3.12.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

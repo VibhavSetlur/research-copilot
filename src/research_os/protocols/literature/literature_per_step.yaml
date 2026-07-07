@@ -1,7 +1,7 @@
 id: literature_per_step
 tier: 'ground'
 name: Per-Step Literature Loop (find → download → cite → validate)
-version: '4.3.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

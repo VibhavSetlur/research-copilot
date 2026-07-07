@@ -1,4 +1,4 @@
-"""Consolidated tool surface — the 45 core Research-OS tools."""
+"""Consolidated tool surface — the 46 core Research-OS tools."""
 from __future__ import annotations
 
 from copy import deepcopy
@@ -296,7 +296,7 @@ CONSOLIDATED_TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
         "Audit a messy project directory and map it into RO layout.",
         "Classify source files and show a read-only migration plan into Research-OS.",
     ),
-    # ---- FULL (15) ----
+    # ---- FULL (16) ----
     "tool_ground": _tool(
         "tool_ground",
         "Register a grounded claim from explicit sources or project context.",

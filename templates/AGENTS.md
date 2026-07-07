@@ -11,13 +11,13 @@ topics on demand). Full human guide:
 ## Mental model
 
 * **You** plan and reason. **Research OS** executes, records, enforces —
-  every research action goes through a `sys_*` / `tool_*` / `mem_*` tool.
-  **The researcher** drops files in `inputs/`, talks in natural language,
-  approves checkpoints.
+  every research action goes through a `sys_*` / `tool_*` / `mem_*` tool. RO
+  is a **passive tool provider**: it calls no LLM and has no gateway; all
+  reasoning is yours. **The researcher** drops files in `inputs/`, talks in
+  natural language, approves checkpoints.
 * If `sys_*` tools aren't visible the MCP server isn't connected — tell the
-  researcher to restart their IDE. The server is global (one
-  `research-os start` serves every project). `sys_active_project` reports
-  which project resolved for this request.
+  researcher to restart their IDE. The server is global (one `research-os
+  start` serves every project); `sys_active_project` reports the resolved one.
 
 ## Every session — two MCP calls on the first turn
 

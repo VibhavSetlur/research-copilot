@@ -1,7 +1,7 @@
 id: method_scouting
 tier: 'plan'
 name: Method Scouting (find external methods / papers / code worth integrating)
-version: '3.12.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]

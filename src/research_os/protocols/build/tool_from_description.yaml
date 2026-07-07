@@ -1,7 +1,7 @@
 id: tool_from_description
 tier: 'plan'
 name: Tool From Description (describe it in plain language → plan → build → improve → version)
-version: '4.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]

@@ -13,7 +13,7 @@ from research_os.server import daemon_bridge as _bridge
 _DAEMON_UNAVAILABLE_NOTE = (
     "Daemon unavailable or not authorized — this run was executed natively "
     "and is NOT journaled (no provenance/CAS/lineage). "
-    "Start the daemon with the gateway enabled to journal runs."
+    "Start the daemon to journal runs."
 )
 
 
@@ -35,11 +35,10 @@ def _try_daemon_run(
     raises). The submit timeout is short (2 s) so a slow/absent daemon never
     stalls a tool call.
 
-    Auth flow: reads the optional gateway bearer token via
-    ``daemon_bridge.gateway_bearer``; when the token is set it is added as an
-    ``Authorization: Bearer`` header.  When the daemon's gateway is disabled
-    the POST returns 503 → ``None`` → degrade.  When no token is set and the
-    gateway requires auth the POST returns 401 → ``None`` → degrade.  In all
+    Auth flow: reads the optional daemon bearer token via
+    ``daemon_bridge.daemon_bearer``; when the token is set it is added as an
+    ``Authorization: Bearer`` header.  When the daemon requires auth and the
+    header is absent/wrong the POST returns 401 → ``None`` → degrade.  In all
     degrade cases the caller falls through to the existing native subprocess
     path and (if a daemon URL was configured) appends ``_DAEMON_UNAVAILABLE_NOTE``
     to the payload.
@@ -52,7 +51,7 @@ def _try_daemon_run(
         if not base:
             return None
         hdrs: dict[str, str] = {}
-        token = _bridge.gateway_bearer(root)
+        token = _bridge.daemon_bearer(root)
         if token:
             hdrs["Authorization"] = f"Bearer {token}"
         # FIX 3: only include root/cwd in payload when not None — avoids
@@ -111,7 +110,7 @@ def _await_daemon_run(root, run_id, *, timeout, poll=0.25):
         if not base:
             return None
         hdrs: dict[str, str] = {}
-        token = _bridge.gateway_bearer(root)
+        token = _bridge.daemon_bearer(root)
         if token:
             hdrs["Authorization"] = f"Bearer {token}"
 
@@ -265,7 +264,7 @@ def _handle_tool_python_exec(name, arguments, root):
                 return _text(env)
             # await failed (daemon vanished) → fall through to native below
 
-    # Degrade-open: daemon absent / gateway off / 503 / lost mid-poll → run natively.
+    # Degrade-open: daemon absent / unauthorized / 503 / lost mid-poll → run natively.
     try:
         res = subprocess.run(
             cmd,
@@ -387,7 +386,7 @@ def _handle_tool_script_exec(name, arguments, root):
                 ))
             # await failed (daemon vanished) → fall through to native
 
-    # Degrade-open: daemon absent / gateway off / 503 / lost mid-poll → run natively.
+    # Degrade-open: daemon absent / unauthorized / 503 / lost mid-poll → run natively.
     res = fn(script_path, root, timeout)
     if res.get("status") == "error":
         return _text(_error(res.get("message", "execution failed")))
@@ -542,7 +541,7 @@ def _handle_tool_task_run(name, arguments, root):
                 ),
             }))
 
-    # Degrade-open: daemon absent / gateway off → run natively via task_run.
+    # Degrade-open: daemon absent / unauthorized → run natively via task_run.
     res = task_run(
         arguments["command"],
         root,

@@ -1,7 +1,7 @@
 id: pick_tool_stack
 tier: 'plan'
 name: Pick Tool Stack (language + library per analysis sub-task)
-version: '4.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

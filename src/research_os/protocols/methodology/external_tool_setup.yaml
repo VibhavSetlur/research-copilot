@@ -1,7 +1,7 @@
 id: external_tool_setup
 tier: 'plan'
 name: External Tool Setup (top-tier viz / analysis stacks installed properly)
-version: '3.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

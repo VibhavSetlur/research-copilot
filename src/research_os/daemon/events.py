@@ -5,7 +5,7 @@ long-horizon work cannot be poll-only. Any connected client — an AI agent
 watching a 6-hour simulation, a web dashboard, an MCP telemetry sidecar —
 must be able to *subscribe* to what the daemon is doing, not hammer
 /v1/state in a loop. The event bus is that substrate. Everything that
-streams in later phases (SSE job logs, gateway token deltas, dashboard
+streams in later phases (SSE job logs, run/gate deltas, dashboard
 live tiles) composes on top of this one primitive.
 
 Design (deliberately small, correct, dependency-free):
@@ -18,7 +18,7 @@ Design (deliberately small, correct, dependency-free):
     server.py (which owns starlette); this module stays transport-agnostic.
 
 An Event is intentionally a plain dict-friendly record: a `kind`
-(namespaced, e.g. "job.started", "state.changed", "gateway.request"), an
+(namespaced, e.g. "job.started", "state.changed", "run.completed"), an
 optional `root` (which project it concerns), and a free-form `data` payload.
 Consumers filter by kind/root; the bus itself stays domain-ignorant
 (strangler-fig: it knows nothing about research).

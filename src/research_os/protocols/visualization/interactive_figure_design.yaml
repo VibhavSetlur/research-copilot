@@ -1,7 +1,7 @@
 id: interactive_figure_design
 tier: 'synthesize'
 name: Interactive Figure Design (per-figure, NOT dashboard-scale)
-version: '3.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

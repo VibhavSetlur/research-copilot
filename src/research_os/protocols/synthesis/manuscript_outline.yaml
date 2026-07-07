@@ -1,7 +1,7 @@
 id: manuscript_outline
 tier: 'synthesize'
 name: Manuscript Outline + Narrative Arc (before drafting)
-version: '3.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

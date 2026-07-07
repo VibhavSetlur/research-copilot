@@ -1,7 +1,7 @@
 id: uncertainty_quantification
 tier: 'plan'
 name: Uncertainty Quantification + Calibration (predictive models)
-version: '3.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

@@ -1,7 +1,7 @@
 id: pipeline_stage_handoff
 tier: 'finalize'
 name: Pipeline Stage Handoff (output → next actor's input)
-version: '4.2.0'
+version: '5.0.0'
 schema_version: '3.0'
 last_reviewed: '2026-06-27'
 scope_tags:

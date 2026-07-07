@@ -1,7 +1,7 @@
 id: synthesis_handout
 tier: 'synthesize'
 name: Synthesis — Printable Handout / One-Pager (redirect)
-version: '3.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

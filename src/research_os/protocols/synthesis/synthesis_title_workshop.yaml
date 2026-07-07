@@ -1,7 +1,7 @@
 id: synthesis_title_workshop
 tier: 'synthesize'
 name: Synthesis — Title Workshop (the single most-read sentence)
-version: '3.8.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

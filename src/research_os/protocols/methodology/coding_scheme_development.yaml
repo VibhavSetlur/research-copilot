@@ -1,7 +1,7 @@
 id: coding_scheme_development
 tier: 'plan'
 name: Coding Scheme Development (qualitative codebook)
-version: '3.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [qualitative]

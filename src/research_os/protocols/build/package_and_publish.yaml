@@ -1,7 +1,7 @@
 id: package_and_publish
 tier: 'finalize'
 name: Package & Publish (distribute the tool so others can install it)
-version: '3.12.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]
