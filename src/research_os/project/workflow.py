@@ -17,7 +17,7 @@ from research_os.project.step_discovery import (
     step_input_link,
 )
 from research_os.project.layout import detect_software_components
-from research_os.project.state import _update_manifest as _update_manifest_impl
+from research_os.project.legacy import _update_manifest as _update_manifest_impl
 
 
 # ---------------------------------------------------------------------------
