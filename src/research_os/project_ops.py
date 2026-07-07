@@ -11,7 +11,25 @@ Conventions
 
 from __future__ import annotations
 
-from research_os.project.legacy import *  # noqa: F401,F403
+import hashlib
+import json
+import os
+import re
+import shutil
+import subprocess
+import tempfile
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Callable
+
+try:
+    import yaml  # type: ignore
+except ImportError:  # pragma: no cover - yaml is a hard dep
+    yaml = None
+
+from research_os.errors import check_write_permitted
+from research_os.state.state_ledger import ResearchLedger
+from research_os.utils.common import find_project_root, now_iso
 
 EXPERIMENT_SUBDIRS = (
     "data/past_step_input",   # symlink → the previous step's data/next_step_output
