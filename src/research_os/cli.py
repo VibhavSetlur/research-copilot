@@ -58,6 +58,7 @@ IDE_CHOICES_FOR_COMPLETION = (*VALID_IDES, "auto", "all", "none")
 # ---------------------------------------------------------------------------
 
 from research_os._cli.term import _check, _cross, _warn_glyph
+from research_os._cli.term import _supports_utf8 as _supports_utf8
 
 
 def _detect_ide() -> list[str]:

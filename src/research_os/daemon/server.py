@@ -46,6 +46,7 @@ def build_app(daemon: "Daemon"):
     from .routes import (
         register_capabilities,
         register_consent,
+        register_continuation,
         register_core,
         register_events,
         register_gates,
@@ -53,7 +54,10 @@ def build_app(daemon: "Daemon"):
         register_jobs,
         register_lineage,
         register_memory,
+        register_metrics,
         register_notifications,
+        register_orient,
+        register_plugins,
         register_plans,
         register_runs,
         register_sandbox,
@@ -80,6 +84,10 @@ def build_app(daemon: "Daemon"):
         register_consent,
         register_gates,
         register_notifications,
+        register_orient,
+        register_plugins,
+        register_metrics,
+        register_continuation,
     ):
         register(app, daemon)
     return app
