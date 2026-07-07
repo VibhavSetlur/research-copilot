@@ -10,7 +10,7 @@ The RunStore persists each run to ``<root>/.os_state/runs/<run_id>/`` as:
                     run.json is for quick reads; this is the complete log).
 
 This makes jobs survive a daemon restart (durability), makes every run
-reproducible (provenance), and gives the gateway/dashboard a permanent,
+reproducible (provenance), and gives the daemon/dashboard a permanent,
 queryable history (observability) — all from one file format.
 
 stdlib only (json, os, time, pathlib, tempfile). No locking beyond atomic

@@ -1,7 +1,7 @@
 id: analysis_paths
 tier: 'execute'
 name: Analysis Paths (Branching, Comparing, Merging)
-version: '4.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 last_reviewed: '2026-06-25'
 scope_tags:

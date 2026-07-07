@@ -1,7 +1,7 @@
 id: synthesis_step_report
 tier: 'synthesize'
 name: Synthesis — Step Report (one step, meeting-grade visual artefact)
-version: '3.11.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

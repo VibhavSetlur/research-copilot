@@ -1,8 +1,9 @@
-"""Research OS daemon — the multi-protocol gateway.
+"""Research OS daemon — the enforcement + execution + notification kernel.
 
 A persistent, headless, localhost daemon that owns the master execution state
 machine and exposes Research OS to any client (IDE, web UI, CLI, MCP sidecar)
-at once.
+at once. RO calls no LLM and has no chat gateway — clients reason over the MCP
+tools directly.
 
 DESIGN STANCE (read docs/ARCHITECTURE.md before extending this):
 
@@ -20,9 +21,8 @@ What it provides: a multi-root state registry, a background task queue, a
 universal subprocess + scheduler (SLURM) runner, a durable run journal with
 crash recovery, provenance / lineage / staleness / reproduce, resumable runs,
 sandbox tiers + resource budgets, a notification spine, consent / hard gates,
-an event bus, orientation, and HTTP endpoints (read-only + auth-gated mutating,
-including an opt-in OpenAI-compatible gateway). A read-only web dashboard is the
-one surface still to come.
+an event bus, orientation, and HTTP endpoints (read-only + bearer-auth-gated
+mutating). A read-only web dashboard is the one surface still to come.
 """
 from __future__ import annotations
 

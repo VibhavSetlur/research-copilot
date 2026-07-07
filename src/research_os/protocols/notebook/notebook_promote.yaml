@@ -1,7 +1,7 @@
 id: notebook_promote
 tier: 'execute'
 name: Notebook Promote (graduate a notebook into durable evidence)
-version: '4.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

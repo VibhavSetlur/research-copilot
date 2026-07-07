@@ -1,7 +1,7 @@
 id: casual_exploration
 tier: 'plan'
 name: Casual Exploration
-version: '3.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:

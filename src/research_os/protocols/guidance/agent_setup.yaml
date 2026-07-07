@@ -1,7 +1,7 @@
 id: agent_setup
 tier: 'intake'
 name: Agent Setup (architect the AI layer above Research-OS for THIS project)
-version: '4.1.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

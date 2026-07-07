@@ -1,7 +1,7 @@
 id: data_ethics_review
 tier: 'plan'
 name: Data Ethics Review (IRB / privacy / consent / fairness)
-version: '3.0.0'
+version: '5.0.0'
 last_reviewed: '2026-06-16'
 schema_version: '3.0'
 scope_tags:

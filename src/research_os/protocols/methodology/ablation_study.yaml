@@ -1,7 +1,7 @@
 id: ablation_study
 tier: 'plan'
 name: Ablation Study
-version: '3.0.0'
+version: '5.0.0'
 last_reviewed: '2026-06-16'
 schema_version: '3.0'
 scope_tags:

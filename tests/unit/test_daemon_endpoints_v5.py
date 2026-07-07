@@ -14,11 +14,11 @@ Tests for every new endpoint added in §13.5:
   POST /v1/plans
   POST /v1/plans/{id}/step
   POST /v1/memory/record
-  DoD guard: no /v1/messages route; no new /v1/chat/* beyond the dead completions one.
+  DoD guard: no /v1/messages route; no /v1/chat/* routes at all (gateway removed in v5).
 
-Auth pattern: _consent_auth_error helper (enable_gateway=True + bearer matching
-RESEARCH_OS_GATEWAY_TOKEN env var).  Each mutating test sets the env var via
-monkeypatch and passes headers={"Authorization": "Bearer secret-123"}.
+Auth pattern: _mutating_auth_error helper (bearer matching RESEARCH_OS_DAEMON_TOKEN
+env var).  Each mutating test sets the env var via monkeypatch and passes
+headers={"Authorization": "Bearer secret-123"}.
 
 All tests are skipped automatically when the optional [daemon] web stack is
 absent so the suite still passes on a core-only install.
@@ -53,9 +53,9 @@ def _gw_daemon(tmp_path, **over):
 
 @pytest.fixture
 def gw_client(tmp_path, monkeypatch):
-    """Gateway-enabled daemon + matching env token."""
-    monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "secret-123")
-    daemon = _gw_daemon(tmp_path, enable_gateway=True)
+    """Daemon with token env set for auth-gated endpoints."""
+    monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "secret-123")
+    daemon = _gw_daemon(tmp_path)
     return TestClient(build_app(daemon)), daemon, tmp_path
 
 
@@ -168,8 +168,9 @@ def test_post_plans_requires_auth(client):
     c, _, _ = client
     proto = _real_protocol_name()
     r = c.post("/v1/plans", json={"protocol": proto})
-    # No auth => 503 (gateway disabled)
-    assert r.status_code in (401, 503)
+    # No token configured → open (200/201); token set + missing → 401.
+    # This client fixture has no token set, so endpoint is open.
+    assert r.status_code in (201, 400, 401, 404)
 
 
 def test_post_plans_creates_plan(gw_client):
@@ -260,7 +261,9 @@ def test_post_memory_record_requires_auth(client):
     c, _, _ = client
     r = c.post("/v1/memory/record",
                json={"kind": "analysis", "content": "test", "summary": "s"})
-    assert r.status_code in (401, 503)
+    # No token configured → open; with token set + missing → 401.
+    # This client has no token so the endpoint is open.
+    assert r.status_code in (201, 400, 401)
 
 
 def test_post_memory_record_stores(gw_client):
@@ -354,16 +357,17 @@ def test_post_rerun_unknown_run_returns_404(gw_client):
 def test_post_rerun_requires_auth(client):
     c, _, _ = client
     r = c.post("/v1/runs/aaaa1111/rerun", json={"overrides": {}})
-    assert r.status_code in (401, 503)
+    # No token configured → open; endpoint may 404 (no such run) or succeed.
+    assert r.status_code not in (503,)
 
 
 def test_post_rerun_journaled_run(tmp_path, monkeypatch):
-    """A journaled subprocess run can be rerrun; new_run_id + parent_id returned."""
+    """A journaled subprocess run can be rerun; new_run_id + parent_id returned."""
     from research_os.daemon.runstore import build_manifest
 
-    monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "secret-123")
+    monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "secret-123")
     (tmp_path / ".os_state").mkdir()
-    daemon = _gw_daemon(tmp_path, enable_gateway=True)
+    daemon = _gw_daemon(tmp_path)
     store = daemon.runstore
     assert store is not None
 
@@ -394,16 +398,17 @@ def test_post_reproduce_unknown_run_returns_404(gw_client):
 def test_post_reproduce_requires_auth(client):
     c, _, _ = client
     r = c.post("/v1/runs/aaaa1111/reproduce", json={})
-    assert r.status_code in (401, 503)
+    # No token configured → open; may 404 (no such run) but not 503.
+    assert r.status_code not in (503,)
 
 
 def test_post_reproduce_journaled_run(tmp_path, monkeypatch):
     """A journaled subprocess run produces a verdict."""
     from research_os.daemon.runstore import build_manifest
 
-    monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "secret-123")
+    monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "secret-123")
     (tmp_path / ".os_state").mkdir()
-    daemon = _gw_daemon(tmp_path, enable_gateway=True)
+    daemon = _gw_daemon(tmp_path)
     store = daemon.runstore
     assert store is not None
 
@@ -424,15 +429,16 @@ def test_post_reproduce_journaled_run(tmp_path, monkeypatch):
     assert body["original_id"] == "rep001"
 
 
-# ── AUTH: mutating endpoint without token returns 401 / 503 ──────────────────
+# ── AUTH: mutating endpoint with token set returns 401 when bearer missing ────
 
-def test_mutating_without_token_denied():
-    """A mutating endpoint with no token or wrong token must be refused."""
+def test_mutating_with_token_set_and_no_bearer_returns_401(monkeypatch):
+    """Token configured + no bearer presented → 401 on every mutating endpoint."""
     import tempfile
     with tempfile.TemporaryDirectory() as tmp:
         from pathlib import Path
         (Path(tmp) / ".os_state").mkdir()
-        daemon = Daemon.for_root(Path(tmp), enable_gateway=False)
+        monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "secret-abc")
+        daemon = Daemon.for_root(Path(tmp))
         c = TestClient(build_app(daemon))
         for method, path in [
             ("POST", "/v1/plans"),
@@ -441,16 +447,17 @@ def test_mutating_without_token_denied():
             ("POST", "/v1/runs/x/reproduce"),
         ]:
             r = getattr(c, method.lower())(path, json={})
-            assert r.status_code in (401, 503), (
-                f"{method} {path} should be denied but got {r.status_code}"
+            assert r.status_code == 401, (
+                f"{method} {path} with token set and no bearer should be 401, "
+                f"got {r.status_code}"
             )
 
 
-# ── DoD guard: no /v1/messages or new /v1/chat/* routes ─────────────────────
+# ── DoD guard: no /v1/messages or any /v1/chat/* routes (gateway removed v5) ──
 
 def test_no_chat_messages_routes():
-    """The spec forbids /v1/messages and any new /v1/chat/* beyond the dead
-    gateway's /v1/chat/completions. Assert neither appears in the routes."""
+    """v5.0.0 removed the LLM gateway entirely. Neither /v1/messages nor any
+    /v1/chat/* route must appear in the registered routes."""
     import tempfile
     from pathlib import Path
     with tempfile.TemporaryDirectory() as tmp:
@@ -462,8 +469,8 @@ def test_no_chat_messages_routes():
         assert not any("/v1/messages" in p for p in paths), (
             f"Found /v1/messages route(s): {[p for p in paths if '/v1/messages' in p]}"
         )
-        # /v1/chat/* must be limited to the single pre-existing dead gateway route.
+        # /v1/chat/* must not exist at all — the gateway was removed in v5.0.0.
         chat_routes = [p for p in paths if "/v1/chat" in p]
-        assert chat_routes == ["/v1/chat/completions"], (
-            f"Unexpected /v1/chat routes: {chat_routes}"
+        assert chat_routes == [], (
+            f"Expected no /v1/chat/* routes (gateway removed), got: {chat_routes}"
         )

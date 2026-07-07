@@ -1,7 +1,7 @@
 id: reviewer_response
 tier: 'review'
 name: Synthesis — Pre-submission Reviewer Simulation + Rebuttal Scaffold
-version: '3.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

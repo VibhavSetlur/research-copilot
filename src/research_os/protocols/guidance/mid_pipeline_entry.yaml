@@ -1,7 +1,7 @@
 id: mid_pipeline_entry
 tier: 'intake'
 name: Mid-Pipeline Entry (entering an in-progress project)
-version: '3.8.0'
+version: '5.0.0'
 schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:

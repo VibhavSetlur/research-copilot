@@ -1,7 +1,7 @@
 id: notebook_synthesize
 tier: 'synthesize'
 name: Notebook Synthesize (weave notebook outputs into the deliverable)
-version: '4.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

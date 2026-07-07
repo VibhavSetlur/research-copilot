@@ -1,7 +1,7 @@
 id: qualitative_research
 tier: 'plan'
 name: Qualitative Research (COREQ / SRQR)
-version: '3.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [qualitative]

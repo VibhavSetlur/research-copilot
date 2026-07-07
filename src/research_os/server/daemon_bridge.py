@@ -201,21 +201,28 @@ def http_post(
         return None, None
 
 
-def gateway_bearer(root: str | Path) -> str | None:
-    """Return the daemon's gateway bearer token if the operator exported it.
+def daemon_bearer(root: str | Path) -> str | None:
+    """Return the daemon's bearer token if the operator exported it.
 
-    Reads the descriptor's advertised ``gateway_token_env`` field (falling
-    back to the documented default env-var name
-    ``RESEARCH_OS_GATEWAY_TOKEN``) and returns the value of that env-var,
-    or ``None`` when the token isn't set.
+    RO calls no LLM and has no gateway; this token only authorizes the
+    daemon's own mutating endpoints (/v1/runs, /v1/gates/respond, …). Reads
+    the descriptor's advertised ``auth_token_env`` field (falling back to the
+    documented default ``RESEARCH_OS_DAEMON_TOKEN``, then to the pre-5.0
+    ``RESEARCH_OS_GATEWAY_TOKEN`` for one release) and returns the value of
+    that env-var, or ``None`` when no token is set.
 
-    Call-site convention: if the return is ``None`` the caller degrades to
-    native execution (unauthenticated POST → 401 / 503 → degrade-open).
+    Call-site convention: if the return is ``None`` the caller sends no
+    Authorization header. When the daemon has no token configured, mutating
+    endpoints are open on localhost; when it does, an unauthenticated POST
+    gets 401 → degrade-open to native execution.
     No daemon import — reads only the on-disk descriptor by shape.
     """
     desc = read_descriptor(root)
-    env_name = (desc or {}).get("gateway_token_env") or "RESEARCH_OS_GATEWAY_TOKEN"
+    env_name = (desc or {}).get("auth_token_env") or "RESEARCH_OS_DAEMON_TOKEN"
     token = os.environ.get(env_name)
+    if not token:
+        # Back-compat: honor the pre-5.0 env name for one release.
+        token = os.environ.get("RESEARCH_OS_GATEWAY_TOKEN")
     return token or None
 
 

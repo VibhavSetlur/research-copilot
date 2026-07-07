@@ -28,10 +28,12 @@ is excellent at what it does, but the design has a structural ceiling:
 - **Execution is native.** Agent-written code runs on the host. That is
   a security and reproducibility liability.
 
-The v4 model resolves this by making Research OS a **persistent headless
-localhost daemon acting as a multi-protocol gateway**: one backend that
-owns the master state machine and exposes standardized interfaces to any
-client (Cursor, Open WebUI, Claude Desktop, Hermes, the CLI) at once.
+The 5.0.0 model resolves this with a **persistent headless localhost daemon
+acting as an enforcement + execution + notification kernel**: one backend
+that owns the master state machine and exposes read-only + bearer-auth-gated
+mutating HTTP endpoints to any client (Cursor, Claude Desktop, Hermes, the
+CLI) at once. Research OS calls no LLM and has no chat gateway — it is a
+passive tool provider; the client does all reasoning over the MCP tools.
 
 ```
               ┌────────────────────────────────────────┐
@@ -94,29 +96,32 @@ native+cluster execution. We keep what works and add what's missing.
    `docs/PROTOCOL_DOCTRINE.md`): tools verify recorded work, gate, route,
    and manage state/provenance. The daemon orchestrates; it does not
    compute findings.
-8. **Provider keys are the client's / user's, scoped to the daemon.**
-   When the daemon forwards to a provider it uses the user's configured
-   key, never bundles one. Research data-source keys keep their existing
+8. **RO never calls a model.** There is no LLM gateway, no chat-completions
+   proxy, no provider forwarding inside RO — that was explicitly rejected
+   and the dead `daemon/gateway.py` was removed in 5.0.0. The client already
+   has an IDE / AI client; RO exposes tools + protocols + journaled state for
+   *that* client to reason over. Research data-source keys keep their existing
    injection path (`server/entry.py:_inject_api_keys`).
 
 ---
 
-## 2. The version stance for v4 — the build→judge→improve loop
+## 2. The version stance — 5.0.0 shipped (historical note)
 
-**Execution model (Vibhav directive, 2026-06): do NOT release 4.0.0
-early.** 4.0.0 is the destination, not a milestone we rush to. The plan
-is a long iterative loop — on the order of **20–30 phases** (~10 to
-*build* the architecture out, then ~20 to *judge → redesign → improve*)
-— and we keep going until 4.0.0 is **the best possible system that could
-exist**, not merely "feature complete."
+**5.0.0 is the shipped baseline** — "The World-Class Architecture Overhaul."
+It was reached deliberately, not rushed: a build→judge→improve loop across
+the P0–P8 phase plan (schema foundation → tool consolidation → config/state
+simplification → memory overhaul → token engineering → daemon core → daemon
+surface → ship). The package version stayed pre-release the whole way; the
+5.0.0 tag waited until the entire architecture was coherent and green.
 
-What this means concretely:
+What shipped (the daemon as an enforcement + execution + notification
+kernel, NOT an LLM gateway):
 
-- **Build phases** (roughly Phases 0–9): stand up each layer of the
-  gateway daemon — skeleton, core loop + state bridge, OpenAI-compat
-  gateway, MCP telemetry sidecar, sandbox, dashboard, and the
-  cross-cutting concerns they expose (auth, multi-root, streaming,
-  observability, persistence of long jobs).
+- **Build phases** stood up each layer of the daemon — skeleton, core loop +
+  state bridge, event bus, CAS, sandbox, and the cross-cutting concerns they
+  expose (bearer auth, multi-root, streaming, observability, persistence of
+  long jobs). The chat gateway that appeared in early drafts was removed:
+  RO calls no LLM.
 - **Judge/improve phases** (roughly Phases 10–30): for each built layer,
   step back and critique it hard — security, ergonomics, performance,
   failure modes, API quality, test depth, docs — then redesign and
@@ -162,7 +167,7 @@ their logic.
 
 **The key insight:** `_handle_tool_call(name, arguments, root)` is a
 pure, transport-agnostic function. The stdio MCP server is just one
-caller of it. The daemon's HTTP gateway becomes a second caller of the
+caller of it. The daemon's HTTP endpoints become a second caller of the
 exact same function. That is the whole strangler-fig in one sentence.
 
 ---
@@ -198,19 +203,17 @@ complete).
   survives client disconnect; task queue runs a trivial job to
   completion and reports status.
 
-### Phase 2 — OpenAI-compatible gateway (`/v1/chat/completions`)
-- The interception pipeline: receive a chat request → resolve project
-  root → `route_request` to pick the protocol → inject protocol
-  constraints + directory context as system/context messages → forward
-  to the user-configured provider → stream/return the completion.
-- Tool-call hooking: when the upstream model emits a tool call, the
-  daemon dispatches it through `_handle_tool_call` and feeds the result
-  back across the API boundary (the agent loop).
-- Provider abstraction (OpenAI / Anthropic / local) reusing the user's
-  configured keys; no bundled key.
-- DoD: a generic OpenAI client (e.g. `curl`, the `openai` python lib,
-  Open WebUI pointed at `localhost`) can hold a research conversation
-  that is protocol-constrained and can execute RO tools end-to-end.
+### Phase 2 — ~~OpenAI-compatible gateway~~ (REMOVED in 5.0.0)
+An early draft proposed an OpenAI-compatible `/v1/chat/completions` gateway
+that would forward prompts to a user-configured provider and run a tool loop
+inside the daemon. **This was explicitly rejected and the dead
+`daemon/gateway.py` was deleted in 5.0.0.** RO never proxied a model in
+normal use (the gateway was opt-in and off by default), and RO is a passive
+tool provider — it calls no LLM. Point your IDE / AI client straight at the
+MCP tools instead; multi-agent orchestration belongs at the client level.
+The daemon still exposes a read-only `/v1/capabilities` front door
+(`daemon/capabilities.py`) so any agent can discover the tool + protocol
+inventory in one GET — but that is a catalog, not a gateway.
 
 ### Phase 3 — Read-only MCP sidecar telemetry
 - Re-expose the EXISTING MCP server in a read-only mode that reflects
@@ -275,17 +278,17 @@ Decisions are append-only with a date + rationale. A judge phase may
 REVISIT a decision — when it does, add a new dated entry that supersedes
 the old one rather than editing history.
 
-- **[RESOLVED 2026-06-23] Web framework for the gateway (Phase 1–2):**
+- **[RESOLVED 2026-06-23] Web framework for the daemon's HTTP endpoints:**
   `starlette` + `uvicorn`, in the `[daemon]` optional extra, imported
-  lazily. Rationale: Phase 2 needs SSE streaming for
-  `/v1/chat/completions`, which stdlib `http.server` makes painful;
+  lazily. Rationale: the event-bus endpoints need SSE streaming
+  (`/v1/stream`, `/v1/events`), which stdlib `http.server` makes painful;
   starlette is a thin ASGI layer and uvicorn is the de-facto server.
   Mitigation for the "heavy dep" worry: it's opt-in (extra), lazy, and
   the daemon degrades with a clear "install research-os[daemon]" message
   when absent. The HTTP layer lives behind a thin `daemon/server.py` so
   the transport stays swappable if a judge phase wants to reconsider.
 - **[RESOLVED 2026-06-23] Multi-project model:** ONE daemon, MANY roots
-  keyed by absolute path. Rationale: the gateway already resolves root
+  keyed by absolute path. Rationale: the daemon already resolves root
   per-request (`_resolve_project_root`), so a root registry is the
   natural fit and avoids a port-per-project explosion. A `Workspace
   registry` maps root → cached engine handles (ledger view, last status).
@@ -483,8 +486,8 @@ Researched the Hermes skills ecosystem online (hermes-agent.nousresearch.com/
 docs) and acted on the architectural thesis it confirms: the best research
 setup is RO (guidance + enforcement + provenance) UNDER a self-improving,
 project-aware agent layer (Hermes as reference) that runs above any model.
-Hermes skills are gateway-style — e.g. the Bioinformatics skill indexes 400+
-external bioSkills/ClawBio skills fetched on demand — which is exactly RO's own
+Hermes skills are index-and-fetch style — e.g. the Bioinformatics skill indexes
+400+ external bioSkills/ClawBio skills fetched on demand — which is exactly RO's own
 philosophy ('RO needn't contain everything'). The pairing existed in code
 (`research-os hermes add`, the distill/promote skill registry, the RO SKILL.md)
 but wasn't discoverable or guided.

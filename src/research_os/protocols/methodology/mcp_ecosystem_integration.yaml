@@ -1,7 +1,7 @@
 id: mcp_ecosystem_integration
 tier: 'plan'
 name: MCP Ecosystem Integration (compose other MCP servers with Research OS)
-version: '3.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

@@ -16,7 +16,7 @@ def _proj() -> Path:
 
 
 def test_str_root_does_not_crash_action_functions():
-    """The daemon gateway can pass a str root; dispatch must coerce it to Path
+    """The daemon can pass a str root; dispatch must coerce it to Path
     so the ~45 functions doing `root / '...'` don't crash."""
     root = _proj()
     r = _handle_tool_call("tool_audit", {"scope": "project", "dimension": "coherence"}, str(root))

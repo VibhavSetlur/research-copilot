@@ -1,7 +1,7 @@
 id: deliverable_design
 tier: 'synthesize'
 name: Deliverable Design (the visual-design skill — dashboards / posters / slides)
-version: '4.4.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

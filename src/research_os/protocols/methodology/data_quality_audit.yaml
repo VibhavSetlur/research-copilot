@@ -1,7 +1,7 @@
 id: data_quality_audit
 tier: 'plan'
 name: Data Quality Audit (standalone QC pass)
-version: '3.0.0'
+version: '5.0.0'
 last_reviewed: '2026-06-16'
 schema_version: '3.0'
 scope_tags:

@@ -63,7 +63,7 @@ class DaemonStatus:
 
 
 class Daemon:
-    """The Research OS gateway daemon — the live serving core.
+    """The Research OS daemon — the live serving core.
 
     Construct with an explicit root + config, or use :meth:`for_root` /
     :meth:`autoresolve` to build one the way the MCP server resolves its
@@ -75,7 +75,7 @@ class Daemon:
         self.config = config
         # Set True by serve() once the process is actually listening.
         self._serving = False
-        # Event spine (Phase 1.5): append-only bus the task queue, gateway,
+        # Event spine (Phase 1.5): append-only bus the task queue,
         # dashboard, and MCP sidecar all publish to / subscribe from. This is
         # the substrate that makes the daemon observable in real time instead
         # of poll-only. stdlib-only, import-cheap.
@@ -157,7 +157,7 @@ class Daemon:
                 "host": self.config.host,
                 "port": self.config.port,
                 "base_url": self.config.base_url,
-                "enable_gateway": self.config.enable_gateway,
+                "auth_token_env": self.config.auth_token_env,
                 "enable_dashboard": self.config.enable_dashboard,
                 "sandbox_mode": self.config.sandbox_mode,
                 "task_workers": self.config.task_workers,

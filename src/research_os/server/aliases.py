@@ -11,9 +11,10 @@ from __future__ import annotations
 from typing import Any
 
 
-# ── Resolving aliases (target MUST be one of the 45 live tools) ──────────────
-# Aim: ≤ 15 entries. Everything not listed here is either a live tool name
-# (callable directly) or a _REMOVED_TOOLS entry (friendly error message).
+# ── Resolving aliases (target MUST be one of the 46 live tools) ──────────────
+# Kept deliberately small (currently 17 — every entry is tested or param-
+# injected). Everything not listed here is either a live tool name (callable
+# directly) or a _REMOVED_TOOLS entry (friendly error message).
 _ALIASES: dict[str, str] = {
     # ── orientation / boot ritual aliases ──────────────────────────────────
     "sys_where":                    "sys_boot",
@@ -594,7 +595,7 @@ _REMOVED_TOOLS: dict[str, str] = {
     ),
     # ── lessons + failure + reliability cluster ──────────────────────────────
     # (These were deprecated aliases in the old file but their targets
-    # tool_lessons and tool_reliability are live 45 tools — they remain
+    # tool_lessons and tool_reliability are live tools — they remain
     # callable directly. The sub-operation aliases below are removed so
     # the AI uses the canonical tool with the operation param.)
     "tool_failure_record": (

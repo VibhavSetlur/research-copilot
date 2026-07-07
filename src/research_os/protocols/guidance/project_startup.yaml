@@ -1,7 +1,7 @@
 id: project_startup
 tier: 'intake'
 name: Project Startup
-version: '3.1.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

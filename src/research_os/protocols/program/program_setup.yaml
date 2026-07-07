@@ -1,7 +1,7 @@
 id: program_setup
 tier: 'plan'
 name: Program Setup (shared codebook, prereg, how studies roll up)
-version: '3.13.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

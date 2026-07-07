@@ -320,7 +320,7 @@ def _handle_tool_call(name: str, arguments: dict, root: Path) -> list[TextConten
     if not _rate_limiter.is_allowed():
         return _text(_error("Rate limit exceeded: slow down."))
     # Normalize root to Path at the dispatch boundary. The MCP entry resolves a
-    # Path, but the daemon gateway passes daemon.root verbatim (which may be a
+    # Path, but the daemon passes daemon.root verbatim (which may be a
     # str), and ~45 action functions do `root / "..."` without coercing — a str
     # root crashes them with `unsupported operand type(s) for /: 'str' and
     # 'str'`. One coercion here protects all 159 tools regardless of caller.

@@ -1,7 +1,7 @@
 id: synthesis_dashboard
 tier: 'synthesize'
 name: Synthesis — Dashboard (custom, story-driven, self-contained HTML)
-version: '4.4.2'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

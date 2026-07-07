@@ -1,7 +1,7 @@
 id: deep_domain_research
 tier: 'plan'
 name: Deep Domain Research (subfield-canonical pipeline)
-version: '3.8.0'
+version: '5.0.0'
 last_reviewed: '2026-06-16'
 schema_version: '3.0'
 scope_tags:

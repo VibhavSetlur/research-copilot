@@ -1,7 +1,7 @@
 id: notebook_reproduce
 tier: 'execute'
 name: Notebook Reproduce (harden a notebook so anyone can re-run it)
-version: '4.0.0'
+version: '5.0.0'
 schema_version: '3.0'
 scope_tags:
   domain: [any]

@@ -104,9 +104,9 @@ def test_short_ttl_grant_expires_for_reader(tmp_path):
 
 # ── HTTP endpoint tests ────────────────────────────────────────────────────
 
-def _gw_daemon(tmp_path, **over):
+def _gw_daemon(tmp_path):
     (tmp_path / ".os_state").mkdir(exist_ok=True)
-    return Daemon.for_root(tmp_path, **over)
+    return Daemon.for_root(tmp_path)
 
 
 def test_request_endpoint_open_no_auth(tmp_path):
@@ -125,16 +125,18 @@ def test_request_endpoint_requires_fields(tmp_path):
     assert r.status_code == 400
 
 
-def test_approve_requires_auth_when_gateway_off(tmp_path):
-    c = TestClient(build_app(_gw_daemon(tmp_path, enable_gateway=False)))
+def test_approve_requires_auth_when_token_set_and_missing(tmp_path, monkeypatch):
+    """Token configured but not presented → 401 (not 503)."""
+    monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "secret-123")
+    c = TestClient(build_app(_gw_daemon(tmp_path)))
     r = c.post("/v1/consent/approve", json={"request_id": "x"})
-    assert r.status_code == 503
-    assert r.json()["code"] == "gateway_disabled"
+    assert r.status_code == 401
+    assert r.json()["code"] == "unauthorized"
 
 
 def test_approve_rejects_bad_token(tmp_path, monkeypatch):
-    monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "secret-123")
-    c = TestClient(build_app(_gw_daemon(tmp_path, enable_gateway=True)))
+    monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "secret-123")
+    c = TestClient(build_app(_gw_daemon(tmp_path)))
     r = c.post(
         "/v1/consent/approve",
         headers={"Authorization": "Bearer wrong"},
@@ -146,8 +148,8 @@ def test_approve_rejects_bad_token(tmp_path, monkeypatch):
 
 def test_full_http_round_trip(tmp_path, monkeypatch):
     """request (open) → approve (auth) → reader validates the minted token."""
-    monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "secret-123")
-    daemon = _gw_daemon(tmp_path, enable_gateway=True)
+    monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "secret-123")
+    daemon = _gw_daemon(tmp_path)
     c = TestClient(build_app(daemon))
 
     # 1. agent requests (no auth)
@@ -188,8 +190,8 @@ def test_full_http_round_trip(tmp_path, monkeypatch):
 
 
 def test_approve_unknown_request_404(tmp_path, monkeypatch):
-    monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "secret-123")
-    c = TestClient(build_app(_gw_daemon(tmp_path, enable_gateway=True)))
+    monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "secret-123")
+    c = TestClient(build_app(_gw_daemon(tmp_path)))
     r = c.post(
         "/v1/consent/approve",
         headers={"Authorization": "Bearer secret-123"},
