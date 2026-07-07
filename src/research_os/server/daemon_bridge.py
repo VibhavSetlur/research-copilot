@@ -36,6 +36,7 @@ STALENESS_VERDICT = "staleness/verdict.json"
 DAEMON_NOTES = "daemon_notes.json"
 RUNS_DIR = "runs"
 GATES_DIR = "gates"  # HITL gate queue (§12.4)
+PLANS_DIR = "plans"  # protocol-driver plan store (§13.3)
 
 
 def state_path(root: str | Path, *parts: str) -> Path:
