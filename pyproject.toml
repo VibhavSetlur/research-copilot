@@ -47,3 +47,15 @@ dependencies = [
     "httpcore>=1.0",
     "typing-extensions>=4.8",
 ]
+
+[project.optional-dependencies]
+ci = [
+    "ruff>=0.6",
+    "pytest>=8.0",
+    "build>=1.0",
+]
+dev = [
+    "ruff>=0.6",
+    "pytest>=8.0",
+    "build>=1.0",
+]
