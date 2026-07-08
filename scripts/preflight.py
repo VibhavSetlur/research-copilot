@@ -1188,8 +1188,17 @@ def check_docs_counts_agree():
     """Fail when docs hard-code drift-prone counts or the stale-count reference is stale."""
     import re
 
-    sys.path.insert(0, str(REPO_ROOT / "scripts"))
-    from update_stale_counts_reference import REFERENCE_PATH, render_reference
+    scripts_dir = REPO_ROOT / "scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from update_stale_counts_reference import render_reference
+    finally:
+        try:
+            sys.path.remove(str(scripts_dir))
+        except ValueError:
+            pass
+
+    REFERENCE_PATH = REPO_ROOT / "docs" / "_STALE_COUNTS_REFERENCE.md"
 
     candidate_files: list[Path] = []
     for pattern in ("*.md", "docs/**/*.md", "templates/**/*.md"):
