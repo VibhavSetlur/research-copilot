@@ -6,18 +6,6 @@ Versioning: [SemVer](https://semver.org).
 
 ---
 
-## [5.0.1] — Documentation Drift Guard (2026-07-08)
-
-### Added
-- Added a generated documentation count reference and preflight drift guard for mutable tool/protocol/check/test counts.
-
-### Improved
-- Rewrote the 5.x roadmap around the daemon-backed enforcement, execution, and notification kernel trajectory.
-- Updated maintainer and project templates to avoid stale hardcoded inventory counts.
-
-### Fixed
-- Replaced stale prose counts with references to generated count metadata or release-gate commands.
-
 ## [5.0.0] — The World-Class Architecture Overhaul (2026-07-06)
 
 A MAJOR release. The headline: Research-OS is now unambiguously a **passive
