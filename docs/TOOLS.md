@@ -1,7 +1,8 @@
 # Tool Catalog
 
 **Live MCP tools** across three namespaces (`sys_*` / `tool_*` / `mem_*`).
-Exactly 46 tools are active. Legacy names dispatch via `_ALIASES` +
+The active tool count is generated and tracked in `docs/_STALE_COUNTS_REFERENCE.md`;
+do not hardcode the number here. Legacy names dispatch via `_ALIASES` +
 `_ALIAS_PARAM_INJECTION`; fully removed names return a friendly
 `_REMOVED_TOOLS` error. See `CHANGELOG.md` for the old → new table.
 

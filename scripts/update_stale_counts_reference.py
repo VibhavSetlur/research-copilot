@@ -5,6 +5,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from importlib import import_module
+
+
 REPO_ROOT = Path('/scratch/vsetlur/Research-OS')
 REFERENCE_PATH = REPO_ROOT / 'docs' / '_STALE_COUNTS_REFERENCE.md'
 
@@ -22,21 +25,39 @@ def generate_counts(root: Path) -> dict[str, Any]:
     preflight = (root / 'scripts' / 'preflight.py').read_text(encoding='utf-8')
     checks = [line for line in preflight.splitlines() if 'tally.check(' in line]
 
-    sidecars: dict[str, int | None] = {}
-    for rel in [
-        'src/research_os/protocols/_route_meta.json',
-        'src/research_os/protocols/_precondition_meta.json',
-        'src/research_os/protocols/_gate_meta.json',
-        'src/research_os/protocols/_embeddings_meta.json',
-    ]:
+    sidecars: dict[str, dict[str, int | str | None]] = {}
+    bundle_path = root / 'src' / 'research_os' / 'protocols' / '_protocols.bundle'
+    try:
+        msgpack = import_module('msgpack')
+    except ImportError:
+        msgpack = None
+    if bundle_path.exists() and msgpack is not None:
+        try:
+            bundle = msgpack.unpackb(bundle_path.read_bytes(), raw=False)
+            sidecars['_protocols.bundle'] = {
+                'protocols': len(bundle.get('protocols', {}) or {}),
+                'gates': len(bundle.get('gates', []) or []),
+                'preconditions': sum(len(v) for v in (bundle.get('preconditions', {}) or {}).values()),
+                'source_hash': bundle.get('source_hash'),
+            }
+        except (OSError, ValueError, TypeError):
+            sidecars['_protocols.bundle'] = {'protocols': None, 'gates': None, 'preconditions': None, 'source_hash': None}
+    else:
+        sidecars['_protocols.bundle'] = {'protocols': None, 'gates': None, 'preconditions': None, 'source_hash': None}
+
+    for rel in ['src/research_os/protocols/_embeddings.npz', 'src/research_os/protocols/_embeddings_meta.json']:
         p = root / rel
-        if p.exists():
+        if not p.exists():
+            sidecars[rel] = {'summary': 'missing'}
+            continue
+        if rel.endswith('.json'):
             try:
-                sidecars[rel] = len(json.loads(p.read_text(encoding='utf-8')))
+                data = json.loads(p.read_text(encoding='utf-8'))
+                sidecars[rel] = {'summary': f"keys={len(data)} schema={data.get('schema_version')}"}
             except (OSError, json.JSONDecodeError):
-                sidecars[rel] = None
+                sidecars[rel] = {'summary': 'unreadable'}
         else:
-            sidecars[rel] = None
+            sidecars[rel] = {'summary': 'binary artifact'}
 
     return {
         'tools_active': len(TOOL_DEFINITIONS),
@@ -61,10 +82,15 @@ def render_reference(root: Path | None = None) -> str:
         f"| Protocol YAML files | {counts['protocol_yaml_files']} | `src/research_os/protocols/**/*.yaml` excluding `_*.yaml` |",
         f"| Preflight checks | {counts['preflight_checks']} | `scripts/preflight.py` registered checks |",
         "| Pytest gate | collected by `python -m pytest -q` during release gate | tests/ |",
+        "| `_protocols.bundle` | compiled routing / gate / precondition bundle | `scripts/build_protocols.py` |",
+        "| `_embeddings.npz` | generated semantic-router vectors | `scripts/build_embeddings.py` |",
+        "| `_embeddings_meta.json` | generated embedding metadata | `scripts/build_embeddings.py` |",
     ]
-    for rel, value in counts['sidecars'].items():
-        desc = 'generated artifact' if value is None else f'{value} entries'
-        lines.append(f"| {rel} | {desc} | generated sidecar |")
+    bundle = counts['sidecars']['_protocols.bundle']
+    lines.append(
+        f"| `_protocols.bundle` detail | protocols={bundle['protocols']}, gates={bundle['gates']}, "
+        f"preconditions={bundle['preconditions']} | source_hash={bundle['source_hash']} |"
+    )
     return '\n'.join(lines) + '\n'
 
 
