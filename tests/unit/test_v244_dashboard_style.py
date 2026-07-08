@@ -279,6 +279,16 @@ def test_changelog_has_current_entry():
 
     body = (REPO_ROOT / "CHANGELOG.md").read_text()
     current_version = research_os.__version__
-    assert f"## [{current_version}]" in body
-    top_entry = body.split(f"## [{current_version}]", 1)[1]
-    assert "Documentation Drift Guard" in top_entry or "apply_research_os_style" in top_entry
+    marker = f"## [{current_version}]"
+    assert marker in body
+
+    top_entry = body.split(marker, 1)[1]
+    if "\n## [" in top_entry:
+        top_entry = top_entry.split("\n## [", 1)[0]
+
+    assert top_entry.lstrip().startswith("— The World-Class Architecture Overhaul (2026-07-06)")
+    assert "### Added" in top_entry
+    assert "### Improved" in top_entry
+    assert "### Fixed / Removed" in top_entry
+    assert "Documentation Drift Guard" not in top_entry
+    assert "apply_research_os_style" not in top_entry

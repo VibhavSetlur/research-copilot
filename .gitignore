@@ -66,6 +66,11 @@ desktop.ini
 
 # AI assistant caches
 .aider*
+.opencode/
+.stress/
+GEMINI.md
+gemini.md
+.gemini/
 
 .antigravitycli/
 
