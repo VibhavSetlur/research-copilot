@@ -951,7 +951,7 @@ def add_api_key(root: Path, provider: str, value: str) -> dict[str, Any]:
                 pass
         return {"status": "success", "provider": provider, "rotated": rotated}
     except Exception as e:
-        logger.exception("add_api_key failed")
+        logger.warning("add_api_key failed: %s", type(e).__name__)
         return {"status": "error", "message": str(e)}
 
 
