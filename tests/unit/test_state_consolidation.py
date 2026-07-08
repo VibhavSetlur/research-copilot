@@ -17,12 +17,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
 
 from research_os.tools.actions.research.grounding import thought_log, thought_trace
 from research_os.tools.actions.research.lessons import (
     _lessons_read_path,
-    _lessons_write_path,
     lessons_consult,
     lessons_record,
 )

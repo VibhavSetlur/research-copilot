@@ -8,7 +8,6 @@ import pytest
 import yaml
 
 from research_os.tools.actions.synthesis.reviewer import (
-    DEFAULT_PERSONAS,
     audit_reviewer_responses,
     rebuttal_draft,
     reviewer_response_compile,

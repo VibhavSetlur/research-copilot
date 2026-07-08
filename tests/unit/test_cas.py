@@ -5,9 +5,8 @@ import hashlib
 import json
 from pathlib import Path
 
-import pytest
 
-from research_os.daemon.cas import Artifact, CASStore, DEFAULT_MAX_BLOB_BYTES
+from research_os.daemon.cas import CASStore, DEFAULT_MAX_BLOB_BYTES
 
 
 # ── helpers ────────────────────────────────────────────────────────────────────

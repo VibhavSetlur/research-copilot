@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import pytest
-import yaml
 
 from research_os.tools.actions.protocol import load_protocol
 

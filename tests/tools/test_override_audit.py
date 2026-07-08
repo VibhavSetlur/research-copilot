@@ -5,15 +5,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
 import yaml
 
 from research_os.project_ops import (
-    create_numbered_experiment,
     log_override,
     scaffold_minimal_workspace,
 )
-from research_os.tools.actions.audit.audit import audit_step_completeness
 from research_os.tools.actions.state.config import get_interaction_policy
 
 
@@ -124,7 +121,6 @@ def test_pre_submission_checklist_protocol_reads_override_log(tmp_path):
     """The pre-submission protocol must contain an explicit step that
     surfaces override_log.md entries — otherwise bypasses are written
     but never read."""
-    import importlib.resources as r
 
     proto = (Path(__file__).resolve().parents[2] /
              "src" / "research_os" / "protocols" / "audit"

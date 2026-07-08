@@ -8,7 +8,6 @@ and points the AI at the bumped name.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 from research_os.server import _handle_tool_call
 from research_os.tools.actions.audit.script_naming import (

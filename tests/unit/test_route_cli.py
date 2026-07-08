@@ -7,7 +7,6 @@ active plan (read-only preview).
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 from research_os import cli
 from research_os.tools.actions.router import route_request

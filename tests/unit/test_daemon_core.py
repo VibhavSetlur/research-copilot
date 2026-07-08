@@ -238,7 +238,6 @@ def test_self_check_interval_config_default():
 
 def test_serve_starts_periodic_self_check_thread(tmp_path, monkeypatch):
     """B1: serve() launches a background thread that re-runs write_notes."""
-    import threading as _t
     from research_os.daemon import core as _core
     from research_os.daemon.config import DaemonConfig
 

@@ -6,7 +6,6 @@ from pathlib import Path
 
 from research_os.project_ops import scaffold_minimal_workspace
 from research_os.tools.actions.audit.script_naming import (
-    audit_script_naming,
     audit_step_script_naming,
     is_helper_module,
     suggest_script_name,

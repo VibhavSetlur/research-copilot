@@ -6,7 +6,6 @@ import csv
 import json
 from pathlib import Path
 
-import pytest
 
 from research_os.tools.actions.audit.figure_interactivity import (
     OVERRIDE_PATTERN,

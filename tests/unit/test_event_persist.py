@@ -13,7 +13,6 @@ import json
 import time
 from pathlib import Path
 
-import pytest
 
 from research_os.daemon.events import (
     GATE_PENDING,

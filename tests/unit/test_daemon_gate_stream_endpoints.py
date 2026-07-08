@@ -6,7 +6,6 @@ else, rather than silently mapping typos to a rejected gate.
 """
 from __future__ import annotations
 
-import json
 
 import pytest
 

@@ -1,7 +1,6 @@
 """Provenance integrity verification + daemon watch (4.1.x improvements)."""
 from __future__ import annotations
 
-import tempfile
 from pathlib import Path
 
 from research_os.project_ops import scaffold_minimal_workspace

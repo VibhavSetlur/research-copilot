@@ -5,7 +5,6 @@ from __future__ import annotations
 import stat
 from pathlib import Path
 
-import pytest
 import yaml
 
 from research_os.config.project import (

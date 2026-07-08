@@ -25,7 +25,6 @@ absent so the suite still passes on a core-only install.
 """
 from __future__ import annotations
 
-import time
 
 import pytest
 

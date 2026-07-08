@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
 
 from research_os.tools.actions.protocol import load_protocol
 from research_os.tools.actions.state.mistake_replay import mistake_replay

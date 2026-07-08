@@ -5,7 +5,6 @@ sys_boot exposes it by-shape (no daemon import).
 """
 from __future__ import annotations
 
-from pathlib import Path
 
 from research_os.daemon import health_notes
 

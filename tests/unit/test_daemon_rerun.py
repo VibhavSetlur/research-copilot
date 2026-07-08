@@ -103,7 +103,6 @@ def test_rerun_run_overrides_cmd(tmp_path):
 
 def test_rerun_run_overrides_cwd(tmp_path):
     """When overrides include cwd, the new run's manifest cwd reflects it."""
-    import os
 
     d = _make_daemon(tmp_path)
     jid = d.run_command(["python", "-c", "import os; print(os.getcwd())"],

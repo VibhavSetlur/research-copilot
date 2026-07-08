@@ -59,7 +59,6 @@ def test_wizard_docstring_is_3_step():
 
 def test_wizard_result_has_output_types_and_venue():
     """WizardResult must carry the new Step-2 fields with correct defaults."""
-    import types
     r = wizard.WizardResult(
         target_dir=__import__("pathlib").Path("/tmp"),
         project_name="test",

@@ -10,10 +10,8 @@ from __future__ import annotations
 
 import hashlib
 import time
-from pathlib import Path
 from types import SimpleNamespace
 
-import pytest
 
 from research_os.daemon.provenance import capture_environment
 from research_os.daemon.runstore import (
