@@ -335,6 +335,48 @@ DECLARED_TRANSITIONS: dict[tuple[str, str], dict[str, str]] = {
             "Keep the built tool; add an analysis spine to USE it on real data."
         ),
     },
+    ("notebook", "tool_build"): {
+        "kind": "promote",
+        "protocol": "",
+        "guidance": (
+            "Promote a notebook prototype into a governed tool-build scaffold."
+        ),
+    },
+    ("notebook", "hybrid"): {
+        "kind": "augment",
+        "protocol": "",
+        "guidance": (
+            "Keep the notebook surface and add a tool/ half for shared code."
+        ),
+    },
+    ("tool_build", "notebook"): {
+        "kind": "augment",
+        "protocol": "",
+        "guidance": (
+            "Add a notebook-based analysis surface alongside the governed tool repo."
+        ),
+    },
+    ("hybrid", "analysis"): {
+        "kind": "promote",
+        "protocol": "hybrid/tool_to_analysis_handoff",
+        "guidance": (
+            "Keep the analysis spine and continue in numbered analysis steps."
+        ),
+    },
+    ("hybrid", "tool_build"): {
+        "kind": "augment",
+        "protocol": "",
+        "guidance": (
+            "Narrow the hybrid workspace toward the inner tool repo when the code half dominates."
+        ),
+    },
+    ("hybrid", "notebook"): {
+        "kind": "augment",
+        "protocol": "",
+        "guidance": (
+            "Shift the analysis half toward notebook-first execution while keeping the tool surface."
+        ),
+    },
     ("analysis", "multi_study"): {
         "kind": "reframe",
         "protocol": "program/program_setup",
@@ -362,6 +404,8 @@ FORBIDDEN_TRANSITIONS: frozenset[tuple[str, str]] = frozenset({
     # hybrid → multi_study: a project that already merges analysis + software
     # cannot be reframed into a multi-study program without losing the tool half.
     ("hybrid", "multi_study"),
+    ("notebook", "multi_study"),
+    ("multi_study", "hybrid"),
     # multi_study → notebook: flattening a program of sub-studies to a single
     # notebook frame is data-loss risk and semantically wrong.
     ("multi_study", "notebook"),

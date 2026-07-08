@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "research-os"
-version = "5.0.1"
+version = "5.0.0"
 description = "MCP server for reproducible, grounded, citation-verified research — sub-task pipelines, provenance sidecars, publication-grade visualisation, grounded reasoning, and self-tested dashboards."
 readme = "README.md"
 authors = [

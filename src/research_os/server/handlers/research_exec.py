@@ -4,7 +4,9 @@ Carved out of handlers/research.py to stay under the 600-line ceiling.
 """
 from __future__ import annotations
 
+# ruff: noqa: F403, F405  # legacy handler runtime star-import compatibility
 from .._handlers_runtime import *  # noqa: F401,F403
+from .._handlers_runtime import _error, _success, _text, now_iso, package_install, subprocess, sys
 from research_os.server import daemon_bridge as _bridge
 
 
@@ -423,8 +425,18 @@ def _handle_tool_slurm_submit(name, arguments, root):
     # TODO §12.5: journal slurm submissions through daemon once the runner
     # models detached scheduler jobs (e.g. a dedicated "slurm_job" run type
     # that records the sbatch argv + returned job_id without re-executing it).
+    from research_os.tools.actions.state.config import get_research_config
+
+    daemon_desc = _bridge.read_descriptor(root)
+    offline = False
+    if daemon_desc is not None:
+        cfg = get_research_config(root)
+        compute = cfg.get("compute") or {}
+        workspace = cfg.get("workspace") or {}
+        offline = bool(compute.get("offline") or workspace.get("offline"))
     res = submit_slurm(
         root,
+        offline=offline,
         step_id=arguments.get("step_id"),
         cmd=arguments["cmd"],
         job_name=arguments.get("job_name"),
@@ -440,6 +452,7 @@ def _handle_tool_slurm_submit(name, arguments, root):
         extra_sbatch=arguments.get("extra_sbatch"),
     )
     if res.get("status") == "success":
+        res["offline"] = offline
         res["warning"] = (
             "SLURM jobs are not yet journaled through the daemon "
             "(the daemon runner cannot model detached scheduler jobs). "

@@ -111,6 +111,10 @@ def _check_notebook(root: Path) -> list[dict]:
     nb = root / "notebooks"
     if not nb.is_dir():
         return out
+    marker = root / ".ipynb_mode"
+    if marker.exists() and not any(nb.rglob("*.ipynb")):
+        out.append(_f("info", "notebook_marker_only",
+                      "notebook mode: notebook markers exist but no .ipynb files were found yet — seed a notebook to make the mode real."))
     notebooks = list(nb.glob("*.ipynb")) + list(nb.glob("**/*.ipynb"))
     if not notebooks:
         out.append(_f("info", "notebook_none_yet",
@@ -206,6 +210,10 @@ def _check_hybrid(root: Path) -> list[dict]:
     # hybrid = analysis spine + a tool/ half. If the tool half has code but no
     # tests, the software side is unguarded.
     tool = root / "tool"
+    notebooks = root / "notebooks"
+    if notebooks.is_dir() and any(notebooks.rglob("*.ipynb")) and tool.is_dir():
+        out.append(_f("info", "hybrid_notebook_tool_mix",
+                      "hybrid: both notebooks/ and tool/ are present — keep the notebook findings and the tool repo aligned."))
     if tool.is_dir() and any(tool.iterdir()):
         has_tests = _has_any(tool, "**/test_*.py") or _has_any(tool, "**/tests")
         has_code = _has_any(tool, "**/*.py") or _has_any(tool, "**/*.rs") \

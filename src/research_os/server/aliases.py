@@ -69,6 +69,7 @@ _DEPRECATED_ALIASES: set[str] = {
 }
 
 
+
 # Maps legacy alias → kwarg(s) to inject. Lets the consolidated handler
 # infer operation/kind/source/mode/scope from the caller's name so an
 # old-style call keeps working without the caller supplying the param.
@@ -375,9 +376,6 @@ _REMOVED_TOOLS: dict[str, str] = {
         "Removed — no longer needed; use the relevant core tool or protocol."
     ),
     "sys_workspace_scaffold": (
-        "Removed — no longer needed; use the relevant core tool or protocol."
-    ),
-    "sys_workspace_mode": (
         "Removed — no longer needed; use the relevant core tool or protocol."
     ),
     "tool_migrate_apply": (

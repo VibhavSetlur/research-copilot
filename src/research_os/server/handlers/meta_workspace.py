@@ -4,7 +4,9 @@ Carved out of handlers/meta.py to stay under the 600-line ceiling.
 """
 from __future__ import annotations
 
+# ruff: noqa: F403, F405  # legacy handler runtime star-import compatibility
 from .._handlers_runtime import *  # noqa: F401,F403
+from .._handlers_runtime import Any, Path, _build_tree, _error, _profile_inputs, _success, _text, abandon_path, compute_file_hash, create_checkpoint, json, list_checkpoints, list_paths, load_state, os, rollback_checkpoint, scaffold_minimal_workspace, _update_manifest
 # mem_log dispatcher delegates to a methodology handler — pull it into scope.
 from research_os.errors import WriteProtectedError, check_write_permitted
 from research_os.tools.actions.audit.script_naming import (
@@ -1008,4 +1010,5 @@ HANDLERS = {
     "sys_file_write": _handle_sys_file_write,
     "sys_file_list": _handle_sys_file_list,
     "sys_mode": _handle_sys_mode,
+    "sys_workspace_mode": _handle_sys_workspace_mode,
 }

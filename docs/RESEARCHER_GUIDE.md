@@ -61,6 +61,17 @@ the AI ("switch to analysis mode") — it runs `sys_workspace_mode`, which
 builds the new mode's surface and records the change (don't hand-edit the
 config: that leaves the scaffold missing).
 
+### Mode + persona coherency
+
+Research OS stores the chosen workspace mode in `inputs/researcher_config.yaml`
+under `workspace.mode`, and the active persona in `.os_state/config.yaml` under
+`persona.active`. The wizard asks for both together so the assistant's behavior
+style matches the workspace shape: the boot payload surfaces `workspace_mode`,
+`mode_directive`, `active_persona`, and a short `boot_directive` that explains
+how the persona should adapt to the mode. `sys_boot` is the canonical place to
+check the pair at session start; `sys_workspace_mode(operation='status')` and
+`sys_mode()` let you inspect or change them later without hand-editing files.
+
 ---
 
 ## 2. The session pattern (how the AI is supposed to use Research OS)

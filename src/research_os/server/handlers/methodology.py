@@ -6,7 +6,15 @@ where it is merged into the canonical _HANDLERS map.
 """
 from __future__ import annotations
 
+# ruff: noqa: F403, F405  # legacy handler runtime star-import compatibility
 from .._handlers_runtime import *  # noqa: F401,F403
+from .._handlers_runtime import (
+    _error,
+    _success,
+    _text,
+    _STEP_DISPATCH,
+    _STEP_PIPELINE_DISPATCH,
+)
 # env_lock's handler lives in meta_routing, but the tool_step dispatcher
 # resolves operations via this module's globals() — so it must be importable
 # here or operation='env_lock' silently fails "handler not callable" (F1).

@@ -48,6 +48,8 @@ class DaemonConfig:
     # runtime and falls back to native; "native" forces host execution;
     # "off" disables agent code execution entirely.
     sandbox_mode: str = "auto"
+    # Air-gapped / offline mode; when true, network-capable tools must refuse.
+    offline: bool = False
     # Background task queue worker count (Phase 1). The "master loop owns
     # execution" primitive runs jobs off the request thread on this pool.
     task_workers: int = 2
@@ -155,6 +157,7 @@ def _from_env() -> dict:
         "auth_token_env": os.environ.get("RESEARCH_OS_DAEMON_AUTH_TOKEN_ENV"),
         "enable_dashboard": os.environ.get("RESEARCH_OS_DAEMON_DASHBOARD"),
         "sandbox_mode": os.environ.get("RESEARCH_OS_DAEMON_SANDBOX"),
+        "offline": os.environ.get("RESEARCH_OS_DAEMON_OFFLINE"),
         "task_workers": os.environ.get("RESEARCH_OS_DAEMON_WORKERS"),
         "state_cache_ttl": os.environ.get("RESEARCH_OS_DAEMON_CACHE_TTL"),
         "notify_command": os.environ.get("RESEARCH_OS_DAEMON_NOTIFY_COMMAND"),
@@ -175,7 +178,7 @@ def _coerce(block: dict) -> dict:
             out["port"] = int(block["port"])
         except (TypeError, ValueError):
             pass
-    for flag in ("enable_dashboard",):
+    for flag in ("enable_dashboard", "offline"):
         if flag in block and block[flag] is not None:
             out[flag] = _as_bool(block[flag])
     for skey in (

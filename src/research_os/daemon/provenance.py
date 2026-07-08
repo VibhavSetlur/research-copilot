@@ -63,7 +63,9 @@ def git_provenance(root: str | Path) -> dict:
 
 
 def env_provenance(packages: list[str] | None = None,
-                   snapshot_env: bool = False) -> dict:
+                    snapshot_env: bool = False,
+                    offline: bool = False) -> dict:
+
     """Capture the runtime environment: python, platform, conda env, pkgs.
 
     When ``snapshot_env`` is True, also records the COMPLETE installed-package
@@ -80,6 +82,7 @@ def env_provenance(packages: list[str] | None = None,
     conda = os.environ.get("CONDA_DEFAULT_ENV")
     if conda:
         prov["conda_env"] = conda
+    prov["offline"] = bool(offline)
     venv = os.environ.get("VIRTUAL_ENV")
     if venv:
         prov["virtualenv"] = venv
@@ -234,6 +237,7 @@ def capture(
     inputs: Sequence[str | Path] | None = None,
     packages: list[str] | None = None,
     snapshot_env: bool = False,
+    offline: bool = False,
 ) -> dict:
     """Capture a full provenance record for a run. Never raises.
 
@@ -243,6 +247,7 @@ def capture(
         packages: package names whose versions matter for reproducibility.
         snapshot_env: also record the complete installed-package set so the
             exact environment is reproducible (recommended for long/HPC runs).
+        offline: mark the capture as air-gapped/no-network.
     """
     prov: dict = {}
     try:
@@ -252,7 +257,7 @@ def capture(
     except Exception:  # noqa: BLE001 - best effort
         pass
     try:
-        prov["env"] = env_provenance(packages, snapshot_env=snapshot_env)
+        prov["env"] = env_provenance(packages, snapshot_env=snapshot_env, offline=offline)
     except Exception:  # noqa: BLE001
         pass
     try:

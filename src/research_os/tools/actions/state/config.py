@@ -28,14 +28,15 @@ logger = logging.getLogger("research_os.tools.config")
 # either way, only the comments are lost on the fallback path.
 try:
     from ruamel.yaml import YAML as _RuamelYAML  # type: ignore
-    _ruamel = _RuamelYAML()
+except ImportError:
+    _ruamel = None
+    _RUAMEL_AVAILABLE = False
+else:
+    _ruamel: Any = _RuamelYAML()
     _ruamel.preserve_quotes = True
     _ruamel.indent(mapping=2, sequence=4, offset=2)
     _ruamel.width = 4096  # don't reflow long strings
     _RUAMEL_AVAILABLE = True
-except ImportError:
-    _ruamel = None
-    _RUAMEL_AVAILABLE = False
 
 
 def _load_config_roundtrip(path: Path):
@@ -121,6 +122,11 @@ project_name: "{project_name}"
 #   multi_study → a portfolio of sub-studies with a shared codebook + roll-up.
 workspace:
   mode: "analysis"        # analysis | hybrid | tool_build | exploration | notebook | multi_study
+  offline: false           # air-gapped / no-network mode; defaults to false for backward compatibility
+
+compute:
+  offline: false           # canonical runtime offline flag; workspace.offline is accepted as an alias
+
   # workflow_shape:        # optional routing hint: proof | interview_study | linear_essay |
   #                        # experiment_pipeline | systems_benchmark | multi_study | exploration |
   #                        # tool_build | notebook. Leave blank to let the router infer it from
@@ -502,6 +508,8 @@ from research_os.state.mode_registry import ALL_MODES as _ALL_MODES  # noqa: E40
 
 VALID_WORKSPACE_MODES: tuple[str, ...] = _ALL_MODES
 # analysis, tool_build, exploration, notebook, multi_study, hybrid
+
+VALID_PERSONA_NAMES = ("scruffy", "neat", "critique", "delegation")
 
 
 def get_workspace_mode(root: Path) -> str:

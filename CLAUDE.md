@@ -75,8 +75,8 @@ installed. Always activate the env first.
 ## Always do before declaring work "done"
 
 ```bash
-python scripts/preflight.py     # preflight 25/25 (or higher; the count grows)
-python -m pytest -q             # 895+ tests, must all pass
+python scripts/preflight.py     # release gate must pass; counts are checked dynamically
+python -m pytest -q             # run the full suite; must all pass
 ruff check src/ tests/ scripts/ # must be clean
 ```
 
@@ -138,6 +138,7 @@ are blocked. The ONLY ways into main:
 
 **Never** commit version bumps to `dev` and call it done. The bump +
 CHANGELOG entry are part of the release PR `dev → main`.
+
 
 ---
 

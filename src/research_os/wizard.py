@@ -29,6 +29,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from research_os import __version__, logo, tui
+from research_os.server.personas import DEFAULT_PERSONA, PERSONAS, VALID_PERSONA_NAMES, set_active_persona
+from research_os.tui import select_many as _select_many
 from research_os.tui import _C  # noqa  (re-exported for cli.py's status lines)
 
 # ---------------------------------------------------------------------------
@@ -46,6 +48,20 @@ IDE_CHOICES: list[tuple[str, str, str]] = [
     ("aider",       "Aider",                        "AI pair-programming CLI"),
 ]
 VALID_IDES = tuple(k for k, _, _ in IDE_CHOICES)
+
+MODE_CHOICES = [
+    ("analysis", "Analysis pipeline (data → results → paper)"),
+    ("tool_build", "A tool / software I iterate on"),
+    ("exploration", "Quick exploration (scratch-first probes)"),
+    ("notebook", "A Jupyter notebook project"),
+    ("hybrid", "Research + software (analysis steps + a code component)"),
+    ("multi_study", "A multi-study program (portfolio + meta-analysis)"),
+]
+VALID_WORKSPACE_MODES_LOCAL = tuple(mode for mode, _ in MODE_CHOICES)
+
+PERSONA_CHOICES = [
+    (name, name.title(), PERSONAS[name]["directive"]) for name in PERSONAS
+]
 
 # Single-select domain menu. The wizard appends "Other (type my own)" and
 # "Skip" at the end. Keep the visible list short — researchers can always
@@ -283,10 +299,10 @@ def run_wizard(args) -> WizardResult:
         project_name = tui.text("Project name", default=default_name)
         ok(f"Name: {project_name}")
 
-    # ── What are you building? (workspace mode, still Step 1) ───────────
-    # Set early — it shapes the whole scaffold. Honors --workspace-mode if
-    # already passed on the command line; mixed/unsure → analysis.
+    # ── What are you building? (workspace mode + persona, still Step 1) ───────
+    # Set early — it shapes the whole scaffold and the boot personality.
     workspace_mode = _ask_workspace_mode(getattr(args, "workspace_mode", None))
+    persona = _ask_persona(getattr(args, "persona", None), workspace_mode)
     ok({
         "analysis":    "Mode: analysis (linear analysis steps)",
         "hybrid":      "Mode: hybrid (research + software component)",
@@ -295,6 +311,7 @@ def run_wizard(args) -> WizardResult:
         "notebook":    "Mode: notebook (Jupyter-first)",
         "multi_study": "Mode: multi_study (program / portfolio)",
     }.get(workspace_mode, f"Mode: {workspace_mode}"))
+    ok(f"Persona: {persona} ({PERSONAS[persona]['directive']})")
 
     # ── Step 2/3: Output types + venue ──────────────────────────────────
     section(2, total, "Output types + venue",
@@ -303,14 +320,14 @@ def run_wizard(args) -> WizardResult:
 
     # Output types — multi-select; defaults: paper + figures.
     output_type_choices = [
-        ("paper",     "Journal / conference paper"),
-        ("figures",   "Figures / plots (standalone)"),
-        ("report",    "Technical report / white paper"),
-        ("notebook",  "Jupyter notebook (reproducible analysis)"),
-        ("dashboard", "Interactive dashboard"),
-        ("software",  "Software / tool / library"),
-        ("dataset",   "Curated dataset / data release"),
-        ("thesis",    "Thesis / dissertation chapter"),
+        ("paper",     "Journal / conference paper", ""),
+        ("figures",   "Figures / plots (standalone)", ""),
+        ("report",    "Technical report / white paper", ""),
+        ("notebook",  "Jupyter notebook (reproducible analysis)", ""),
+        ("dashboard", "Interactive dashboard", ""),
+        ("software",  "Software / tool / library", ""),
+        ("dataset",   "Curated dataset / data release", ""),
+        ("thesis",    "Thesis / dissertation chapter", ""),
     ]
     output_types = tui.select_many(
         "Output type(s):",
@@ -525,6 +542,11 @@ def run_wizard(args) -> WizardResult:
         default=False,
     )
 
+    try:
+        set_active_persona(target_dir, persona)
+    except Exception:
+        pass
+
     return WizardResult(
         target_dir=target_dir,
         project_name=project_name,
@@ -565,7 +587,7 @@ def run_wizard(args) -> WizardResult:
 # would later reject (drift guard). Imported lazily-safe at module load:
 # config is a leaf state module with no back-edge to the wizard.
 from research_os.tools.actions.state.config import (  # noqa: E402
-    VALID_WORKSPACE_MODES,
+    VALID_WORKSPACE_MODES as _VALID_WORKSPACE_MODES,
 )
 
 
@@ -574,25 +596,40 @@ def _ask_workspace_mode(preset: str | None = None) -> str:
 
     Honors a value already passed on the command line (``--workspace-mode``).
     Mixed / unsure maps implicitly to ``analysis``. Returns one of
-    ``analysis | tool_build | exploration | notebook | multi_study``.
+    ``analysis | tool_build | exploration | notebook | hybrid | multi_study``.
     """
-    if isinstance(preset, str) and preset.strip() in VALID_WORKSPACE_MODES:
+    if isinstance(preset, str) and preset.strip() in _VALID_WORKSPACE_MODES:
         return preset.strip()
     pick = tui.select_one(
         "What are you building?",
-        [
-            ("analysis",    "Analysis pipeline (data → results → paper)"),
-            ("hybrid",      "Research + software (analysis steps + a code component)"),
-            ("tool_build",  "A tool / software I iterate on"),
-            ("exploration", "Quick exploration (scratch-first probes)"),
-            ("notebook",    "A Jupyter notebook project"),
-            ("multi_study", "A multi-study program (portfolio + meta-analysis)"),
-        ],
+        MODE_CHOICES,
         default_index=0,
         help_line="Shapes the scaffold + how the AI works. Change later in "
                   "researcher_config.yaml (workspace.mode).",
     )
-    return pick if pick in VALID_WORKSPACE_MODES else "analysis"
+    return pick if pick in _VALID_WORKSPACE_MODES else "analysis"
+
+
+def _ask_persona(preset: str | None = None, workspace_mode: str = "analysis") -> str:
+    """Ask which persona should guide the workspace boot behavior."""
+    if isinstance(preset, str) and preset.strip() in VALID_PERSONA_NAMES:
+        return preset.strip()
+    default_persona = {
+        "analysis": "neat",
+        "tool_build": "delegation",
+        "hybrid": "neat",
+        "exploration": "scruffy",
+        "notebook": "neat",
+        "multi_study": "neat",
+    }.get(workspace_mode, DEFAULT_PERSONA)
+    pick = _select_many(
+        "Which persona should shape the boot behavior?",
+        [(name, label, hint) for name, label, hint in PERSONA_CHOICES],
+        preselected=[default_persona],
+        help_line="Stored in .os_state/config.yaml under persona.active.",
+    )
+    return pick[0] if pick else default_persona
+    return pick if pick in VALID_PERSONA_NAMES else default_persona
 
 
 def _ask_domain() -> str:

@@ -179,6 +179,20 @@ CONSOLIDATED_TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
         "category": "state",
         "inputSchema": _SYS_STATE_SCHEMA,
     },
+    "sys_workspace_mode": {
+        "short": "Report or transition workspace mode.",
+        "description": "Report or transition the active workspace mode; use status for the current mode and transition to plan or apply a supported mode change.",
+        "category": "workspace",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "operation": {"type": "string", "enum": ["status", "transition"], "default": "status"},
+                "to": {"type": "string", "description": "Target mode (for operation='transition')."},
+                "confirm": {"type": "boolean", "description": "Apply the transition (default false = plan only)."},
+                "rationale": {"type": "string", "description": "Why the mode is changing (recorded in mode_history)."},
+            },
+        },
+    },
     "tool_search": {
         "short": "Search literature/web, scrape pages, or save literature hits.",
         "description": "Unified search entry for provider search, webpage scraping, and literature saves.",

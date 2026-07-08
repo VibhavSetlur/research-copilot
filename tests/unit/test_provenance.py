@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from research_os.daemon.provenance import capture, env_provenance
 from research_os.tools.actions.state.provenance import (
     load_provenance,
     step_provenance_inventory,
@@ -66,3 +67,13 @@ def test_track_runtime_records_wall_seconds():
         time.sleep(0.02)
     assert rt["wall_seconds"] is not None
     assert rt["wall_seconds"] > 0
+
+
+def test_env_provenance_records_offline_flag():
+    prov = env_provenance(offline=True)
+    assert prov["offline"] is True
+
+
+def test_capture_propagates_offline_flag(tmp_path: Path):
+    cap = capture(tmp_path, offline=True)
+    assert cap["env"]["offline"] is True

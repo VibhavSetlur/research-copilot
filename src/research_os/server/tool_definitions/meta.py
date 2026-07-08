@@ -312,20 +312,6 @@ META_TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
             },
         },
     },
-    "sys_workspace_mode": {
-        "short": "Report or transition the workspace mode (analysis/tool_build/exploration/notebook/multi_study/hybrid).",
-        "description": "First-class workspace-mode lifecycle. operation='status' returns the current mode (config + state), a drift flag, and the supported transitions from here. operation='transition' with `to=<mode>` moves the project to another mode — PLANS by default (shows what scaffold surface the target mode needs that's missing), and APPLIES when confirm=true: it ADDITIVELY creates the missing surface (never deletes prior work), syncs config + state (fixing any drift), records the move to .os_state/mode_history.jsonl, and points you at the promotion/handoff protocol for the crossing (e.g. exploration→analysis promotes probes into steps; analysis→hybrid adds an inner tool repo; analysis→multi_study reframes as study 01). Use this instead of sys_config(workspace.mode=…), which only flips the string and leaves the scaffold missing.",
-        "category": "workspace",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "operation": {"type": "string", "enum": ["status", "transition"], "default": "status"},
-                "to": {"type": "string", "description": "Target mode (for operation='transition')."},
-                "confirm": {"type": "boolean", "description": "Apply the transition (default false = plan only)."},
-                "rationale": {"type": "string", "description": "Why the mode is changing (recorded in mode_history)."},
-            },
-        },
-    },
     "sys_workspace_scaffold": {
         "short": "Create the Research OS directory layout. Use when researcher asks for a re-scaffold.",
         "description": "Create the standard Research OS directory layout. Used by `research-os init`; only call from inside the MCP if the researcher explicitly asks for a re-scaffold.",
@@ -339,6 +325,20 @@ META_TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
                     "description": "all | cursor | claude | antigravity | opencode | vscode",
                     "default": "all",
                 },
+            },
+        },
+    },
+    "sys_workspace_mode": {
+        "short": "Report or transition the workspace mode (analysis/tool_build/exploration/notebook/multi_study/hybrid).",
+        "description": "First-class workspace-mode lifecycle. operation='status' returns the current mode (config + state), a drift flag, and the supported transitions from here. operation='transition' with `to=<mode>` moves the project to another mode — PLANS by default (shows what scaffold surface the target mode needs that's missing), and APPLIES when confirm=true: it ADDITIVELY creates the missing surface (never deletes prior work), syncs config + state (fixing any drift), records the move to .os_state/mode_history.jsonl, and points you at the promotion/handoff protocol for the crossing (e.g. exploration→analysis promotes probes into steps; analysis→hybrid adds an inner tool repo; analysis→multi_study reframes as study 01). Use this instead of sys_config(workspace.mode=…), which only flips the string and leaves the scaffold missing.",
+        "category": "workspace",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "operation": {"type": "string", "enum": ["status", "transition"], "default": "status"},
+                "to": {"type": "string", "description": "Target mode (for operation='transition')."},
+                "confirm": {"type": "boolean", "description": "Apply the transition (default false = plan only)."},
+                "rationale": {"type": "string", "description": "Why the mode is changing (recorded in mode_history)."},
             },
         },
     },

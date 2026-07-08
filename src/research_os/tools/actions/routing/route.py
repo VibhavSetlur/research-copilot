@@ -1017,13 +1017,14 @@ def sys_boot(root: Path, *, lean: bool = False) -> dict[str, Any]:
             # §13.1 Active persona — directive text returned as MCP context.
             # Research-OS never sends this to any model; the client's AI reads it.
             "active_persona": _boot_active_persona(root),
+            "boot_directive": _boot_mode_persona_directive(_mode_info, _boot_active_persona(root)),
         }
     except Exception as e:
         logger.exception("sys_boot failed")
         return {"status": "error", "message": str(e)}
 
 
-def _boot_active_persona(root: Path) -> dict:
+def _boot_active_persona(root: Path) -> dict[str, str]:
     """Return the active persona name + directive for the sys_boot payload.
 
     Text only — never sent to any model by Research-OS.
@@ -1047,6 +1048,13 @@ def _boot_active_persona(root: Path) -> dict:
             "tool_visibility": "all",
             "execution_policy": "direct",
         }
+
+
+def _boot_mode_persona_directive(mode_info: tuple[str, str], persona: dict) -> str:
+    mode_name, mode_directive = mode_info
+    persona_name = str(persona.get("name") or "scruffy")
+    persona_directive = str(persona.get("directive") or "")
+    return f"Mode {mode_name}: {mode_directive} Persona {persona_name}: {persona_directive}"
 
 
 def _boot_new_context(root: Path) -> dict:

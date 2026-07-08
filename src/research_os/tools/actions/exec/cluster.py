@@ -133,6 +133,7 @@ def _build_sbatch(
 def submit_slurm(
     root: Path,
     *,
+    offline: bool = False,
     step_id: str | None = None,
     cmd: str,
     job_name: str | None = None,
@@ -154,6 +155,12 @@ def submit_slurm(
 
         submit_slurm(root, step_id="03_fit", cmd="python scripts/03_fit_v1.py")
     """
+    if offline:
+        return {
+            "status": "error",
+            "message": "offline mode blocks SLURM job submission because it requires scheduler I/O",
+            "offline": True,
+        }
     if not _has_slurm():
         return {
             "status": "error",
@@ -164,10 +171,10 @@ def submit_slurm(
         }
     defaults = _cfg_defaults(root)
     job_name = job_name or (step_id or "research-os") + "-job"
-    cpus = cpus or defaults.get("cpus_per_task", 4)
-    mem = mem or defaults.get("mem", "16G")
-    time_limit = time_limit or defaults.get("time", "02:00:00")
-    partition = partition or defaults.get("partition", "compute")
+    cpus = int(cpus or defaults.get("cpus_per_task", 4))
+    mem = str(mem or defaults.get("mem", "16G"))
+    time_limit = str(time_limit or defaults.get("time", "02:00:00"))
+    partition = str(partition or defaults.get("partition", "compute"))
     modules = modules or defaults.get("modules") or []
     conda_env = conda_env or defaults.get("conda_env")
     extra_sbatch = extra_sbatch or defaults.get("extra_sbatch") or []
@@ -186,7 +193,7 @@ def submit_slurm(
 
     script_body = _build_sbatch(
         job_name=job_name, cmd=cmd,
-        cpus=cpus, mem=mem, time_limit=time_limit, partition=partition,
+        cpus=int(cpus), mem=str(mem), time_limit=str(time_limit), partition=str(partition),
         gpus=gpus, array=array, dependency=dependency,
         modules=modules, conda_env=conda_env, extra_sbatch=extra_sbatch,
         output_dir=log_dir,
@@ -234,6 +241,7 @@ def submit_slurm(
         "cpus": cpus, "mem": mem, "time": time_limit,
         "gpus": gpus, "array": array, "dependency": dependency,
         "modules": modules, "conda_env": conda_env,
+        "offline": bool(offline),
         "script": str(script_path.relative_to(root)),
         "log_dir": str(log_dir.relative_to(root)),
     }
@@ -277,9 +285,11 @@ def status_slurm(root: Path, job_id: str | None = None) -> dict[str, Any]:
                 capture_output=True, text=True, errors="replace", timeout=15,
             )
             if sq.returncode == 0 and sq.stdout.strip():
-                state, elapsed, reason = sq.stdout.strip().split("|", 2)
-                live_state = {"state": state, "elapsed": elapsed,
-                              "reason": reason}
+                parts = sq.stdout.strip().split("|", 2)
+                if len(parts) == 3:
+                    state, elapsed, reason = parts
+                    live_state = {"state": state, "elapsed": elapsed, "reason": reason}
+
         except (OSError, subprocess.TimeoutExpired):
             pass
 

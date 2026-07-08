@@ -15,7 +15,9 @@ two MCP calls before anything else:
    summary-first for `complexity:low`. (Full branching: AGENTS.md.)
 
 Tools use underscores (`sys_state_get`, `tool_data`, `mem_log`); dot notation
-+ legacy names auto-rewrite. `sys_tool_describe(name)` for a tool's full spec.
++ legacy names auto-rewrite. Use `sys_boot` for current state, `tool_route` for
++ routing, and `sys_daemon` for gate/notification state. `sys_tool_describe(name)`
++ for a tool's full spec.
 
 Research OS does NOT manage LLM provider keys — Claude Code owns model access.
 The only credentials it uses are optional literature / web-search keys.
