@@ -30,7 +30,7 @@ def _load_preflight():
 def test_new_check_functions_exist():
     """All five W21 check functions must be present on preflight module."""
     pre = _load_preflight()
-    assert hasattr(pre, "check_docs_code_consistency")
+    assert hasattr(pre, "check_docs_counts_agree")
     assert hasattr(pre, "check_tools_md_roundtrip")
     assert hasattr(pre, "check_citation_cff_valid")
     assert hasattr(pre, "check_tool_short_field_length")
@@ -70,7 +70,12 @@ def test_citation_cff_check_passes():
 
 
 def test_packs_in_both_lists_passes():
-    """Every research_os_* pack/adapter dir must be in both bundled lists."""
+    """Every bundled in-tree pack/adapter package should be in both lists.
+
+    This guards the real shipped contract: the source tree's bundled
+    adapter/package dirs must be represented in both the loader registry
+    and the packaging manifest, with no stale list-only entries left behind.
+    """
     pre = _load_preflight()
     ok, detail = pre.check_packs_in_both_lists()
     assert ok, f"packs-in-both-lists check failed: {detail}"

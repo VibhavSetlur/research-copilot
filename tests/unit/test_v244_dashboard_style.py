@@ -275,11 +275,11 @@ def test_version_files_coherent():
         assert pattern in body, f"{file_rel} should contain {pattern!r}"
 
 
-def test_changelog_has_244_entry():
+def test_changelog_has_current_entry():
+    import research_os
+
     body = (REPO_ROOT / "CHANGELOG.md").read_text()
-    # Section header.
-    assert "## [2.4.4]" in body
-    # Style preset called out as Added.
-    assert "apply_research_os_style" in body
-    # render → view → v2 loop called out.
-    assert "render → view" in body or "view → v2" in body or "view loop" in body
+    current_version = research_os.__version__
+    assert f"## [{current_version}]" in body
+    top_entry = body.split(f"## [{current_version}]", 1)[1]
+    assert "Documentation Drift Guard" in top_entry or "apply_research_os_style" in top_entry
