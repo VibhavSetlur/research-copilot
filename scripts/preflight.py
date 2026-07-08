@@ -1081,11 +1081,16 @@ def check_docs_counts_agree():
     ]
 
     expected = render_reference(REPO_ROOT)
+    try:
+        reference_rel = REFERENCE_PATH.relative_to(REPO_ROOT)
+    except ValueError:
+        reference_rel = REFERENCE_PATH
+
     if not REFERENCE_PATH.exists():
-        return False, f"missing {REFERENCE_PATH.relative_to(REPO_ROOT)}"
+        return False, f"missing {reference_rel}"
     actual = REFERENCE_PATH.read_text(encoding="utf-8")
     if actual != expected:
-        return False, f"stale {REFERENCE_PATH.relative_to(REPO_ROOT)}"
+        return False, f"stale {reference_rel}"
 
     false_positive_patterns = [
         r"\b\d{4}-\d{2}-\d{2}\b",
