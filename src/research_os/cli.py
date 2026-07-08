@@ -57,8 +57,8 @@ IDE_CHOICES_FOR_COMPLETION = (*VALID_IDES, "auto", "all", "none")
 # Helpers
 # ---------------------------------------------------------------------------
 
-from research_os._cli.term import _check, _cross, _warn_glyph
-from research_os._cli.term import _supports_utf8 as _supports_utf8
+from research_os._cli.term import _check, _cross, _warn_glyph  # noqa: E402 - imported after CLI helper section
+from research_os._cli.term import _supports_utf8 as _supports_utf8  # noqa: E402 - imported after CLI helper section
 
 
 def _detect_ide() -> list[str]:

@@ -4,6 +4,7 @@ Carved out of handlers/audit.py to stay under the 600-line ceiling.
 """
 from __future__ import annotations
 
+# ruff: noqa: F403, F405  # legacy handler runtime star-import compatibility
 from .._handlers_runtime import *  # noqa: F401,F403
 
 __all__ = [
