@@ -58,7 +58,7 @@ from .staleness import assess as assess_staleness
 from .staleness import check_input_staleness
 from .tasks import Job, JobStatus, TaskQueue
 from .protocol_driver import ProtocolDriver
-from .workflow import DAGExecutor, Digraph
+from .dag_executor import DAGExecutor, Digraph
 
 __all__ = [
     "Daemon",
