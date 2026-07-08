@@ -60,3 +60,33 @@ dev = [
     "pytest>=8.0",
     "build>=1.0",
 ]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/scripts",
+    "/docs",
+    "/templates",
+    "/README.md",
+    "/CHANGELOG.md",
+    "/CITATION.cff",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "src/research_os",
+    "src/research_os_humanities",
+    "src/research_os_qualitative",
+    "src/research_os_theory_math",
+    "src/research_os_wet_lab",
+    "src/research_os_engineering",
+    "src/research_os_adapter_slurm",
+    "src/research_os_adapter_snakemake",
+    "src/research_os_adapter_nextflow",
+    "src/research_os_adapter_cytoscape",
+    "src/research_os_adapter_redcap",
+    "src/research_os_adapter_synapse",
+    "src/research_os_adapter_mlflow",
+    "src/research_os_adapter_zenodo",
+]

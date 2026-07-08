@@ -1424,14 +1424,13 @@ def check_packs_in_both_lists():
         and d.name.startswith("research_os_")
         and d.name not in excluded
         and not d.name.endswith(".egg-info")
-        and not (d / "__pycache__").exists()
     )
 
     loader = REPO_ROOT / "src" / "research_os" / "server" / "pack_loader.py"
     loader_text = loader.read_text() if loader.exists() else ""
     bundled_in_loader = {
         match.group(1)
-        for match in re.finditer(r'\("(research_os_[A-Za-z0-9_]+)"\s*,\s*"\1:register"\)', loader_text)
+        for match in re.finditer(r'"(research_os_[A-Za-z0-9_]+):register"', loader_text)
     }
 
     pyproject = REPO_ROOT / "pyproject.toml"
