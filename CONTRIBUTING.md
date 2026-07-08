@@ -70,7 +70,7 @@ release flow (version bump, CHANGELOG, tag, publish).
 4. Run the local checks (`pytest`, `ruff`, `preflight`).
 5. Open the PR — the template walks you through what to include.
 6. CI runs lint + preflight + unit + integration + tools + build tests
-   on Python 3.10 / 3.11 / 3.12.
+   on Python 3.11 / 3.12.
 7. A maintainer reviews. After approval + green CI, the PR is squash-
    merged into `dev`.
 

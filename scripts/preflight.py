@@ -536,6 +536,23 @@ def check_protocols_referenced_tools_resolve():
     return True, f"{len(refs)} unique tool refs all resolve"
 
 
+def _read_protocol_bundle() -> tuple[dict | None, str | None]:
+    """Read the compiled protocol bundle in its on-disk msgpack format."""
+    import msgpack
+
+    bundle_path = PROTOCOLS_DIR / "_protocols.bundle"
+    if not bundle_path.exists():
+        return None, "missing _protocols.bundle — run python scripts/build_protocols.py"
+    try:
+        bundle = msgpack.unpackb(bundle_path.read_bytes(), raw=False)
+    except Exception as exc:
+        return None, f"could not parse _protocols.bundle: {exc}"
+    if not isinstance(bundle, dict):
+        return None, "_protocols.bundle top-level object is not a mapping"
+    return bundle, None
+
+
+
 def check_bundle_fresh():
     """The compiled _protocols.bundle must match the current protocol YAMLs.
 
@@ -547,8 +564,6 @@ def check_bundle_fresh():
     Fix when this fails:
         python scripts/build_protocols.py
     """
-    import msgpack
-
     bundle_path = PROTOCOLS_DIR / "_protocols.bundle"
     if not bundle_path.exists():
         return False, "missing _protocols.bundle — run python scripts/build_protocols.py"
@@ -557,10 +572,9 @@ def check_bundle_fresh():
         bp = __import__("build_protocols")
     except Exception as exc:
         return False, f"failed to import scripts/build_protocols.py: {exc}"
-    try:
-        on_disk = msgpack.unpackb(bundle_path.read_bytes(), raw=False)
-    except Exception as exc:
-        return False, f"could not parse _protocols.bundle: {exc}"
+    on_disk, error = _read_protocol_bundle()
+    if on_disk is None:
+        return False, error or "could not read _protocols.bundle"
     now = bp.source_hash()
     stored = on_disk.get("source_hash")
     if stored != now:
@@ -571,6 +585,118 @@ def check_bundle_fresh():
     n = len(on_disk.get("protocols", {}))
     g = len(on_disk.get("gates", []))
     return True, f"bundle fresh: {n} protocols, {g} gate(s)"
+
+
+def _bundle_protocol_ids(protocols) -> tuple[set[str], list[str]]:
+    ids: list[str] = []
+    errors: list[str] = []
+    if isinstance(protocols, dict):
+        ids = [str(k).strip() for k in protocols if str(k).strip()]
+        if len(ids) != len(protocols):
+            errors.append("protocols mapping contains empty protocol id key(s)")
+    elif isinstance(protocols, list):
+        for i, entry in enumerate(protocols):
+            if not isinstance(entry, dict):
+                errors.append(f"protocols[{i}] is not a mapping")
+                continue
+            pid = entry.get("id") or entry.get("protocol_id") or entry.get("name")
+            if not isinstance(pid, str) or not pid.strip():
+                errors.append(f"protocols[{i}] has no non-empty id/protocol_id/name")
+                continue
+            ids.append(pid.strip())
+    else:
+        errors.append("protocols must be a mapping or list")
+
+    duplicates = sorted({pid for pid in ids if ids.count(pid) > 1})
+    if duplicates:
+        errors.append(f"duplicate protocol id(s): {duplicates[:5]}")
+    if not ids:
+        errors.append("bundle contains no protocol ids")
+    return set(ids), errors
+
+
+def _iter_protocol_targets(value, *, field: str):
+    if value is None:
+        return
+    if isinstance(value, str):
+        target = value.split("#", 1)[0].strip()
+        if not target or target.lower() in {"null", "none"}:
+            return
+        if "/" in target or field in {"protocol", "protocol_id", "next_protocol"}:
+            yield target
+        return
+    if isinstance(value, list):
+        for item in value:
+            yield from _iter_protocol_targets(item, field=field)
+
+
+def _collect_bundle_reference_errors(bundle: dict, protocol_ids: set[str]) -> list[str]:
+    errors: list[str] = []
+    target_fields = {"protocol", "protocol_id", "protocols", "target", "next_protocol"}
+
+    def scan(obj, path: str) -> None:
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                key_s = str(key)
+                child_path = f"{path}.{key_s}" if path else key_s
+                if key_s in target_fields:
+                    for target in _iter_protocol_targets(value, field=key_s):
+                        if target not in protocol_ids:
+                            errors.append(f"{child_path} → {target!r}")
+                if isinstance(value, (dict, list)):
+                    scan(value, child_path)
+        elif isinstance(obj, list):
+            for i, item in enumerate(obj):
+                if isinstance(item, (dict, list)):
+                    scan(item, f"{path}[{i}]")
+
+    for key in ("protocols", "routing", "router"):
+        if key in bundle:
+            scan(bundle[key], key)
+
+    gates = bundle.get("gates")
+    if isinstance(gates, list):
+        for i, gate in enumerate(gates):
+            if not isinstance(gate, dict):
+                errors.append(f"gates[{i}] is not a mapping")
+                continue
+            source = gate.get("source_protocol")
+            if isinstance(source, str) and source.strip() and source not in protocol_ids:
+                errors.append(f"gates[{i}].source_protocol → {source!r}")
+    elif gates is not None:
+        errors.append("gates must be a list when present")
+
+    preconditions = bundle.get("preconditions")
+    if isinstance(preconditions, dict):
+        for key, value in preconditions.items():
+            key_s = str(key)
+            if key_s in protocol_ids:
+                scan(value, f"preconditions.{key_s}")
+            elif "/" in key_s:
+                errors.append(f"preconditions key → {key_s!r}")
+    elif preconditions is not None:
+        errors.append("preconditions must be a mapping when present")
+
+    built_from = bundle.get("gate_built_from")
+    if isinstance(built_from, list):
+        for target in built_from:
+            if isinstance(target, str) and target not in protocol_ids:
+                errors.append(f"gate_built_from → {target!r}")
+    return errors
+
+
+def check_bundle_internal_consistency():
+    """Compiled bundle references must point at protocols in the bundle."""
+    bundle, error = _read_protocol_bundle()
+    if bundle is None:
+        return False, error or "could not read _protocols.bundle"
+
+    protocol_ids, errors = _bundle_protocol_ids(bundle.get("protocols"))
+    if protocol_ids:
+        errors.extend(_collect_bundle_reference_errors(bundle, protocol_ids))
+    if errors:
+        return False, "; ".join(errors[:6])
+    return True, f"bundle internal refs consistent across {len(protocol_ids)} protocol(s)"
 
 
 def check_protocols_validate():
@@ -1744,6 +1870,7 @@ def main() -> int:
     tally.check("Every tool is reachable (no orphan tools)", check_every_tool_is_reachable)
     tally.check("Protocols validate against Protocol model (schema 3.0)", check_protocols_validate)
     tally.check("Compiled _protocols.bundle fresh (source-hash matches YAMLs)", check_bundle_fresh)
+    tally.check("Compiled _protocols.bundle internal refs resolve", check_bundle_internal_consistency)
     tally.check("Protocol freshness (review cadence)", check_protocol_freshness)
     tally.check("next_protocol_kind declared on every protocol", check_next_protocol_kind_present)
     tally.check("Routing targets resolve (next_protocol/on_failure/see_also)", check_routing_targets_resolve)

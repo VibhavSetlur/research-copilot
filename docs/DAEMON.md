@@ -423,15 +423,12 @@ prune between studies.
 
 ```bash
 research-os daemon domain        # detected research field + field-aware defaults
-research-os daemon gateway       # OpenAI-compatible chat gateway status / mint a token
 ```
 
-The **gateway** (`daemon gateway`) is an advanced, off-by-default surface:
-an OpenAI-compatible `/v1/chat/completions` endpoint that routes a prompt
-through the protocol router and executes Research OS tools, so a non-MCP
-client can drive a project. It requires an explicit enable flag and a
-per-session bearer token. Most researchers never need it.
-
+The pre-v5 **gateway** (`daemon gateway`) OpenAI-compatible chat surface was
+removed. Use MCP stdio for AI-client connections, and use the daemon's status,
+execution, run, consent, freshness, and notification commands for the optional
+background kernel.
 ---
 
 ## Mental model

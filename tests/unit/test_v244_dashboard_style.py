@@ -286,7 +286,7 @@ def test_changelog_has_current_entry():
     if "\n## [" in top_entry:
         top_entry = top_entry.split("\n## [", 1)[0]
 
-    assert top_entry.lstrip().startswith("— The World-Class Architecture Overhaul (2026-07-06)")
+    assert top_entry.lstrip().startswith("— The World-Class Architecture Overhaul (2026-07-08)")
     assert "### Added" in top_entry
     assert "### Improved" in top_entry
     assert "### Fixed / Removed" in top_entry

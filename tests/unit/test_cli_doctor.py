@@ -29,9 +29,9 @@ from research_os import cli_doctor
 
 def test_check_python_version_passes_on_current_interpreter():
     status, msg, _ = cli_doctor.check_python_version()
-    # The conda env we run in is >= 3.10 — the project's own floor.
+    # The conda env we run in is >= 3.11 — the project's own floor.
     assert status == "pass"
-    assert ">= 3.10" in msg
+    assert ">= 3.11" in msg
 
 
 def test_check_conda_active_warns_when_unset(monkeypatch):

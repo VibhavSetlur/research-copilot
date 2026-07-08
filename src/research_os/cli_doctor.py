@@ -135,14 +135,14 @@ def _c(text: str, code: str, enable: bool) -> str:
 
 
 def check_python_version() -> CheckResult:
-    """Require Python >= 3.10 (matches pyproject `requires-python`)."""
+    """Require Python >= 3.11 (matches pyproject `requires-python`)."""
     v = sys.version_info
-    if (v.major, v.minor) >= (3, 10):
-        return ("pass", f"Python {v.major}.{v.minor}.{v.micro} (>= 3.10)", None)
+    if (v.major, v.minor) >= (3, 11):
+        return ("pass", f"Python {v.major}.{v.minor}.{v.micro} (>= 3.11)", None)
     return (
         "fail",
-        f"Python {v.major}.{v.minor}.{v.micro} is too old (need >= 3.10)",
-        "Install Python 3.10+ via conda: "
+        f"Python {v.major}.{v.minor}.{v.micro} is too old (need >= 3.11)",
+        "Install Python 3.11+ via conda: "
         "`conda create -n research-os python=3.11 && conda activate research-os`",
     )
 

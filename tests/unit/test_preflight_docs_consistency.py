@@ -81,6 +81,39 @@ def test_packs_in_both_lists_passes():
     assert ok, f"packs-in-both-lists check failed: {detail}"
 
 
+def test_bundle_internal_consistency_passes_on_valid_minimal_bundle(monkeypatch):
+    pre = _load_preflight()
+    bundle = {
+        "protocols": {
+            "analysis/example": {"next_protocol": "audit/check"},
+            "audit/check": {},
+        },
+        "gates": [{"key": "review", "source_protocol": "analysis/example"}],
+        "gate_built_from": ["analysis/example"],
+        "preconditions": {"audit/check": [{"protocol": "analysis/example"}]},
+    }
+    monkeypatch.setattr(pre, "_read_protocol_bundle", lambda: (bundle, None))
+
+    ok, detail = pre.check_bundle_internal_consistency()
+    assert ok, detail
+
+
+
+def test_bundle_internal_consistency_catches_missing_route_target(monkeypatch):
+    pre = _load_preflight()
+    bundle = {
+        "protocols": {"analysis/example": {"next_protocol": "audit/missing"}},
+        "gates": [],
+        "preconditions": {},
+    }
+    monkeypatch.setattr(pre, "_read_protocol_bundle", lambda: (bundle, None))
+
+    ok, detail = pre.check_bundle_internal_consistency()
+    assert not ok
+    assert "audit/missing" in detail
+
+
+
 def test_preflight_registers_25plus_checks():
     """main() must register at least 25 checks (W21 bumps total >=29)."""
     pre = _load_preflight()

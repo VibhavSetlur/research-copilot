@@ -6,7 +6,7 @@ from __future__ import annotations
 
 # ruff: noqa: F403, F405  # legacy handler runtime star-import compatibility
 from .._handlers_runtime import *  # noqa: F401,F403
-from .._handlers_runtime import Any, Path, _build_tree, _error, _profile_inputs, _success, _text, abandon_path, compute_file_hash, create_checkpoint, json, list_checkpoints, list_paths, load_state, os, rollback_checkpoint, scaffold_minimal_workspace, _update_manifest
+from .._handlers_runtime import Any, Path, _build_tree, _error, _profile_inputs, _success, _text, abandon_path, compute_file_hash, create_checkpoint, json, list_checkpoints, list_paths, load_state, rollback_checkpoint, scaffold_minimal_workspace, _update_manifest
 # mem_log dispatcher delegates to a methodology handler — pull it into scope.
 from research_os.errors import WriteProtectedError, check_write_permitted
 from research_os.tools.actions.audit.script_naming import (
@@ -690,15 +690,11 @@ def _daemon_http_get(base_url, path, timeout):
 def _handle_sys_daemon(name, arguments, root):
     """Bridge the MCP session to a running daemon (Phase 3).
 
-    Discovers the daemon via its self-advertised descriptor at
-    <root>/.os_state/daemon.json, confirms the PID is alive, then pulls
-    the read-only /v1/orient + /v1/jobs telemetry over localhost HTTP.
+    Discovers the daemon through daemon_bridge's canonical descriptor and
+    liveness helpers, then pulls read-only telemetry over localhost HTTP.
     Degrades to running=false with a start hint when nothing is running.
-
-    Stdlib-only by design: the reasoning layer must not import the daemon
-    package, so this re-implements the trivial descriptor read rather than
-    importing research_os.daemon.discovery (same on-disk SHAPE, no import).
     """
+    from research_os.server import daemon_bridge as _bridge
     timeout = arguments.get("timeout")
     try:
         timeout = float(timeout) if timeout is not None else 2.0
@@ -713,35 +709,30 @@ def _handle_sys_daemon(name, arguments, root):
         "freshness, and a recommended next action.",
     }
 
-    desc_path = Path(root) / ".os_state" / "daemon.json"
-    try:
-        if not desc_path.exists():
-            return _text(_success(not_running))
-        desc = json.loads(desc_path.read_text(encoding="utf-8"))
-        if not isinstance(desc, dict):
-            return _text(_success(not_running))
-    except (OSError, ValueError):
+    desc = _bridge.read_descriptor(root)
+    if desc is None:
         return _text(_success(not_running))
 
-    # Confirm the advertised PID is actually alive — a stale descriptor
-    # (daemon crashed without cleanup) must not read as "running".
     pid = desc.get("pid")
-    if isinstance(pid, int):
-        try:
-            os.kill(pid, 0)
-        except ProcessLookupError:
-            stale = dict(not_running)
+    if not _bridge.daemon_present(root):
+        stale = dict(not_running)
+        if isinstance(pid, int):
             stale["hint"] = (
                 "Found a stale daemon descriptor (pid %s not alive). "
                 "Start a fresh daemon with 'research-os daemon start'." % pid
             )
-            return _text(_success(stale))
-        except PermissionError:
-            pass  # alive, owned by another user
-        except OSError:
-            pass
+        return _text(_success(stale))
 
-    base_url = desc.get("base_url") or f"http://{desc.get('host')}:{desc.get('port')}"
+    base_url = _bridge.daemon_base_url(root)
+    if not base_url:
+        return _text(_success({
+            "running": True,
+            "reachable": False,
+            "version": desc.get("version"),
+            "pid": pid,
+            "hint": "Daemon process is alive but its descriptor does not "
+            "advertise an HTTP base URL; restart it with 'research-os daemon start'.",
+        }))
     orient = _daemon_http_get(base_url, "/v1/orient", timeout)
     jobs = _daemon_http_get(base_url, "/v1/jobs", timeout)
     # Also surface the execution bound (resource budget) and any

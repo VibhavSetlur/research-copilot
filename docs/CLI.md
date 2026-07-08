@@ -265,8 +265,11 @@ research-os daemon consent deny <id>      # refuse
 # notifications + misc
 research-os daemon notifications  # the outbox + delivery status (--undelivered)
 research-os daemon domain         # detected research field + defaults
-research-os daemon gateway        # OpenAI-compatible chat gateway status / mint token
 ```
+
+`research-os daemon gateway` was removed in v5. Use MCP stdio for AI-client
+connections; use `daemon status`, `daemon exec`, and the run/consent commands
+above for daemon-managed execution and approval flows.
 
 Every subcommand takes `--help` for its own flags. The daemon binds
 `127.0.0.1` only.
@@ -309,7 +312,7 @@ inside a workspace) the workspace itself. Modelled on `brew doctor` /
 
 | Check                       | Purpose                                                                                |
 | --------------------------- | -------------------------------------------------------------------------------------- |
-| `python_version`            | Python >= 3.10 (matches `pyproject.toml`'s `requires-python`).                         |
+| `python_version`            | Python >= 3.11 (matches `pyproject.toml`'s `requires-python`).                         |
 | `conda_active`              | Warns if `CONDA_DEFAULT_ENV` is unset.                                                 |
 | `version_consistency`       | `pyproject.toml`, `__init__.py`, `CITATION.cff` agree on the same version string.     |
 | `in_tree_packs_registered`  | All 5 bundled packs (humanities, qualitative, theory_math, wet_lab, engineering) import and register cleanly. |
@@ -354,7 +357,7 @@ research-os doctor --workspace /path/to/my-research
 {
   "checks": [
     {"name": "python_version", "status": "pass",
-     "message": "Python 3.11.15 (>= 3.10)", "scope": "install"},
+     "message": "Python 3.11.15 (>= 3.11)", "scope": "install"},
     ...
   ],
   "summary": {"pass": 6, "warn": 2, "fail": 0},

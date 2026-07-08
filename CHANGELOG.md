@@ -6,7 +6,7 @@ Versioning: [SemVer](https://semver.org).
 
 ---
 
-## [5.0.0] — The World-Class Architecture Overhaul (2026-07-06)
+## [5.0.0] — The World-Class Architecture Overhaul (2026-07-08)
 
 A MAJOR release. The headline: Research-OS is now unambiguously a **passive
 tool provider** — it calls no LLM and has no gateway. The daemon is an

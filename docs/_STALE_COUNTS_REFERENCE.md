@@ -6,7 +6,7 @@
 |---|---:|---|
 | Active MCP tools | 47 | `research_os.server.TOOL_DEFINITIONS` |
 | Protocol YAML files | 161 | `src/research_os/protocols/**/*.yaml` excluding `_*.yaml` |
-| Preflight checks | 36 | `scripts/preflight.py` registered checks |
+| Preflight checks | 37 | `scripts/preflight.py` registered checks |
 | Pytest gate | collected by `python -m pytest -q` during release gate | tests/ |
 | `_protocols.bundle` | compiled routing / gate / precondition bundle | `scripts/build_protocols.py` |
 | `_embeddings.npz` | generated semantic-router vectors | `scripts/build_embeddings.py` |
