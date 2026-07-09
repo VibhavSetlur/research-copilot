@@ -990,7 +990,7 @@ def _write_os_state_summary(root: Path) -> None:
         "",
         "1. Read `AGENTS.md` at project root (the AI's operating rules).",
         "2. Read THIS file (status + open hypotheses + what was last done).",
-        "3. On your first turn, call `sys_boot` for the live state +"
+        "3. On your first turn, call `sys_boot` for the live state +",
         " active plan + pause classification.",
         "4. Then `tool_route(prompt=<the researcher's message>)`.",
     ])

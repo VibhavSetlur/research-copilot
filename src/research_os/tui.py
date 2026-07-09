@@ -655,7 +655,7 @@ def secret(label: str, allow_empty: bool = True, mask_char: str = "•") -> str:
             if val or allow_empty:
                 return val
 
-    print(f"  {label}")
+    print("  [secret input hidden]")
 
     buf = ""
 

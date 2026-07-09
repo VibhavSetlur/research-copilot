@@ -108,19 +108,31 @@ def _hr(ch: str = "─") -> str:
     return ch * min(68, w)
 
 
+def _redact_status_text(value: str) -> str:
+    """Redact likely inline secrets before rendering human-facing status lines."""
+    return re.sub(
+        r"(?i)\b(api[_ -]?key|token|password|secret)\b\s*[:=]\s*\S+",
+        r"\1: [redacted]",
+        value,
+    )
+
+
+def _status_suffix(detail: str) -> str:
+    if not detail:
+        return ""
+    return f"  {_C.GREY}{_redact_status_text(detail)}{_C.RESET}"
+
+
 def ok(msg: str, detail: str = "") -> None:
-    suf = f"  {_C.GREY}{detail}{_C.RESET}" if detail else ""
-    print(f"  [{_C.GREEN}✓{_C.RESET}] {msg}{suf}")
+    print(f"  [{_C.GREEN}✓{_C.RESET}] {_redact_status_text(msg)}{_status_suffix(detail)}")
 
 
 def warn(msg: str, detail: str = "") -> None:
-    suf = f"  {_C.GREY}{detail}{_C.RESET}" if detail else ""
-    print(f"  [{_C.YELLOW}!{_C.RESET}] {msg}{suf}")
+    print(f"  [{_C.YELLOW}!{_C.RESET}] {_redact_status_text(msg)}{_status_suffix(detail)}")
 
 
 def fail(msg: str, detail: str = "") -> None:
-    suf = f"  {_C.GREY}{detail}{_C.RESET}" if detail else ""
-    print(f"  [{_C.RED}✗{_C.RESET}] {msg}{suf}")
+    print(f"  [{_C.RED}✗{_C.RESET}] {_redact_status_text(msg)}{_status_suffix(detail)}")
 
 
 def info(msg: str) -> None:
@@ -629,7 +641,6 @@ def _ask_persona(preset: str | None = None, workspace_mode: str = "analysis") ->
         help_line="Stored in .os_state/config.yaml under persona.active.",
     )
     return pick[0] if pick else default_persona
-    return pick if pick in VALID_PERSONA_NAMES else default_persona
 
 
 def _ask_domain() -> str:
