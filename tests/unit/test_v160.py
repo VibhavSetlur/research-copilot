@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
 
 from research_os.tools.actions.protocol import load_protocol
 from research_os.tools.actions.state.mistake_replay import mistake_replay
@@ -85,36 +84,6 @@ def test_dryrun_finds_tool_calls_in_descriptions():
     assert out["total_predicted_tool_calls"] >= 5
 
 
-# -- Theme 15: tool_step_complete bundling -----------------------------------
-
-
-def test_tool_step_complete_handler_returns_merged_result(tmp_path):
-    """Smoke: handler returns merged result with all four stages, even on a
-    minimal workspace where most stages will error/warn (no real step on disk).
-    """
-    from research_os.server import _HANDLERS
-    handler = _HANDLERS["tool_step_complete"]
-    res = handler("tool_step_complete", {"step_id": "01_smoke"}, tmp_path)
-    # tool_step_complete now returns a conformant envelope; the bundle is in payload.
-    env = json.loads(res[0].text)
-    inner = env["payload"]
-    assert inner["step_id"] == "01_smoke"
-    assert "stages" in inner
-    for stage in ("finalize", "completeness", "literature", "revision"):
-        assert stage in inner["stages"], f"missing stage: {stage}"
-    assert inner["overall_status"] in {"success", "warning", "error"}
-    assert env["status"] in {"success", "warning", "error"}
-
-
-def test_tool_step_complete_requires_step_id():
-    from research_os.server import _HANDLERS
-    handler = _HANDLERS["tool_step_complete"]
-    res = handler("tool_step_complete", {}, Path("/tmp"))
-    inner = json.loads(res[0].text)
-    assert inner.get("status") == "error"
-    assert "step_id" in inner.get("message", "")
-
-
 # -- Theme 7: coaching mode + tool_mistake_replay ----------------------------
 
 
@@ -154,7 +123,7 @@ def test_sys_protocol_get_schema_enumerates_formats():
     schema = TOOL_DEFINITIONS["sys_protocol_get"]["inputSchema"]
     fmt = schema["properties"]["format"]
     assert "enum" in fmt
-    assert set(fmt["enum"]) == {"summary", "step", "full", "lean", "dryrun"}
+    assert set(fmt["enum"]) == {"ref", "summary", "step", "full", "lean", "dryrun"}
     assert schema.get("additionalProperties") is False
 
 
@@ -165,39 +134,16 @@ def test_tool_dry_run_schema_rejects_extras():
     assert "protocol_name" in schema["required"]
 
 
-def test_tool_step_complete_schema_rejects_extras():
-    from research_os.server import TOOL_DEFINITIONS
-    schema = TOOL_DEFINITIONS["tool_step_complete"]["inputSchema"]
-    assert schema.get("additionalProperties") is False
-    assert "step_id" in schema["required"]
-
-
 # -- Wiring ------------------------------------------------------------------
 
 
 def test_three_new_tools_wired():
-    """tool_dry_run + tool_step_complete remain top-level surface; the v1.6.0
-    `tool_mistake_replay` collapsed into tool_lessons(operation='mistake_replay')
-    in phase-9-c4 but must still resolve through _ALIASES + param injection."""
-    from research_os.server import (
-        _ALIAS_PARAM_INJECTION,
-        _ALIASES,
-        _DEPRECATED_ALIASES,
-        _HANDLERS,
-        TOOL_DEFINITIONS,
-    )
-    for name in ("tool_dry_run", "tool_step_complete"):
+    """tool_dry_run remains top-level surface; tool_lessons stays wired."""
+    from research_os.server import _HANDLERS, TOOL_DEFINITIONS
+    for name in ("tool_dry_run", "tool_lessons"):
         assert name in TOOL_DEFINITIONS, f"{name} not in TOOL_DEFINITIONS"
         assert name in _HANDLERS, f"{name} not in _HANDLERS"
         assert callable(_HANDLERS[name]), f"{name} handler not callable"
-    # Legacy name preserved as an alias into the consolidated dispatcher.
-    assert _ALIASES.get("tool_mistake_replay") == "tool_lessons"
-    assert "tool_mistake_replay" in _DEPRECATED_ALIASES
-    assert _ALIAS_PARAM_INJECTION.get("tool_mistake_replay") == (
-        "operation",
-        "mistake_replay",
-    )
-    assert "tool_lessons" in _HANDLERS
 
 
 def test_template_researcher_config_documents_coaching():

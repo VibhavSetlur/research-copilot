@@ -1,23 +1,23 @@
 id: polyglot_analysis
 tier: 'plan'
 name: Polyglot Analysis (run the RIGHT language for the task, reproducibly)
-version: '4.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai]
   workflow_shape: [any]
 last_reviewed: '2026-06-25'
 see_also:
-  - methodology/pick_tool_stack               # settles language+library per method; this covers HOW to run it
-  - methodology/mixed_language_orchestration   # when ONE step must round-trip data across languages
-  - reproducibility/reproducibility            # the project-wide repro discipline this feeds
-  - notebook/notebook_workflow                 # the notebook-native equivalent of this execution discipline
+- methodology/pick_tool_stack                 # settles language+library per method; this covers HOW to run it
+- methodology/mixed_language_orchestration     # when ONE step must round-trip data across languages
+- reproducibility/reproducibility              # the project-wide repro discipline this feeds
+- notebook/notebook_workflow                   # the notebook-native equivalent of this execution discipline
 description: |
   Research-OS is deliberately language-agnostic: it can run Python, R,
-  Julia, and Bash scripts directly (tool_python_exec, tool_r_exec,
-  tool_julia_exec, tool_bash_exec) and execute notebooks (tool_notebook_exec)
-  and R Markdown / Quarto (tool_rmarkdown_render). This protocol scaffolds the
+  Julia, and Bash scripts directly (tool_python_exec, tool_bash_exec,
+  tool_bash_exec, tool_bash_exec) and execute notebooks (tool_notebook_exec)
+  and R Markdown / Quarto (tool_bash_exec). This protocol scaffolds the
   judgement of WHICH language to reach for on a given research sub-task, and
   the discipline of running non-Python code so that it is just as grounded,
   provenance-bearing, and reproducible as Python work.
@@ -66,144 +66,140 @@ trigger: |
       methodology/mixed_language_orchestration.
 
 prerequisites:
-  - The candidate language's interpreter is installed in the project env.
-    Confirm before writing code (e.g. via a one-line version probe through the
-    matching exec tool) rather than assuming it is present.
-  - There is a workspace step (or notebook) to write the script + outputs into,
-    so the work has a provenance home.
+- The candidate language's interpreter is installed in the project env. Confirm before writing code (e.g. via a one-line version probe through the matching exec tool) rather than assuming it is present.
+- There is a workspace step (or notebook) to write the script + outputs into, so the work has a provenance home.
 
 steps:
-  - id: name_the_task_shape
-    name: Name what KIND of work this is, before naming a language
-    description: |
-      State in one line what the sub-task actually is, in language-neutral
-      terms: a statistical model fit, a numerically heavy simulation, a
-      set-based query over relational/tabular data, orchestration of external
-      CLI tools, a data reshape, a plot. The shape of the work — not the AI's
-      fluency — is the first input to the language choice. A task described as
-      "run DESeq2 on the count matrix" has already half-chosen its language;
-      a task described as "fit a differential-expression model" leaves the
-      choice open to reasoning.
+- id: name_the_task_shape
+  name: Name what KIND of work this is, before naming a language
+  description: |
+    State in one line what the sub-task actually is, in language-neutral
+    terms: a statistical model fit, a numerically heavy simulation, a
+    set-based query over relational/tabular data, orchestration of external
+    CLI tools, a data reshape, a plot. The shape of the work — not the AI's
+    fluency — is the first input to the language choice. A task described as
+    "run DESeq2 on the count matrix" has already half-chosen its language;
+    a task described as "fit a differential-expression model" leaves the
+    choice open to reasoning.
 
-  - id: read_the_ecosystem
-    name: Read the researcher's ecosystem + the field's home language
-    description: |
-      The right language is partly a property of the task and partly a
-      property of WHERE this work will live and be reviewed. Reason over:
-        - what the researcher and their field actually use for this kind of
-          task (the language a reviewer expects to see in the methods section);
-        - what the project already uses — introducing a new language carries a
-          reproducibility cost (another interpreter + lockfile to pin, another
-          environment a stranger must rebuild) that must be earned;
-        - what is installed and pinnable in the project env right now.
-      Where field practice for the METHOD is the deciding factor, ground it
-      via pick_tool_stack rather than guessing. The output of this step is a
-      defensible candidate, not a default.
+- id: read_the_ecosystem
+  name: Read the researcher's ecosystem + the field's home language
+  description: |
+    The right language is partly a property of the task and partly a
+    property of WHERE this work will live and be reviewed. Reason over:
+      - what the researcher and their field actually use for this kind of
+        task (the language a reviewer expects to see in the methods section);
+      - what the project already uses — introducing a new language carries a
+        reproducibility cost (another interpreter + lockfile to pin, another
+        environment a stranger must rebuild) that must be earned;
+      - what is installed and pinnable in the project env right now.
+    Where field practice for the METHOD is the deciding factor, ground it
+    via pick_tool_stack rather than guessing. The output of this step is a
+    defensible candidate, not a default.
 
-  - id: justify_the_choice
-    name: Justify the language against the alternatives (no reflex)
-    description: |
-      Commit to a language and record WHY, naming what you are NOT choosing
-      and why the chosen one wins for THIS task. Reason from the task shape +
-      ecosystem, e.g.:
-        - statistics / mixed models / Bioconductor genomics → the ecosystem
-          where that family of methods is maintained and validated is often R;
-        - a numerically heavy inner loop, large-scale optimization, or
-          differential-equation system where runtime dominates → a language
-          built for that, often Julia, may earn the switch;
-        - chaining stable command-line tools and moving files between them →
-          Bash is the natural glue, with the heavy lifting left to those tools;
-        - a join / aggregate / filter over relational or large tabular data →
-          a declarative data language (SQL and relatives) expresses it more
-          clearly and often runs faster than hand-rolled imperative code;
-        - general-purpose analysis, ML, and plotting where the project already
-          lives → Python is a perfectly good default once it has been reasoned
-          to, not assumed.
-      These are illustrations of the reasoning, not a lookup table. A choice
-      that cannot survive "why not the language the project already uses?"
-      should be revisited. Capture the one-line rationale (with a citation when
-      the basis is field practice) where the step's narrative lives.
+- id: justify_the_choice
+  name: Justify the language against the alternatives (no reflex)
+  description: |
+    Commit to a language and record WHY, naming what you are NOT choosing
+    and why the chosen one wins for THIS task. Reason from the task shape +
+    ecosystem, e.g.:
+      - statistics / mixed models / Bioconductor genomics → the ecosystem
+        where that family of methods is maintained and validated is often R;
+      - a numerically heavy inner loop, large-scale optimization, or
+        differential-equation system where runtime dominates → a language
+        built for that, often Julia, may earn the switch;
+      - chaining stable command-line tools and moving files between them →
+        Bash is the natural glue, with the heavy lifting left to those tools;
+      - a join / aggregate / filter over relational or large tabular data →
+        a declarative data language (SQL and relatives) expresses it more
+        clearly and often runs faster than hand-rolled imperative code;
+      - general-purpose analysis, ML, and plotting where the project already
+        lives → Python is a perfectly good default once it has been reasoned
+        to, not assumed.
+    These are illustrations of the reasoning, not a lookup table. A choice
+    that cannot survive "why not the language the project already uses?"
+    should be revisited. Capture the one-line rationale (with a citation when
+    the basis is field practice) where the step's narrative lives.
 
-      AUTONOMY GATE:
-        Risk: reversible + cheap — choosing a language commits no science yet,
-        and introducing one only costs an environment entry that is itself
-        reversible.
-        proceed (adaptive default, autopilot) → pick the justified language and
-          proceed; if the choice introduces a NEW interpreter the project must
-          henceforth pin, surface that cost in the rationale (and log it on
-          autopilot).
-        confirm first (manual / supervised) → present the language choice + the
-          alternative you rejected + any new-environment cost before writing code.
+    AUTONOMY GATE:
+      Risk: reversible + cheap — choosing a language commits no science yet,
+      and introducing one only costs an environment entry that is itself
+      reversible.
+      proceed (adaptive default, autopilot) → pick the justified language and
+        proceed; if the choice introduces a NEW interpreter the project must
+        henceforth pin, surface that cost in the rationale (and log it on
+        autopilot).
+      confirm first (manual / supervised) → present the language choice + the
+        alternative you rejected + any new-environment cost before writing code.
 
-  - id: run_via_the_exec_tool
-    name: Run the script via the matching exec tool (not raw shell)
-    description: |
-      Write the work as a script in the workspace and run it through the
-      language's exec tool so the run is observed and recorded, rather than
-      typing interpreter commands into a bare shell:
-        - Python → tool_python_exec
-        - R → tool_r_exec     (render an .Rmd / .qmd report via tool_rmarkdown_render)
-        - Julia → tool_julia_exec
-        - Bash glue → tool_bash_exec
-        - a notebook in any supported kernel → tool_notebook_exec
-      The exec tools capture stdout/stderr and tie the run to the workspace,
-      which is what makes a non-Python run auditable in the same way a Python
-      run is. A result the project will stand behind comes from a script the
-      exec tool ran — not from a number pasted out of an interactive session.
+- id: run_via_the_exec_tool
+  name: Run the script via the matching exec tool (not raw shell)
+  description: |
+    Write the work as a script in the workspace and run it through the
+    language's exec tool so the run is observed and recorded, rather than
+    typing interpreter commands into a bare shell:
+      - Python → tool_python_exec
+      - R → tool_bash_exec     (render an .Rmd / .qmd report via tool_bash_exec)
+      - Julia → tool_bash_exec
+      - Bash glue → tool_bash_exec
+      - a notebook in any supported kernel → tool_notebook_exec
+    The exec tools capture stdout/stderr and tie the run to the workspace,
+    which is what makes a non-Python run auditable in the same way a Python
+    run is. A result the project will stand behind comes from a script the
+    exec tool ran — not from a number pasted out of an interactive session.
 
-  - id: capture_provenance_per_language
-    name: Capture environment + provenance for EVERY language used
-    description: |
-      A run is only reproducible if its interpreter and libraries can be
-      rebuilt. For each language the analysis touches, capture the
-      environment in that language's native form so a stranger can recreate
-      the kernel — record the interpreter version and the pinned library set
-      (the project's environment snapshot tooling is the home for this, e.g.
-      sys_env snapshots). Each language carries its own lockfile shape (a
-      Python requirements/lock, an R DESCRIPTION or renv lock plus
-      sessionInfo, a Julia Project.toml + Manifest, recorded CLI tool
-      versions for Bash-orchestrated binaries). Set RNG seeds explicitly in
-      whichever language draws randomness — seeding is per-interpreter, so a
-      seeded Python step says nothing about an unseeded R step in the same
-      analysis. Do not let one language's reproducibility story stand in for
-      another's.
+- id: capture_provenance_per_language
+  name: Capture environment + provenance for EVERY language used
+  description: |
+    A run is only reproducible if its interpreter and libraries can be
+    rebuilt. For each language the analysis touches, capture the
+    environment in that language's native form so a stranger can recreate
+    the kernel — record the interpreter version and the pinned library set
+    (the project's environment snapshot tooling is the home for this, e.g.
+    sys_env snapshots). Each language carries its own lockfile shape (a
+    Python requirements/lock, an R DESCRIPTION or renv lock plus
+    sessionInfo, a Julia Project.toml + Manifest, recorded CLI tool
+    versions for Bash-orchestrated binaries). Set RNG seeds explicitly in
+    whichever language draws randomness — seeding is per-interpreter, so a
+    seeded Python step says nothing about an unseeded R step in the same
+    analysis. Do not let one language's reproducibility story stand in for
+    another's.
 
-  - id: ground_outputs_across_languages
-    name: Keep cross-language outputs grounded + reproducible
-    description: |
-      The grounding bar does not relax because the code is not Python. Every
-      quantitative claim that comes out of an R / Julia / SQL / Bash step
-      traces back to the script and data that produced it — no number is
-      pasted from memory or from an interactive session that wasn't recorded.
-      Tie figures and tables to the exact script that emitted them, just as in
-      Python work, and run the project's grounding / verification tools
-      (tool_ground, tool_verify) and audit gates (tool_audit) over
-      multi-language outputs as you would over Python ones. When a hand-off
-      crosses a language boundary, pin the schema before writing the consumer
-      and assert it on read so cross-language drift surfaces as an error, not a
-      silent divergence (the deep treatment of in-step hand-offs is
-      methodology/mixed_language_orchestration).
+- id: ground_outputs_across_languages
+  name: Keep cross-language outputs grounded + reproducible
+  description: |
+    The grounding bar does not relax because the code is not Python. Every
+    quantitative claim that comes out of an R / Julia / SQL / Bash step
+    traces back to the script and data that produced it — no number is
+    pasted from memory or from an interactive session that wasn't recorded.
+    Tie figures and tables to the exact script that emitted them, just as in
+    Python work, and run the project's grounding / verification tools
+    (tool_ground, tool_verify) and audit gates (tool_audit) over
+    multi-language outputs as you would over Python ones. When a hand-off
+    crosses a language boundary, pin the schema before writing the consumer
+    and assert it on read so cross-language drift surfaces as an error, not a
+    silent divergence (the deep treatment of in-step hand-offs is
+    methodology/mixed_language_orchestration).
 
-  - id: decide_durable_form
-    name: Decide whether the polyglot step is glue or a separate step
-    description: |
-      Reason about how the languages should be ORGANISED across the analysis,
-      not just which to use. When a downstream language consumes an upstream
-      language's output once, with no round-trip, the clean shape is usually
-      SEPARATE steps connected by a file on disk — each step single-language,
-      independently reproducible. Only when one logical unit must pass the same
-      data object back and forth does the work belong in a single mixed step,
-      and then route to methodology/mixed_language_orchestration for the
-      hand-off contract. Prefer the shape that keeps each language's run
-      independently re-runnable; mixing within a step is a cost to be earned,
-      not a convenience to reach for.
+- id: decide_durable_form
+  name: Decide whether the polyglot step is glue or a separate step
+  description: |
+    Reason about how the languages should be ORGANISED across the analysis,
+    not just which to use. When a downstream language consumes an upstream
+    language's output once, with no round-trip, the clean shape is usually
+    SEPARATE steps connected by a file on disk — each step single-language,
+    independently reproducible. Only when one logical unit must pass the same
+    data object back and forth does the work belong in a single mixed step,
+    and then route to methodology/mixed_language_orchestration for the
+    hand-off contract. Prefer the shape that keeps each language's run
+    independently re-runnable; mixing within a step is a cost to be earned,
+    not a convenience to reach for.
 
 expected_outputs:
-  - workspace/<step>/scripts/* (single-language scripts run via the exec tools)
-  - workspace/<step>/environment/* (a reconstructable env per language used)
-  - a one-line language rationale recorded in the step's narrative (with a
-    citation where the basis is field practice)
-  - outputs traced to the exact script that produced them, regardless of language
+- workspace/<step>/scripts/* (single-language scripts run via the exec tools)
+- workspace/<step>/environment/* (a reconstructable env per language used)
+- a one-line language rationale recorded in the step's narrative (with a citation where the basis is field practice)
+- outputs traced to the exact script that produced them, regardless of language
 
 quality_bar: |
   - The language fits the task shape + the researcher's ecosystem and the
@@ -219,3 +215,46 @@ quality_bar: |
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: methodology/pick_tool_stack
+intent_class: methodology
+sub_intent: pick
+triggers:
+- analyze in r
+- analyse in r
+- analyze this in r
+- analyse this in r
+- do this in r
+- do it in r
+- use r
+- in r instead
+- use julia
+- do this in julia
+- rewrite in julia
+- make this faster
+- speed this up
+- performance language
+- write a bash script
+- shell script
+- glue script
+- orchestrate cli
+- shell out
+- run a sql query
+- use sql
+- query the data
+- database question
+- join these tables
+- which language for this
+- non-python
+- scripting language
+- run this in another language
+summary: Choose + run the RIGHT language per research task (R for stats/Bioconductor, Julia for performance, Bash for glue, SQL for data, Python as a reasoned default) via the exec tools, with per-language provenance + cross-language reproducibility.
+decomposition:
+- protocol: methodology/polyglot_analysis
+  purpose: Name the task shape, read the ecosystem, justify the language against the project's existing one, run it via the matching exec tool, capture per-language provenance, keep outputs grounded.
+- tool: tool_bash_exec
+  purpose: Run R scripts (stats / Bioconductor / mixed models) under workspace provenance.
+- tool: tool_bash_exec
+  purpose: Run Julia scripts where runtime / numerics dominate.
+- tool: tool_bash_exec
+  purpose: Run Bash glue that orchestrates external CLI tools + file plumbing.
+- tool: tool_python_exec
+  purpose: Run Python where it is the reasoned default for the task.

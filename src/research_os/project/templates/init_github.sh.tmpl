@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# Initialise a GitHub repo from this project — share-safe by default.
+#
+# Excludes AI-internal files (AGENTS.md, CLAUDE.md, .os_state/, .claude/,
+# MCP configs, GETTING_STARTED.md) and large raw data via .gitignore.
+#
+# Requires: gh CLI installed and authenticated (`gh auth login`).
+#
+# Usage:
+#   ./scripts/init_github.sh                    # default name from project slug
+#   ./scripts/init_github.sh my-repo-name       # custom repo name
+#   ./scripts/init_github.sh my-repo --public   # public repo (default private)
+set -euo pipefail
+
+HERE="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$HERE"
+
+REPO_NAME="${1:-__SLUG__}"
+VISIBILITY="--private"
+for arg in "$@"; do
+  [[ "$arg" == "--public" ]] && VISIBILITY="--public"
+  [[ "$arg" == "--internal" ]] && VISIBILITY="--internal"
+done
+
+# 1. Make sure git is initialised.
+if [ ! -d ".git" ]; then
+  git init -b main
+fi
+
+# 2. Make sure the share-safe .gitignore additions are present.
+GI=".gitignore"
+touch "$GI"
+add_ignore() {
+  grep -qxF "$1" "$GI" 2>/dev/null || echo "$1" >> "$GI"
+}
+add_ignore "AGENTS.md"
+add_ignore "CLAUDE.md"
+add_ignore "GETTING_STARTED.md"
+add_ignore ".os_state/"
+add_ignore ".claude/"
+add_ignore ".cursor/"
+add_ignore ".vscode/"
+add_ignore ".antigravity/"
+add_ignore ".opencode/"
+add_ignore "mcp_config.json"
+add_ignore ".mcp.json"
+add_ignore "opencode.json"
+add_ignore "inputs/raw_data/"
+add_ignore "__pycache__/"
+add_ignore "*.pyc"
+add_ignore ".DS_Store"
+
+# 3. Stage + commit (idempotent — skips if nothing changed).
+git add .
+if ! git diff --staged --quiet; then
+  git commit -m "Initial commit: Research OS project (share-safe)"
+fi
+
+# 4. Create the remote + push.
+if ! command -v gh >/dev/null 2>&1; then
+  echo "gh CLI not installed. Skipping remote creation."
+  echo "Install: https://cli.github.com/  then re-run."
+  exit 0
+fi
+
+if ! gh auth status >/dev/null 2>&1; then
+  echo "gh CLI not authenticated. Run: gh auth login"
+  exit 1
+fi
+
+if ! gh repo view "$REPO_NAME" >/dev/null 2>&1; then
+  gh repo create "$REPO_NAME" $VISIBILITY --source=. --remote=origin --push
+else
+  echo "Repo $REPO_NAME already exists. Pushing current branch."
+  git push -u origin main
+fi
+
+echo "[done] Repo URL:"
+gh repo view --json url -q .url

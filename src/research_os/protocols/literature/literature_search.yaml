@@ -1,16 +1,16 @@
 id: literature_search
 tier: 'ground'
 name: Literature Search
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - literature/evidence_synthesis     # grades + tabulates the corpus this search produces
-  - literature/systematic_review      # when the project IS a review, not a background pass
+- literature/evidence_synthesis       # grades + tabulates the corpus this search produces
+- literature/systematic_review        # when the project IS a review, not a background pass
 description: |
   Multi-database literature search across several academic providers.
   Produces a deduplicated citation list and a PRISMA-style accounting.
@@ -26,166 +26,173 @@ description: |
 trigger: After methodology_selection — provides the body of literature that grounds the eventual paper.
 
 steps:
-  - id: build_search_strings
-    name: Build Search Strings
-    description: |
-      Decompose the research question into its core concepts. For each
-      concept, list:
-        - The controlled-vocabulary term the field uses (the indexing
-          thesaurus the target databases expose — e.g. a MeSH term for
-          biomedical, the field's subject-classification scheme for CS).
-        - The synonyms / spelling variants a relevant paper might use
-          instead.
-      Combine with AND across concepts, OR within a concept. Add a
-      date-range clause only when the question is time-bounded — and
-      justify the boundary from the field's pace, not a round number.
-      Write the strings to workspace/logs/search_strings.log.
+- id: build_search_strings
+  name: Build Search Strings
+  description: |
+    Decompose the research question into its core concepts. For each
+    concept, list:
+      - The controlled-vocabulary term the field uses (the indexing
+        thesaurus the target databases expose — e.g. a MeSH term for
+        biomedical, the field's subject-classification scheme for CS).
+      - The synonyms / spelling variants a relevant paper might use
+        instead.
+    Combine with AND across concepts, OR within a concept. Add a
+    date-range clause only when the question is time-bounded — and
+    justify the boundary from the field's pace, not a round number.
+    Write the strings to workspace/logs/search_strings.log.
 
-  - id: execute_searches
-    name: Execute Searches (multi-source)
-    description: |
-      Query MORE THAN ONE provider — a single database's coverage is
-      always partial, and the partiality is field-specific. Choose
-      providers by which ones index this field's venues authoritatively
-      (name the choice in the log). Set each call's result limit and the
-      target raw-hit count to the breadth of the question: a narrow,
-      well-defined question saturates quickly; a broad or emerging topic
-      needs wider nets. Stop widening when new queries stop returning
-      new relevant papers (saturation), not at a fixed count.
+- id: execute_searches
+  name: Execute Searches (multi-source)
+  description: |
+    Query MORE THAN ONE provider — a single database's coverage is
+    always partial, and the partiality is field-specific. Choose
+    providers by which ones index this field's venues authoritatively
+    (name the choice in the log). Set each call's result limit and the
+    target raw-hit count to the breadth of the question: a narrow,
+    well-defined question saturates quickly; a broad or emerging topic
+    needs wider nets. Stop widening when new queries stop returning
+    new relevant papers (saturation), not at a fixed count.
 
-  - id: deduplicate_and_filter
-    name: Deduplicate + Filter
-    description: |
-      Deduplicate by (in order): exact DOI match, then case-insensitive title +
-      first-author last-name match. Then filter on quality dimensions,
-      reasoning about each rather than applying a fixed cutoff:
-        - Recency vs. seminality — recent work for the current state,
-          older work for the foundations the field still cites. The
-          age boundary is field-specific; a fast-moving subfield and a
-          slow one warrant different windows.
-        - Completeness — entries with no author list or year cannot be
-          verified; drop or flag them.
-        - Evidence standing — peer-reviewed, preprint, and grey
-          literature carry different weight; record the standing rather
-          than silently mixing them.
+- id: deduplicate_and_filter
+  name: Deduplicate + Filter
+  description: |
+    Deduplicate by (in order): exact DOI match, then case-insensitive title +
+    first-author last-name match. Then filter on quality dimensions,
+    reasoning about each rather than applying a fixed cutoff:
+      - Recency vs. seminality — recent work for the current state,
+        older work for the foundations the field still cites. The
+        age boundary is field-specific; a fast-moving subfield and a
+        slow one warrant different windows.
+      - Completeness — entries with no author list or year cannot be
+        verified; drop or flag them.
+      - Evidence standing — peer-reviewed, preprint, and grey
+        literature carry different weight; record the standing rather
+        than silently mixing them.
 
-  - id: download_and_index
-    name: Download Key Papers & Build Index
-    description: |
-      Download the full text of every paper the corpus will actually
-      cite. A search snippet is a lead; the citation is earned only once
-      the PDF is on disk and its metadata (title, authors, year, DOI)
-      has been validated against the file. Claims downstream rest on the
-      paper's content, never on the abstract the search API returned.
+- id: download_and_index
+  name: Download Key Papers & Build Index
+  description: |
+    Download the full text of every paper the corpus will actually
+    cite. A search snippet is a lead; the citation is earned only once
+    the PDF is on disk and its metadata (title, authors, year, DOI)
+    has been validated against the file. Claims downstream rest on the
+    paper's content, never on the abstract the search API returned.
 
-      Two scopes are available:
+    Two scopes are available:
 
-      A) **Project literature** (papers grounding the WHOLE research question):
-         tool_literature_download url=<pdf-url> filename=<author_year_kw.pdf>
-                                  metadata={title, authors, year, doi, venue}
-         (No step_id → saves under inputs/literature/.)
+    A) **Project literature** (papers grounding the WHOLE research question):
+       tool_search mode=literature url=<pdf-url> filename=<author_year_kw.pdf>
+                                metadata={title, authors, year, doi, venue}
+       (No step_id → saves under inputs/literature/.)
 
-      B) **Step literature** (papers grounding a SPECIFIC experiment step):
-         tool_literature_download url=<pdf-url> filename=<author_year_kw.pdf>
-                                  step_id="<NN>_<slug>"   # whatever this step is called
-                                  metadata={title, authors, year, doi}
-         Saves under workspace/<step>/literature/. Use this when a paper is
-         the canonical reference for the method this step uses.
-         (Don't hardcode `step_id` — pull the current step ID from
-         sys_path or the active state.)
+    B) **Step literature** (papers grounding a SPECIFIC experiment step):
+       tool_search mode=literature url=<pdf-url> filename=<author_year_kw.pdf>
+                                step_id="<NN>_<slug>"   # whatever this step is called
+                                metadata={title, authors, year, doi}
+       Saves under workspace/<step>/literature/. Use this when a paper is
+       the canonical reference for the method this step uses.
+       (Don't hardcode `step_id` — pull the current step ID from
+       sys_state_get or the active state.)
 
-      Faster bulk approach — combined search + download in one call:
-         tool_literature_search_and_save
-           query="<concept>"  source="semantic_scholar"
-           limit=8  download_top=3  step_id=<optional>
+    Faster bulk approach — combined search + download in one call:
+       tool_search (mode=literature)
+         query="<concept>"  source="semantic_scholar"
+         limit=8  download_top=3  step_id=<optional>
 
-      After downloading, call mem_citations_generate — scans both
-      inputs/literature/ and every workspace/<step>/literature/, rewrites
-      inputs/literature_index.yaml + workspace/citations.md.
+    After downloading, call mem_log (operation='citations_generate') — scans both
+    inputs/literature/ and every workspace/<step>/literature/, rewrites
+    inputs/literature_index.yaml + workspace/citations.md.
 
-      List step literature any time with:
-         tool_step_literature_list step_id=<NN_slug>   # or omit for all steps
+    List step literature any time with:
+       tool_search (mode=literature, operation='list', step_id=<NN_slug>)   # or omit for all steps
 
-      Paywall memory: tool_literature_download
-      auto-skips URLs / DOIs that have already failed permanently
-      (paywall, 404, 403). On retries from a fresh chat:
-         tool_lessons(operation='failure_check', target=<url-or-doi>)
-      returns known_bad=true if the target is in the local file
-      `workspace/.os_state/failures-jsonl`. The download tool calls
-      this internally; surface
-         tool_lessons(operation='failure_list', limit=20)
-      to the researcher when several downloads keep skipping — they
-      may need to add the PDF manually to inputs/literature/ or skip
-      that citation. The internal recorder
-         tool_lessons(operation='failure_record', tool=..., target=..., reason=...)
-      is also called automatically by the download tool when an
-      attempt fails (paywall / 404 / 403 mark permanent=true).
+    Paywall memory: tool_search (mode=literature)
+    auto-skips URLs / DOIs that have already failed permanently
+    (paywall, 404, 403). On retries from a fresh chat:
+       tool_lessons(operation='failure_check', target=<url-or-doi>)
+    returns known_bad=true if the target is in the local file
+    `workspace/.os_state/failures-jsonl`. The download tool calls
+    this internally; surface
+       tool_lessons(operation='failure_list', limit=20)
+    to the researcher when several downloads keep skipping — they
+    may need to add the PDF manually to inputs/literature/ or skip
+    that citation. The internal recorder
+       tool_lessons(operation='failure_record', tool=..., target=..., reason=...)
+    is also called automatically by the download tool when an
+    attempt fails (paywall / 404 / 403 mark permanent=true).
 
-  - id: forward_citation_walk
-    name: Forward-citation walk (catch the recent extensions)
-    description: |
-      A keyword search returns papers MATCHING terms; it misses the
-      recent papers that CITE the seminal references but use new
-      vocabulary. Walk one level of forward citations on the
-      most-included seed hits (the ones the corpus already leans on):
+- id: forward_citation_walk
+  name: Forward-citation walk (catch the recent extensions)
+  description: |
+    A keyword search returns papers MATCHING terms; it misses the
+    recent papers that CITE the seminal references but use new
+    vocabulary. Walk one level of forward citations on the
+    most-included seed hits (the ones the corpus already leans on):
 
-        tool_search mode="forward_citations"
-                                     paper_id="<seed paper>"
+      tool_search mode="forward_citations"
+                                   paper_id="<seed paper>"
 
-      Score the returned papers on relevance to the research
-      question; include any whose abstract clearly extends or
-      contradicts the seed. Add to the dedup pass.
+    Score the returned papers on relevance to the research
+    question; include any whose abstract clearly extends or
+    contradicts the seed. Add to the dedup pass.
 
-      The forward walk catches:
-        - the recent methodology paper that the keyword search
-          missed because it uses a new term for the same idea
-        - the recent critique / failed-replication that wasn't
-          named in the seed's terminology
-        - the recent benchmark that supersedes the seed's
-          comparison
+    The forward walk catches:
+      - the recent methodology paper that the keyword search
+        missed because it uses a new term for the same idea
+      - the recent critique / failed-replication that wasn't
+        named in the seed's terminology
+      - the recent benchmark that supersedes the seed's
+        comparison
 
-  - id: predatory_venue_check
-    name: Predatory / problematic venue check
-    description: |
-      Walk each included citation's VENUE:
-        - cross-reference against Beall's list (archived) + Cabells
-          Predatory Reports + the open Stop Predatory Journals
-          list (when the journal is unfamiliar)
-        - flag any hit from a known predatory publisher
-        - flag any hit from a retracted-papers index (Retraction
-          Watch) — both for the paper itself + for any retracted
-          source it cites approvingly
+- id: predatory_venue_check
+  name: Predatory / problematic venue check
+  description: |
+    Walk each included citation's VENUE:
+      - cross-reference against Beall's list (archived) + Cabells
+        Predatory Reports + the open Stop Predatory Journals
+        list (when the journal is unfamiliar)
+      - flag any hit from a known predatory publisher
+      - flag any hit from a retracted-papers index (Retraction
+        Watch) — both for the paper itself + for any retracted
+        source it cites approvingly
 
-      Predatory-venue hits don't get dropped automatically — many
-      have legitimate content, and some critiques the literature
-      needs to engage with are published there. But they get
-      TAGGED in the citations index so the AI / researcher knows
-      to weight them lower + so synthesis flags any reliance on
-      them in the limitations.
+    Predatory-venue hits don't get dropped automatically — many
+    have legitimate content, and some critiques the literature
+    needs to engage with are published there. But they get
+    TAGGED in the citations index so the AI / researcher knows
+    to weight them lower + so synthesis flags any reliance on
+    them in the limitations.
 
-      Save the flag list to workspace/logs/predatory_venue_flags.md.
-      For retraction hits: this is RED — the citation gets
-      removed and the limitation noted.
+    Save the flag list to workspace/logs/predatory_venue_flags.md.
+    For retraction hits: this is RED — the citation gets
+    removed and the limitation noted.
 
-  - id: log_prisma_counts
-    name: Log PRISMA-style counts
-    description: |
-      Append to workspace/analysis.md (via mem_log) one line:
-        "PRISMA: identified=<N1>, after_dedup=<N2>, screened=<N3>, included=<N4>, forward_walk_added=<N5>, predatory_flagged=<N6>, retracted_removed=<N7>"
+- id: log_prisma_counts
+  name: Log PRISMA-style counts
+  description: |
+    Append to workspace/analysis.md (via mem_log) one line:
+      "PRISMA: identified=<N1>, after_dedup=<N2>, screened=<N3>, included=<N4>, forward_walk_added=<N5>, predatory_flagged=<N6>, retracted_removed=<N7>"
 
-  - id: persist_search_log
-    name: Persist Search Log
-    description: |
-      Every search you ran already appears in workspace/logs/searches.log
-      (the server logs all tool_search_* calls automatically). Spot-check the
-      log exists and has entries.
+- id: persist_search_log
+  name: Persist Search Log
+  description: |
+    Every search you ran already appears in workspace/logs/searches.log
+    (the server logs all tool_search_* calls automatically). Spot-check the
+    log exists and has entries.
 
 expected_outputs:
-  - inputs/literature_index.yaml
-  - workspace/citations.md
-  - workspace/logs/searches.log
-  - workspace/logs/predatory_venue_flags.md   (when any flags surfaced)
+- inputs/literature_index.yaml
+- workspace/citations.md
+- workspace/logs/searches.log
+- workspace/logs/predatory_venue_flags.md   (when any flags surfaced)
 
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: literature/evidence_synthesis
+intent_class: literature
+sub_intent: search
+triggers:
+- literature search
+- find papers
+- search the literature
+summary: Broad literature pass on the research question.

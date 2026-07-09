@@ -49,3 +49,27 @@ def test_slugify_empty_falls_back():
     assert wizard.slugify("   ") == "research-project"
     assert wizard.slugify("My Cool Project!") == "my-cool-project"
     assert wizard.slugify("---") == "research-project"
+
+
+def test_wizard_docstring_is_3_step():
+    """Docstring must say '3-step', not the old '7-step'."""
+    assert "3-step" in wizard.__doc__
+    assert "7-step" not in wizard.__doc__
+
+
+def test_wizard_result_has_output_types_and_venue():
+    """WizardResult must carry the new Step-2 fields with correct defaults."""
+    r = wizard.WizardResult(
+        target_dir=__import__("pathlib").Path("/tmp"),
+        project_name="test",
+        domain="",
+        question="",
+        questions=[],
+        ides=[],
+        force=False,
+        run_verify=False,
+        start_server=False,
+        create_dir_needed=False,
+    )
+    assert r.output_types == ["paper", "figures"]
+    assert r.target_venue == ""

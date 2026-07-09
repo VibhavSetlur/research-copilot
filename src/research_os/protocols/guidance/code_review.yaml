@@ -1,16 +1,16 @@
 id: code_review
 tier: 'review'
 name: Code Review (analysis scripts)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai]
   workflow_shape: [any]
 see_also:
-  - guidance/quick_paper_review        # distinct: reviews prose, not scripts
-  - audit/audit_and_validation         # distinct: checks the project's own outputs vs quality bars
+- guidance/quick_paper_review          # distinct: reviews prose, not scripts
+- audit/audit_and_validation           # distinct: checks the project's own outputs vs quality bars
 description: |
   Critically review the analysis scripts in a numbered step (or
   scripts a collaborator just dropped into `inputs/`) for correctness,
@@ -33,152 +33,157 @@ trigger: |
 editorial_voice:
   mode: guidance
   rules:
-    - "Be specific about line numbers and the failure mode each
-       concern would surface — vague 'consider refactoring' is
-       useless to the author."
-    - "Distinguish CORRECTNESS bugs (would change the result) from
-       REPRODUCIBILITY issues (would change the result on rerun)
-       from STYLE concerns (would not change the result)."
-    - "Severity tags: BLOCKER (correctness), HIGH (reproducibility),
-       MEDIUM (clarity), LOW (style)."
+  - "Be specific about line numbers and the failure mode each concern would surface — vague 'consider refactoring' is useless to the author."
+  - "Distinguish CORRECTNESS bugs (would change the result) from REPRODUCIBILITY issues (would change the result on rerun) from STYLE concerns (would not change the result)."
+  - "Severity tags: BLOCKER (correctness), HIGH (reproducibility), MEDIUM (clarity), LOW (style)."
 
 steps:
-  - id: scope_review
-    name: Scope the review
-    description: |
-      Identify what to review:
-        - All scripts in a specific step folder (most common).
-        - A specific file the researcher named.
-        - Every script that touched a specific output file.
-      Read each file end-to-end; do NOT skim. The reviewer's job is
-      to think like the data, not like the author.
+- id: scope_review
+  name: Scope the review
+  description: |
+    Identify what to review:
+      - All scripts in a specific step folder (most common).
+      - A specific file the researcher named.
+      - Every script that touched a specific output file.
+    Read each file end-to-end; do NOT skim. The reviewer's job is
+    to think like the data, not like the author.
 
-  - id: run_static_quality
-    name: Static quality pass
-    description: |
-      Begin with the automated audit so the obvious smells are
-      already triaged: bare-except clauses, `import *`, eval/exec,
-      hardcoded absolute paths, oversized functions, missing
-      docstrings. `tool_audit(scope='step', dimension='code_quality')` returns these as
-      structured blockers + warnings — fold its output into the
-      review report's "automated findings" section.
+- id: run_static_quality
+  name: Static quality pass
+  description: |
+    Begin with the automated audit so the obvious smells are
+    already triaged: bare-except clauses, `import *`, eval/exec,
+    hardcoded absolute paths, oversized functions, missing
+    docstrings. `tool_audit(scope='step', dimension='code_quality')` returns these as
+    structured blockers + warnings — fold its output into the
+    review report's "automated findings" section.
 
-  - id: correctness_review
-    name: Read for correctness bugs
-    description: |
-      The questions reviewers ask:
-        - Are data merges keyed on the right column with the right
-          join type? (`merge` defaults to inner — silent row drops.)
-        - Is the train/test split done BEFORE any data-leaking
-          transform (scaler fitting, target encoding, imputation)?
-        - Are loops over rows of a DataFrame doing what they appear
-          to be doing? (Off-by-one is the silent killer.)
-        - Are the assumption checks the analyst said they would do
-          actually run, with sensible thresholds, and consumed by a
-          downstream decision?
-        - For stochastic code, is every randomness source seeded
-          (numpy, torch, sklearn, random)?
-        - Does the script handle empty inputs / NaN inputs / a
-          DataFrame with one row?
-        - Are categorical encodings consistent between fit and
-          predict?
-        - Does the script's stated effect match what it actually
-          computes (e.g. claiming AUROC but computing accuracy)?
+- id: correctness_review
+  name: Read for correctness bugs
+  description: |
+    The questions reviewers ask:
+      - Are data merges keyed on the right column with the right
+        join type? (`merge` defaults to inner — silent row drops.)
+      - Is the train/test split done BEFORE any data-leaking
+        transform (scaler fitting, target encoding, imputation)?
+      - Are loops over rows of a DataFrame doing what they appear
+        to be doing? (Off-by-one is the silent killer.)
+      - Are the assumption checks the analyst said they would do
+        actually run, with sensible thresholds, and consumed by a
+        downstream decision?
+      - For stochastic code, is every randomness source seeded
+        (numpy, torch, sklearn, random)?
+      - Does the script handle empty inputs / NaN inputs / a
+        DataFrame with one row?
+      - Are categorical encodings consistent between fit and
+        predict?
+      - Does the script's stated effect match what it actually
+        computes (e.g. claiming AUROC but computing accuracy)?
 
-      Severity BLOCKER for any correctness bug; HIGH for "would
-      probably be wrong on edge cases".
+    Severity BLOCKER for any correctness bug; HIGH for "would
+    probably be wrong on edge cases".
 
-  - id: reproducibility_review
-    name: Read for reproducibility
-    description: |
-      The questions:
-        - Random seeds set at the top, before any stochastic call?
-        - File paths relative to the project root (not absolute, not
-          ~)?
-        - Library versions pinned in `environment/requirements.txt`?
-        - Output filenames deterministic across runs (no
-          `datetime.now()` in the name unless intentional)?
-        - All inputs declared in `pipeline.yaml` so the runner can
-          hash them?
-        - The script can be executed standalone via
-          `python scripts/<name>.py` from the step folder?
+- id: reproducibility_review
+  name: Read for reproducibility
+  description: |
+    The questions:
+      - Random seeds set at the top, before any stochastic call?
+      - File paths relative to the project root (not absolute, not
+        ~)?
+      - Library versions pinned in `environment/requirements.txt`?
+      - Output filenames deterministic across runs (no
+        `datetime.now()` in the name unless intentional)?
+      - All inputs declared in `pipeline.yaml` so the runner can
+        hash them?
+      - The script can be executed standalone via
+        `python scripts/<name>.py` from the step folder?
 
-      Severity HIGH for any reproducibility issue.
+    Severity HIGH for any reproducibility issue.
 
-  - id: leakage_audit
-    name: Leakage + bias-of-evaluation audit
-    description: |
-      Specific patterns to look for:
-        - Data scalers / imputers fit on the full data BEFORE the
-          test split.
-        - Feature engineering that uses the target (target encoding,
-          mean-of-target features) computed on the full data.
-        - Cross-validation that doesn't respect time order (when
-          time matters).
-        - Group-aware data (multiple rows per subject) split without
-          group-aware CV.
-        - Hyperparameter tuning using the test set's performance.
-        - Reporting test-set performance after multiple bouts of
-          hand-tuning against the same test set ("the test set
-          becomes the validation set" problem).
+- id: leakage_audit
+  name: Leakage + bias-of-evaluation audit
+  description: |
+    Specific patterns to look for:
+      - Data scalers / imputers fit on the full data BEFORE the
+        test split.
+      - Feature engineering that uses the target (target encoding,
+        mean-of-target features) computed on the full data.
+      - Cross-validation that doesn't respect time order (when
+        time matters).
+      - Group-aware data (multiple rows per subject) split without
+        group-aware CV.
+      - Hyperparameter tuning using the test set's performance.
+      - Reporting test-set performance after multiple bouts of
+        hand-tuning against the same test set ("the test set
+        becomes the validation set" problem).
 
-      Severity BLOCKER for any clear leakage.
+    Severity BLOCKER for any clear leakage.
 
-  - id: clarity_review
-    name: Read for clarity (medium / low severity)
-    description: |
-      Questions:
-        - Do variable names communicate intent or do they read as
-          single-letter mathematics?
-        - Are intermediate steps separated into helper functions
-          that name what they do?
-        - Are non-obvious decisions commented with the WHY (not the
-          WHAT)?
-        - Is the script's "shape" obvious from a 30-second skim?
+- id: clarity_review
+  name: Read for clarity (medium / low severity)
+  description: |
+    Questions:
+      - Do variable names communicate intent or do they read as
+        single-letter mathematics?
+      - Are intermediate steps separated into helper functions
+        that name what they do?
+      - Are non-obvious decisions commented with the WHY (not the
+        WHAT)?
+      - Is the script's "shape" obvious from a 30-second skim?
 
-      Severity MEDIUM / LOW. Worth raising but never above
-      correctness or reproducibility concerns.
+    Severity MEDIUM / LOW. Worth raising but never above
+    correctness or reproducibility concerns.
 
-  - id: write_review_brief
-    name: Write the review brief
-    description: |
-      Assemble `workspace/<step>/outputs/reports/code_review.md` with
-      the structure:
+- id: write_review_brief
+  name: Write the review brief
+  description: |
+    Assemble `workspace/<step>/outputs/reports/code_review.md` with
+    the structure:
 
-        # Code review — <step name> — <date>
+      # Code review — <step name> — <date>
 
-        ## Summary
-        <one paragraph: overall assessment + count of blockers/HIGH>
+      ## Summary
+      <one paragraph: overall assessment + count of blockers/HIGH>
 
-        ## Blockers (correctness)
-        ### <script>:<line> — <one-line title>
-        - **Concern**: <what's wrong>
-        - **Impact**: <how the result would change>
-        - **Fix**: <suggested change, concrete>
+      ## Blockers (correctness)
+      ### <script>:<line> — <one-line title>
+      - **Concern**: <what's wrong>
+      - **Impact**: <how the result would change>
+      - **Fix**: <suggested change, concrete>
 
-        ## High (reproducibility)
-        ...
+      ## High (reproducibility)
+      ...
 
-        ## Medium / Low (clarity, style)
-        ...
+      ## Medium / Low (clarity, style)
+      ...
 
-        ## Automated findings
-        <fold in tool_audit(scope='step', dimension='code_quality') output>
+      ## Automated findings
+      <fold in tool_audit(scope='step', dimension='code_quality') output>
 
-  - id: assign_severity_and_decide
-    name: Recommend a verdict
-    description: |
-      Close the review with one of three recommendations:
-        - **Ship as is** — no blockers, minor concerns acknowledged.
-        - **Revise then ship** — blockers exist, fixes are
-          tractable, no methodology change needed.
-        - **Re-design** — concerns reveal an issue with the analytic
-          plan, not just the code. Loop back to
-          `methodology_selection`.
+- id: assign_severity_and_decide
+  name: Recommend a verdict
+  description: |
+    Close the review with one of three recommendations:
+      - **Ship as is** — no blockers, minor concerns acknowledged.
+      - **Revise then ship** — blockers exist, fixes are
+        tractable, no methodology change needed.
+      - **Re-design** — concerns reveal an issue with the analytic
+        plan, not just the code. Loop back to
+        `methodology_selection`.
 
 expected_outputs:
-  - workspace/<step>/outputs/reports/code_review.md
+- workspace/<step>/outputs/reports/code_review.md
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: review
+sub_intent: code
+triggers:
+- review my code
+- code review
+- review the scripts
+- vet this script
+- is this correct
+- audit my analysis script
+summary: Review analysis scripts for correctness / reproducibility / leakage.

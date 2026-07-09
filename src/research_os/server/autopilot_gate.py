@@ -122,43 +122,10 @@ _ALWAYS_GATED: set[str] = {
 # project's resolved strictness is at or above the gate's floor. Lower
 # index = looser. ``light`` keeps only the truly irreversible / real-money
 # gates; ``normal`` adds the reversible-but-weighty ones; ``strict`` is the
-# full autopilot set.
-#
-# LEGACY fail-safe mirror of the declared gates. Kept so the engine never
-# loses its floor if the compiled sidecar is absent. The live values come
-# from gate_spec.declared_floor_map() (sourced from autopilot.yaml).
-#
-# Classification rationale:
-#   light  → irreversible OR spends real money (can't be undone / costs $):
-#            package_install, rollback, path abandon, paid tools.
-#   normal → + final-deliverable compile + reproducibility audit
-#            (expensive, but re-runnable).
-#   strict → + synthesis force-overwrite (auto-archived, fully reversible)
-#            + long background tasks (killable) = every gate.
-_LEGACY_GATE_FLOOR: dict[str, str] = {
-    "tool_package_install": "light",
-    "sys_checkpoint_rollback": "light",
-    "sys_path:abandon": "light",
-    "tool_research_tool:paid": "light",
-    "tool_typst_compile": "normal",
-    # World-state gate (stale inputs feeding the final compile). The floor
-    # is recorded for parity with the declared set, but the legacy
-    # fail-safe matcher below CANNOT evaluate a world_state predicate (it
-    # has no verdict reader), so when the compiled sidecar is absent this
-    # gate degrades OFF — exactly today's behaviour (no staleness gating).
-    # The gate is live only via the declared/compiled path.
-    "tool_typst_compile:stale_inputs": "normal",
-    # World-state gate (precondition gate tier 2): paper scaffolding blocked
-    # until synthesis_paper's foundations exist. Same as above — the legacy
-    # matcher can't evaluate a world_state predicate, so it degrades OFF
-    # when the sidecar is absent (no precondition gating, today's behaviour);
-    # live only via the declared/compiled path.
-    "tool_synthesis_scaffold:paper_preconditions": "normal",
-    "tool_audit:reproducibility": "normal",
-    "sys_file_write:synthesis_force": "strict",
-    "tool_task:run": "strict",
-}
-
+# full autopilot set. The key → floor map is served by
+# gate_spec.declared_floor_map() from the compiled _protocols.bundle (P1) —
+# the bundle always ships in the package, so no hand-maintained fallback
+# table is needed.
 _STRICTNESS_RANK = {"light": 0, "normal": 1, "strict": 2}
 
 
@@ -170,21 +137,21 @@ def _declared_gates() -> list:
 
 
 def _GATE_FLOOR_resolved() -> dict[str, str]:
-    """key → floor from the compiled sidecar, or the legacy table if empty.
+    """key → floor from the compiled _protocols.bundle (P1).
 
-    Fail-safe: an absent/garbage sidecar yields the built-in legacy floors
-    so the engine keeps enforcing exactly today's set.
+    The bundle always ships in the package; a garbage bundle yields an
+    empty map (gate_spec fails safe to []), which just means adaptive-mode
+    floor filtering has nothing to relax — every resolved gate still fires.
     """
     from .gate_spec import declared_floor_map
 
-    declared = declared_floor_map(_declared_gates())
-    return declared or dict(_LEGACY_GATE_FLOOR)
+    return declared_floor_map(_declared_gates())
 
 
 # Back-compat module attribute: some callers/tests read _GATE_FLOOR
-# directly. Resolve it once at import from the compiled sidecar (falling
-# back to legacy). This is a snapshot; the live decision path uses
-# _GATE_FLOOR_resolved() so a rebuilt sidecar is picked up on reload.
+# directly. Resolve it once at import from the compiled bundle. This is a
+# snapshot; the live decision path uses _GATE_FLOOR_resolved() so a rebuilt
+# bundle is picked up on reload.
 _GATE_FLOOR: dict[str, str] = _GATE_FLOOR_resolved()
 
 

@@ -1,16 +1,16 @@
 id: synthesis_abstract
 tier: 'synthesize'
 name: Synthesis — Abstract (venue-tailored)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - synthesis/synthesis_paper
-  - synthesis/synthesis_title_workshop
+- synthesis/synthesis_paper
+- synthesis/synthesis_title_workshop
 description: Generate a structured / unstructured abstract tuned to the target venue.
 trigger: Researcher asks for "an abstract", OR `research_goal.output_types` includes "abstract", OR called from synthesis_paper.
 
@@ -56,45 +56,54 @@ venue_profile:
       NIH-style Project Summary / Specific Aims preview.
 
 steps:
-  - id: select_profile
-    name: Select Venue Profile
-    description: |
-      Read research_goal.target_venue. If "abstract" was the only output type
-      and no venue specified, ask: "Conference, journal, preprint, poster, or grant?"
+- id: select_profile
+  name: Select Venue Profile
+  description: |
+    Read research_goal.target_venue. If "abstract" was the only output type
+    and no venue specified, ask: "Conference, journal, preprint, poster, or grant?"
 
-  - id: gather_sources
-    name: Gather Sources
-    description: |
-      sys_file_read each of synthesis/methods.md, synthesis/results.md,
-      synthesis/discussion.md if present; otherwise fall back to
-      workspace/methods.md + latest conclusions.md.
+- id: gather_sources
+  name: Gather Sources
+  description: |
+    sys_file_read each of synthesis/methods.md, synthesis/results.md,
+    synthesis/discussion.md if present; otherwise fall back to
+    workspace/methods.md + latest conclusions.md.
 
-  - id: draft
-    name: Draft Abstract
-    description: |
-      Author `synthesis/abstract.typ` directly (or `synthesis/abstract.md`
-      when the venue requires markdown). Apply the venue's section
-      structure (structured for journals/preprints, unstructured for
-      conferences). Cite a verified reference only when an anchor is
-      essential — abstracts rarely cite.
+- id: draft
+  name: Draft Abstract
+  description: |
+    Author `synthesis/abstract.typ` directly (or `synthesis/abstract.md`
+    when the venue requires markdown). Apply the venue's section
+    structure (structured for journals/preprints, unstructured for
+    conferences). Cite a verified reference only when an anchor is
+    essential — abstracts rarely cite.
 
-      QUALITY CHECK:
-        - Word count inside the venue's stated abstract limit.
-        - For structured: every required section heading present.
-        - At least one quantitative finding with unit.
-        - No causal language unless the design supports it.
-        - No banned phrases.
+    QUALITY CHECK:
+      - Word count inside the venue's stated abstract limit.
+      - For structured: every required section heading present.
+      - At least one quantitative finding with unit.
+      - No causal language unless the design supports it.
+      - No banned phrases.
 
-  - id: validate
-    name: Validate
-    description: |
-      tool_synthesis_check(file='synthesis/abstract.typ', mode='all')
-      Address blockers (missing quantitative claim, missing method
-      reference, missing conclusion verb) and re-draft.
+- id: validate
+  name: Validate
+  description: |
+    tool_synthesis_scaffold (operation=check)(file='synthesis/abstract.typ', mode='all')
+    Address blockers (missing quantitative claim, missing method
+    reference, missing conclusion verb) and re-draft.
 
 expected_outputs:
-  - synthesis/abstract.md
+- synthesis/abstract.md
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: abstract
+triggers:
+- write abstract
+- draft abstract
+- tldr
+- structured abstract
+summary: AI authors a standalone abstract from the finished workspace.
+shortcut_tool: tool_synthesis_scaffold (operation=plan)

@@ -161,6 +161,25 @@ def test_no_undelivered_notifications_omits_field(tmp_path, monkeypatch):
     assert "undelivered_notifications" not in r["payload"]
 
 
+def test_descriptor_without_address_does_not_probe_none_url(tmp_path, monkeypatch):
+    p = tmp_path / ".os_state" / "daemon.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(
+        json.dumps({"pid": os.getpid(), "version": "9.9.9"}),
+        encoding="utf-8",
+    )
+
+    def fail_get(*args, **kwargs):
+        raise AssertionError("HTTP probe should not run without a bridge base URL")
+
+    monkeypatch.setattr(mw, "_daemon_http_get", fail_get)
+    r = _payload(mw._handle_sys_daemon("sys_daemon", {}, tmp_path))
+    assert r["payload"]["running"] is True
+    assert r["payload"]["reachable"] is False
+    assert "base_url" not in r["payload"]
+
+
+
 def test_timeout_arg_is_clamped(tmp_path, monkeypatch):
     _write_descriptor(tmp_path, pid=os.getpid())
     seen = {}

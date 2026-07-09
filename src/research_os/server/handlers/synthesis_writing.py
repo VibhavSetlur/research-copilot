@@ -5,7 +5,8 @@ compile. They never generate prose / layout themselves.
 """
 from __future__ import annotations
 
-from .._handlers_runtime import *  # noqa: F401,F403
+from .._handlers_runtime import _error, _success, _text, Path
+
 
 __all__ = [
     "_handle_tool_synthesize_plan",
@@ -149,13 +150,6 @@ def _handle_tool_figure_palette(name, arguments, root):
 
 
 HANDLERS = {
-    "tool_synthesize_plan": _handle_tool_synthesize_plan,
-    "tool_synthesis_preview": _handle_tool_synthesis_preview,
     "tool_synthesis_scaffold": _handle_tool_synthesis_scaffold,
-    "tool_synthesis_check": _handle_tool_synthesis_check,
     "tool_typst_compile": _handle_tool_typst_compile,
-    "tool_latex_compile": _handle_tool_latex_compile,
-    "tool_writing_discussion_from_verdicts": _handle_tool_writing_discussion_from_verdicts,
-    "tool_discussion_coverage_audit": _handle_tool_discussion_coverage_audit,
-    "tool_figure_palette": _handle_tool_figure_palette,
 }

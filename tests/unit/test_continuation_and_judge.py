@@ -5,7 +5,6 @@ scorecard shape (a score without a reason is rejected).
 """
 from __future__ import annotations
 
-from pathlib import Path
 
 from research_os.daemon import continuation
 from research_os.daemon.config import DaemonConfig

@@ -1,16 +1,16 @@
 id: autopilot
 tier: 'plan'
 name: Autopilot Mode
-version: '3.1.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:
   domain: [any]
   audience: [naive_ai, researcher]
   workflow_shape: [any]
 see_also:
-  - guidance/constructive_disagreement   # distinct: AI driving vs AI pushing back on the researcher
-  - guidance/dead_end_routing            # where autopilot routes on an abandoned step
+- guidance/constructive_disagreement     # distinct: AI driving vs AI pushing back on the researcher
+- guidance/dead_end_routing              # where autopilot routes on an abandoned step
 description: |
   Hands-off "drive the project to its next deliverable without checking in
   on every step" mode. Defines the exact gates where the AI MUST stop and
@@ -21,9 +21,9 @@ trigger: |
   it", "wake me up when it's done", OR config has
   ``interaction.autonomy_level: autopilot``.
 prerequisites:
-  - session_boot has completed and set autonomy=autopilot
-  - inputs/intake.md exists (researcher won't be available to fix gaps)
-  - research_overview.md is non-placeholder
+- session_boot has completed and set autonomy=autopilot
+- inputs/intake.md exists (researcher won't be available to fix gaps)
+- research_overview.md is non-placeholder
 
 # Machine-readable mirror of the `mandatory_gates` step below. The engine
 # (server/gate_spec.py + autopilot_gate.py) compiles this block into
@@ -38,182 +38,183 @@ prerequisites:
 #   strict → reversible-but-weighty (fires only at strict / autopilot)
 enforcement:
   gates:
-    - key: tool_package_install
-      tool: tool_package_install
-      when: {}
-      floor: light
-      reason: installs mutate the environment irreversibly
-    - key: sys_checkpoint_rollback
-      tool: sys_checkpoint_rollback
-      when: {}
-      floor: light
-      reason: workspace mutation, reversible only by another rollback
-    - key: sys_path:abandon
-      tool: sys_path
-      when:
-        operation: abandon
-      floor: light
-      reason: dead-end declarations are loud and semantically irreversible
-    - key: tool_research_tool:paid
-      tool: tool_research_tool
-      when:
-        any_of:
-          - source: [paid, paid_or_licensed]
-          - paid: {truthy: true}
-      floor: light
-      reason: paid / licensed candidates spend real money
-    - key: tool_typst_compile
-      tool: tool_typst_compile
-      when: {}
-      floor: normal
-      reason: compiling the final deliverable makes the artefact shareable
-    - key: tool_typst_compile:stale_inputs
-      tool: tool_typst_compile
-      when:
-        world_state: no_stale_inputs
-      floor: normal
-      reason: >-
-        the final deliverable would embed results built from inputs that
-        changed on disk; re-run the affected steps (or override) first
-    - key: tool_audit:reproducibility
-      tool: tool_audit
-      when:
-        scope: step
-        dimension: reproducibility
-      floor: normal
-      reason: reproducibility audits are slow and expensive
-    - key: sys_file_write:synthesis_force
-      tool: sys_file_write
-      when:
-        synthesis_force:
-          path_prefix: synthesis/
-          exists: true
-          when_arg: force
-      floor: strict
-      reason: force-overwriting existing synthesis content (auto-archived)
-    - key: tool_task:run
-      tool: tool_task
-      when:
-        operation: run
-      floor: strict
-      reason: long-running background jobs spend compute (but are killable)
+  - key: tool_package_install
+    tool: tool_package_install
+    when: {}
+    floor: light
+    reason: installs mutate the environment irreversibly
+  - key: tool_git (operation=rollback)
+    tool: tool_git
+    when:
+      operation: rollback
+    floor: light
+    reason: workspace mutation, reversible only by another rollback
+  - key: dead_end_abandon
+    tool: tool_plan
+    when:
+      operation: dead_end
+    floor: light
+    reason: dead-end declarations are loud and semantically irreversible
+  - key: search_paid_sources
+    tool: tool_search
+    when:
+      any_of:
+      - source: [paid, paid_or_licensed]
+      - paid: {truthy: true}
+    floor: light
+    reason: paid / licensed search candidates spend real money
+  - key: tool_typst_compile
+    tool: tool_typst_compile
+    when: {}
+    floor: normal
+    reason: compiling the final deliverable makes the artefact shareable
+  - key: tool_typst_compile:stale_inputs
+    tool: tool_typst_compile
+    when:
+      world_state: no_stale_inputs
+    floor: normal
+    reason: >-
+      the final deliverable would embed results built from inputs that
+      changed on disk; re-run the affected steps (or override) first
+  - key: tool_audit:reproducibility
+    tool: tool_audit
+    when:
+      scope: step
+      dimension: reproducibility
+    floor: normal
+    reason: reproducibility audits are slow and expensive
+  - key: sys_file_write:synthesis_force
+    tool: sys_file_write
+    when:
+      synthesis_force:
+        path_prefix: synthesis/
+        exists: true
+        when_arg: force
+    floor: strict
+    reason: force-overwriting existing synthesis content (auto-archived)
+  - key: tool_task:run
+    tool: tool_task
+    when:
+      operation: run
+    floor: strict
+    reason: long-running background jobs spend compute (but are killable)
 
 steps:
-  - id: declare_scope
-    name: Declare Scope + End Condition
-    description: |
-      ONE sentence to the researcher: "Autopilot until <end-condition>.
-      I'll page you if: <gates>." End-conditions can be:
-        - "synthesis/paper.typ exists and passes tool_synthesis_check"
-        - "N planned experiment steps are completed"
-        - "all active hypotheses reach status != testing"
-        - "I hit a configured gate (see below)"
+- id: declare_scope
+  name: Declare Scope + End Condition
+  description: |
+    ONE sentence to the researcher: "Autopilot until <end-condition>.
+    I'll page you if: <gates>." End-conditions can be:
+      - "synthesis/paper.typ exists and passes tool_synthesis_scaffold (operation='check')"
+      - "N planned experiment steps are completed"
+      - "all active hypotheses reach status != testing"
+      - "I hit a configured gate (see below)"
 
-  - id: mandatory_gates
-    name: Mandatory Confirmation Gates
-    description: |
-      Autopilot DOES stop and ask before:
-        1. tool_typst_compile for the final deliverable (paper / slides
-           / poster / grant / report PDF). The compile is the moment the
-           artefact becomes shareable.
-        2. tool_audit(scope='step', dimension='reproducibility') (slow + expensive).
-        3. Any tool_research_tool candidate tagged paid_or_licensed.
-        4. sys_path (dead-end declarations are reversible but loud).
-        5. Any sys_file_write to synthesis/ with force=true.
-        6. tool_package_install for a package not already in
-           environment/requirements.txt.
-        7. Any tool_task(operation='run') whose estimated compute /
-           memory / disk cost is large relative to the project's
-           budget (a long GPU job, a memory- or I/O-heavy run). Page
-           before spending; cite the cost estimate you based the call
-           on. If the project declares a resource budget in config,
-           gate against that; otherwise gate on any run you'd hesitate
-           to launch unattended.
-        8. sys_checkpoint_rollback (workspace mutation; reversible only by
-           re-rolling back to a different checkpoint).
-      For each gate, sys_notify level="action_required" and wait one turn.
+- id: mandatory_gates
+  name: Mandatory Confirmation Gates
+  description: |
+    Autopilot DOES stop and ask before:
+      1. tool_typst_compile for the final deliverable (paper / slides
+         / poster / grant / report PDF). The compile is the moment the
+         artefact becomes shareable.
+      2. tool_audit(scope='step', dimension='reproducibility') (slow + expensive).
+      3. Any tool_search candidate tagged paid_or_licensed.
+      4. Dead-end declarations (routing to guidance/dead_end_routing) are reversible but loud.
+      5. Any sys_file_write to synthesis/ with force=true.
+      6. tool_package_install for a package not already in
+         environment/requirements.txt.
+      7. Any tool_task(operation='run') whose estimated compute /
+         memory / disk cost is large relative to the project's
+         budget (a long GPU job, a memory- or I/O-heavy run). Page
+         before spending; cite the cost estimate you based the call
+         on. If the project declares a resource budget in config,
+         gate against that; otherwise gate on any run you'd hesitate
+         to launch unattended.
+      8. tool_git (operation='rollback') (workspace mutation; reversible only by
+         re-rolling back to a different commit).
+    For each gate, sys_notify level="action_required" and wait one turn.
 
-      SERVER-SIDE ENFORCEMENT: these floor gates are enforced by the
-      dispatcher in src/research_os/server/dispatch.py via
-      autopilot_gate.enforce_autopilot_gate. When
-      interaction.autonomy_level == 'autopilot' AND the gated tool is
-      invoked without arguments['confirmed'] == true, the call returns
-      an RoError with what='autopilot_gate_blocked'. The protocol prose
-      above is the documentation; the dispatcher is the floor.
+    SERVER-SIDE ENFORCEMENT: these floor gates are enforced by the
+    dispatcher in src/research_os/server/dispatch.py via
+    autopilot_gate.enforce_autopilot_gate. When
+    interaction.autonomy_level == 'autopilot' AND the gated tool is
+    invoked without arguments['confirmed'] == true, the call returns
+    an RoError with what='autopilot_gate_blocked'. The protocol prose
+    above is the documentation; the dispatcher is the floor.
 
-      NEVER one-shot the full research project. Autopilot may iterate
-      through experiment steps without checking in, but the gates above
-      are floors — they cannot be bypassed even by an explicit
-      "do everything" prompt. The researcher must consent to each final
-      deliverable separately so the synthesis is a deliberate act, not a
-      side effect.
+    NEVER one-shot the full research project. Autopilot may iterate
+    through experiment steps without checking in, but the gates above
+    are floors — they cannot be bypassed even by an explicit
+    "do everything" prompt. The researcher must consent to each final
+    deliverable separately so the synthesis is a deliberate act, not a
+    side effect.
 
-  - id: scheduled_checkpoints
-    name: Auto-Checkpoint Every Major Step
-    description: |
-      After each completed numbered experiment step, in this order:
-        1. tool_path_finalize — rewrites the step's READMEs from what was
-           produced (so empty environment/literature/data folders carry an
-           informative note, not blank space).
-        2. sys_checkpoint_create description="autopilot after <step_id>"
-           — keeps a rollback target so a runaway autopilot can be undone
-           in one call.
+- id: scheduled_checkpoints
+  name: Auto-Checkpoint Every Major Step
+  description: |
+    After each completed numbered experiment step, in this order:
+      1. tool_plan (operation='finalize_step') — rewrites the step's READMEs from what was
+         produced (so empty environment/literature/data folders carry an
+         informative note, not blank space).
+      2. tool_git (operation='commit', message="autopilot after <step_id>")
+         — keeps a rollback target so a runaway autopilot can be undone
+         in one call.
 
-  - id: heartbeat
-    name: Hourly Heartbeat (long runs)
-    description: |
-      If the autopilot run will exceed 30 minutes wall-clock, sys_notify
-      level="info" every ~60 min with: completed steps, open tasks, any
-      hypothesis status changes. Researcher can quietly observe or jump in.
+- id: heartbeat
+  name: Hourly Heartbeat (long runs)
+  description: |
+    If the autopilot run will exceed 30 minutes wall-clock, sys_notify
+    level="info" every ~60 min with: completed steps, open tasks, any
+    hypothesis status changes. Researcher can quietly observe or jump in.
 
-  - id: lean_on_the_daemon_watch
-    name: Let the Daemon Watch You (unattended supervision)
-    description: |
-      When a daemon is running, you are not unsupervised — it re-checks the
-      project in the background and the things you most need to not lose are
-      surfaced back to you. Treat its findings as a standing question every turn:
-        - A `daemon_flagged_issue` finding on a tool envelope means the daemon
-          caught something since your last turn (a stale result, an abandoned
-          protocol, a stalled background job, a mode-health gap). Address the
-          BLOCK items before continuing — do not build on top of a flagged
-          problem during an unattended run.
-        - The daemon escalates to the researcher when the SAME problem persists
-          across its checks. That is the safety net, not a reason to ignore the
-          finding — fix it so it never escalates.
-        - For long background/compute, prefer the daemon's tracked runs: they
-          are journaled, the environment is snapshotted for reproducibility, and
-          a stalled job is detected for you. A run you launch outside that has
-          none of those protections.
-      The point of the scaffold here is not a command sequence; it is the habit:
-      during unattended work, the daemon is your second pair of eyes — keep
-      checking whether it flagged you, and resolve what it found.
+- id: lean_on_the_daemon_watch
+  name: Let the Daemon Watch You (unattended supervision)
+  description: |
+    When a daemon is running, you are not unsupervised — it re-checks the
+    project in the background and the things you most need to not lose are
+    surfaced back to you. Treat its findings as a standing question every turn:
+      - A `daemon_flagged_issue` finding on a tool envelope means the daemon
+        caught something since your last turn (a stale result, an abandoned
+        protocol, a stalled background job, a mode-health gap). Address the
+        BLOCK items before continuing — do not build on top of a flagged
+        problem during an unattended run.
+      - The daemon escalates to the researcher when the SAME problem persists
+        across its checks. That is the safety net, not a reason to ignore the
+        finding — fix it so it never escalates.
+      - For long background/compute, prefer the daemon's tracked runs: they
+        are journaled, the environment is snapshotted for reproducibility, and
+        a stalled job is detected for you. A run you launch outside that has
+        none of those protections.
+    The point of the scaffold here is not a command sequence; it is the habit:
+    during unattended work, the daemon is your second pair of eyes — keep
+    checking whether it flagged you, and resolve what it found.
 
-  - id: failure_handling
-    name: Failure Handling Without a Human in the Loop
-    description: |
-      On ANY tool error during autopilot:
-        - Log to workspace/logs/autopilot_errors.log via sys_file_write
-        - Retry once if the error looks transient (network timeout, rate
-          limit, missing optional dep — try tool fallback)
-        - On second failure, sys_notify level="action_required" describing
-          the failed call + best-guess fix, then HALT autopilot
-        - Never silently fall through to the next step on hard failures
-      On ANY dead-end (e.g. assumption violated), abandon the step,
-      sys_notify level="warn", and route to guidance/dead_end_routing.
+- id: failure_handling
+  name: Failure Handling Without a Human in the Loop
+  description: |
+    On ANY tool error during autopilot:
+      - Log to workspace/logs/autopilot_errors.log via sys_file_write
+      - Retry once if the error looks transient (network timeout, rate
+        limit, missing optional dep — try tool fallback)
+      - On second failure, sys_notify level="action_required" describing
+        the failed call + best-guess fix, then HALT autopilot
+      - Never silently fall through to the next step on hard failures
+    On ANY dead-end (e.g. assumption violated), abandon the step,
+    sys_notify level="warn", and route to guidance/dead_end_routing.
 
-  - id: final_deliverable_gate
-    name: Final Deliverable Gate
-    description: |
-      Before tool_typst_compile for the named deliverable:
-        - tool_synthesis_check(file='synthesis/<artefact>.typ') passes
-        - tool_audit(scope='project', dimension='citations') passes
-        - tool_synthesis_preview shows the predicted shape (word count,
-          page count, figure count, citation count) to the researcher
-      Wait for approval. Only after explicit "go" does the compile run.
+- id: final_deliverable_gate
+  name: Final Deliverable Gate
+  description: |
+    Before tool_typst_compile for the named deliverable:
+      - tool_synthesis_scaffold(file='synthesis/<artefact>.typ', operation='check') passes
+      - tool_audit(scope='project', dimension='citations') passes
+      - tool_synthesis_scaffold(operation='preview') shows the predicted shape (word count,
+        page count, figure count, citation count) to the researcher
+    Wait for approval. Only after explicit "go" does the compile run.
 
 expected_outputs:
-  - workspace/logs/autopilot_errors.log (only on failures)
-  - .os_state/checkpoints/ (one per completed step)
+- workspace/logs/autopilot_errors.log (only on failures)
+- .os_state/checkpoints/ (one per completed step)
 
 quality_bar: |
   - Every autopilot run produces a clear audit trail in protocol_execution_log
@@ -226,3 +227,22 @@ quality_bar: |
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: session
+sub_intent: autopilot
+triggers:
+- autopilot
+- you drive
+- run with it
+- just do it
+- wake me up
+- hands off
+summary: Drive the project hands-off; explicit gates only.
+token_estimate: 1100
+decomposition:
+- tool: sys_boot
+  args:
+    operation: config_get
+- protocol: guidance/autopilot
+  purpose: Load gates + heartbeat policy.
+- protocol: guidance/analysis_plan
+  purpose: Start executing under autopilot.

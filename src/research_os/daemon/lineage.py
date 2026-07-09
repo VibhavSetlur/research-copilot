@@ -211,6 +211,68 @@ def topo_order(lineage: dict, subset: "set[str] | None" = None) -> list[str]:
     return out
 
 
+def downstream(lineage: dict, run_id: str) -> list[str]:
+    """All runs transitively downstream of ``run_id``.
+
+    §13.4 public alias for :func:`descendants` — the two names co-exist so
+    callers can use whichever reads more naturally for their context.
+    "Downstream" emphasises data-flow; "descendants" emphasises the DAG.
+    """
+    return descendants(lineage, run_id)
+
+
+def provenance(
+    manifests_or_lineage: "list[dict] | dict",
+    artifact_path: str,
+) -> list[str]:
+    """Run ids that PRODUCED ``artifact_path``.
+
+    Answers "what produced this file?" — every run whose recorded artifacts
+    include a non-deleted entry with path == ``artifact_path``.
+
+    Args:
+        manifests_or_lineage: either the raw list of run manifests (preferred
+            — covers artifacts not yet consumed by any downstream run) *or* the
+            pre-built lineage graph dict.  When a dict is given we extract the
+            node ids and re-scan the same content by walking the edges' ``via``
+            producer_path entries for linked artifacts; when a list is given we
+            scan each manifest's ``artifacts`` array directly (more complete,
+            handles orphan producers).
+        artifact_path: the path to look up (as recorded in ``artifacts[].path``
+            — usually relative to the project root; no normalisation is applied).
+
+    Returns:
+        Sorted, de-duplicated list of run_ids that produced the artifact.
+        Returns ``[]`` when no run produced it (including deleted artifacts,
+        which carry no content and are excluded by :func:`_artifact_hashes`).
+    """
+    # Prefer the raw-manifest path: it finds producers even when the artifact
+    # was never consumed (those wouldn't appear in any edge's via[]).
+    if isinstance(manifests_or_lineage, list):
+        manifests = manifests_or_lineage
+        result: set[str] = set()
+        for m in manifests:
+            for art in m.get("artifacts") or []:
+                if (
+                    art.get("path") == artifact_path
+                    and art.get("change") != "deleted"
+                    and art.get("sha256")  # must have a hash (mirrors _artifact_hashes)
+                ):
+                    result.add(_run_id(m))
+        return sorted(result)
+
+    # Lineage graph branch: walk edges' via entries for linked artifacts, then
+    # supplement with node ids that declare the path in their own outputs.
+    # (Nodes know n_outputs but not the paths; we can only use what's in edges.)
+    graph = manifests_or_lineage
+    result = set()
+    for e in graph.get("edges") or []:
+        for via in e.get("via") or []:
+            if via.get("producer_path") == artifact_path:
+                result.add(e["from"])
+    return sorted(result)
+
+
 def lineage_to_mermaid(graph: dict) -> str:
     """Render a computed run-lineage DAG as a mermaid flowchart string.
 

@@ -35,32 +35,21 @@ class DaemonConfig:
 
     host: str = DEFAULT_HOST
     port: int = DEFAULT_PORT
-    # Enable the OpenAI-compatible gateway. Off by default (opt-in security
-    # surface); when enabled + a bearer token is set, serves POST
-    # /v1/chat/completions.
-    enable_gateway: bool = False
-    # Gateway upstream LLM (OpenAI-compatible). The daemon forwards
-    # chat completions here after injecting Research-OS context. base_url
-    # points at any OpenAI-compatible server (OpenAI, vLLM, Ollama, etc.);
-    # the API key is read from the named env var (never stored in config).
-    gateway_upstream_base_url: str = "https://api.openai.com/v1"
-    gateway_upstream_model: str = "gpt-4o-mini"
-    gateway_api_key_env: str = "RESEARCH_OS_GATEWAY_UPSTREAM_KEY"
-    # Per-session bearer token clients must present to use the gateway.
-    # Read from this env var; when unset the gateway refuses to start
-    # (mutating surface MUST be authenticated — ROADMAP §6).
-    gateway_token_env: str = "RESEARCH_OS_GATEWAY_TOKEN"
-    # Max tool-call round-trips per request before the gateway stops
-    # looping (prevents an LLM from spinning the tool loop forever).
-    gateway_max_tool_rounds: int = 6
-    # Upstream request timeout (seconds) for one forward to the LLM.
-    gateway_timeout: float = 120.0
+    # Per-session bearer token clients must present to call the *mutating*
+    # endpoints (/v1/runs, /v1/gates/respond, /v1/consent/*, …). Read from
+    # this env var; when unset those endpoints refuse the write (mutating
+    # surface MUST be authenticated — ROADMAP §6). Read surfaces stay open
+    # behind the 127.0.0.1 bind. RO calls no LLM and has no gateway; this is
+    # purely local write-authorization for the daemon's own endpoints.
+    auth_token_env: str = "RESEARCH_OS_DAEMON_TOKEN"
     # Enable the read-only web dashboard (Phase 5). Off until built.
     enable_dashboard: bool = False
     # Sandbox execution mode (Phase 4): "auto" detects a container
     # runtime and falls back to native; "native" forces host execution;
     # "off" disables agent code execution entirely.
     sandbox_mode: str = "auto"
+    # Air-gapped / offline mode; when true, network-capable tools must refuse.
+    offline: bool = False
     # Background task queue worker count (Phase 1). The "master loop owns
     # execution" primitive runs jobs off the request thread on this pool.
     task_workers: int = 2
@@ -108,10 +97,6 @@ class DaemonConfig:
             raise ValueError(f"port must be in 1..65535, got {self.port}")
         if self.task_workers < 1:
             raise ValueError(f"task_workers must be >= 1, got {self.task_workers}")
-        if self.gateway_max_tool_rounds < 1:
-            raise ValueError(
-                f"gateway_max_tool_rounds must be >= 1, got {self.gateway_max_tool_rounds}"
-            )
         if self.state_cache_ttl < 0:
             raise ValueError(
                 f"state_cache_ttl must be >= 0, got {self.state_cache_ttl}"
@@ -169,13 +154,10 @@ def _from_env() -> dict:
     env = {
         "host": os.environ.get("RESEARCH_OS_DAEMON_HOST"),
         "port": os.environ.get("RESEARCH_OS_DAEMON_PORT"),
-        "enable_gateway": os.environ.get("RESEARCH_OS_DAEMON_GATEWAY"),
-        "gateway_upstream_base_url": os.environ.get("RESEARCH_OS_GATEWAY_BASE_URL"),
-        "gateway_upstream_model": os.environ.get("RESEARCH_OS_GATEWAY_MODEL"),
-        "gateway_max_tool_rounds": os.environ.get("RESEARCH_OS_GATEWAY_MAX_ROUNDS"),
-        "gateway_timeout": os.environ.get("RESEARCH_OS_GATEWAY_TIMEOUT"),
+        "auth_token_env": os.environ.get("RESEARCH_OS_DAEMON_AUTH_TOKEN_ENV"),
         "enable_dashboard": os.environ.get("RESEARCH_OS_DAEMON_DASHBOARD"),
         "sandbox_mode": os.environ.get("RESEARCH_OS_DAEMON_SANDBOX"),
+        "offline": os.environ.get("RESEARCH_OS_DAEMON_OFFLINE"),
         "task_workers": os.environ.get("RESEARCH_OS_DAEMON_WORKERS"),
         "state_cache_ttl": os.environ.get("RESEARCH_OS_DAEMON_CACHE_TTL"),
         "notify_command": os.environ.get("RESEARCH_OS_DAEMON_NOTIFY_COMMAND"),
@@ -196,24 +178,16 @@ def _coerce(block: dict) -> dict:
             out["port"] = int(block["port"])
         except (TypeError, ValueError):
             pass
-    for flag in ("enable_gateway", "enable_dashboard"):
+    for flag in ("enable_dashboard", "offline"):
         if flag in block and block[flag] is not None:
             out[flag] = _as_bool(block[flag])
     for skey in (
-        "gateway_upstream_base_url",
-        "gateway_upstream_model",
-        "gateway_api_key_env",
-        "gateway_token_env",
+        "auth_token_env",
         "notify_command",
         "continue_command",
     ):
         if skey in block and block[skey] is not None:
             out[skey] = str(block[skey])
-    if "gateway_max_tool_rounds" in block and block["gateway_max_tool_rounds"] is not None:
-        try:
-            out["gateway_max_tool_rounds"] = int(block["gateway_max_tool_rounds"])
-        except (TypeError, ValueError):
-            pass
     if "sandbox_mode" in block and block["sandbox_mode"] is not None:
         out["sandbox_mode"] = str(block["sandbox_mode"]).strip().lower()
     if "task_workers" in block and block["task_workers"] is not None:
@@ -234,11 +208,6 @@ def _coerce(block: dict) -> dict:
     if "continue_timeout" in block and block["continue_timeout"] is not None:
         try:
             out["continue_timeout"] = float(block["continue_timeout"])
-        except (TypeError, ValueError):
-            pass
-    if "gateway_timeout" in block and block["gateway_timeout"] is not None:
-        try:
-            out["gateway_timeout"] = float(block["gateway_timeout"])
         except (TypeError, ValueError):
             pass
     return out

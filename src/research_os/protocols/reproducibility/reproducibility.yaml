@@ -1,139 +1,139 @@
 id: reproducibility
 tier: 'finalize'
 name: Reproducibility
-version: '4.4.1'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - audit/provenance_completeness   # the per-output sidecars this re-run audit verifies against
-  - audit/audit_and_validation      # the master quality audit that follows the snapshot
+- audit/provenance_completeness     # the per-output sidecars this re-run audit verifies against
+- audit/audit_and_validation        # the master quality audit that follows the snapshot
 description: Lock down environments, verify the pipeline runs end-to-end, and produce a Dockerfile for full portability.
 trigger: After all planned experiments are complete. Before audit_and_validation.
 
 steps:
-  - id: snapshot_each_step
-    name: Snapshot Each Step's Environment
-    description: |
-      For EACH active (non-dead-end) experiment in workspace/, ensure
-      workspace/<step>/environment/requirements.txt exists. If missing, switch
-      to that step (or just call) sys_env(operation='snapshot'). R packages → renv.lock,
-      Julia → Project.toml + Manifest.toml.
+- id: snapshot_each_step
+  name: Snapshot Each Step's Environment
+  description: |
+    For EACH active (non-dead-end) experiment in workspace/, ensure
+    workspace/<step>/environment/requirements.txt exists. If missing, switch
+    to that step (or just call) sys_env(operation='snapshot'). R packages → renv.lock,
+    Julia → Project.toml + Manifest.toml.
 
-      Note: work run as a daemon-tracked job (e.g. an HPC/SLURM submission)
-      already carries a full environment snapshot in its run record, so its
-      environment is pinned without a separate step snapshot. This step covers
-      the interactive/local work the daemon didn't execute.
+    Note: work run as a daemon-tracked job (e.g. an HPC/SLURM submission)
+    already carries a full environment snapshot in its run record, so its
+    environment is pinned without a separate step snapshot. This step covers
+    the interactive/local work the daemon didn't execute.
 
-  - id: verify_seeds
-    name: Verify Random Seeds Are Set
-    description: |
-      Grep every script in workspace/*/scripts/ for explicit seeding:
-        Python  → np.random.seed | random.seed | torch.manual_seed | rng = np.random.default_rng(seed=…)
-        R       → set.seed(…)
-        Julia   → Random.seed!
-      Any script that uses randomness but does NOT seed gets flagged. Either
-      bump the script to a new version with seeding, or document why determinism
-      is not required.
+- id: verify_seeds
+  name: Verify Random Seeds Are Set
+  description: |
+    Grep every script in workspace/*/scripts/ for explicit seeding:
+      Python  → np.random.seed | random.seed | torch.manual_seed | rng = np.random.default_rng(seed=…)
+      R       → set.seed(…)
+      Julia   → Random.seed!
+    Any script that uses randomness but does NOT seed gets flagged. Either
+    bump the script to a new version with seeding, or document why determinism
+    is not required.
 
-  - id: verify_relative_paths
-    name: Verify Relative Paths
-    description: |
-      Grep scripts for absolute paths (/home, /Users, C:\). Any hit is a bug —
-      rewrite to use paths relative to workspace/<step>/ or to env vars.
+- id: verify_relative_paths
+  name: Verify Relative Paths
+  description: |
+    Grep scripts for absolute paths (/home, /Users, C:\). Any hit is a bug —
+    rewrite to use paths relative to workspace/<step>/ or to env vars.
 
-  - id: hash_outputs
-    name: Hash Key Outputs
-    description: |
-      For every key output file (anything under workspace/*/outputs/ and
-      workspace/*/data/next_step_output/), compute sha256 and append to
-      workspace/logs/output_hashes.json. This becomes the baseline that the
-      reproducibility audit will compare future runs against.
+- id: hash_outputs
+  name: Hash Key Outputs
+  description: |
+    For every key output file (anything under workspace/*/outputs/ and
+    workspace/*/data/next_step_output/), compute sha256 and append to
+    workspace/logs/output_hashes.json. This becomes the baseline that the
+    reproducibility audit will compare future runs against.
 
-  - id: dockerise
-    name: Generate Dockerfile(s)
-    description: |
-      sys_env(operation='docker_generate') — produces environment/Dockerfile
-      from the session snapshot. Verify it would build (read it, sanity check
-      the package list).
+- id: dockerise
+  name: Generate Dockerfile(s)
+  description: |
+    sys_env(operation='docker_generate') — produces environment/Dockerfile
+    from the session snapshot. Verify it would build (read it, sanity check
+    the package list).
 
-      Per-step containers (on demand or for full reproducibility): when the
-      researcher asks to "dockerize this step" / "give me a container for the
-      analysis" / "make this step runnable on another machine", generate a
-      STEP-SCOPED image instead of (or in addition to) the project one:
-        sys_env(operation='snapshot', step_id='<NN_slug>')      # pin the step's deps
-        sys_env(operation='docker_generate', step_id='<NN_slug>')# write its Dockerfile
-      This writes workspace/<NN_slug>/environment/Dockerfile (+ .dockerignore)
-      built from THAT step's own requirements, with the build context = the
-      step directory, so the step's scripts + data + pinned env travel together
-      and `docker build` from the step dir reproduces it in isolation. A step
-      that ran scripts but has no per-step env is flagged by the daemon
-      (step_no_env_snapshot) — snapshot first, then dockerize.
+    Per-step containers (on demand or for full reproducibility): when the
+    researcher asks to "dockerize this step" / "give me a container for the
+    analysis" / "make this step runnable on another machine", generate a
+    STEP-SCOPED image instead of (or in addition to) the project one:
+      sys_env(operation='snapshot', step_id='<NN_slug>')      # pin the step's deps
+      sys_env(operation='docker_generate', step_id='<NN_slug>')# write its Dockerfile
+    This writes workspace/<NN_slug>/environment/Dockerfile (+ .dockerignore)
+    built from THAT step's own requirements, with the build context = the
+    step directory, so the step's scripts + data + pinned env travel together
+    and `docker build` from the step dir reproduces it in isolation. A step
+    that ran scripts but has no per-step env is flagged by the daemon
+    (step_no_env_snapshot) — snapshot first, then dockerize.
 
-  - id: emit_open_science_manifests
-    name: Emit RO-Crate + CodeMeta Manifests
-    description: |
-      Open-science manifests make the project machine-discoverable + citable.
-      sys_export_ro_crate(operation='build') writes ro-crate-metadata.json
-      (RO-Crate 1.1 Lightweight Profile, JSON-LD with
-      @context: https://w3id.org/ro/crate/1.1/context) AND codemeta.json
-      (CodeMeta 2.0, @context: https://doi.org/10.5063/schema/codemeta-2.0)
-      at the project root. Both are populated from
-      inputs/researcher_config.yaml (author identity, ORCID, license_data,
-      license_code), inputs/intake.md (description), environment/
-      (softwareRequirements), and a walk of synthesis/ + workspace/*/outputs/
-      for hasPart entries (including every *.prov.json sidecar).
+- id: emit_open_science_manifests
+  name: Emit RO-Crate + CodeMeta Manifests
+  description: |
+    Open-science manifests make the project machine-discoverable + citable.
+    tool_finalize_project(operation='build') writes ro-crate-metadata.json
+    (RO-Crate 1.1 Lightweight Profile, JSON-LD with
+    @context: https://w3id.org/ro/crate/1.1/context) AND codemeta.json
+    (CodeMeta 2.0, @context: https://doi.org/10.5063/schema/codemeta-2.0)
+    at the project root. Both are populated from
+    inputs/researcher_config.yaml (author identity, ORCID, license_data,
+    license_code), inputs/intake.md (description), environment/
+    (softwareRequirements), and a walk of synthesis/ + workspace/*/outputs/
+    for hasPart entries (including every *.prov.json sidecar).
 
-      sys_export_share_archive automatically refreshes + bundles these
-      manifests at archive root, so collaborators can point ro-crate-py
-      or cffconvert at the zip and validate it.
+    tool_finalize_project automatically refreshes + bundles these
+    manifests at archive root, so collaborators can point ro-crate-py
+    or cffconvert at the zip and validate it.
 
-  - id: mandatory_rerun_audit
-    name: Mandatory Re-Run Reproducibility Audit (DEFAULT before any synthesis-grade output)
-    description: |
-      Re-run verification is REQUIRED by default before ANY synthesis-grade
-      output (paper, poster, dashboard, slides, handout, grant, report).
-      The audit re-runs every workspace script in a clean subprocess and
-      compares output hashes against `workspace/logs/output_hashes.json`.
+- id: mandatory_rerun_audit
+  name: Mandatory Re-Run Reproducibility Audit (DEFAULT before any synthesis-grade output)
+  description: |
+    Re-run verification is REQUIRED by default before ANY synthesis-grade
+    output (paper, poster, dashboard, slides, handout, grant, report).
+    The audit re-runs every workspace script in a clean subprocess and
+    compares output hashes against `workspace/logs/output_hashes.json`.
 
-      Call:
-        tool_audit(scope='step', dimension='reproducibility')
+    Call:
+      tool_audit(scope='step', dimension='reproducibility')
 
-      Report goes to `workspace/logs/reproducibility_report.md`.
+    Report goes to `workspace/logs/reproducibility_report.md`.
 
-      Outcomes:
-        - All hashes match            → PASS. Synthesis may proceed.
-        - Any hash mismatch           → BLOCKER. Investigate before
-          synthesis: did a seed slip? a dependency upgrade? a manual
-          edit to an output file?
-        - Any script fails to re-run  → BLOCKER. Fix the script before
-          synthesis embeds its output.
+    Outcomes:
+      - All hashes match            → PASS. Synthesis may proceed.
+      - Any hash mismatch           → BLOCKER. Investigate before
+        synthesis: did a seed slip? a dependency upgrade? a manual
+        edit to an output file?
+      - Any script fails to re-run  → BLOCKER. Fix the script before
+        synthesis embeds its output.
 
-      OPT-OUT — the researcher MAY skip this audit only via an
-      EXPLICIT opt-out, by either:
-        (a) invoking the audit with `--skip-rerun-audit`
-            (`tool_audit(scope='step', dimension='reproducibility') skip=true` documents the
-             opt-out in the report), OR
-        (b) telling the AI "skip the re-run audit; I'll accept the
-            unverified state" — the AI then `mem_log`s the
-            opt-out with the researcher's stated rationale and a
-            warning that the resulting synthesis is NOT
-            reproducibility-verified.
+    OPT-OUT — the researcher MAY skip this audit only via an
+    EXPLICIT opt-out, by either:
+      (a) invoking the audit with `--skip-rerun-audit`
+          (`tool_audit(scope='step', dimension='reproducibility') skip=true` documents the
+           opt-out in the report), OR
+      (b) telling the AI "skip the re-run audit; I'll accept the
+          unverified state" — the AI then `mem_log`s the
+          opt-out with the researcher's stated rationale and a
+          warning that the resulting synthesis is NOT
+          reproducibility-verified.
 
-      Autopilot mode does NOT auto-opt-out. Autopilot is precisely
-      when re-run verification matters most because the human is
-      not watching. Autopilot runs the audit by default and pauses
-      on BLOCKERs as a configured gate.
+    Autopilot mode does NOT auto-opt-out. Autopilot is precisely
+    when re-run verification matters most because the human is
+    not watching. Autopilot runs the audit by default and pauses
+    on BLOCKERs as a configured gate.
 
 expected_outputs:
-  - workspace/*/environment/requirements.txt
-  - environment/Dockerfile
-  - workspace/logs/output_hashes.json
-  - ro-crate-metadata.json
-  - codemeta.json
+- workspace/*/environment/requirements.txt
+- environment/Dockerfile
+- workspace/logs/output_hashes.json
+- ro-crate-metadata.json
+- codemeta.json
 
 # AUTONOMY GATE on next_protocol: chaining to a full project audit is
 # reversible (it just loads the next protocol), but a reproducibility
@@ -144,3 +144,16 @@ expected_outputs:
 next_protocol: audit/audit_and_validation
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: audit_wrap
+sub_intent: repro
+triggers:
+- reproducibility
+- reproducible
+- rerun from scratch
+- snapshot environment
+- rerun my pipeline
+- rerun my whole pipeline
+- someone else can rerun
+- so others can reproduce
+summary: Snapshot env + verify everything reruns clean.
+shortcut_tool: tool_audit

@@ -7,13 +7,13 @@ contribute changes that keep the surface small and the protocols sharp.
 
 The AI IDE is the brain (Cursor / Claude Code / Claude Desktop /
 OpenCode / Antigravity / VS Code / Windsurf / Continue / Aider).
-Research OS is the body: 212 MCP tools and 114 YAML protocols, plus a
-**hybrid semantic + trigger router** that turns a user prompt into a
-protocol pick + planned tool sequence without the AI ever loading the
-trigger index itself. The semantic path uses local BGE-small ONNX
-embeddings (no network, no LLM API keys, optional `[semantic]` extra);
-the trigger path serves as the deterministic fallback. The system also
-enforces immutability (`inputs/raw_data/`, `inputs/literature/`) and
+Research OS is the body: a live MCP tool surface and a live protocol
+catalog, plus a **hybrid semantic + trigger router** that turns a user
+prompt into a protocol pick + planned tool sequence without the AI ever
+loading the trigger index itself. The semantic path uses local BGE-small
+ONNX embeddings (no network, no LLM API keys, optional `[semantic]`
+extra); the trigger path serves as the deterministic fallback. The system
+also enforces immutability (`inputs/raw_data/`, `inputs/literature/`) and
 provenance (`workspace/methods.md`, `workspace/analysis.md`,
 `.os_state/protocol_execution_log.jsonl`, `.os_state/active_plan.json`).
 It never calls an LLM itself.
@@ -33,9 +33,9 @@ cd Research-OS
 git checkout dev                      # work happens on dev
 pip install -e ".[ci,dev]"            # lean install used by CI
 # or pip install -e ".[all,dev]"      # everything except R / Julia / Docker
-pytest                                # 872+ tests, ~12s
+pytest                                # run the full suite
 ruff check src/ tests/ scripts/
-python scripts/preflight.py           # 14 wiring checks (incl. embedding freshness)
+python scripts/preflight.py           # wiring checks + docs/count drift guards
 # After editing any protocol YAML or tool definition:
 python scripts/build_embeddings.py    # rebuilds protocols/_embeddings.npz
 ```
@@ -70,7 +70,7 @@ release flow (version bump, CHANGELOG, tag, publish).
 4. Run the local checks (`pytest`, `ruff`, `preflight`).
 5. Open the PR — the template walks you through what to include.
 6. CI runs lint + preflight + unit + integration + tools + build tests
-   on Python 3.10 / 3.11 / 3.12.
+   on Python 3.11 / 3.12.
 7. A maintainer reviews. After approval + green CI, the PR is squash-
    merged into `dev`.
 

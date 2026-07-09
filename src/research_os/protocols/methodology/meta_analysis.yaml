@@ -1,16 +1,16 @@
 id: meta_analysis
 tier: 'plan'
 name: Meta-Analysis
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - literature/systematic_review            # supplies the studies + extraction table
-  - methodology/multiple_comparisons        # subgroup/sensitivity multiplicity
+- literature/systematic_review              # supplies the studies + extraction table
+- methodology/multiple_comparisons          # subgroup/sensitivity multiplicity
 description: |
   Reasoning scaffold for pooling effect estimates across primary
   studies. Names the decisions a defensible meta-analysis must
@@ -21,8 +21,8 @@ description: |
 trigger: Systematic review with quantitatively comparable studies.
 
 prerequisites:
-  - literature/systematic_review or literature/evidence_synthesis has been run
-  - data_extraction.csv exists with effect sizes + SEs (or sufficient stats to compute them)
+- literature/systematic_review or literature/evidence_synthesis has been run
+- data_extraction.csv exists with effect sizes + SEs (or sufficient stats to compute them)
 
 # Machine-checkable subset (precondition gate): the extraction table must
 # exist. The systematic-review-OR-evidence-synthesis prereq stays prose
@@ -30,99 +30,99 @@ prerequisites:
 # one ran). "sufficient stats" judgement also stays prose.
 requires:
   checks:
-    - kind: glob_min
-      pattern: "**/data_extraction.csv"
-      min: 1
-      because: a meta-analysis pools effect sizes from the extraction table
+  - kind: glob_min
+    pattern: "**/data_extraction.csv"
+    min: 1
+    because: a meta-analysis pools effect sizes from the extraction table
 
 editorial_voice:
   mode: guidance
   rules:
-    - "The choice of effect-size scale is determined by the outcome
-       type AND the convention in the field's recent meta-analytic
-       literature. Defaulting to one scale without checking is sloppy."
-    - "Heterogeneity is information, not a nuisance. The point is to
-       characterise variation in effects, not to suppress it. Pooling
-       across heterogeneous studies and reporting a single number
-       hides the science."
-    - "Publication-bias diagnostics only become informative with
-       enough studies; below that threshold, the absence of bias
-       evidence is not evidence of its absence — state this
-       explicitly."
+  - "The choice of effect-size scale is determined by the outcome type AND the convention in the field's recent meta-analytic literature. Defaulting to one scale without checking is sloppy."
+  - "Heterogeneity is information, not a nuisance. The point is to characterise variation in effects, not to suppress it. Pooling across heterogeneous studies and reporting a single number hides the science."
+  - "Publication-bias diagnostics only become informative with enough studies; below that threshold, the absence of bias evidence is not evidence of its absence — state this explicitly."
 
 steps:
-  - id: harmonise_effect_sizes
-    name: Harmonise effect sizes onto a common scale
-    description: |
-      For each primary study, derive a comparable effect size +
-      standard error. The right scale depends on the outcome family:
-      continuous outcomes have standardised mean differences,
-      binary outcomes have log-odds / log-risk ratios, correlations
-      have Fisher Z. Whichever family — cite the convention the
-      field uses + the standard reference for the conversion
-      formulae. If a study reports only a CI or a p-value, document
-      how the SE was recovered.
+- id: harmonise_effect_sizes
+  name: Harmonise effect sizes onto a common scale
+  description: |
+    For each primary study, derive a comparable effect size +
+    standard error. The right scale depends on the outcome family:
+    continuous outcomes have standardised mean differences,
+    binary outcomes have log-odds / log-risk ratios, correlations
+    have Fisher Z. Whichever family — cite the convention the
+    field uses + the standard reference for the conversion
+    formulae. If a study reports only a CI or a p-value, document
+    how the SE was recovered.
 
-  - id: heterogeneity
-    name: Characterise heterogeneity
-    description: |
-      Compute the heterogeneity statistics the field treats as
-      canonical (typically a between-study variance estimate, a
-      relative heterogeneity measure, and a homogeneity test). Cite
-      the source for whichever interpretive scale is used to label
-      "low / moderate / substantial". Visualise the distribution of
-      study-level effects (forest plot + a heterogeneity panel) so
-      a reader can see the variation, not just read a percentage.
+- id: heterogeneity
+  name: Characterise heterogeneity
+  description: |
+    Compute the heterogeneity statistics the field treats as
+    canonical (typically a between-study variance estimate, a
+    relative heterogeneity measure, and a homogeneity test). Cite
+    the source for whichever interpretive scale is used to label
+    "low / moderate / substantial". Visualise the distribution of
+    study-level effects (forest plot + a heterogeneity panel) so
+    a reader can see the variation, not just read a percentage.
 
-  - id: pool
-    name: Pool the effect — choose the model
-    description: |
-      The pooling model follows from the heterogeneity reasoning:
-      random-effects when between-study variance is non-negligible,
-      fixed-effect / common-effect when the studies plausibly share
-      one underlying effect. The estimator within random-effects
-      (REML, DerSimonian-Laird, Hartung-Knapp-Sidik-Jonkman,
-      Bayesian) is also a literature-grounded choice — small
-      study counts favour estimators with better small-sample
-      properties; the field's recent guidance names which. Save the
-      pooled estimate + uncertainty interval to
-      `outputs/reports/pooled_effect.json`.
+- id: pool
+  name: Pool the effect — choose the model
+  description: |
+    The pooling model follows from the heterogeneity reasoning:
+    random-effects when between-study variance is non-negligible,
+    fixed-effect / common-effect when the studies plausibly share
+    one underlying effect. The estimator within random-effects
+    (REML, DerSimonian-Laird, Hartung-Knapp-Sidik-Jonkman,
+    Bayesian) is also a literature-grounded choice — small
+    study counts favour estimators with better small-sample
+    properties; the field's recent guidance names which. Save the
+    pooled estimate + uncertainty interval to
+    `outputs/reports/pooled_effect.json`.
 
-  - id: forest_plot
-    name: Forest plot
-    description: |
-      Build a publication-grade forest plot at
-      `outputs/figures/<step>_forest_plot.png`. Order, annotations,
-      and weights follow the field's convention.
+- id: forest_plot
+  name: Forest plot
+  description: |
+    Build a publication-grade forest plot at
+    `outputs/figures/<step>_forest_plot.png`. Order, annotations,
+    and weights follow the field's convention.
 
-  - id: publication_bias
-    name: Publication-bias diagnostics
-    description: |
-      Conventional small-study / publication-bias diagnostics
-      (funnel-plot asymmetry, regression-based tests, selection
-      models) require enough studies to be informative — the
-      conventional minimum is around 10 but varies by field. If the
-      sample falls short, state this and skip the formal test rather
-      than mis-applying it. If applicable, run AT LEAST one diagnostic
-      + a corresponding sensitivity analysis (trim-and-fill,
-      selection-model adjustment, PET-PEESE).
+- id: publication_bias
+  name: Publication-bias diagnostics
+  description: |
+    Conventional small-study / publication-bias diagnostics
+    (funnel-plot asymmetry, regression-based tests, selection
+    models) require enough studies to be informative — the
+    conventional minimum is around 10 but varies by field. If the
+    sample falls short, state this and skip the formal test rather
+    than mis-applying it. If applicable, run AT LEAST one diagnostic
+    + a corresponding sensitivity analysis (trim-and-fill,
+    selection-model adjustment, PET-PEESE).
 
-  - id: sensitivity_and_subgroup
-    name: Sensitivity + pre-specified subgroup analyses
-    description: |
-      Run only the sensitivity / subgroup analyses pre-specified in
-      the review protocol — post-hoc subgrouping is hypothesis
-      generation, not confirmation. Standard sensitivity moves:
-      leave-one-out, exclusion of high-risk-of-bias studies, swap
-      of pooling estimator. Document each + report whether the
-      conclusion is robust.
+- id: sensitivity_and_subgroup
+  name: Sensitivity + pre-specified subgroup analyses
+  description: |
+    Run only the sensitivity / subgroup analyses pre-specified in
+    the review protocol — post-hoc subgrouping is hypothesis
+    generation, not confirmation. Standard sensitivity moves:
+    leave-one-out, exclusion of high-risk-of-bias studies, swap
+    of pooling estimator. Document each + report whether the
+    conclusion is robust.
 
 expected_outputs:
-  - workspace/*/outputs/figures/<step>_forest_plot.png
-  - workspace/*/outputs/reports/pooled_effect.json
-  - workspace/*/outputs/reports/heterogeneity.md
-  - workspace/*/outputs/reports/publication_bias.md
+- workspace/*/outputs/figures/<step>_forest_plot.png
+- workspace/*/outputs/reports/pooled_effect.json
+- workspace/*/outputs/reports/heterogeneity.md
+- workspace/*/outputs/reports/publication_bias.md
 
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: meta
+triggers:
+- meta analysis
+- meta-analysis
+- pooled estimate
+- forest plot
+summary: Pooled effect estimates + heterogeneity.

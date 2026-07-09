@@ -1,17 +1,17 @@
 id: tool_to_analysis_handoff
 tier: 'execute'
 name: Tool-to-Analysis Handoff (cross the boundary with provenance intact)
-version: '3.12.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai, auditor]
   workflow_shape: [hybrid, handoff]
 last_reviewed: '2026-06-23'
 see_also:
-  - hybrid/hybrid_workflow                        # the home loop that decides when to cross
-  - build/release_and_changelog                   # how the tool increment is versioned before use
-  - guidance/analysis_plan                        # the analysis loop the handed-off tool enters
+- hybrid/hybrid_workflow                          # the home loop that decides when to cross
+- build/release_and_changelog                     # how the tool increment is versioned before use
+- guidance/analysis_plan                          # the analysis loop the handed-off tool enters
 description: |
   The transition protocol of a hybrid project: the moment a tool increment is
   ready and an analysis is about to USE it (or an analysis reveals the tool
@@ -39,90 +39,90 @@ trigger: |
   the tool for the analysis now", "the tool's ready, let's run it", "the
   analysis shows the tool is wrong", "feed this back into the tool".
 prerequisites:
-  - workspace.mode is hybrid (sys_boot reports workspace_mode)
-  - A tool increment exists at a known state (the inner repo) OR an analysis step has produced a finding about the tool's behaviour
+- workspace.mode is hybrid (sys_boot reports workspace_mode)
+- A tool increment exists at a known state (the inner repo) OR an analysis step has produced a finding about the tool's behaviour
 
 steps:
-  - id: determine_direction
-    name: Determine the crossing direction
-    description: |
-      A handoff goes one of two ways; name which:
-        TOOL → ANALYSIS: a tool increment is ready and an analysis step is
-          about to use it.
-        ANALYSIS → TOOL: using the tool surfaced a bug, a missing capability,
-          or a wrong result, and the tool itself must change.
-      The direction sets what this crossing must protect: forward, the
-      analysis's reproducibility against a pinned tool; backward, the
-      integrity of any past result the tool change might invalidate.
+- id: determine_direction
+  name: Determine the crossing direction
+  description: |
+    A handoff goes one of two ways; name which:
+      TOOL → ANALYSIS: a tool increment is ready and an analysis step is
+        about to use it.
+      ANALYSIS → TOOL: using the tool surfaced a bug, a missing capability,
+        or a wrong result, and the tool itself must change.
+    The direction sets what this crossing must protect: forward, the
+    analysis's reproducibility against a pinned tool; backward, the
+    integrity of any past result the tool change might invalidate.
 
-  - id: confirm_increment_ready
-    name: Confirm the tool increment is actually ready to depend on (forward)
-    description: |
-      Before an analysis depends on a tool capability, confirm the capability
-      is trustworthy — depending on a half-built tool poisons the analysis
-      downstream. Check the increment meets the build bar for what it claims:
-      it does what the analysis needs, it has the tests that make that claim
-      credible (build/test_strategy), and it is at a NAMED version (a tag /
-      commit / release per build/release_and_changelog), not an uncommitted
-      working tree. If it's not ready, return to hybrid_workflow and finish the
-      tool increment first; do not hand off a moving target.
+- id: confirm_increment_ready
+  name: Confirm the tool increment is actually ready to depend on (forward)
+  description: |
+    Before an analysis depends on a tool capability, confirm the capability
+    is trustworthy — depending on a half-built tool poisons the analysis
+    downstream. Check the increment meets the build bar for what it claims:
+    it does what the analysis needs, it has the tests that make that claim
+    credible (build/test_strategy), and it is at a NAMED version (a tag /
+    commit / release per build/release_and_changelog), not an uncommitted
+    working tree. If it's not ready, return to hybrid_workflow and finish the
+    tool increment first; do not hand off a moving target.
 
-      AUTONOMY GATE:
-        Risk: reversible but consequential — an analysis built on a not-really-
-        ready tool increment may have to be thrown out and re-run.
-        proceed (adaptive default, autopilot) → if the increment is tested and versioned,
-          proceed with the crossing; if not, return to finish it.
-        confirm first (manual / supervised) → state whether the increment is ready (tests +
-          version) and your recommendation; confirm before the analysis depends
-          on it.
+    AUTONOMY GATE:
+      Risk: reversible but consequential — an analysis built on a not-really-
+      ready tool increment may have to be thrown out and re-run.
+      proceed (adaptive default, autopilot) → if the increment is tested and versioned,
+        proceed with the crossing; if not, return to finish it.
+      confirm first (manual / supervised) → state whether the increment is ready (tests +
+        version) and your recommendation; confirm before the analysis depends
+        on it.
 
-  - id: pin_and_record_dependency
-    name: Pin the tool version and record the analysis's dependency on it (forward)
-    description: |
-      Make the dependency explicit and durable. Pin the exact tool version the
-      analysis will use (tag / commit hash / installed release), and record in
-      the analysis step's context (workspace/<NN_slug>/context/notes.md) that
-      this step depends on tool vX. mem_log "analysis step <NN> uses tool vX".
-      The test of success: someone can check out tool vX and re-run the
-      analysis to the same result. An analysis that says "used the tool"
-      without a version has no provenance — pin it now, at the crossing, not
-      later from memory.
+- id: pin_and_record_dependency
+  name: Pin the tool version and record the analysis's dependency on it (forward)
+  description: |
+    Make the dependency explicit and durable. Pin the exact tool version the
+    analysis will use (tag / commit hash / installed release), and record in
+    the analysis step's context (workspace/<NN_slug>/context/notes.md) that
+    this step depends on tool vX. mem_log "analysis step <NN> uses tool vX".
+    The test of success: someone can check out tool vX and re-run the
+    analysis to the same result. An analysis that says "used the tool"
+    without a version has no provenance — pin it now, at the crossing, not
+    later from memory.
 
-      Then enter guidance/analysis_plan on the step to run it under full
-      analysis rigor, with the tool version already pinned in its record.
+    Then enter guidance/analysis_plan on the step to run it under full
+    analysis rigor, with the tool version already pinned in its record.
 
-  - id: triage_feedback_to_tool
-    name: Triage the analysis finding into a tool change (backward)
-    description: |
-      When the crossing is analysis → tool, treat the finding as a tool
-      requirement: is it a BUG (the tool gave a wrong result — highest
-      priority, and any past analysis that used the buggy path is now suspect),
-      a MISSING CAPABILITY (the analysis needs something the tool can't do), or
-      a USABILITY friction (the tool works but is painful)? Scope the smallest
-      tool change that addresses it and route it into the build loop
-      (build/spec_and_design → implement → test) inside the inner repo.
+- id: triage_feedback_to_tool
+  name: Triage the analysis finding into a tool change (backward)
+  description: |
+    When the crossing is analysis → tool, treat the finding as a tool
+    requirement: is it a BUG (the tool gave a wrong result — highest
+    priority, and any past analysis that used the buggy path is now suspect),
+    a MISSING CAPABILITY (the analysis needs something the tool can't do), or
+    a USABILITY friction (the tool works but is painful)? Scope the smallest
+    tool change that addresses it and route it into the build loop
+    (build/spec_and_design → implement → test) inside the inner repo.
 
-      Critically, if the finding is a BUG, identify which PAST analysis steps
-      used the affected behaviour and flag them for re-running against the
-      fixed tool — a bug fix that silently leaves old results standing on the
-      buggy tool is how a hybrid project ships a wrong number.
+    Critically, if the finding is a BUG, identify which PAST analysis steps
+    used the affected behaviour and flag them for re-running against the
+    fixed tool — a bug fix that silently leaves old results standing on the
+    buggy tool is how a hybrid project ships a wrong number.
 
-  - id: carry_the_narrative
-    name: Carry the cross-boundary narrative thread
-    description: |
-      Either direction, record the link that makes the eventual write-up true:
-      forward, "tool vX enabled analysis step <NN>"; backward, "analysis step
-      <NN> drove tool change <Y> (vX → vX+1)". This thread is what lets the
-      deliverable honestly tell the co-evolution story — "we built X, used it
-      to find Y, which showed X needed Z" — instead of presenting the tool and
-      the analysis as if they were developed in ignorance of each other.
-      mem_log the link; return to hybrid/hybrid_workflow to re-read the
-      bottleneck and continue.
+- id: carry_the_narrative
+  name: Carry the cross-boundary narrative thread
+  description: |
+    Either direction, record the link that makes the eventual write-up true:
+    forward, "tool vX enabled analysis step <NN>"; backward, "analysis step
+    <NN> drove tool change <Y> (vX → vX+1)". This thread is what lets the
+    deliverable honestly tell the co-evolution story — "we built X, used it
+    to find Y, which showed X needed Z" — instead of presenting the tool and
+    the analysis as if they were developed in ignorance of each other.
+    mem_log the link; return to hybrid/hybrid_workflow to re-read the
+    bottleneck and continue.
 
 expected_outputs:
-  - an analysis step with its tool version pinned in context/notes.md (forward)
-  - a scoped tool change in the inner repo + flagged past steps to re-run (backward)
-  - a logged cross-boundary link recording the dependency / feedback
+- an analysis step with its tool version pinned in context/notes.md (forward)
+- a scoped tool change in the inner repo + flagged past steps to re-run (backward)
+- a logged cross-boundary link recording the dependency / feedback
 
 quality_bar: |
   - The crossing direction is named and the right invariant protected.
@@ -135,3 +135,21 @@ quality_bar: |
 next_protocol: hybrid/hybrid_workflow
 next_protocol_kind: forward_default
 on_failure: hybrid/hybrid_workflow
+intent_class: execute
+sub_intent: hybrid_handoff
+triggers:
+- use the tool for the analysis
+- the tool's ready, run it
+- the tool is ready, run it
+- feed this back into the tool
+- the analysis shows the tool is wrong
+- pin the tool version
+- hand off to analysis
+- the analysis needs the tool to change
+summary: 'Cross the tool↔analysis boundary deliberately: pin the exact tool version an analysis depends on (forward), or triage an analysis finding into a tool change and flag affected past steps (backward).'
+token_estimate: 1500
+decomposition:
+- protocol: hybrid/tool_to_analysis_handoff
+  purpose: Name the direction, confirm the increment is ready, pin + record the version (or triage the finding into a tool change), carry the narrative.
+- tool: mem_log
+  purpose: Log the crossing (analysis step ↔ tool version dependency / feedback).

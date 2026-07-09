@@ -1,7 +1,7 @@
 id: design_iteration
 name: "Design Iteration — versioned revisions with rationale"
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering, humanities]
   audience: [auditor]
@@ -34,164 +34,171 @@ trigger: |
   order), "design review", "why did we change X".
 
 prerequisites:
-  - A baseline design artefact exists and is committed to version
-    control (CAD repo, EDA project, or git for software architecture).
-  - A requirements document exists (output of requirements_traceability)
-    so each revision can cite which requirement(s) drove it.
-  - "Revision numbering convention is declared in
-     workspace/engineering/design/rev_scheme.md (default is provided
-     below — MAJOR.MINOR.PATCH where MAJOR breaks interface, MINOR
-     adds capability, PATCH fixes a defect without changing interface)."
+- A baseline design artefact exists and is committed to version control (CAD repo, EDA project, or git for software architecture).
+- A requirements document exists (output of requirements_traceability) so each revision can cite which requirement(s) drove it.
+- "Revision numbering convention is declared in workspace/engineering/design/rev_scheme.md (default is provided below — MAJOR.MINOR.PATCH where MAJOR breaks interface, MINOR adds capability, PATCH fixes a defect without changing interface)."
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "A revision without a rationale is not a revision; it is a commit
-       message. The rationale must name the requirement, the trade-off,
-       and the alternative that was rejected."
-    - "Diff first, rationale second, sign-off third. A revision merged
-       without all three is reopened, not patched."
-    - "The revision history is the design. The CAD / schematic / code
-       is a snapshot. Treat the history as the artefact of record and
-       the snapshot as derived."
-    - "If the diff touches an interface (mechanical mating surface,
-       electrical pinout, software API), it is MAJOR. No exceptions
-       for 'it's just one pin'."
-    - "Reviewers who approve without reading the diff are not reviewers.
-       Require the reviewer to cite at least one line of the diff in
-       their approval comment."
+  - "A revision without a rationale is not a revision; it is a commit message. The rationale must name the requirement, the trade-off, and the alternative that was rejected."
+  - "Diff first, rationale second, sign-off third. A revision merged without all three is reopened, not patched."
+  - "The revision history is the design. The CAD / schematic / code is a snapshot. Treat the history as the artefact of record and the snapshot as derived."
+  - "If the diff touches an interface (mechanical mating surface, electrical pinout, software API), it is MAJOR. No exceptions for 'it's just one pin'."
+  - "Reviewers who approve without reading the diff are not reviewers. Require the reviewer to cite at least one line of the diff in their approval comment."
 
 quality_bar:
   rev_scheme:
-    major: "Breaks interface (mating surface, pinout, API signature)
-            or violates a prior requirement. Forces downstream rework."
-    minor: "Adds capability or tightens tolerance without breaking
-            interface. Backwards-compatible."
-    patch: "Fixes a defect (typo in BOM, wrong resistor value, off-by-one)
-            without changing interface or capability."
+    major: "Breaks interface (mating surface, pinout, API signature) or violates a prior requirement. Forces downstream rework."
+    minor: "Adds capability or tightens tolerance without breaking interface. Backwards-compatible."
+    patch: "Fixes a defect (typo in BOM, wrong resistor value, off-by-one) without changing interface or capability."
   required_diff_fields:
-    - rev_id
-    - prior_rev_id
-    - artefact_path
-    - diff_summary
-    - requirements_driving_change
-    - tradeoff_made
-    - alternatives_rejected
-    - reviewer
-    - sign_off_date
+  - rev_id
+  - prior_rev_id
+  - artefact_path
+  - diff_summary
+  - requirements_driving_change
+  - tradeoff_made
+  - alternatives_rejected
+  - reviewer
+  - sign_off_date
   diff_must_be_machine_readable: true
   rationale_min_length_chars: 120
   reviewer_must_not_be_author: true
   fmea_review_required_on_major: true
 
 steps:
-  - id: baseline_the_artefact
-    name: Establish the baseline revision under version control
-    description: |
-      Confirm the current design is committed and tagged (git tag for
-      software, PDM/PLM checkpoint for CAD, EDA project archive for
-      schematics). The baseline is the "prior rev" that the next
-      revision will diff against. If no baseline exists, create
-      rev 0.1.0 from current HEAD and document the as-found state in
-      workspace/engineering/design/<artefact>/rev_0.1.0/notes.md.
-      mem_log the baseline rev_id + artefact_path so future revisions
-      can chain back to it.
+- id: baseline_the_artefact
+  name: Establish the baseline revision under version control
+  description: |
+    Confirm the current design is committed and tagged (git tag for
+    software, PDM/PLM checkpoint for CAD, EDA project archive for
+    schematics). The baseline is the "prior rev" that the next
+    revision will diff against. If no baseline exists, create
+    rev 0.1.0 from current HEAD and document the as-found state in
+    workspace/engineering/design/<artefact>/rev_0.1.0/notes.md.
+    mem_log the baseline rev_id + artefact_path so future revisions
+    can chain back to it.
 
-  - id: capture_the_diff
-    name: Capture the diff in a machine-readable form
-    description: |
-      For software: git diff is the diff. For CAD: export STEP / IGES
-      from both revs and use the PLM's geometry diff tool, OR if no
-      PLM, screenshot front/top/side of both revs side-by-side AND
-      list parameter changes (dimension X: 12.0 -> 12.5mm). For
-      schematics: net-list diff (e.g., KiCad's net-list export +
-      diff). A "diff" that is "I changed the resistor" is not a diff.
-      Store the diff at workspace/engineering/design/<artefact>/<new_rev>/diff.{patch,pdf,csv}.
-      tool_search the prior rev's revision notes before writing the
-      new diff so you do not re-litigate a closed decision.
+- id: capture_the_diff
+  name: Capture the diff in a machine-readable form
+  description: |
+    For software: git diff is the diff. For CAD: export STEP / IGES
+    from both revs and use the PLM's geometry diff tool, OR if no
+    PLM, screenshot front/top/side of both revs side-by-side AND
+    list parameter changes (dimension X: 12.0 -> 12.5mm). For
+    schematics: net-list diff (e.g., KiCad's net-list export +
+    diff). A "diff" that is "I changed the resistor" is not a diff.
+    Store the diff at workspace/engineering/design/<artefact>/<new_rev>/diff.{patch,pdf,csv}.
+    tool_search the prior rev's revision notes before writing the
+    new diff so you do not re-litigate a closed decision.
 
-  - id: write_the_rationale
-    name: Write the rationale, citing requirements + trade-off
-    description: |
-      The rationale answers three questions in order:
-        1. Which requirement(s) drove this change? Cite by requirement
-           ID from requirements_traceability output. "User feedback"
-           is not a requirement.
-        2. What trade-off was made? Every change costs something
-           (mass, cost, BOM count, build time, API surface, test
-           coverage). Name the cost.
-        3. Which alternative(s) were rejected and why? At least one.
-           "There was no alternative" is almost never true and is a
-           red flag that the design space was not explored.
-      Minimum 120 chars. Write it in workspace/engineering/design/<artefact>/<new_rev>/rationale.md.
+- id: write_the_rationale
+  name: Write the rationale, citing requirements + trade-off
+  description: |
+    The rationale answers three questions in order:
+      1. Which requirement(s) drove this change? Cite by requirement
+         ID from requirements_traceability output. "User feedback"
+         is not a requirement.
+      2. What trade-off was made? Every change costs something
+         (mass, cost, BOM count, build time, API surface, test
+         coverage). Name the cost.
+      3. Which alternative(s) were rejected and why? At least one.
+         "There was no alternative" is almost never true and is a
+         red flag that the design space was not explored.
+    Minimum 120 chars. Write it in workspace/engineering/design/<artefact>/<new_rev>/rationale.md.
 
-  - id: classify_the_rev
-    name: Classify the revision as MAJOR / MINOR / PATCH
-    description: |
-      Walk the diff against the rev_scheme:
-        - Does it change any interface (mating surface, pinout, API)?
-          -> MAJOR.
-        - Does it violate any prior requirement? -> MAJOR (and the
-          requirement must be renegotiated before merge).
-        - Does it add capability without breaking interface? -> MINOR.
-        - Is it a defect fix with no interface or capability change?
-          -> PATCH.
-      Disagreement between author + reviewer on classification is
-      common and is a useful signal: usually it means the interface
-      contract is not written down. If you bump to MAJOR, the next
-      step (FMEA review) becomes mandatory.
+- id: classify_the_rev
+  name: Classify the revision as MAJOR / MINOR / PATCH
+  description: |
+    Walk the diff against the rev_scheme:
+      - Does it change any interface (mating surface, pinout, API)?
+        -> MAJOR.
+      - Does it violate any prior requirement? -> MAJOR (and the
+        requirement must be renegotiated before merge).
+      - Does it add capability without breaking interface? -> MINOR.
+      - Is it a defect fix with no interface or capability change?
+        -> PATCH.
+    Disagreement between author + reviewer on classification is
+    common and is a useful signal: usually it means the interface
+    contract is not written down. If you bump to MAJOR, the next
+    step (FMEA review) becomes mandatory.
 
-  - id: review_and_sign_off
-    name: Peer review with mandatory diff citation
-    description: |
-      Assign a reviewer who is not the author. Reviewer must:
-        - Read the diff (not just the rationale).
-        - Cite at least one specific line / parameter / pin from the
-          diff in their approval comment.
-        - Confirm the classification (MAJOR/MINOR/PATCH).
-        - Flag any downstream artefacts (tests, drawings, firmware,
-          BOM) that this rev invalidates.
-      For MAJOR revs: also trigger an FMEA review (see
-      engineering/safety/fmea_protocol). For MINOR/PATCH: FMEA review
-      is optional but encouraged if the diff touches a high-RPN row.
-      Sign-off is recorded in workspace/engineering/design/<artefact>/<new_rev>/signoff.yaml
-      with reviewer name + date + cited diff lines.
+- id: review_and_sign_off
+  name: Peer review with mandatory diff citation
+  description: |
+    Assign a reviewer who is not the author. Reviewer must:
+      - Read the diff (not just the rationale).
+      - Cite at least one specific line / parameter / pin from the
+        diff in their approval comment.
+      - Confirm the classification (MAJOR/MINOR/PATCH).
+      - Flag any downstream artefacts (tests, drawings, firmware,
+        BOM) that this rev invalidates.
+    For MAJOR revs: also trigger an FMEA review (see
+    engineering/safety/fmea_protocol). For MINOR/PATCH: FMEA review
+    is optional but encouraged if the diff touches a high-RPN row.
+    Sign-off is recorded in workspace/engineering/design/<artefact>/<new_rev>/signoff.yaml
+    with reviewer name + date + cited diff lines.
 
-  - id: propagate_downstream
-    name: Propagate the rev to downstream artefacts
-    description: |
-      A design change is not done when the design file is updated.
-      It is done when every downstream artefact is updated or
-      explicitly waived. The downstream list (per discipline):
-        - Mechanical: drawings, BOM, fixtures, inspection plans.
-        - Electrical: BOM, test jigs, firmware pin-maps, EMC report.
-        - Software: API docs, client SDKs, integration tests,
-          deployment configs.
-      Use sys_path to enumerate the downstream artefacts the project
-      declared in workspace/engineering/design/downstream_map.yaml.
-      Anything not updated must be listed in the rev's signoff.yaml
-      as a deferred action with an owner and a deadline.
+- id: propagate_downstream
+  name: Propagate the rev to downstream artefacts
+  description: |
+    A design change is not done when the design file is updated.
+    It is done when every downstream artefact is updated or
+    explicitly waived. The downstream list (per discipline):
+      - Mechanical: drawings, BOM, fixtures, inspection plans.
+      - Electrical: BOM, test jigs, firmware pin-maps, EMC report.
+      - Software: API docs, client SDKs, integration tests,
+        deployment configs.
+    Use sys_path to enumerate the downstream artefacts the project
+    declared in workspace/engineering/design/downstream_map.yaml.
+    Anything not updated must be listed in the rev's signoff.yaml
+    as a deferred action with an owner and a deadline.
 
-  - id: close_and_chain
-    name: Close the rev and chain into the history
-    description: |
-      Commit the diff + rationale + signoff together (one commit, one
-      rev). Tag the commit with the rev_id. Update
-      workspace/engineering/design/<artefact>/history.md by appending
-      a row: rev_id, date, author, reviewer, classification,
-      one-line summary, link to rationale.md. mem_log the new rev_id
-      so subsequent design_iteration runs find it as the new prior
-      rev. The next iteration starts from this rev as baseline; the
-      history.md file is the human-readable index into the chain.
+- id: close_and_chain
+  name: Close the rev and chain into the history
+  description: |
+    Commit the diff + rationale + signoff together (one commit, one
+    rev). Tag the commit with the rev_id. Update
+    workspace/engineering/design/<artefact>/history.md by appending
+    a row: rev_id, date, author, reviewer, classification,
+    one-line summary, link to rationale.md. mem_log the new rev_id
+    so subsequent design_iteration runs find it as the new prior
+    rev. The next iteration starts from this rev as baseline; the
+    history.md file is the human-readable index into the chain.
 
 expected_outputs:
-  - "workspace/engineering/design/<artefact>/<rev>/diff.{patch,pdf,csv}"
-  - "workspace/engineering/design/<artefact>/<rev>/rationale.md"
-  - "workspace/engineering/design/<artefact>/<rev>/signoff.yaml"
-  - "workspace/engineering/design/<artefact>/history.md"
-  - workspace/engineering/design/rev_scheme.md
-  - workspace/engineering/design/downstream_map.yaml
+- "workspace/engineering/design/<artefact>/<rev>/diff.{patch,pdf,csv}"
+- "workspace/engineering/design/<artefact>/<rev>/rationale.md"
+- "workspace/engineering/design/<artefact>/<rev>/signoff.yaml"
+- "workspace/engineering/design/<artefact>/history.md"
+- workspace/engineering/design/rev_scheme.md
+- workspace/engineering/design/downstream_map.yaml
 
 next_protocol: engineering/design/requirements_traceability
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: execute
+sub_intent: new_experiment
+triggers:
+- design iteration
+- design revision
+- rev N to rev N+1
+- design diff
+- design changelog
+- finite element
+- finite element analysis
+- computational fluid dynamics
+- cfd simulation
+- cfd model
+- numerical simulation
+- simulation model
+- design a controller
+- controller design
+- control system design
+- control loop design
+summary: Versioned design revisions; each with rationale + diff from prior. Mechanical / electrical / software.
+token_estimate: 1500
+decomposition:
+- protocol: engineering/design/design_iteration
+  purpose: Capture + justify a design revision.

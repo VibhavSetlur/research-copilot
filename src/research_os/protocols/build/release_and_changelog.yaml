@@ -1,18 +1,18 @@
 id: release_and_changelog
 tier: 'finalize'
 name: Release & Changelog (cut a versioned, reproducible release)
-version: '3.10.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]
   audience: [naive_ai, auditor]
   workflow_shape: [tool_build]
 last_reviewed: '2026-06-16'
 see_also:
-  - build/implement_iteration    # where the next increment set re-enters after a release
-  - build/versioning_and_rollback # the internal working-version discipline beneath this public release; blessed versions feed it
-  - build/benchmark_vs_baseline  # supplies the evidence behind any performance claim shipped
-  - build/package_and_publish    # distributes the cut release to a registry (optional next step)
+- build/implement_iteration      # where the next increment set re-enters after a release
+- build/versioning_and_rollback   # the internal working-version discipline beneath this public release; blessed versions feed it
+- build/benchmark_vs_baseline    # supplies the evidence behind any performance claim shipped
+- build/package_and_publish      # distributes the cut release to a registry (optional next step)
 description: |
   Turn a set of committed increments into a release a consumer can adopt
   with confidence: a version that signals what changed, a changelog
@@ -31,161 +31,191 @@ description: |
   build/implement_iteration.
 trigger: When an increment set is ready to ship — "cut a release", "tag a version", "ship it", "publish", "write the changelog", "package this for users".
 prerequisites:
-  - The inner repo builds and its CI gate / test suite is green on the release commit
-  - CHANGELOG.md (Unreleased) has been kept current by the build loop
+- The inner repo builds and its CI gate / test suite is green on the release commit
+- CHANGELOG.md (Unreleased) has been kept current by the build loop
 
 steps:
-  - id: confirm_releasable
-    name: Confirm the tree is releasable
-    description: |
-      A release inherits whatever state the tree is in, so verify it first:
-        - the working tree is clean (no uncommitted changes), HEAD is a real
-          commit, and recent commit subjects aren't WIP/fixup leftovers —
-          tool_audit(scope='tool', dimension='git_hygiene') checks all three;
-        - the build succeeds and the full test suite / CI gate is green on the
-          exact commit you intend to release — tool_build(operation='build')
-          + tool_build(operation='test'), or the one-shot tool_audit(scope=
-          'tool', dimension='build') / dimension='tests');
-        - the relevant eval/ acceptance checks pass (the release meets the
-          spec's definition of done).
+- id: confirm_releasable
+  name: Confirm the tree is releasable
+  description: |
+    A release inherits whatever state the tree is in, so verify it first:
+      - the working tree is clean (no uncommitted changes), HEAD is a real
+        commit, and recent commit subjects aren't WIP/fixup leftovers —
+        tool_audit(scope='tool', dimension='git_hygiene') checks all three;
+      - the build succeeds and the full test suite / CI gate is green on the
+        exact commit you intend to release — tool_build(operation='build')
+        + tool_build(operation='test'), or the one-shot tool_audit(scope=
+        'tool', dimension='build') / dimension='tests');
+      - the relevant eval/ acceptance checks pass (the release meets the
+        spec's definition of done).
 
-      Do not cut a release from a red or dirty tree. If anything fails,
-      route back to build/implement_iteration and fix it as an increment
-      before releasing.
+    Do not cut a release from a red or dirty tree. If anything fails,
+    route back to build/implement_iteration and fix it as an increment
+    before releasing.
 
-  - id: decide_version
-    name: Decide the version — from what actually changed for users
-    description: |
-      Choose the new version by what changed for CONSUMERS, not by how much
-      code moved. Under semantic versioning the question is: did this break
-      the public contract (major), add backwards-compatible capability
-      (minor), or only fix/refine without changing the contract (patch)?
+- id: decide_version
+  name: Decide the version — from what actually changed for users
+  description: |
+    Choose the new version by what changed for CONSUMERS, not by how much
+    code moved. Under semantic versioning the question is: did this break
+    the public contract (major), add backwards-compatible capability
+    (minor), or only fix/refine without changing the contract (patch)?
 
-      Reason from the interface contract in spec/design.md and the commit
-      history: scan the commits since the last release and classify their
-      user-facing impact. A removed/renamed public symbol or changed
-      required input is a breaking change even if the diff is tiny.
+    Reason from the interface contract in spec/design.md and the commit
+    history: scan the commits since the last release and classify their
+    user-facing impact. A removed/renamed public symbol or changed
+    required input is a breaking change even if the diff is tiny.
 
-      Apply the versioning scheme this tool's ecosystem actually uses
-      (SemVer is common but not universal — calendar versioning, ZeroVer,
-      etc. exist for good reasons in some communities); justify the scheme
-      if it's not the obvious one. Bump the version in the single source of
-      truth the project uses (package manifest / version file), consistently
-      across every place that declares it.
+    Apply the versioning scheme this tool's ecosystem actually uses
+    (SemVer is common but not universal — calendar versioning, ZeroVer,
+    etc. exist for good reasons in some communities); justify the scheme
+    if it's not the obvious one. Bump the version in the single source of
+    truth the project uses (package manifest / version file), consistently
+    across every place that declares it.
 
-      AUTONOMY GATE:
-        Risk: reversible — choosing the bump and writing the CHANGELOG
-        changes nothing published; it can be re-edited before the tag.
-        proceed (adaptive default, autopilot) → choose the bump, state the reasoning (which
-          commits forced major vs minor vs patch), and proceed; flag any
-          commit whose classification was ambiguous.
-        confirm first (manual / supervised) → present the proposed bump + the reasoning
-          (which commits forced major vs minor vs patch); confirm before
-          tagging.
+    AUTONOMY GATE:
+      Risk: reversible — choosing the bump and writing the CHANGELOG
+      changes nothing published; it can be re-edited before the tag.
+      proceed (adaptive default, autopilot) → choose the bump, state the reasoning (which
+        commits forced major vs minor vs patch), and proceed; flag any
+        commit whose classification was ambiguous.
+      confirm first (manual / supervised) → present the proposed bump + the reasoning
+        (which commits forced major vs minor vs patch); confirm before
+        tagging.
 
-  - id: write_changelog
-    name: Write the changelog FROM the commit history
-    description: |
-      Assemble the release's changelog entry from the actual history, not
-      from memory of what you think changed. Read the commits since the
-      last release (tool_git(operation='log')) and translate them into
-      user-facing language grouped the way the project groups changes
-      (commonly Added / Changed / Fixed / Removed, or the project's own
-      convention).
+- id: write_changelog
+  name: Write the changelog FROM the commit history
+  description: |
+    Assemble the release's changelog entry from the actual history, not
+    from memory of what you think changed. Read the commits since the
+    last release (tool_git(operation='log')) and translate them into
+    user-facing language grouped the way the project groups changes
+    (commonly Added / Changed / Fixed / Removed, or the project's own
+    convention).
 
-      Discipline:
-        - Every user-visible change gets a line; internal-only churn can be
-          omitted or summarised.
-        - BREAKING changes are called out unmistakably, with the migration
-          a consumer must perform.
-        - Write for the consumer ("the --format flag now accepts JSON"),
-          not for the committer ("refactored output module").
+    Discipline:
+      - Every user-visible change gets a line; internal-only churn can be
+        omitted or summarised.
+      - BREAKING changes are called out unmistakably, with the migration
+        a consumer must perform.
+      - Write for the consumer ("the --format flag now accepts JSON"),
+        not for the committer ("refactored output module").
 
-      Promote the Unreleased section the build loop maintained into a dated,
-      versioned section at the top of CHANGELOG.md; reset Unreleased.
+    Promote the Unreleased section the build loop maintained into a dated,
+    versioned section at the top of CHANGELOG.md; reset Unreleased.
 
-  - id: docs_and_usage
-    name: Update the usage / API docs to match the shipped surface
-    description: |
-      Docs that describe an older surface are a bug. Reconcile the
-      consumer-facing documentation with what this version actually ships:
-        - install / quickstart for the new version;
-        - the public interface (CLI flags, API signatures, endpoints) as it
-          now stands;
-        - any behaviour change a current user must know about;
-        - the breaking-change migration notes, in the docs as well as the
-          changelog.
+- id: docs_and_usage
+  name: Update the usage / API docs to match the shipped surface
+  description: |
+    Docs that describe an older surface are a bug. Reconcile the
+    consumer-facing documentation with what this version actually ships:
+      - install / quickstart for the new version;
+      - the public interface (CLI flags, API signatures, endpoints) as it
+        now stands;
+      - any behaviour change a current user must know about;
+      - the breaking-change migration notes, in the docs as well as the
+        changelog.
 
-      The README is the deliverable a consumer reads first — make it carry the
-      tool's SHAPE, not just its commands. The load-bearing sections for a tool
-      (adapt to what THIS tool needs): what it does · install · usage (the
-      interface contract) · architecture (embed the diagram from
-      spec/architecture.md so the reader sees the modules + data flow at a
-      glance) · how "done" is defined (link eval/) · key decisions (link
-      decisions/) · how to reproduce. A diagram that describes an OLDER
-      architecture is a bug the same way stale API docs are — reconcile it with
-      the shipped surface here. (tool_build has no conclusions.md, so derive the
-      README from spec/ + decisions/ + CHANGELOG, not from tool_path_finalize.)
+    The README is the deliverable a consumer reads first — make it carry the
+    tool's SHAPE, not just its commands. The load-bearing sections for a tool
+    (adapt to what THIS tool needs): what it does · install · usage (the
+    interface contract) · architecture (embed the diagram from
+    spec/architecture.md so the reader sees the modules + data flow at a
+    glance) · how "done" is defined (link eval/) · key decisions (link
+    decisions/) · how to reproduce. A diagram that describes an OLDER
+    architecture is a bug the same way stale API docs are — reconcile it with
+    the shipped surface here. (tool_build has no conclusions.md, so derive the
+    README from spec/ + decisions/ + CHANGELOG, not from tool_plan (operation=finalize_step).)
 
-      The bar: a new consumer can install, use, AND understand the shape of the
-      tool from the README + its architecture diagram alone, and an existing
-      consumer can upgrade from the migration notes alone.
+    The bar: a new consumer can install, use, AND understand the shape of the
+    tool from the README + its architecture diagram alone, and an existing
+    consumer can upgrade from the migration notes alone.
 
-  - id: reproducibility
-    name: Pin dependencies + record the build environment
-    description: |
-      A release that can't be rebuilt isn't durable. Make this version
-      reproducible:
-        - pin/lock the dependency versions the release was built against
-          (the project's lockfile mechanism), so the build is deterministic;
-        - record the build environment — toolchain/runtime versions, OS /
-          container, build flags — in environment/ or the release notes, via
-          sys_env(operation='snapshot') and/or tool_bash_exec capturing the
-          versions;
-        - confirm a clean build from the pinned state actually succeeds
-          (build it once from a clean checkout / fresh env when feasible).
+- id: reproducibility
+  name: Pin dependencies + record the build environment
+  description: |
+    A release that can't be rebuilt isn't durable. Make this version
+    reproducible:
+      - pin/lock the dependency versions the release was built against
+        (the project's lockfile mechanism), so the build is deterministic;
+      - record the build environment — toolchain/runtime versions, OS /
+        container, build flags — in environment/ or the release notes, via
+        sys_env(operation='snapshot') and/or tool_bash_exec capturing the
+        versions;
+      - confirm a clean build from the pinned state actually succeeds
+        (build it once from a clean checkout / fresh env when feasible).
 
-      Reproducibility is prescription about the SYSTEM, not the science —
-      it is non-negotiable for a release others depend on.
+    Reproducibility is prescription about the SYSTEM, not the science —
+    it is non-negotiable for a release others depend on.
 
-  - id: artefact_and_tag
-    name: Cut the release artefact + tag, with a citable record
-    description: |
-      Produce the release: tag the version in git (an annotated tag on the
-      release commit via tool_git(operation='tag', name=<version>,
-      message=...)), build the distributable artefact the ecosystem expects
-      (package / wheel / binary / image / archive), and prepare the release
-      notes (the changelog section is the body).
+- id: artefact_and_tag
+  name: Cut the release artefact + tag, with a citable record
+  description: |
+    Produce the release: tag the version in git (an annotated tag on the
+    release commit via tool_git(operation='tag', name=<version>,
+    message=...)), build the distributable artefact the ecosystem expects
+    (package / wheel / binary / image / archive), and prepare the release
+    notes (the changelog section is the body).
 
-      For a tool meant to be cited or attributed, add the metadata that
-      makes it citable — a CITATION file, author/affiliation, license
-      confirmation, and (where the project uses one) a DOI/archive deposit.
-      A research tool with no way to cite it won't be credited.
+    For a tool meant to be cited or attributed, add the metadata that
+    makes it citable — a CITATION file, author/affiliation, license
+    confirmation, and (where the project uses one) a DOI/archive deposit.
+    A research tool with no way to cite it won't be credited.
 
-      mem_log the release (version + headline + tag) so a later session has
-      the provenance. After the release, the next increment set re-enters at
-      build/implement_iteration — this protocol terminates here.
+    mem_log the release (version + headline + tag) so a later session has
+    the provenance. After the release, the next increment set re-enters at
+    build/implement_iteration — this protocol terminates here.
 
-      AUTONOMY GATE:
-        Risk: publishing to an external registry is irreversible — a
-        published version can't be unpublished; tagging is local and cheap.
-        proceed (adaptive default, autopilot) → tag and build the artefact locally; PAUSE
-          before any PUBLISH to an external registry (PyPI, npm, a public
-          release) and confirm, because that step can't be undone. This is
-          a hard floor, not a judgement call. (Under autopilot, pause before
-          any PUBLISH to an external registry unless the researcher opted
-          into autopilot publishing.)
-        confirm first (manual / supervised) → present the version + changelog + artefact
-          plan; tag and publish only on explicit confirmation (publishing is
-          hard to undo).
+    AUTONOMY GATE:
+      Risk: publishing to an external registry is irreversible — a
+      published version can't be unpublished; tagging is local and cheap.
+      proceed (adaptive default, autopilot) → tag and build the artefact locally; PAUSE
+        before any PUBLISH to an external registry (PyPI, npm, a public
+        release) and confirm, because that step can't be undone. This is
+        a hard floor, not a judgement call. (Under autopilot, pause before
+        any PUBLISH to an external registry unless the researcher opted
+        into autopilot publishing.)
+      confirm first (manual / supervised) → present the version + changelog + artefact
+        plan; tag and publish only on explicit confirmation (publishing is
+        hard to undo).
 
 expected_outputs:
-  - A version bump in the project's single source of truth
-  - CHANGELOG.md (dated, versioned release section)
-  - Updated usage / API docs + migration notes for breaking changes
-  - Pinned dependencies + recorded build environment
-  - A git tag + release artefact (+ CITATION/DOI when the tool is citable)
+- A version bump in the project's single source of truth
+- CHANGELOG.md (dated, versioned release section)
+- Updated usage / API docs + migration notes for breaking changes
+- Pinned dependencies + recorded build environment
+- A git tag + release artefact (+ CITATION/DOI when the tool is citable)
 
 next_protocol: build/package_and_publish
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: execute
+sub_intent: build_release
+triggers:
+- cut a release
+- tag a release
+- tag a version
+- release this
+- release it
+- release the tool
+- ship it
+- publish the tool
+- publish this
+- write the changelog
+- update the changelog
+- bump the version
+- package this
+- package the tool
+- make a release
+- version bump
+summary: 'Cut a versioned, reproducible release: SemVer bump from what changed for users, changelog from the commit history, updated docs, pinned deps + recorded build env, tag + citable artefact.'
+token_estimate: 1800
+decomposition:
+- protocol: build/release_and_changelog
+  purpose: Confirm releasable, decide the version, write the changelog from history, update docs, pin + record the env, tag + build the artefact.
+- tool: tool_bash_exec
+  purpose: git log since last release, version bump, build, git tag, build the distributable artefact.
+- tool: sys_env
+  purpose: Snapshot the build environment for reproducibility.
+- tool: mem_log
+  purpose: Record the release (version + headline + tag).

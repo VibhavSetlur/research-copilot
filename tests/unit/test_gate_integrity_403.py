@@ -24,8 +24,8 @@ def _proj() -> Path:
 # F2 — paid-tool gate must fire for case-variant source values
 def test_paid_gate_fires_case_insensitively():
     for src in ("paid", "PAID", "Paid_Or_Licensed", "paid_or_licensed"):
-        assert resolve_declared_gate("tool_research_tool", {"source": src}) is not None, src
-    assert resolve_declared_gate("tool_research_tool", {"source": "free"}) is None
+        assert resolve_declared_gate("tool_search", {"source": src}) is not None, src
+    assert resolve_declared_gate("tool_search", {"source": "free"}) is None
 
 
 # F3 — a corrupt config must NOT disable floor gates (fail-safe, not fail-open)

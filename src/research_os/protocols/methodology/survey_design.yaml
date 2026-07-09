@@ -1,16 +1,16 @@
 id: survey_design
 tier: 'plan'
 name: Survey / Questionnaire Design (instrument development)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [experiment_pipeline, interview_study]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/survey_psychometrics   # analyses the instrument this protocol builds
-  - methodology/preregistration        # the frozen instrument is the pre-registered measure
+- methodology/survey_psychometrics     # analyses the instrument this protocol builds
+- methodology/preregistration          # the frozen instrument is the pre-registered measure
 description: |
   Distinct from survey_psychometrics, which analyses a survey that
   already exists. THIS protocol scaffolds the design BEFORE data is
@@ -40,218 +40,200 @@ trigger: |
       instrument and none exists.
 
 prerequisites:
-  - The construct(s) the survey will measure are at least loosely
-    defined (the protocol refines them, but a starting point is
-    required).
-  - A literature search has been done OR will be done in step 1
-    to confirm no existing validated instrument fits.
+- The construct(s) the survey will measure are at least loosely defined (the protocol refines them, but a starting point is required).
+- A literature search has been done OR will be done in step 1 to confirm no existing validated instrument fits.
 
 editorial_voice:
   rules:
-    - "Use a validated instrument when one fits. Building a new
-       instrument properly is a major undertaking; adapting /
-       translating an existing one is usually faster AND yields more
-       comparable results. Justify why a new instrument is needed
-       before drafting one."
-    - "Construct definition is the foundation. An item can only
-       be 'good' relative to a defined construct. Vague constructs
-       ('engagement') produce vague items; sharpened constructs
-       ('cognitive engagement during asynchronous video lessons')
-       constrain item drafting."
-    - "Cognitive interviewing is non-negotiable for new items. It
-       is the step that catches comprehension failures before they
-       become noise in the data; skipping it yields items
-       participants misunderstand."
-    - "Response format encodes the construct. The number of
-       categories, whether a neutral option exists, ordered vs.
-       continuous — each trades discrimination against cognitive
-       load and changes the measurement level. Pick deliberately and
-       cite the format's evidence base for this construct."
+  - "Use a validated instrument when one fits. Building a new instrument properly is a major undertaking; adapting / translating an existing one is usually faster AND yields more comparable results. Justify why a new instrument is needed before drafting one."
+  - "Construct definition is the foundation. An item can only be 'good' relative to a defined construct. Vague constructs ('engagement') produce vague items; sharpened constructs ('cognitive engagement during asynchronous video lessons') constrain item drafting."
+  - "Cognitive interviewing is non-negotiable for new items. It is the step that catches comprehension failures before they become noise in the data; skipping it yields items participants misunderstand."
+  - "Response format encodes the construct. The number of categories, whether a neutral option exists, ordered vs. continuous — each trades discrimination against cognitive load and changes the measurement level. Pick deliberately and cite the format's evidence base for this construct."
 
 steps:
-  - id: confirm_no_existing_instrument
-    name: Confirm no existing validated instrument fits
-    description: |
-      tool_research_method query="validated instrument <construct>
-                           <population>" — search:
-        - PsycTESTS / Mental Measurements Yearbook (psychology)
-        - PROMIS (health outcomes)
-        - HAPI / GEM (health behaviour)
-        - field-specific instrument repositories
-        - the published literature for instruments that include the
-          construct
+- id: confirm_no_existing_instrument
+  name: Confirm no existing validated instrument fits
+  description: |
+    tool_search query="validated instrument <construct>
+                         <population>" — search:
+      - PsycTESTS / Mental Measurements Yearbook (psychology)
+      - PROMIS (health outcomes)
+      - HAPI / GEM (health behaviour)
+      - field-specific instrument repositories
+      - the published literature for instruments that include the
+        construct
 
-      For each candidate found, capture: (a) what construct it
-      measures, (b) population validated on, (c) reliability +
-      validity evidence, (d) license / cost. Write to
-      workspace/.survey/instrument_review.md.
+    For each candidate found, capture: (a) what construct it
+    measures, (b) population validated on, (c) reliability +
+    validity evidence, (d) license / cost. Write to
+    workspace/.survey/instrument_review.md.
 
-      DECIDE explicitly: adopt as-is / adapt / build new. Justify the
-      decision in writing. Building new is the rare path; reviewers
-      will ask why.
+    DECIDE explicitly: adopt as-is / adapt / build new. Justify the
+    decision in writing. Building new is the rare path; reviewers
+    will ask why.
 
-  - id: define_construct
-    name: Define the construct(s) precisely
-    description: |
-      For each construct the instrument will measure, write:
-        - theoretical definition (one paragraph, with citation)
-        - operational definition (what observable behaviour /
-          experience does it manifest as?)
-        - boundaries (what is OUT of scope — what construct that
-          looks similar are we NOT measuring?)
-        - unidimensional or multidimensional? If multidimensional,
-          what facets?
+- id: define_construct
+  name: Define the construct(s) precisely
+  description: |
+    For each construct the instrument will measure, write:
+      - theoretical definition (one paragraph, with citation)
+      - operational definition (what observable behaviour /
+        experience does it manifest as?)
+      - boundaries (what is OUT of scope — what construct that
+        looks similar are we NOT measuring?)
+      - unidimensional or multidimensional? If multidimensional,
+        what facets?
 
-      A multi-construct instrument needs this per construct. Write
-      to workspace/.survey/construct_definitions.md. The construct
-      definition is the rubric against which every item is judged.
+    A multi-construct instrument needs this per construct. Write
+    to workspace/.survey/construct_definitions.md. The construct
+    definition is the rubric against which every item is judged.
 
-  - id: draft_items
-    name: Draft items per construct
-    description: |
-      For each construct (or facet), draft a surplus pool — more items
-      than you expect to retain, because attrition during cognitive
-      testing and pilot factor analysis is the norm. Size the surplus
-      to the construct's breadth and the field's culling conventions.
+- id: draft_items
+  name: Draft items per construct
+  description: |
+    For each construct (or facet), draft a surplus pool — more items
+    than you expect to retain, because attrition during cognitive
+    testing and pilot factor analysis is the norm. Size the surplus
+    to the construct's breadth and the field's culling conventions.
 
-      Item-writing principles:
-        - one idea per item (no double-barrelled)
-        - simple sentence structure, plain language at the population's
-          reading level (Flesch-Kincaid; consider screen-reader users)
-        - avoid loaded / leading wording
-        - decide on negative / reverse-scored wording deliberately:
-          negation reliably increases comprehension errors, so a
-          mix of positive and negative items trades method-factor
-          control against measurement noise — cite the field's
-          current position rather than defaulting either way
-        - avoid jargon, acronyms, regionalisms
-        - culturally appropriate references (foods, holidays,
-          institutions) where the survey will be deployed
-        - time frame explicit ("in the past week" not "usually")
+    Item-writing principles:
+      - one idea per item (no double-barrelled)
+      - simple sentence structure, plain language at the population's
+        reading level (Flesch-Kincaid; consider screen-reader users)
+      - avoid loaded / leading wording
+      - decide on negative / reverse-scored wording deliberately:
+        negation reliably increases comprehension errors, so a
+        mix of positive and negative items trades method-factor
+        control against measurement noise — cite the field's
+        current position rather than defaulting either way
+      - avoid jargon, acronyms, regionalisms
+      - culturally appropriate references (foods, holidays,
+        institutions) where the survey will be deployed
+      - time frame explicit ("in the past week" not "usually")
 
-      Write workspace/.survey/item_pool_v1.md as a numbered list
-      tagged by construct + facet.
+    Write workspace/.survey/item_pool_v1.md as a numbered list
+    tagged by construct + facet.
 
-  - id: pick_response_format
-    name: Pick the response format(s) per item
-    description: |
-      Reason through the choice — examples of common formats and the
-      trade-off each carries:
+- id: pick_response_format
+  name: Pick the response format(s) per item
+  description: |
+    Reason through the choice — examples of common formats and the
+    trade-off each carries:
 
-        LIKERT (ordered categories): the number of points and the
-          presence/absence of a neutral midpoint trade discrimination
-          against cognitive load and against the forced-choice vs.
-          opt-out decision. Cite the field's evidence for the count.
-        VISUAL ANALOG SCALE / SLIDER: continuous; harder to administer
-          on paper; easier in digital.
-        FREQUENCY: vague frequency words (rarely / often / …) mean
-          different things to different respondents (Bradburn et al.
-          2004) — a known measurement hazard.
-        BEHAVIORAL FREQUENCY: numeric count over a time frame ("how
-          many days last week did you…") — more interpretable than
-          vague frequency words.
-        SEMANTIC DIFFERENTIAL: paired opposites (good — bad) on a
-          scale; works for evaluation.
-        MULTIPLE CHOICE / SELECT-ALL: for behaviour or factual recall.
-        OPEN-ENDED: for exploration or for items the closed format
-          can't capture. Code separately.
+      LIKERT (ordered categories): the number of points and the
+        presence/absence of a neutral midpoint trade discrimination
+        against cognitive load and against the forced-choice vs.
+        opt-out decision. Cite the field's evidence for the count.
+      VISUAL ANALOG SCALE / SLIDER: continuous; harder to administer
+        on paper; easier in digital.
+      FREQUENCY: vague frequency words (rarely / often / …) mean
+        different things to different respondents (Bradburn et al.
+        2004) — a known measurement hazard.
+      BEHAVIORAL FREQUENCY: numeric count over a time frame ("how
+        many days last week did you…") — more interpretable than
+        vague frequency words.
+      SEMANTIC DIFFERENTIAL: paired opposites (good — bad) on a
+        scale; works for evaluation.
+      MULTIPLE CHOICE / SELECT-ALL: for behaviour or factual recall.
+      OPEN-ENDED: for exploration or for items the closed format
+        can't capture. Code separately.
 
-      Match format to the construct's nature. Document the choice
-      per item / per construct and cite the format's evidence base.
+    Match format to the construct's nature. Document the choice
+    per item / per construct and cite the format's evidence base.
 
-  - id: cognitive_interview
-    name: Cognitive interview the item pool
-    description: |
-      Recruit participants representative of the target population,
-      enough to surface the recurring comprehension failures (more
-      when subgroups differ — recruit per subgroup; cite the field's
-      convention for cognitive-interview sample size). For each item,
-      probe:
-        - COMPREHENSION — "What does this question mean to you?"
-        - RETRIEVAL — "How did you arrive at your answer?"
-        - JUDGEMENT — "How did you decide between [option A] and
-          [option B]?"
-        - RESPONSE FORMATTING — "Was the scale easy to use?"
+- id: cognitive_interview
+  name: Cognitive interview the item pool
+  description: |
+    Recruit participants representative of the target population,
+    enough to surface the recurring comprehension failures (more
+    when subgroups differ — recruit per subgroup; cite the field's
+    convention for cognitive-interview sample size). For each item,
+    probe:
+      - COMPREHENSION — "What does this question mean to you?"
+      - RETRIEVAL — "How did you arrive at your answer?"
+      - JUDGEMENT — "How did you decide between [option A] and
+        [option B]?"
+      - RESPONSE FORMATTING — "Was the scale easy to use?"
 
-      Common methods: concurrent think-aloud vs retrospective probing
-      (Willis 2005). Document the method.
+    Common methods: concurrent think-aloud vs retrospective probing
+    (Willis 2005). Document the method.
 
-      Capture every comprehension failure, ambiguity, and unintended
-      interpretation in workspace/.survey/cognitive_interviews.md.
+    Capture every comprehension failure, ambiguity, and unintended
+    interpretation in workspace/.survey/cognitive_interviews.md.
 
-  - id: revise_items
-    name: Revise items based on cognitive testing
-    description: |
-      For each problematic item:
-        REWORD — fix ambiguity or vocabulary
-        SPLIT — separate double-barrelled items
-        DROP — remove items participants cannot answer
-        ADD — add items where a facet is under-covered
+- id: revise_items
+  name: Revise items based on cognitive testing
+  description: |
+    For each problematic item:
+      REWORD — fix ambiguity or vocabulary
+      SPLIT — separate double-barrelled items
+      DROP — remove items participants cannot answer
+      ADD — add items where a facet is under-covered
 
-      Write workspace/.survey/item_pool_v2.md with a change log.
+    Write workspace/.survey/item_pool_v2.md with a change log.
 
-      Iterate cognitive testing if changes are substantial — a further
-      round on the revised items, sized to the remaining uncertainty.
+    Iterate cognitive testing if changes are substantial — a further
+    round on the revised items, sized to the remaining uncertainty.
 
-  - id: pilot_for_psychometrics
-    name: Pilot for preliminary psychometrics
-    description: |
-      Field the revised instrument to a pilot sample. Pilot N is
-      dictated by the planned psychometric analysis, not chosen as a
-      round number — derive it and cite the source for the rule used:
-        - exploratory factor analysis: N scales with item count +
-          communalities (e.g. Costello & Osborne 2005; MacCallum et
-          al. 1999) — cite the convention you apply.
-        - confirmatory factor analysis: N scales with model
-          complexity (e.g. Boomsma & Hoogland 2001) — cite the rule.
-        - simple item analysis for initial culling needs less than a
-          full factor model — state the floor and its source.
+- id: pilot_for_psychometrics
+  name: Pilot for preliminary psychometrics
+  description: |
+    Field the revised instrument to a pilot sample. Pilot N is
+    dictated by the planned psychometric analysis, not chosen as a
+    round number — derive it and cite the source for the rule used:
+      - exploratory factor analysis: N scales with item count +
+        communalities (e.g. Costello & Osborne 2005; MacCallum et
+        al. 1999) — cite the convention you apply.
+      - confirmatory factor analysis: N scales with model
+        complexity (e.g. Boomsma & Hoogland 2001) — cite the rule.
+      - simple item analysis for initial culling needs less than a
+        full factor model — state the floor and its source.
 
-      Document the pilot recruitment + sample composition and the
-      N-justification.
+    Document the pilot recruitment + sample composition and the
+    N-justification.
 
-      Hand off to methodology/survey_psychometrics for the actual
-      factor analysis / reliability / item response theory work on
-      the pilot data. This protocol does not perform that analysis;
-      it stages it.
+    Hand off to methodology/survey_psychometrics for the actual
+    factor analysis / reliability / item response theory work on
+    the pilot data. This protocol does not perform that analysis;
+    it stages it.
 
-  - id: translation_and_adaptation
-    name: Translation + cultural adaptation (when applicable)
-    description: |
-      If the instrument will be used in a language other than the
-      drafting language, follow a structured cross-cultural adaptation
-      process rather than a single translation. The canonical stages
-      the guidelines name:
-        - independent forward translation (multiple translators)
-        - reconciliation
-        - back-translation to the source language
-        - committee review of discrepancies
-        - cognitive interviews in the target language
-        - separate psychometric validation in the target population
+- id: translation_and_adaptation
+  name: Translation + cultural adaptation (when applicable)
+  description: |
+    If the instrument will be used in a language other than the
+    drafting language, follow a structured cross-cultural adaptation
+    process rather than a single translation. The canonical stages
+    the guidelines name:
+      - independent forward translation (multiple translators)
+      - reconciliation
+      - back-translation to the source language
+      - committee review of discrepancies
+      - cognitive interviews in the target language
+      - separate psychometric validation in the target population
 
-      Follow the protocol the field endorses for this and cite it
-      (e.g. WHO / Beaton et al. 2000, Guidelines for the Process of
-      Cross-Cultural Adaptation). Surface mismatches between source
-      and target as cultural items to revise, not just translate.
+    Follow the protocol the field endorses for this and cite it
+    (e.g. WHO / Beaton et al. 2000, Guidelines for the Process of
+    Cross-Cultural Adaptation). Surface mismatches between source
+    and target as cultural items to revise, not just translate.
 
-  - id: log_and_route
-    name: Log the instrument + route to analysis or preregistration
-    description: |
-      Finalize workspace/.survey/instrument_FROZEN_<iso>.md with
-      content-hash. mem_log the freeze.
+- id: log_and_route
+  name: Log the instrument + route to analysis or preregistration
+  description: |
+    Finalize workspace/.survey/instrument_FROZEN_<iso>.md with
+    content-hash. mem_log the freeze.
 
-      If the instrument is part of a confirmatory study, route to
-      methodology/preregistration with the instrument hash as the
-      pre-registered measure. Otherwise route to the analysis or
-      data-collection protocol.
+    If the instrument is part of a confirmatory study, route to
+    methodology/preregistration with the instrument hash as the
+    pre-registered measure. Otherwise route to the analysis or
+    data-collection protocol.
 
 expected_outputs:
-  - workspace/.survey/instrument_review.md
-  - workspace/.survey/construct_definitions.md
-  - workspace/.survey/item_pool_v<n>.md
-  - workspace/.survey/cognitive_interviews.md
-  - workspace/.survey/instrument_FROZEN_<iso>.md
-  - (entries appended to methods.md via mem_log)
+- workspace/.survey/instrument_review.md
+- workspace/.survey/construct_definitions.md
+- workspace/.survey/item_pool_v<n>.md
+- workspace/.survey/cognitive_interviews.md
+- workspace/.survey/instrument_FROZEN_<iso>.md
+- (entries appended to methods.md via mem_log)
 
 quality_bar:
   existing_instrument_search_documented: true
@@ -266,3 +248,16 @@ quality_bar:
 next_protocol: methodology/survey_psychometrics
 next_protocol_kind: forward_default
 on_failure: guidance/scope_clarification
+intent_class: methodology
+sub_intent: survey_design
+triggers:
+- design a survey
+- build a questionnaire
+- instrument development
+- draft items
+- likert
+- questionnaire design
+- cognitive interview
+- pilot survey
+- new survey
+summary: Design / draft a new survey instrument before collecting data.

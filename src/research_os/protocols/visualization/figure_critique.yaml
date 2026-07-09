@@ -1,16 +1,16 @@
 id: figure_critique
 tier: 'review'
 name: Figure Critique (review a single figure — yours or theirs)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - visualization/visualization_workflow      # rebuild the figure once the fix is agreed
-  - visualization/color_accessibility_audit    # deeper CVD/contrast check on a flagged palette
+- visualization/visualization_workflow        # rebuild the figure once the fix is agreed
+- visualization/color_accessibility_audit      # deeper CVD/contrast check on a flagged palette
 description: |
   Reviewer-style critique of ONE figure. Distinct from
   `audit/audit_and_validation` (mechanical DPI / sidecar checks) and from
@@ -29,182 +29,175 @@ trigger: |
   you improve this figure", "the reviewers complained about my Figure 2".
 
 prerequisites:
-  - A PNG / SVG / PDF figure available at a known path OR pasted into
-    the chat with a context note about what it should be showing.
+- A PNG / SVG / PDF figure available at a known path OR pasted into the chat with a context note about what it should be showing.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Critique encodings, not aesthetics. 'Use viridis' is style;
-       'dual-y axes here invite a spurious comparison' is critique."
-    - "Distinguish the FAILURE MODES — wrong chart family, right
-       chart-wrong encoding, right encoding-wrong scale, right
-       everything-wrong caption. Each has a different fix."
-    - "When the figure looks fine but the data behind it is suspect,
-       say so — caption-level critique is shallower than
-       encoding-level critique."
-    - "If you cannot point to an alternative chart that would answer
-       the same comparison better, the figure is probably fine."
+  - "Critique encodings, not aesthetics. 'Use viridis' is style; 'dual-y axes here invite a spurious comparison' is critique."
+  - "Distinguish the FAILURE MODES — wrong chart family, right chart-wrong encoding, right encoding-wrong scale, right everything-wrong caption. Each has a different fix."
+  - "When the figure looks fine but the data behind it is suspect, say so — caption-level critique is shallower than encoding-level critique."
+  - "If you cannot point to an alternative chart that would answer the same comparison better, the figure is probably fine."
 
 steps:
-  - id: scope_critique
-    name: Scope the critique
-    description: |
-      Confirm in one line:
-        - file path of the figure (or paste content)
-        - the comparison/distribution the figure is supposed to make
-          ("the headline finding this figure is meant to surface")
-        - the audience (lay / mixed / technical / expert)
-        - whether the source data is available — if yes, the critique
-          can include "this encoding hides X about the data"; if no,
-          the critique is restricted to "given the figure alone, …".
+- id: scope_critique
+  name: Scope the critique
+  description: |
+    Confirm in one line:
+      - file path of the figure (or paste content)
+      - the comparison/distribution the figure is supposed to make
+        ("the headline finding this figure is meant to surface")
+      - the audience (lay / mixed / technical / expert)
+      - whether the source data is available — if yes, the critique
+        can include "this encoding hides X about the data"; if no,
+        the critique is restricted to "given the figure alone, …".
 
-  - id: name_the_question
-    name: Name the question the figure should answer
-    description: |
-      Write down the SPECIFIC question a competent reader should be
-      able to answer by looking at this figure. Examples:
+- id: name_the_question
+  name: Name the question the figure should answer
+  description: |
+    Write down the SPECIFIC question a competent reader should be
+    able to answer by looking at this figure. Examples:
 
-        "Does group A score higher than group B on outcome Y?"
-        "How does the slope of X vs Y change across time?"
-        "Is the distribution of Z bimodal or skewed?"
+      "Does group A score higher than group B on outcome Y?"
+      "How does the slope of X vs Y change across time?"
+      "Is the distribution of Z bimodal or skewed?"
 
-      A figure that doesn't have a clean question behind it usually
-      fails for chart-family reasons. A figure with the right question
-      but the wrong chart family fails differently. Naming the question
-      first sharpens every downstream comment.
+    A figure that doesn't have a clean question behind it usually
+    fails for chart-family reasons. A figure with the right question
+    but the wrong chart family fails differently. Naming the question
+    first sharpens every downstream comment.
 
-  - id: chart_family_check
-    name: Chart family — is it the one the comparison demands?
-    description: |
-      Compare the chart family used against the chart_chooser in
-      visualization/figure_guidelines. Common mismatches:
+- id: chart_family_check
+  name: Chart family — is it the one the comparison demands?
+  description: |
+    Compare the chart family used against the chart_chooser in
+    visualization/figure_guidelines. Common mismatches:
 
-        comparison / categories_few → bar (or dot) → not pie / donut.
-        relationship / two continuous → scatter (+ optional OLS) → not
-          line for cross-sectional data.
-        distribution / single variable → histogram + KDE → not box
-          when the multimodality matters.
-        meta-analytic / effect sizes → forest → not bar.
+      comparison / categories_few → bar (or dot) → not pie / donut.
+      relationship / two continuous → scatter (+ optional OLS) → not
+        line for cross-sectional data.
+      distribution / single variable → histogram + KDE → not box
+        when the multimodality matters.
+      meta-analytic / effect sizes → forest → not bar.
 
-      If the family is wrong, name the family that fits and what the
-      reader would gain from the switch. Reference the field-specific
-      convention when one exists — "GWAS reports manhattan-plot, not
-      scatter, for genome-wide p-values".
+    If the family is wrong, name the family that fits and what the
+    reader would gain from the switch. Reference the field-specific
+    convention when one exists — "GWAS reports manhattan-plot, not
+    scatter, for genome-wide p-values".
 
-  - id: encoding_check
-    name: Encoding choices — colour / axis / scale / order
-    description: |
-      Walk each encoding:
+- id: encoding_check
+  name: Encoding choices — colour / axis / scale / order
+  description: |
+    Walk each encoding:
 
-        - colour: qualitative for categories / sequential for ordered /
-          diverging for signed; colour-blind safe (Okabe-Ito / viridis /
-          PuOr); not redundant with shape unless redundancy is the
-          point.
-        - x-axis: variable type matches scale type (continuous on
-          linear/log, categorical on discrete, time on time-aware
-          axis). Order categorical levels by something meaningful
-          (frequency, severity, or the order the reader would expect)
-          — alphabetical is rarely the right order.
-        - y-axis: starts at zero for proportions / counts; non-zero
-          baselines must be flagged or substantively justified.
-        - secondary y-axis: usually a smell — invites the reader to
-          compare two unrelated scales.
-        - units: present and visible.
-        - sample-size annotation: present where group sizes vary.
+      - colour: qualitative for categories / sequential for ordered /
+        diverging for signed; colour-blind safe (Okabe-Ito / viridis /
+        PuOr); not redundant with shape unless redundancy is the
+        point.
+      - x-axis: variable type matches scale type (continuous on
+        linear/log, categorical on discrete, time on time-aware
+        axis). Order categorical levels by something meaningful
+        (frequency, severity, or the order the reader would expect)
+        — alphabetical is rarely the right order.
+      - y-axis: starts at zero for proportions / counts; non-zero
+        baselines must be flagged or substantively justified.
+      - secondary y-axis: usually a smell — invites the reader to
+        compare two unrelated scales.
+      - units: present and visible.
+      - sample-size annotation: present where group sizes vary.
 
-      For each encoding flagged, name the alternative + what it would
-      cost the reader to interpret.
+    For each encoding flagged, name the alternative + what it would
+    cost the reader to interpret.
 
-  - id: information_density_check
-    name: Information density — too much / too little / chartjunk
-    description: |
-      A figure carries ONE headline. Subordinate detail supports it
-      but does not compete. Things to flag:
+- id: information_density_check
+  name: Information density — too much / too little / chartjunk
+  description: |
+    A figure carries ONE headline. Subordinate detail supports it
+    but does not compete. Things to flag:
 
-        - too many series in one panel — split into small multiples
-        - too few panels for a multi-condition comparison — facet
-        - chartjunk (3-D bars, drop shadows, animated transitions in
-          a static PDF, decorative backgrounds, exploded pies)
-        - legends placed inside the plot area when they overlap data
-        - reference lines (zero, identity, threshold) absent when
-          the headline depends on them
-        - error bars / CIs absent when the comparison is between
-          estimates rather than raw values
+      - too many series in one panel — split into small multiples
+      - too few panels for a multi-condition comparison — facet
+      - chartjunk (3-D bars, drop shadows, animated transitions in
+        a static PDF, decorative backgrounds, exploded pies)
+      - legends placed inside the plot area when they overlap data
+      - reference lines (zero, identity, threshold) absent when
+        the headline depends on them
+      - error bars / CIs absent when the comparison is between
+        estimates rather than raw values
 
-  - id: caption_and_alignment_check
-    name: Caption ↔ figure alignment
-    description: |
-      Read the caption (or write what the caption SHOULD say if absent).
-      Check:
-        - does the caption lead with the substantive finding, or merely
-          describe what the chart is?
-        - does the figure actually support the caption's claim, or does
-          a quick sniff (overlapping CIs, unclear effect size, small n)
-          contradict it?
-        - is causal language used when the design doesn't license it?
+- id: caption_and_alignment_check
+  name: Caption ↔ figure alignment
+  description: |
+    Read the caption (or write what the caption SHOULD say if absent).
+    Check:
+      - does the caption lead with the substantive finding, or merely
+        describe what the chart is?
+      - does the figure actually support the caption's claim, or does
+        a quick sniff (overlapping CIs, unclear effect size, small n)
+        contradict it?
+      - is causal language used when the design doesn't license it?
 
-      A figure with a true caption is more honest than a figure with a
-      flashy caption that overstates the data.
+    A figure with a true caption is more honest than a figure with a
+    flashy caption that overstates the data.
 
-  - id: sensitivity_proposal
-    name: Propose ONE alternative encoding to test fragility
-    description: |
-      Name ONE alternative way to encode the same comparison. If the
-      researcher rebuilds the figure that way and the headline reverses,
-      the original was telling a fragile story; the caption needs to
-      qualify, or the analysis needs a sensitivity step. Examples:
+- id: sensitivity_proposal
+  name: Propose ONE alternative encoding to test fragility
+  description: |
+    Name ONE alternative way to encode the same comparison. If the
+    researcher rebuilds the figure that way and the headline reverses,
+    the original was telling a fragile story; the caption needs to
+    qualify, or the analysis needs a sensitivity step. Examples:
 
-        bar of means → violin of distributions
-        line over time → small multiples by group
-        forest plot → cumulative meta-analysis
-        scatter with one trend line → small multiples by sub-group
+      bar of means → violin of distributions
+      line over time → small multiples by group
+      forest plot → cumulative meta-analysis
+      scatter with one trend line → small multiples by sub-group
 
-      The point is adversarial, not aesthetic. The researcher decides
-      whether to do the rebuild; the critique just surfaces the risk.
+    The point is adversarial, not aesthetic. The researcher decides
+    whether to do the rebuild; the critique just surfaces the risk.
 
-  - id: write_critique_brief
-    name: Write the critique brief
-    description: |
-      sys_file_write filepath="workspace/reviews/figure_<slug>.md" with:
+- id: write_critique_brief
+  name: Write the critique brief
+  description: |
+    sys_file_write filepath="workspace/reviews/figure_<slug>.md" with:
 
-        # Figure critique: <one-line description>
-        **Source**: <path or "pasted into chat">
-        **Question the figure should answer**: <from step name_the_question>
-        **Verdict**: keep | minor revise | major revise | redo
+      # Figure critique: <one-line description>
+      **Source**: <path or "pasted into chat">
+      **Question the figure should answer**: <from step name_the_question>
+      **Verdict**: keep | minor revise | major revise | redo
 
-        ## Chart family
-        <ok | wrong family, switch to X because Y>
+      ## Chart family
+      <ok | wrong family, switch to X because Y>
 
-        ## Encoding
-        - <each flagged choice + the alternative + why>
+      ## Encoding
+      - <each flagged choice + the alternative + why>
 
-        ## Information density
-        <chartjunk / overcrowding / under-annotation findings>
+      ## Information density
+      <chartjunk / overcrowding / under-annotation findings>
 
-        ## Caption alignment
-        <does the caption match what the figure actually shows>
+      ## Caption alignment
+      <does the caption match what the figure actually shows>
 
-        ## Sensitivity / alternative encoding to test
-        <the ONE alternative the researcher should try>
+      ## Sensitivity / alternative encoding to test
+      <the ONE alternative the researcher should try>
 
-        ## Bottom line
-        <2 sentences: the most important fix and the time it would
-         take to apply>
+      ## Bottom line
+      <2 sentences: the most important fix and the time it would
+       take to apply>
 
-      Keep total length ≤ 600 words. Critique tone — supportive,
-      specific, never "this is bad".
+    Keep total length ≤ 600 words. Critique tone — supportive,
+    specific, never "this is bad".
 
-  - id: hand_back
-    name: Hand the critique back
-    description: |
-      sys_notify level="info" message="Figure critique at
-      workspace/reviews/figure_<slug>.md — verdict: <verdict>."
-      Offer to rebuild via `visualization/visualization_workflow` if
-      the researcher wants the fix applied rather than just suggested.
+- id: hand_back
+  name: Hand the critique back
+  description: |
+    sys_notify level="info" message="Figure critique at
+    workspace/reviews/figure_<slug>.md — verdict: <verdict>."
+    Offer to rebuild via `visualization/visualization_workflow` if
+    the researcher wants the fix applied rather than just suggested.
 
 expected_outputs:
-  - workspace/reviews/figure_<slug>.md
+- workspace/reviews/figure_<slug>.md
 
 quality_bar:
   every_flagged_choice_names_an_alternative: true
@@ -212,6 +205,28 @@ quality_bar:
   sensitivity_alternative_proposed: true
   brief_under_600_words: true
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: review
+sub_intent: figure
+triggers:
+- critique this figure
+- critique my figure
+- review this plot
+- review this figure
+- review this chart
+- is this a good figure
+- what's wrong with this chart
+- what's wrong with this figure
+- improve this figure
+- feedback on my figure
+- feedback on my plot
+- the reviewers complained about my figure
+- how would you improve this figure
+- figure 2 needs work
+summary: Reviewer-style critique of a single figure (yours or theirs).
+token_estimate: 900
+decomposition:
+- protocol: visualization/figure_critique
+  purpose: Walk the chart-family / encoding / caption critique.

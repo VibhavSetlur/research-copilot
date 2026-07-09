@@ -1,18 +1,18 @@
 id: synthesis_step_report
 tier: 'synthesize'
 name: Synthesis — Step Report (one step, meeting-grade visual artefact)
-version: '3.11.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [any]
 last_reviewed: '2026-06-22'
 see_also:
-  - synthesis/synthesis_progress_update   # the text-only sibling; the narrative update
-  - synthesis/synthesis_dashboard         # whole-project surface; this is ONE step
-  - synthesis/deliverable_design          # palette / visual-identity skill (shared shell)
-  - synthesis/synthesis_paper             # the eventual linear argument these steps build toward
+- synthesis/synthesis_progress_update     # the text-only sibling; the narrative update
+- synthesis/synthesis_dashboard           # whole-project surface; this is ONE step
+- synthesis/deliverable_design            # palette / visual-identity skill (shared shell)
+- synthesis/synthesis_paper               # the eventual linear argument these steps build toward
 description: |
   Guide the AI to author a **self-contained, presentation-grade visual
   artefact for a SINGLE analysis step** — the page a researcher screen-shares
@@ -50,15 +50,8 @@ trigger: |
   shareable visual about ONE step rather than the whole project.
 
 prerequisites:
-  - The step to report on has substantive outputs to show — typically a
-    `conclusions.md` with Findings, and/or figures/tables under the step's
-    workspace folder. (A blocked step with nothing to show yet is a candidate
-    for synthesis_progress_update, not this visual artefact.)
-  - "Researcher's research_goal.output_types (in inputs/researcher_config.yaml)
-    is consulted by the gate. step_report is treated as 'open' when the list
-    is empty; if the list is non-empty and excludes step_report,
-    tool_synthesis_scaffold returns status=ask — surface it and re-call with
-    confirmed=true only after the researcher agrees."
+- The step to report on has substantive outputs to show — typically a `conclusions.md` with Findings, and/or figures/tables under the step's workspace folder. (A blocked step with nothing to show yet is a candidate for synthesis_progress_update, not this visual artefact.)
+- "Researcher's research_goal.output_types (in inputs/researcher_config.yaml) is consulted by the gate. step_report is treated as 'open' when the list is empty; if the list is non-empty and excludes step_report, tool_synthesis_scaffold returns status=ask — surface it and re-call with confirmed=true only after the researcher agrees."
 
 design_principles: |
   These are the design INTENTIONS the scaffold seeds as comments. They guide
@@ -103,7 +96,7 @@ design_principles: |
     also protects projector / print legibility).
 
 quality_standards: |
-  What tool_synthesis_check enforces for a step report. Note what is ABSENT:
+  What tool_synthesis_scaffold (operation=check) enforces for a step report. Note what is ABSENT:
   there is NO required-heading list and NO mandated section set. The gate
   checks that the artefact is honest, grounded, accessible, and shareable —
   it never dictates the AI's layout.
@@ -123,75 +116,88 @@ quality_standards: |
     over-resolution).
 
 steps:
-  - id: verify_intent_and_step
-    name: Confirm intent + identify the step
-    description: |
-      Establish WHICH step this report is for (a number like "21", a
-      zero-padded "07", or the step folder name). Read
-      inputs/researcher_config.yaml#research_goal.output_types: empty →
-      proceed; includes step_report → proceed silently; non-empty and
-      excludes step_report → ask before scaffolding. Do not scaffold until
-      the step is identified.
+- id: verify_intent_and_step
+  name: Confirm intent + identify the step
+  description: |
+    Establish WHICH step this report is for (a number like "21", a
+    zero-padded "07", or the step folder name). Read
+    inputs/researcher_config.yaml#research_goal.output_types: empty →
+    proceed; includes step_report → proceed silently; non-empty and
+    excludes step_report → ask before scaffolding. Do not scaffold until
+    the step is identified.
 
-  - id: gather_step_outputs
-    name: Gather the step's outputs
-    description: |
-      Read, in ONE batch, this step's evidence:
-        - the step's conclusions.md (Findings + any numbers to surface)
-        - the step's figures (and any .caption.md sidecars)
-        - the step's output tables / metrics
-        - mem_hypothesis_list for any hypothesis this step touched
-      Distil the ONE thing this step established (or the one thing that moved
-      since the last update) and the single most informative figure. Every
-      number you plan to show must be traceable to one of these sources.
+- id: gather_step_outputs
+  name: Gather the step's outputs
+  description: |
+    Read, in ONE batch, this step's evidence:
+      - the step's conclusions.md (Findings + any numbers to surface)
+      - the step's figures (and any .caption.md sidecars)
+      - the step's output tables / metrics
+      - mem_hypothesis (operation=list) for any hypothesis this step touched
+    Distil the ONE thing this step established (or the one thing that moved
+    since the last update) and the single most informative figure. Every
+    number you plan to show must be traceable to one of these sources.
 
-  - id: scaffold
-    name: Scaffold the step report shell
-    description: |
-      tool_synthesis_scaffold(kind='step_report', step='NN') writes a minimal
-      shell — RO palette tokens, a11y baseline, offline chrome, and an author
-      brief in comments — to synthesis/updates/step-NN-<slug>.html. Idempotent;
-      refuses overwrite without overwrite=true. The shell carries NO fixed
-      sections: the <main> body is the brief plus an empty canvas.
+- id: scaffold
+  name: Scaffold the step report shell
+  description: |
+    tool_synthesis_scaffold(kind='step_report', step='NN') writes a minimal
+    shell — RO palette tokens, a11y baseline, offline chrome, and an author
+    brief in comments — to synthesis/updates/step-NN-<slug>.html. Idempotent;
+    refuses overwrite without overwrite=true. The shell carries NO fixed
+    sections: the <main> body is the brief plus an empty canvas.
 
-  - id: design_and_author
-    name: Design the page, then author it
-    description: |
-      Read the author brief in the scaffold, then DESIGN the layout this step
-      deserves — there is no required structure. Compose the sections, order,
-      and visual rhythm that tell this step's story fastest. Embed the focal
-      figure(s) via base64 OR a relative path under a sibling figures/ folder
-      (copy the step's figure(s) there so the file travels intact). Write
-      findings as sentences; ground every number in step outputs; name the
-      caveat and the next step / ask. Delete the author-brief comment when done.
+- id: design_and_author
+  name: Design the page, then author it
+  description: |
+    Read the author brief in the scaffold, then DESIGN the layout this step
+    deserves — there is no required structure. Compose the sections, order,
+    and visual rhythm that tell this step's story fastest. Embed the focal
+    figure(s) via base64 OR a relative path under a sibling figures/ folder
+    (copy the step's figure(s) there so the file travels intact). Write
+    findings as sentences; ground every number in step outputs; name the
+    caveat and the next step / ask. Delete the author-brief comment when done.
 
-  - id: audit
-    name: Audit (honesty, grounding, accessibility, offline)
-    description: |
-      tool_synthesis_check(file='synthesis/updates/step-NN-<slug>.html')
-      catches an un-authored shell, a left-in author brief, missing alt text,
-      external/network resources, placeholders, leftover example paths, and
-      path leaks. It does NOT check your layout. Clear every blocker before
-      sharing.
+- id: audit
+  name: Audit (honesty, grounding, accessibility, offline)
+  description: |
+    tool_synthesis_scaffold (operation=check)(file='synthesis/updates/step-NN-<slug>.html')
+    catches an un-authored shell, a left-in author brief, missing alt text,
+    external/network resources, placeholders, leftover example paths, and
+    path leaks. It does NOT check your layout. Clear every blocker before
+    sharing.
 
-  - id: share
-    name: Share
-    description: |
-      The file IS the deliverable — no compilation step. Hand the path to the
-      researcher; it is portable (emailable, screen-shareable, single-file).
-      The chain of step reports under synthesis/updates/ is the project's
-      visual diary. For the text-only narrative update, route to
-      synthesis_progress_update; for the whole-project surface, synthesis_dashboard.
+- id: share
+  name: Share
+  description: |
+    The file IS the deliverable — no compilation step. Hand the path to the
+    researcher; it is portable (emailable, screen-shareable, single-file).
+    The chain of step reports under synthesis/updates/ is the project's
+    visual diary. For the text-only narrative update, route to
+    synthesis_progress_update; for the whole-project surface, synthesis_dashboard.
 
 tools: |
   - tool_synthesis_scaffold(kind='step_report', step='NN') — seed the shell (idempotent)
-  - tool_synthesis_check — honesty / grounding / a11y / offline gate (NOT a heading list)
-  - tool_synthesis_curate_figures — copy the step's figure(s) + caption sidecars
-  - tool_figure_palette — colour-blind-safe palette for any inline charts
+  - tool_synthesis_scaffold (operation=check) — honesty / grounding / a11y / offline gate (NOT a heading list)
+  - tool_synthesis_scaffold (operation=curate_figures) — copy the step's figure(s) + caption sidecars
+  - pick CVD-safe hex colors inline — colour-blind-safe palette for any inline charts
 
 expected_outputs:
-  - synthesis/updates/step-NN-<slug>.html   # AI-designed, self-contained, one step
+- synthesis/updates/step-NN-<slug>.html     # AI-designed, self-contained, one step
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: synthesis/synthesis_progress_update
+intent_class: synthesize
+sub_intent: step_report
+triggers:
+- step report
+- report for this step
+- write up step
+- visual for this step
+- page for what i just did
+- show this step at the meeting
+- step update i can screen-share
+- polish this step's results
+summary: AI designs a self-contained visual artefact for ONE step (meeting-grade).
+shortcut_tool: tool_synthesis_scaffold

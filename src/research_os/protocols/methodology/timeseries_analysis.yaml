@@ -1,16 +1,16 @@
 id: timeseries_analysis
 tier: 'plan'
 name: Time-Series Analysis
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [experiment_pipeline]
 see_also:
-  - methodology/methodology_selection         # grounds the method-family choice
-  - methodology/uncertainty_quantification     # calibrated forecast intervals
+- methodology/methodology_selection           # grounds the method-family choice
+- methodology/uncertainty_quantification       # calibrated forecast intervals
 description: |
   First-class protocol for analyses where time order matters:
   trend / seasonality / structural break detection, autocorrelation
@@ -30,172 +30,179 @@ trigger: |
   time-indexed AND the goal involves prediction-over-time.
 
 prerequisites:
-  - Outcome (or primary covariate) is indexed by time at a
-    well-defined frequency.
-  - Either the goal is forecasting / explanation-over-time OR
-    standard methods would be wrong because of autocorrelation.
+- Outcome (or primary covariate) is indexed by time at a well-defined frequency.
+- Either the goal is forecasting / explanation-over-time OR standard methods would be wrong because of autocorrelation.
 
 editorial_voice:
   mode: guidance
   rules:
-    - "Time-ordered data violates IID. Every standard method needs
-       a time-aware variant — defaulting to a random train/test
-       split or a regular k-fold CV is almost always wrong."
-    - "Stationarity is the precondition for many classical methods.
-       Don't apply ARMA to a non-stationary series — difference
-       (or detrend) first, OR use a method that doesn't require
-       stationarity (state-space / Bayesian)."
-    - "Report forecast intervals, not just point forecasts. A
-       point estimate with no uncertainty band is misleading."
+  - "Time-ordered data violates IID. Every standard method needs a time-aware variant — defaulting to a random train/test split or a regular k-fold CV is almost always wrong."
+  - "Stationarity is the precondition for many classical methods. Don't apply ARMA to a non-stationary series — difference (or detrend) first, OR use a method that doesn't require stationarity (state-space / Bayesian)."
+  - "Report forecast intervals, not just point forecasts. A point estimate with no uncertainty band is misleading."
 
 steps:
-  - id: characterise_series
-    name: Characterise the series
-    description: |
-      Before choosing a method, examine the series:
-        - Sampling frequency + regularity (daily, monthly, irregular).
-        - Length (n_obs) and missingness pattern.
-        - Visible trend / level / seasonality / structural break.
-        - Stationarity (visual inspection + a formal test like
-          ADF / KPSS as confirmation, but plots usually settle it).
-        - Autocorrelation structure (ACF / PACF plots).
-        - Multiple seasonalities (e.g. daily + weekly + yearly)?
-        - Exogenous covariates available?
-        - Multiple series (panel / cross-sectional)?
+- id: characterise_series
+  name: Characterise the series
+  description: |
+    Before choosing a method, examine the series:
+      - Sampling frequency + regularity (daily, monthly, irregular).
+      - Length (n_obs) and missingness pattern.
+      - Visible trend / level / seasonality / structural break.
+      - Stationarity (visual inspection + a formal test like
+        ADF / KPSS as confirmation, but plots usually settle it).
+      - Autocorrelation structure (ACF / PACF plots).
+      - Multiple seasonalities (e.g. daily + weekly + yearly)?
+      - Exogenous covariates available?
+      - Multiple series (panel / cross-sectional)?
 
-      Persist the characterisation report under
-      `outputs/reports/<step>_series_profile.md`. The downstream
-      method choice falls out of this.
+    Persist the characterisation report under
+    `outputs/reports/<step>_series_profile.md`. The downstream
+    method choice falls out of this.
 
-  - id: pick_method_family
-    name: Pick a method family
-    description: |
-      The method follows from the series characterisation. The
-      dimensions that drive the choice are stable across fields:
-        - univariate vs. multivariate
-        - stationary vs. non-stationary
-        - presence + number of seasonalities
-        - forecasting vs. intervention analysis vs. structural-break
-          detection
-        - presence of exogenous covariates
-        - sample size (long enough for ML; short enough that classical
-          methods win)
-        - need for interpretable parameters vs. black-box accuracy
+- id: pick_method_family
+  name: Pick a method family
+  description: |
+    The method follows from the series characterisation. The
+    dimensions that drive the choice are stable across fields:
+      - univariate vs. multivariate
+      - stationary vs. non-stationary
+      - presence + number of seasonalities
+      - forecasting vs. intervention analysis vs. structural-break
+        detection
+      - presence of exogenous covariates
+      - sample size (long enough for ML; short enough that classical
+        methods win)
+      - need for interpretable parameters vs. black-box accuracy
 
-      Reason through these dimensions for THIS series, then ground
-      the candidate methods via `methodology_selection`'s grounding
-      step. Do NOT pick a method from memory because it matches the
-      dimension labels — the field's recent forecasting-benchmark
-      literature names which methods win on which combinations, and
-      the answer changes faster than any static table can keep up.
+    Reason through these dimensions for THIS series, then ground
+    the candidate methods via `methodology_selection`'s grounding
+    step. Do NOT pick a method from memory because it matches the
+    dimension labels — the field's recent forecasting-benchmark
+    literature names which methods win on which combinations, and
+    the answer changes faster than any static table can keep up.
 
-      Record the dimension-by-dimension reasoning + the 2-3 candidates
-      surfaced from the literature in
-      `outputs/reports/<step>_method_choice.md`.
+    Record the dimension-by-dimension reasoning + the 2-3 candidates
+    surfaced from the literature in
+    `outputs/reports/<step>_method_choice.md`.
 
-  - id: stationarity_decision
-    name: Stationarity decision (when classical methods apply)
-    description: |
-      If the chosen method assumes stationarity (ARMA / SARIMA /
-      most non-state-space classical methods):
-        - Visually inspect (level + variance over time).
-        - Apply the field's stationarity tests; pair a test with a
-          null of stationarity against one with a null of a unit root
-          (e.g. KPSS vs ADF) — their disagreement distinguishes
-          "trend-stationary" from "difference-stationary".
-        - Difference to the order the diagnostics support, OR detrend,
-          OR transform (log, Box-Cox) as appropriate. Over-differencing
-          injects spurious negative autocorrelation — choose the
-          minimal order, don't default to one.
-        - For seasonal data, seasonal-difference if SARIMA.
+- id: stationarity_decision
+  name: Stationarity decision (when classical methods apply)
+  description: |
+    If the chosen method assumes stationarity (ARMA / SARIMA /
+    most non-state-space classical methods):
+      - Visually inspect (level + variance over time).
+      - Apply the field's stationarity tests; pair a test with a
+        null of stationarity against one with a null of a unit root
+        (e.g. KPSS vs ADF) — their disagreement distinguishes
+        "trend-stationary" from "difference-stationary".
+      - Difference to the order the diagnostics support, OR detrend,
+        OR transform (log, Box-Cox) as appropriate. Over-differencing
+        injects spurious negative autocorrelation — choose the
+        minimal order, don't default to one.
+      - For seasonal data, seasonal-difference if SARIMA.
 
-      Document the differencing decision and any transforms in the
-      methods record so the inverse transform is unambiguous when
-      reporting forecasts back on the original scale.
+    Document the differencing decision and any transforms in the
+    methods record so the inverse transform is unambiguous when
+    reporting forecasts back on the original scale.
 
-  - id: time_aware_split
-    name: Time-aware train/test split (CRITICAL)
-    description: |
-      The split must respect time order:
-        - Hold out the LAST k observations for testing — never
-          random.
-        - For multiple test horizons, use rolling-origin
-          (expanding-window) cross-validation.
-        - For panel data with multiple subjects, additionally
-          group-aware split (don't split mid-subject across
-          train/test).
-        - State the forecast HORIZON explicitly (1-step ahead?
-          h-step ahead? full out-of-sample?).
+- id: time_aware_split
+  name: Time-aware train/test split (CRITICAL)
+  description: |
+    The split must respect time order:
+      - Hold out the LAST k observations for testing — never
+        random.
+      - For multiple test horizons, use rolling-origin
+        (expanding-window) cross-validation.
+      - For panel data with multiple subjects, additionally
+        group-aware split (don't split mid-subject across
+        train/test).
+      - State the forecast HORIZON explicitly (1-step ahead?
+        h-step ahead? full out-of-sample?).
 
-      A random k-fold split here is a leakage bug.
+    A random k-fold split here is a leakage bug.
 
-  - id: fit_and_diagnose
-    name: Fit + residual diagnostics
-    description: |
-      After fitting:
-        - Residuals should be indistinguishable from white noise —
-          a flat ACF and a portmanteau test (e.g. Ljung-Box) that
-          fails to reject independence at the field's chosen level.
-          Residual autocorrelation means the model left structure on
-          the table.
-        - For state-space models, also examine smoothed states
-          and the Kalman gain.
-        - For Bayesian / state-space models, posterior predictive
-          checks (re-use bayesian_analysis's PPC step).
-        - For ML forecasters, the residual-by-time plot reveals
-          whether the model is missing periodic structure.
+- id: fit_and_diagnose
+  name: Fit + residual diagnostics
+  description: |
+    After fitting:
+      - Residuals should be indistinguishable from white noise —
+        a flat ACF and a portmanteau test (e.g. Ljung-Box) that
+        fails to reject independence at the field's chosen level.
+        Residual autocorrelation means the model left structure on
+        the table.
+      - For state-space models, also examine smoothed states
+        and the Kalman gain.
+      - For Bayesian / state-space models, posterior predictive
+        checks (re-use bayesian_analysis's PPC step).
+      - For ML forecasters, the residual-by-time plot reveals
+        whether the model is missing periodic structure.
 
-  - id: evaluate_forecast
-    name: Evaluate the forecast
-    description: |
-      Metrics depend on the data:
-        - Point accuracy: MAPE / sMAPE / MAE / RMSE — use what
-          your domain reports.
-        - Scale-free: MASE (mean absolute scaled error) lets you
-          compare across series.
-        - Probabilistic forecast: CRPS / pinball loss / coverage
-          of the prediction interval at the nominal level.
-        - Comparison baseline: Naive (random walk) + seasonal
-          naive are the floor every model must beat.
+- id: evaluate_forecast
+  name: Evaluate the forecast
+  description: |
+    Metrics depend on the data:
+      - Point accuracy: MAPE / sMAPE / MAE / RMSE — use what
+        your domain reports.
+      - Scale-free: MASE (mean absolute scaled error) lets you
+        compare across series.
+      - Probabilistic forecast: CRPS / pinball loss / coverage
+        of the prediction interval at the nominal level.
+      - Comparison baseline: Naive (random walk) + seasonal
+        naive are the floor every model must beat.
 
-      Report the metrics across the horizons the decision actually
-      uses (short, mid, and the longest horizon that matters) — a
-      model that wins at 1-step often loses at long horizons, so a
-      single-horizon number can mislead.
+    Report the metrics across the horizons the decision actually
+    uses (short, mid, and the longest horizon that matters) — a
+    model that wins at 1-step often loses at long horizons, so a
+    single-horizon number can mislead.
 
-  - id: forecast_intervals
-    name: Forecast intervals + scenarios
-    description: |
-      The point forecast is rarely the most useful thing:
-        - Always accompany the point forecast with a prediction
-          interval at the nominal level the decision needs, and
-          verify its empirical coverage on held-out data — a stated
-          interval that under-covers is worse than none.
-        - For decision-supporting forecasts, present a small set of
-          scenarios (e.g. low / central / high) so the consumer
-          reasons about uncertainty rather than anchoring on a number.
-        - For long-horizon forecasts, the interval will dominate
-          the point — visualising the interval (fan chart) is the
-          honest representation.
+- id: forecast_intervals
+  name: Forecast intervals + scenarios
+  description: |
+    The point forecast is rarely the most useful thing:
+      - Always accompany the point forecast with a prediction
+        interval at the nominal level the decision needs, and
+        verify its empirical coverage on held-out data — a stated
+        interval that under-covers is worse than none.
+      - For decision-supporting forecasts, present a small set of
+        scenarios (e.g. low / central / high) so the consumer
+        reasons about uncertainty rather than anchoring on a number.
+      - For long-horizon forecasts, the interval will dominate
+        the point — visualising the interval (fan chart) is the
+        honest representation.
 
-  - id: structural_break_check
-    name: Structural break check
-    description: |
-      If the series spans regime changes (policy intervention,
-      pandemic, technology shift), the assumption that the past
-      forecasts the future may not hold:
-        - Visually + formally test for breaks (Chow / Bai-Perron /
-          changepoint methods).
-        - When a break is detected, model the regimes separately
-          OR include a level shift / intercept term OR move to a
-          state-space frame that allows time-varying parameters.
+- id: structural_break_check
+  name: Structural break check
+  description: |
+    If the series spans regime changes (policy intervention,
+    pandemic, technology shift), the assumption that the past
+    forecasts the future may not hold:
+      - Visually + formally test for breaks (Chow / Bai-Perron /
+        changepoint methods).
+      - When a break is detected, model the regimes separately
+        OR include a level shift / intercept term OR move to a
+        state-space frame that allows time-varying parameters.
 
 expected_outputs:
-  - workspace/<step>/outputs/reports/<step>_series_profile.md
-  - workspace/<step>/outputs/figures/<step>_forecast_fan.png
-  - workspace/<step>/outputs/figures/<step>_residual_diagnostics.png
-  - workspace/methods.md (entry with model spec + split rule + horizon)
+- workspace/<step>/outputs/reports/<step>_series_profile.md
+- workspace/<step>/outputs/figures/<step>_forecast_fan.png
+- workspace/<step>/outputs/figures/<step>_residual_diagnostics.png
+- workspace/methods.md (entry with model spec + split rule + horizon)
 
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: timeseries
+triggers:
+- time series
+- timeseries
+- forecasting
+- forecast
+- arima
+- ets
+- state-space
+- kalman
+- prophet
+- interrupted time series
+- structural break
+summary: Time-aware analysis + forecasting (ARIMA/ETS/state-space/Prophet/ML).

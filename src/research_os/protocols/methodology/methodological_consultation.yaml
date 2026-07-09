@@ -1,16 +1,16 @@
 id: methodological_consultation
 tier: 'plan'
 name: Methodological Consultation (teach / explain / advise — no project commit)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/methodology_selection       # when the consult leads to committing a method
-  - methodology/method_comparison           # when the ask is an empirical X-vs-Y
+- methodology/methodology_selection         # when the consult leads to committing a method
+- methodology/method_comparison             # when the ask is an empirical X-vs-Y
 description: |
   Lightweight protocol for the case where the researcher wants to
   REASON ABOUT methodology — explain a method, compare two methods,
@@ -45,169 +45,157 @@ prerequisites: []
 editorial_voice:
   mode: hybrid
   rules:
-    - "Teach against the researcher's intent — what they will USE the
-       method for. A statistician learning the same method needs
-       different framing than a clinician about to read it in a
-       paper next week."
-    - "Build the understanding in LAYERS: intuition → mechanics →
-       caveats → reading list. Stop at whichever layer the
-       researcher signals is enough; don't power-bomb every layer."
-    - "Cite the references that taught YOU the method (the canonical
-       textbook chapter, the foundational paper, the recent tutorial).
-       Methods learnt only from training memory drift over decades
-       and across subfields; the citation is what binds the teaching
-       to the current consensus."
-    - "Surface the FAILURE MODES of the method — the reviewer's
-       favourite questions, the silent assumption that bites — at
-       the same depth as the mechanics. Half of methodological
-       skill is knowing how to break what you're about to use."
+  - "Teach against the researcher's intent — what they will USE the method for. A statistician learning the same method needs different framing than a clinician about to read it in a paper next week."
+  - "Build the understanding in LAYERS: intuition → mechanics → caveats → reading list. Stop at whichever layer the researcher signals is enough; don't power-bomb every layer."
+  - "Cite the references that taught YOU the method (the canonical textbook chapter, the foundational paper, the recent tutorial). Methods learnt only from training memory drift over decades and across subfields; the citation is what binds the teaching to the current consensus."
+  - "Surface the FAILURE MODES of the method — the reviewer's favourite questions, the silent assumption that bites — at the same depth as the mechanics. Half of methodological skill is knowing how to break what you're about to use."
 
 steps:
-  - id: scope_the_ask
-    name: Scope the consultation
-    description: |
-      Ask in one line (or infer when in autopilot):
-        - WHAT method / concept / decision is on the table
-        - INTENT — use it on a project / understand it to review /
-          decide between options / debug a method that already misfired
-        - BACKGROUND level — never seen it / read about it / used
-          it once / used it routinely
-        - DEPTH expected — 5-minute intuition / 30-minute working
-          knowledge / deep enough to teach someone else
+- id: scope_the_ask
+  name: Scope the consultation
+  description: |
+    Ask in one line (or infer when in autopilot):
+      - WHAT method / concept / decision is on the table
+      - INTENT — use it on a project / understand it to review /
+        decide between options / debug a method that already misfired
+      - BACKGROUND level — never seen it / read about it / used
+        it once / used it routinely
+      - DEPTH expected — 5-minute intuition / 30-minute working
+        knowledge / deep enough to teach someone else
 
-      The four answers determine which layers below run and how
-      deep. Push back gently when a researcher asks for "explain X"
-      with no context — the most useful explanation is targeted at
-      what they're about to do with it.
+    The four answers determine which layers below run and how
+    deep. Push back gently when a researcher asks for "explain X"
+    with no context — the most useful explanation is targeted at
+    what they're about to do with it.
 
-  - id: ground_in_literature_first
-    name: Ground in the literature BEFORE explaining
-    description: |
-      Even for methods the AI knows well, run a short literature pass:
-        tool_research_method query="<method> tutorial"
-        tool_research_method query="<method> failure modes"
-        tool_search query="<method> when does it fail"
+- id: ground_in_literature_first
+  name: Ground in the literature BEFORE explaining
+  description: |
+    Even for methods the AI knows well, run a short literature pass:
+      tool_search query="<method> tutorial"
+      tool_search query="<method> failure modes"
+      tool_search query="<method> when does it fail"
 
-      Surfaces the field's current canonical teaching reference and
-      the most recent best-practice / critique paper. Without this
-      pass, the consultation drifts toward whatever version of the
-      method was popular when the AI was trained — which may not be
-      what the researcher's reviewers will compare against.
+    Surfaces the field's current canonical teaching reference and
+    the most recent best-practice / critique paper. Without this
+    pass, the consultation drifts toward whatever version of the
+    method was popular when the AI was trained — which may not be
+    what the researcher's reviewers will compare against.
 
-      Save the 1-2 most useful sources via
-      tool_literature_search_and_save for later citation; route the
-      rest to inputs/literature/ at the researcher's discretion.
+    Save the 1-2 most useful sources via
+    tool_search (mode=literature) for later citation; route the
+    rest to inputs/literature/ at the researcher's discretion.
 
-  - id: layer1_intuition
-    name: Layer 1 — Intuition (always)
-    description: |
-      Explain the method in ONE PARAGRAPH at the intuition layer:
-        - what problem it solves
-        - the one CORE IDEA that makes it work (avoid mechanics here)
-        - one analogy the researcher's background would find
-          familiar (e.g. for ML methods, a regression analogy
-          works for stats-background readers; for stats methods,
-          a fitting-the-best-line analogy works for ML-background
-          readers)
+- id: layer1_intuition
+  name: Layer 1 — Intuition (always)
+  description: |
+    Explain the method in ONE PARAGRAPH at the intuition layer:
+      - what problem it solves
+      - the one CORE IDEA that makes it work (avoid mechanics here)
+      - one analogy the researcher's background would find
+        familiar (e.g. for ML methods, a regression analogy
+        works for stats-background readers; for stats methods,
+        a fitting-the-best-line analogy works for ML-background
+        readers)
 
-      Stop here if the researcher signalled "5-minute intuition"
-      depth. Offer to continue: "Want me to keep going — mechanics
-      next?"
+    Stop here if the researcher signalled "5-minute intuition"
+    depth. Offer to continue: "Want me to keep going — mechanics
+    next?"
 
-  - id: layer2_mechanics
-    name: Layer 2 — Mechanics (when depth ≥ working knowledge)
-    description: |
-      Explain HOW the method actually works:
-        - the inputs it consumes + the assumptions on those inputs
-        - the OBJECTIVE it optimises or the QUANTITY it estimates
-        - the algorithm as a short numbered sequence (one paragraph
-          each, not pseudocode unless asked)
-        - the outputs it produces + how to read them
-        - the canonical implementation in the languages the
-          researcher works in (cite the library, not as a default
-          but as the field's current go-to)
+- id: layer2_mechanics
+  name: Layer 2 — Mechanics (when depth ≥ working knowledge)
+  description: |
+    Explain HOW the method actually works:
+      - the inputs it consumes + the assumptions on those inputs
+      - the OBJECTIVE it optimises or the QUANTITY it estimates
+      - the algorithm as a short numbered sequence (one paragraph
+        each, not pseudocode unless asked)
+      - the outputs it produces + how to read them
+      - the canonical implementation in the languages the
+        researcher works in (cite the library, not as a default
+        but as the field's current go-to)
 
-      Stop here if the researcher signalled "working knowledge"
-      depth. Offer: "Want the caveats + failure modes next?"
+    Stop here if the researcher signalled "working knowledge"
+    depth. Offer: "Want the caveats + failure modes next?"
 
-  - id: layer3_caveats_and_failure_modes
-    name: Layer 3 — Caveats + failure modes (when depth ≥ deep)
-    description: |
-      The caveats layer is the difference between someone who
-      USES the method and someone who DEFENDS the method in
-      review. Cover:
+- id: layer3_caveats_and_failure_modes
+  name: Layer 3 — Caveats + failure modes (when depth ≥ deep)
+  description: |
+    The caveats layer is the difference between someone who
+    USES the method and someone who DEFENDS the method in
+    review. Cover:
 
-        - ASSUMPTIONS the method makes about the data + what
-          violating each one does to the inference
-        - SILENT ASSUMPTIONS the method makes that the reviewer
-          asks about (independence; equal variance; covariate
-          balance; functional form; censoring mechanism;
-          measurement error)
-        - the COMMON MIS-USES (the variants of the method
-          that look right but aren't — e.g. cluster-then-DE
-          without pseudo-bulk, t-test on grossly non-normal small
-          samples, repeated-measures ANOVA when sphericity fails,
-          propensity scores without overlap checks)
-        - the DIAGNOSTIC that would surface each violation (a
-          residual plot, a balance check, a sensitivity bound)
-        - the FALLBACK method when the assumption fails
+      - ASSUMPTIONS the method makes about the data + what
+        violating each one does to the inference
+      - SILENT ASSUMPTIONS the method makes that the reviewer
+        asks about (independence; equal variance; covariate
+        balance; functional form; censoring mechanism;
+        measurement error)
+      - the COMMON MIS-USES (the variants of the method
+        that look right but aren't — e.g. cluster-then-DE
+        without pseudo-bulk, t-test on grossly non-normal small
+        samples, repeated-measures ANOVA when sphericity fails,
+        propensity scores without overlap checks)
+      - the DIAGNOSTIC that would surface each violation (a
+        residual plot, a balance check, a sensitivity bound)
+      - the FALLBACK method when the assumption fails
 
-      Cite each caveat — never present a failure mode without a
-      pointer to the methods paper / textbook section that names
-      it.
+    Cite each caveat — never present a failure mode without a
+    pointer to the methods paper / textbook section that names
+    it.
 
-  - id: layer4_decision_helper
-    name: Layer 4 — Decide between methods (when intent = compare)
-    description: |
-      When the consultation is "X vs Y" rather than "teach me X":
-        - frame the decision as the SET OF QUESTIONS that
-          distinguish them — data structure, assumption set,
-          interpretability needs, sample size, computational
-          budget, what the reviewer expects
-        - build a SHORT TABLE: question → which method handles it
-          better → why → with a citation
-        - state the SIMPLE-CASE answer (most projects fit a
-          simple case) and the EDGE-CASE answer (when the simple
-          answer flips)
+- id: layer4_decision_helper
+  name: Layer 4 — Decide between methods (when intent = compare)
+  description: |
+    When the consultation is "X vs Y" rather than "teach me X":
+      - frame the decision as the SET OF QUESTIONS that
+        distinguish them — data structure, assumption set,
+        interpretability needs, sample size, computational
+        budget, what the reviewer expects
+      - build a SHORT TABLE: question → which method handles it
+        better → why → with a citation
+      - state the SIMPLE-CASE answer (most projects fit a
+        simple case) and the EDGE-CASE answer (when the simple
+        answer flips)
 
-      Avoid prescribing one method as "best" — the choice is
-      always project-specific. Help the researcher see WHICH of
-      their project's features pushes the choice.
+    Avoid prescribing one method as "best" — the choice is
+    always project-specific. Help the researcher see WHICH of
+    their project's features pushes the choice.
 
-  - id: layer5_reading_list_and_next
-    name: Layer 5 — Reading list + next step
-    description: |
-      Close every consultation with:
-        - a SHORT reading list spanning the bases: one foundational,
-          one recent tutorial / best-practice, one critique /
-          failure-modes paper, optionally one applied paper in the
-          researcher's subfield
-        - the LOGICAL NEXT PROTOCOL when the researcher commits to
-          using the method:
-            * scope an active project → guidance/project_startup
-              or guidance/mid_pipeline_entry
-            * pick this method for an active hypothesis →
-              methodology/methodology_selection (referencing this
-              consultation in the rationale)
-            * compare empirically against an alternative →
-              methodology/method_comparison
-            * preregister before applying → methodology/preregistration
+- id: layer5_reading_list_and_next
+  name: Layer 5 — Reading list + next step
+  description: |
+    Close every consultation with:
+      - a SHORT reading list spanning the bases: one foundational,
+        one recent tutorial / best-practice, one critique /
+        failure-modes paper, optionally one applied paper in the
+        researcher's subfield
+      - the LOGICAL NEXT PROTOCOL when the researcher commits to
+        using the method:
+          * scope an active project → guidance/project_startup
+            or guidance/mid_pipeline_entry
+          * pick this method for an active hypothesis →
+            methodology/methodology_selection (referencing this
+            consultation in the rationale)
+          * compare empirically against an alternative →
+            methodology/method_comparison
+          * preregister before applying → methodology/preregistration
 
-  - id: record_the_consultation
-    name: Record the consultation (optional, on request)
-    description: |
-      ONLY when the researcher says "save this":
-        sys_file_write filepath="docs/consultations/<topic_slug>.md"
-        contents=<the layered explanation + reading list>
+- id: record_the_consultation
+  name: Record the consultation (optional, on request)
+  description: |
+    ONLY when the researcher says "save this":
+      sys_file_write filepath="docs/consultations/<topic_slug>.md"
+      contents=<the layered explanation + reading list>
 
-      Glossary update on request:
-        Append to docs/glossary.md the term + one-paragraph definition
-        derived from layer 1 + layer 3 (the failure modes — so that
-        future references to the term carry the caveat with them).
+    Glossary update on request:
+      Append to docs/glossary.md the term + one-paragraph definition
+      derived from layer 1 + layer 3 (the failure modes — so that
+      future references to the term carry the caveat with them).
 
-      For consultations that DID NOT lead to a project commitment,
-      leave nothing on disk by default. The protocol's primary value
-      is the conversation, not the artefact.
+    For consultations that DID NOT lead to a project commitment,
+    leave nothing on disk by default. The protocol's primary value
+    is the conversation, not the artefact.
 
 expected_outputs: []
 
@@ -218,6 +206,29 @@ quality_bar:
   reading_list_in_every_consultation: true
   layered_to_researcher_signalled_depth: true
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: methodology
+sub_intent: consult
+triggers:
+- explain to me
+- teach me
+- walk me through
+- how does it work
+- what's the difference between
+- when would i use
+- consult on
+- help me think through
+- what should i know about
+- give me a primer on
+- primer on
+- before i use this method
+- explain the method
+- teach me a method
+summary: Teach / explain / compare methods without committing to a project (intuition → mechanics → caveats).
+token_estimate: 1300
+decomposition:
+- protocol: methodology/methodological_consultation
+  purpose: Literature pass + layered explanation + reading list + next step.
+- tool: tool_search

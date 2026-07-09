@@ -7,7 +7,7 @@ your AI IDE. For the 5-minute version, see [START.md](START.md).
 
 ## 1. Prerequisites
 
-* Python 3.10 or newer.
+* Python 3.11 or newer.
 * `pip` (or `uv` / `poetry` / `conda` — anything that installs a Python
   package).
 * An AI IDE that supports MCP: Claude Code, OpenCode, Antigravity,
@@ -300,7 +300,7 @@ Aider — anywhere) and let it walk you through the setup end-to-end.
 > <https://github.com/VibhavSetlur/Research-OS>. Please walk me through
 > all of this, asking me ONE question at a time when you need input:
 >
-> 1. **Check Python ≥ 3.10.** If missing, suggest how to install for
+> 1. **Check Python ≥ 3.11.** If missing, suggest how to install for
 >    my OS (macOS / Linux / Windows / WSL — ask which I'm on).
 > 2. **Install with all optional extras**:
 >    ```

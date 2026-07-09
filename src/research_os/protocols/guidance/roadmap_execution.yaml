@@ -1,19 +1,19 @@
 id: roadmap_execution
 tier: 'plan'
 name: Roadmap Execution (Autonomous Build Loop)
-version: '4.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-25'
 scope_tags:
   domain: [any]
   audience: [naive_ai, researcher]
   workflow_shape: [any]
 see_also:
-  - methodology/deep_planning              # where the roadmap this loop executes was authored
-  - guidance/analysis_paths                # how this loop opens / compares / closes branches
-  - guidance/analysis_plan                 # the per-milestone execution loop this protocol drives into
-  - guidance/autopilot                     # the hands-off mode + the floor gates this loop respects
-  - guidance/dead_end_routing              # where a failed milestone routes
+- methodology/deep_planning                # where the roadmap this loop executes was authored
+- guidance/analysis_paths                  # how this loop opens / compares / closes branches
+- guidance/analysis_plan                   # the per-milestone execution loop this protocol drives into
+- guidance/autopilot                       # the hands-off mode + the floor gates this loop respects
+- guidance/dead_end_routing                # where a failed milestone routes
 description: >
   Given a durable roadmap (inputs/research_plan.md), executes it step by step
   toward the goal — respecting the autonomy level + floor gates, recording each
@@ -27,171 +27,171 @@ trigger: >
   toward the plan" — OR methodology/deep_planning has just produced a roadmap
   and the researcher wants the AI to build against it.
 prerequisites:
-  - inputs/research_plan.md exists (a roadmap to execute)
+- inputs/research_plan.md exists (a roadmap to execute)
 
 requires:
   checks:
-    - kind: file_exists
-      path: inputs/research_plan.md
-      non_empty: true
-      because: the autonomous build loop executes against a durable roadmap
+  - kind: file_exists
+    path: inputs/research_plan.md
+    non_empty: true
+    because: the autonomous build loop executes against a durable roadmap
 
 steps:
-  - id: load_thread
-    name: Load the Thread (roadmap + state + autonomy)
-    description: |
-      ONE batch in parallel:
-        - sys_boot               # state + autonomy_level + active_plan + pause_classification
-        - sys_path operation=list   # which milestones/paths exist + their status
-        - mem_hypothesis_list    # the assumptions the roadmap is tracking
-        - sys_file_read filepath="inputs/research_plan.md"   # the roadmap itself
+- id: load_thread
+  name: Load the Thread (roadmap + state + autonomy)
+  description: |
+    ONE batch in parallel:
+      - sys_boot               # state + autonomy_level + active_plan + pause_classification
+      - sys_state_get            # which milestones/paths exist + their status
+      - mem_hypothesis (operation=list)    # the assumptions the roadmap is tracking
+      - sys_file_read filepath="inputs/research_plan.md"   # the roadmap itself
 
-      Reconstruct WHERE the project is against the roadmap: which milestones are
-      done, which is next, which branches are open, which assumptions still hold.
-      This re-orientation is what lets the loop survive a fresh AI picking up the
-      project cold — the roadmap + state ARE the thread.
+    Reconstruct WHERE the project is against the roadmap: which milestones are
+    done, which is next, which branches are open, which assumptions still hold.
+    This re-orientation is what lets the loop survive a fresh AI picking up the
+    project cold — the roadmap + state ARE the thread.
 
-      Read interaction.autonomy_level now; it governs every gate below.
+    Read interaction.autonomy_level now; it governs every gate below.
 
-  - id: select_next_milestone
-    name: Select the Next Milestone from the Roadmap
-    description: |
-      From the roadmap's sequence + the current state, pick the next milestone
-      whose dependencies are satisfied. If a decision point was just resolved
-      (see re_plan below), the roadmap may now point at a specific branch —
-      follow it.
+- id: select_next_milestone
+  name: Select the Next Milestone from the Roadmap
+  description: |
+    From the roadmap's sequence + the current state, pick the next milestone
+    whose dependencies are satisfied. If a decision point was just resolved
+    (see re_plan below), the roadmap may now point at a specific branch —
+    follow it.
 
-      State, in one line, WHICH milestone you're taking and WHY it's next
-      (which dependency cleared, which branch the last result selected). This is
-      the breadcrumb that keeps a long autonomous run legible.
+    State, in one line, WHICH milestone you're taking and WHY it's next
+    (which dependency cleared, which branch the last result selected). This is
+    the breadcrumb that keeps a long autonomous run legible.
 
-      If the roadmap is exhausted (all milestones done OR the goal's success
-      criteria are met), skip to converge_or_finish.
+    If the roadmap is exhausted (all milestones done OR the goal's success
+    criteria are met), skip to converge_or_finish.
 
-  - id: execute_milestone
-    name: Execute the Milestone (hand to the per-step loop)
-    description: |
-      A milestone is executed, not improvised here. Hand it to the protocol
-      that runs one unit of work end-to-end:
-        sys_protocol_get format='full' name='guidance/analysis_plan'
-      and run it for THIS milestone — that loop grounds the method in
-      literature, writes atomic versioned scripts, produces the artefacts, and
-      records the step's conclusions. roadmap_execution is the OUTER loop; it
-      decides WHICH milestone and WHAT the result means, but it does not
-      duplicate analysis_plan's inner mechanics.
+- id: execute_milestone
+  name: Execute the Milestone (hand to the per-step loop)
+  description: |
+    A milestone is executed, not improvised here. Hand it to the protocol
+    that runs one unit of work end-to-end:
+      sys_protocol_get format='full' name='guidance/analysis_plan'
+    and run it for THIS milestone — that loop grounds the method in
+    literature, writes atomic versioned scripts, produces the artefacts, and
+    records the step's conclusions. roadmap_execution is the OUTER loop; it
+    decides WHICH milestone and WHAT the result means, but it does not
+    duplicate analysis_plan's inner mechanics.
 
-      The method, tools, and thresholds for the milestone are decided INSIDE
-      that loop, from the literature, when the milestone runs — not pre-pinned
-      by the roadmap. This is the doctrine that keeps the plan a scaffold.
+    The method, tools, and thresholds for the milestone are decided INSIDE
+    that loop, from the literature, when the milestone runs — not pre-pinned
+    by the roadmap. This is the doctrine that keeps the plan a scaffold.
 
-      LONG-RUNNING milestones: if the work is heavy, run it as a background
-      task (tool_task operation='run') and poll, so the loop can checkpoint and
-      resume rather than block. Tell the researcher the task id + cadence.
+    LONG-RUNNING milestones: if the work is heavy, run it as a background
+    task (tool_task operation='run') and poll, so the loop can checkpoint and
+    resume rather than block. Tell the researcher the task id + cadence.
 
-  - id: record_result
-    name: Record the Result Against the Roadmap
-    description: |
-      When the milestone lands, capture what the EVIDENCE showed — not just
-      that the step ran:
-        - the finding / decision the milestone produced
-        - which roadmap assumptions it confirmed, strained, or falsified
-          (update those hypotheses: mem_hypothesis_add upserts the status)
-        - which decision point (if any) it just resolved, and which way
-        - mem_log the milestone outcome with its rationale
+- id: record_result
+  name: Record the Result Against the Roadmap
+  description: |
+    When the milestone lands, capture what the EVIDENCE showed — not just
+    that the step ran:
+      - the finding / decision the milestone produced
+      - which roadmap assumptions it confirmed, strained, or falsified
+        (update those hypotheses: mem_hypothesis (operation=add) upserts the status)
+      - which decision point (if any) it just resolved, and which way
+      - mem_log the milestone outcome with its rationale
 
-      Then run tool_path_finalize for the executed step so its READMEs reflect
-      what was actually produced, and (in hands-off runs) snapshot:
-      sys_checkpoint_create so a runaway loop can be undone in one call.
+    Then run tool_plan (operation='finalize_step') for the executed step so its READMEs reflect
+    what was actually produced, and (in hands-off runs) snapshot:
+    tool_git (operation='commit') so a runaway loop can be undone in one call.
 
-      JUDGE THE MILESTONE before moving on. Call tool_judge_score with the
-      dimensions that matter for THIS work (0-5 + a real justification each),
-      the honest limitations, the concrete improvements, and a verdict:
-        - ship   → this milestone is good enough for the goal.
-        - iterate → close but not there; the named improvements feed the next
-          pass (re_plan reads them).
-        - redo   → fundamentally flawed; re-plan the approach.
-      The verdict is what loop_or_converge reads to decide continue-vs-stop —
-      an honest scorecard is what stops the loop converging too early OR
-      spinning forever.
+    JUDGE THE MILESTONE before moving on. Call tool_audit (operation='judge') with the
+    dimensions that matter for THIS work (0-5 + a real justification each),
+    the honest limitations, the concrete improvements, and a verdict:
+      - ship   → this milestone is good enough for the goal.
+      - iterate → close but not there; the named improvements feed the next
+        pass (re_plan reads them).
+      - redo   → fundamentally flawed; re-plan the approach.
+    The verdict is what loop_or_converge reads to decide continue-vs-stop —
+    an honest scorecard is what stops the loop converging too early OR
+    spinning forever.
 
-  - id: re_plan
-    name: Re-Plan from the Evidence (reshape the roadmap, open/close paths)
-    description: |
-      This is what makes the loop ITERATIVE rather than a checklist. Compare the
-      result against the roadmap's uncertainty tags (set by
-      methodology/deep_planning) and decide what the plan should now become:
+- id: re_plan
+  name: Re-Plan from the Evidence (reshape the roadmap, open/close paths)
+  description: |
+    This is what makes the loop ITERATIVE rather than a checklist. Compare the
+    result against the roadmap's uncertainty tags (set by
+    methodology/deep_planning) and decide what the plan should now become:
 
-        - the result was ROUTINE (touched no marked uncertainty, resolved no
-          decision point) → no reshape; continue to the next milestone.
-        - the result RESOLVED a decision point → close the branches it ruled
-          out and commit to the branch it selected; record the resolution in
-          the roadmap's iteration log.
-        - the result STRAINED OR FALSIFIED a load-bearing assumption → reshape:
-          re-order, add, or drop downstream milestones so the plan reflects what
-          you now know. If the goal's framing itself is in question, that is a
-          pause condition (see pause_or_proceed).
-        - the result OPENED a genuine fork (two rival next moves now both look
-          worth pursuing) → consult guidance/analysis_paths on whether to
-          branch into parallel paths, and if so, name + create them there.
+      - the result was ROUTINE (touched no marked uncertainty, resolved no
+        decision point) → no reshape; continue to the next milestone.
+      - the result RESOLVED a decision point → close the branches it ruled
+        out and commit to the branch it selected; record the resolution in
+        the roadmap's iteration log.
+      - the result STRAINED OR FALSIFIED a load-bearing assumption → reshape:
+        re-order, add, or drop downstream milestones so the plan reflects what
+        you now know. If the goal's framing itself is in question, that is a
+        pause condition (see pause_or_proceed).
+      - the result OPENED a genuine fork (two rival next moves now both look
+        worth pursuing) → consult guidance/analysis_paths on whether to
+        branch into parallel paths, and if so, name + create them there.
 
-      Every reshape APPENDS to inputs/research_plan.md's iteration log (date,
-      what changed, why, the evidence that drove it) and never overwrites the
-      plan's history. For the mechanics of WHEN to branch, how to name and
-      compare branches, and when to merge or abandon them, defer to
-      guidance/analysis_paths — this step decides THAT the plan changes; that
-      protocol governs HOW the paths are run.
+    Every reshape APPENDS to inputs/research_plan.md's iteration log (date,
+    what changed, why, the evidence that drove it) and never overwrites the
+    plan's history. For the mechanics of WHEN to branch, how to name and
+    compare branches, and when to merge or abandon them, defer to
+    guidance/analysis_paths — this step decides THAT the plan changes; that
+    protocol governs HOW the paths are run.
 
-  - id: pause_or_proceed
-    name: Decide — Proceed Autonomously or Pause for the Researcher
-    description: |
-      The loop must know when to keep going and when to stop. Judge from the
-      consequence of what just happened, not from a fixed step count.
+- id: pause_or_proceed
+  name: Decide — Proceed Autonomously or Pause for the Researcher
+  description: |
+    The loop must know when to keep going and when to stop. Judge from the
+    consequence of what just happened, not from a fixed step count.
 
-      AUTONOMY GATE:
-        Risk: spans the full range — most milestone-to-milestone moves are
-        cheap + reversible (flow), but some results demand a human (pause).
-        proceed (adaptive default, autopilot) → PROCEED to the next milestone
-          on a routine result or a cleanly-resolved decision point. PAUSE +
-          sys_notify level="action_required" when the goal's framing is in
-          question, a result contradicts a core assumption, the next milestone
-          trips a floor gate, or two branches are close + costly to undo.
-          (Under autopilot, flow on EXCEPT at the floor gates below.)
-        confirm first (manual / supervised) → PRESENT the result + the
-          re-planned roadmap diff + the proposed next milestone, and WAIT for
-          the researcher each loop.
+    AUTONOMY GATE:
+      Risk: spans the full range — most milestone-to-milestone moves are
+      cheap + reversible (flow), but some results demand a human (pause).
+      proceed (adaptive default, autopilot) → PROCEED to the next milestone
+        on a routine result or a cleanly-resolved decision point. PAUSE +
+        sys_notify level="action_required" when the goal's framing is in
+        question, a result contradicts a core assumption, the next milestone
+        trips a floor gate, or two branches are close + costly to undo.
+        (Under autopilot, flow on EXCEPT at the floor gates below.)
+      confirm first (manual / supervised) → PRESENT the result + the
+        re-planned roadmap diff + the proposed next milestone, and WAIT for
+        the researcher each loop.
 
-      FLOOR GATES (page even on autopilot — these are not bypassable):
-        - the final deliverable compile (the artefact becomes shareable)
-        - declaring a milestone / path a dead end (sys_path operation='abandon')
-        - installing packages, spending real money, or launching a large
-          background job relative to the project's budget
-      These mirror guidance/autopilot's enforced floors; consult that protocol
-      for the full list. When in doubt about whether THIS action clears the
-      floor, treat it as a gate and page.
+    FLOOR GATES (page even on autopilot — these are not bypassable):
+      - the final deliverable compile (the artefact becomes shareable)
+      - declaring a milestone / path a dead end (route to guidance/dead_end_routing)
+      - installing packages, spending real money, or launching a large
+        background job relative to the project's budget
+    These mirror guidance/autopilot's enforced floors; consult that protocol
+    for the full list. When in doubt about whether THIS action clears the
+    floor, treat it as a gate and page.
 
-  - id: loop_or_converge
-    name: Loop Back, or Converge on the Goal
-    description: |
-      If the goal's success criteria are not yet met and the roadmap still has
-      milestones, LOOP BACK to select_next_milestone with the (possibly
-      reshaped) roadmap. The thread is always the roadmap → the goal.
+- id: loop_or_converge
+  name: Loop Back, or Converge on the Goal
+  description: |
+    If the goal's success criteria are not yet met and the roadmap still has
+    milestones, LOOP BACK to select_next_milestone with the (possibly
+    reshaped) roadmap. The thread is always the roadmap → the goal.
 
-      Converge when the goal's success criteria are met OR the roadmap is
-      exhausted. Before declaring done:
-        - confirm each milestone's result is recorded + each open branch is
-          resolved (merged or abandoned via guidance/analysis_paths)
-        - confirm the roadmap's iteration log tells the full story of how the
-          evidence reshaped the plan
-        - present the researcher a short close-out: goal vs. what was achieved,
-          which branches won, which assumptions held or broke, what's left
+    Converge when the goal's success criteria are met OR the roadmap is
+    exhausted. Before declaring done:
+      - confirm each milestone's result is recorded + each open branch is
+        resolved (merged or abandoned via guidance/analysis_paths)
+      - confirm the roadmap's iteration log tells the full story of how the
+        evidence reshaped the plan
+      - present the researcher a short close-out: goal vs. what was achieved,
+        which branches won, which assumptions held or broke, what's left
 
-      Then route forward: if the deliverable is a paper / report / dashboard,
-      hand to the matching synthesis protocol; if a direction failed, route to
-      guidance/dead_end_routing.
+    Then route forward: if the deliverable is a paper / report / dashboard,
+    hand to the matching synthesis protocol; if a direction failed, route to
+    guidance/dead_end_routing.
 
 expected_outputs:
-  - inputs/research_plan.md (kept in sync; iteration log appended each re-plan)
-  - .os_state/checkpoints/ (one per milestone in hands-off runs)
+- inputs/research_plan.md (kept in sync; iteration log appended each re-plan)
+- .os_state/checkpoints/ (one per milestone in hands-off runs)
 
 quality_bar: |
   - Every milestone selected names why it's next; the thread to the goal is never lost.
@@ -204,3 +204,39 @@ quality_bar: |
 next_protocol: guidance/roadmap_execution
 next_protocol_kind: iterate_back
 on_failure: guidance/dead_end_routing
+intent_class: plan
+sub_intent: roadmap
+triggers:
+- build toward this autonomously
+- drive autonomously toward the roadmap
+- drive autonomously toward the goal
+- build toward the plan
+- build toward the goal
+- execute the roadmap
+- execute the plan
+- run the roadmap
+- run the plan
+- drive the project to the goal
+- keep building toward the plan
+- autonomously build
+- work the roadmap
+- follow the roadmap
+- keep going until it's done
+- keep going until done
+- run the whole plan yourself
+- run the whole plan
+- just build it toward the goal
+- build it toward the goal
+- keep building until it's finished
+- take it from here to the goal
+summary: 'Autonomous build loop: execute a roadmap step by step, record each result, re-plan from the evidence, open/close paths, pause when the researcher is needed.'
+token_estimate: 1700
+decomposition:
+- tool: sys_boot
+  purpose: Load state + autonomy + active plan to reconstruct the thread.
+- protocol: guidance/roadmap_execution
+  purpose: Select next milestone, execute, record result, re-plan, decide pause-or-proceed.
+- tool: tool_audit
+  purpose: Score each milestone (verdict ship/iterate/redo) — the loop reads the verdict to continue or converge (operation='judge').
+- tool: sys_file_write
+  purpose: Keep inputs/research_plan.md in sync; append to the iteration log each re-plan.

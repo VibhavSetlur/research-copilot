@@ -1,16 +1,16 @@
 id: writing_results
 tier: 'synthesize'
 name: Writing — Results (data with discipline)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - writing/writing_core               # number-format + grounding rules this section obeys
-  - writing/writing_discussion         # interprets what this section reports
+- writing/writing_core                 # number-format + grounding rules this section obeys
+- writing/writing_discussion           # interprets what this section reports
 description: |
   Draft the Results section. Results writing is its own skill: report
   what the data show, refer correctly to figures and tables, format
@@ -31,39 +31,27 @@ trigger: |
   needs work".
 
 prerequisites:
-  - At least one workspace step has substantive conclusions.md > Findings.
-  - At least one figure in workspace/<step>/outputs/figures/ with both
-    caption sidecars.
+- At least one workspace step has substantive conclusions.md > Findings.
+- At least one figure in workspace/<step>/outputs/figures/ with both caption sidecars.
 
 # Machine-checkable subset (precondition gate): at least one step's
 # conclusions must exist. "Substantive > Findings" and the figure caption
 # sidecars stay prose (content judgement).
 requires:
   checks:
-    - kind: glob_min
-      pattern: workspace/**/conclusions.md
-      min: 1
-      because: the results section writes up recorded step findings
+  - kind: glob_min
+    pattern: workspace/**/conclusions.md
+    min: 1
+    because: the results section writes up recorded step findings
 
 editorial_voice:
   mode: prescription
   rules:
-    - "Past tense throughout. Active or passive, your choice, but be
-       consistent within a section."
-    - "Report numbers; interpret them in the Discussion. 'The
-       intervention group had a 0.42 SD improvement (95% CI 0.31-0.52)'
-       is Results; 'this suggests the intervention is effective' is
-       Discussion."
-    - "Every figure / table referenced must (a) exist on disk and
-       (b) be numbered when this section is finalised. Reference by
-       'Figure N' / 'Table N' once numbered; until then refer by
-       file slug so the audit can resolve."
-    - "Every statistic carries its full form: point estimate +
-       uncertainty (CI when possible; SE otherwise) + sample size +
-       test name + p-value formatted to the field's convention."
-    - "When subgroups are reported, the subgroup count is reported
-       alongside the subgroup estimate. Subgroup analyses without
-       counts invite cherry-picking concerns."
+  - "Past tense throughout. Active or passive, your choice, but be consistent within a section."
+  - "Report numbers; interpret them in the Discussion. 'The intervention group had a 0.42 SD improvement (95% CI 0.31-0.52)' is Results; 'this suggests the intervention is effective' is Discussion."
+  - "Every figure / table referenced must (a) exist on disk and (b) be numbered when this section is finalised. Reference by 'Figure N' / 'Table N' once numbered; until then refer by file slug so the audit can resolve."
+  - "Every statistic carries its full form: point estimate + uncertainty (CI when possible; SE otherwise) + sample size + test name + p-value formatted to the field's convention."
+  - "When subgroups are reported, the subgroup count is reported alongside the subgroup estimate. Subgroup analyses without counts invite cherry-picking concerns."
 
 structure_options:
   by_aim:
@@ -92,195 +80,195 @@ structure_options:
       outcomes after, exploratory outcomes labelled as such.
 
 steps:
-  - id: pre_audit_evidence_grid
-    name: Pre-audit the evidence grid (BEFORE prose is appended)
-    description: |
-      MANDATORY first step. Before a single Results sentence is
-      written, run `tool_audit(scope='project', dimension='claims')` on the planned evidence
-      sources so that ungrounded numbers cannot leak into prose.
+- id: pre_audit_evidence_grid
+  name: Pre-audit the evidence grid (BEFORE prose is appended)
+  description: |
+    MANDATORY first step. Before a single Results sentence is
+    written, run `tool_audit(scope='project', dimension='claims')` on the planned evidence
+    sources so that ungrounded numbers cannot leak into prose.
 
-      Walk the existing evidence floor:
-        - `workspace/<step>/conclusions.md > ## Findings` rows,
-        - `workspace/<step>/outputs/tables/*.csv` cells,
-        - `workspace/<step>/outputs/reports/*.md` claims tables,
-        - `workspace/scratch/results_evidence.md`
-          (built fresh in the next step if it doesn't exist yet —
-           if it does exist from a prior pass, audit it now).
+    Walk the existing evidence floor:
+      - `workspace/<step>/conclusions.md > ## Findings` rows,
+      - `workspace/<step>/outputs/tables/*.csv` cells,
+      - `workspace/<step>/outputs/reports/*.md` claims tables,
+      - `workspace/scratch/results_evidence.md`
+        (built fresh in the next step if it doesn't exist yet —
+         if it does exist from a prior pass, audit it now).
 
-      Call:
-        tool_audit(scope='project', dimension='claims') target="<the evidence floor: the existing
-        conclusions/reports/results_evidence file the prose will
-        draw from>"
+    Call:
+      tool_audit(scope='project', dimension='claims') target="<the evidence floor: the existing
+      conclusions/reports/results_evidence file the prose will
+      draw from>"
 
-      The auditor flags any number that:
-        - does not trace to a workspace artefact on disk,
-        - appears in a draft / scratch / chat-only buffer with no
-          producing script or output file,
-        - matches an "approx" / "around" / "roughly" hedge instead
-          of a precise figure on disk.
+    The auditor flags any number that:
+      - does not trace to a workspace artefact on disk,
+      - appears in a draft / scratch / chat-only buffer with no
+        producing script or output file,
+      - matches an "approx" / "around" / "roughly" hedge instead
+        of a precise figure on disk.
 
-      If ungrounded numbers exist, REFUSE TO WRITE. The researcher
-      must either:
-        (a) point the AI at the source on disk (a CSV row, a
-            report row, a conclusions.md ## Findings line), or
-        (b) drop the claim, or
-        (c) open a new step via `sys_path` and run the
-            analysis that produces the number — then re-audit.
+    If ungrounded numbers exist, REFUSE TO WRITE. The researcher
+    must either:
+      (a) point the AI at the source on disk (a CSV row, a
+          report row, a conclusions.md ## Findings line), or
+      (b) drop the claim, or
+      (c) open a new step via `sys_state_get` and run the
+          analysis that produces the number — then re-audit.
 
-      Persist the verdict to
-      `workspace/logs/results_pre_audit.md`. The downstream
-      `assemble_the_evidence_table` step starts from this clean
-      ground-truth set.
+    Persist the verdict to
+    `workspace/logs/results_pre_audit.md`. The downstream
+    `assemble_the_evidence_table` step starts from this clean
+    ground-truth set.
 
-  - id: select_structure
-    name: Select results structure
-    description: |
-      Ask (or infer):
-        "Structure? by_aim | by_dataset | by_analysis_type |
-         by_outcome."
-      Choose the organisation that matches how the target venue's
-      readers expect results laid out and how the study is framed:
-        - reporting-guideline-driven trials tend to lead with the
-          primary outcome (by_outcome)
-        - methods-paper venues tend to walk descriptives → primary →
-          secondary → sensitivity (by_analysis_type)
-        - hypothesis-driven studies often mirror the order of their
-          Aims (by_aim)
-        - multi-cohort papers report one block per dataset (by_dataset)
-      The mapping is a starting point, not a rule — name the venue's
-      actual expectation when it's known.
+- id: select_structure
+  name: Select results structure
+  description: |
+    Ask (or infer):
+      "Structure? by_aim | by_dataset | by_analysis_type |
+       by_outcome."
+    Choose the organisation that matches how the target venue's
+    readers expect results laid out and how the study is framed:
+      - reporting-guideline-driven trials tend to lead with the
+        primary outcome (by_outcome)
+      - methods-paper venues tend to walk descriptives → primary →
+        secondary → sensitivity (by_analysis_type)
+      - hypothesis-driven studies often mirror the order of their
+        Aims (by_aim)
+      - multi-cohort papers report one block per dataset (by_dataset)
+    The mapping is a starting point, not a rule — name the venue's
+    actual expectation when it's known.
 
-  - id: assemble_the_evidence_table
-    name: Assemble the evidence table (the data behind the section)
-    description: |
-      Before writing prose, build the EVIDENCE TABLE — a markdown
-      table the section will draw from. One row per result the
-      section will report. Save to
-      workspace/scratch/results_evidence.md:
+- id: assemble_the_evidence_table
+  name: Assemble the evidence table (the data behind the section)
+  description: |
+    Before writing prose, build the EVIDENCE TABLE — a markdown
+    table the section will draw from. One row per result the
+    section will report. Save to
+    workspace/scratch/results_evidence.md:
 
-        | id | hypothesis | metric | estimate | uncertainty | n | test | p | figure | table |
+      | id | hypothesis | metric | estimate | uncertainty | n | test | p | figure | table |
 
-      Every cell sourced from a specific workspace artefact (a
-      conclusions.md row, an outputs/tables CSV, an outputs/reports
-      markdown). The Results prose later cites this table by id;
-      tool_audit(scope='project', dimension='claims') uses it as the ground truth.
+    Every cell sourced from a specific workspace artefact (a
+    conclusions.md row, an outputs/tables CSV, an outputs/reports
+    markdown). The Results prose later cites this table by id;
+    tool_audit(scope='project', dimension='claims') uses it as the ground truth.
 
-      Rows that don't have a source on disk are NOT REPORTED. If a
-      number appears in the researcher's head but not in a workspace
-      artefact, route back to analysis_plan to generate the
-      artefact first.
+    Rows that don't have a source on disk are NOT REPORTED. If a
+    number appears in the researcher's head but not in a workspace
+    artefact, route back to analysis_plan to generate the
+    artefact first.
 
-  - id: draft_descriptives_first
-    name: Draft descriptives first (one short paragraph)
-    description: |
-      Open with a descriptives paragraph (or a Table 1 reference):
-        - sample sizes per group, per outcome, per stratum
-        - basic demographic / variable distributions
-        - missingness counts (the missingness is data; report it)
+- id: draft_descriptives_first
+  name: Draft descriptives first (one short paragraph)
+  description: |
+    Open with a descriptives paragraph (or a Table 1 reference):
+      - sample sizes per group, per outcome, per stratum
+      - basic demographic / variable distributions
+      - missingness counts (the missingness is data; report it)
 
-      Keep it tight — most papers blow paragraph budget on
-      descriptives. A few sentences for a journal; a paragraph for a
-      thesis chapter. For papers with a real Table 1, the Results
-      prose just references the table: "Sample characteristics are
-      shown in Table 1."
+    Keep it tight — most papers blow paragraph budget on
+    descriptives. A few sentences for a journal; a paragraph for a
+    thesis chapter. For papers with a real Table 1, the Results
+    prose just references the table: "Sample characteristics are
+    shown in Table 1."
 
-  - id: draft_primary_results
-    name: Draft the primary results (organised per structure)
-    description: |
-      For each block in the chosen structure, draft 2-5 sentences:
-        - the substantive result (lead with the FINDING, not the
-          method: "Intervention reduced X by 0.42 SD ..." not
-          "We fit a mixed-effects model and found ...")
-        - the full statistic (estimate + uncertainty + n + test +
-          p) using the field's reporting convention
-        - the figure or table reference that supports the result
-        - any pre-specified subgroup result with its subgroup n
-          alongside
+- id: draft_primary_results
+  name: Draft the primary results (organised per structure)
+  description: |
+    For each block in the chosen structure, draft 2-5 sentences:
+      - the substantive result (lead with the FINDING, not the
+        method: "Intervention reduced X by 0.42 SD ..." not
+        "We fit a mixed-effects model and found ...")
+      - the full statistic (estimate + uncertainty + n + test +
+        p) using the field's reporting convention
+      - the figure or table reference that supports the result
+      - any pre-specified subgroup result with its subgroup n
+        alongside
 
-      Pattern for one primary result:
-        "Intervention reduced X by 0.42 SD (95% CI 0.31-0.52;
-         n=412; mixed-effects model, p < 0.001; Figure 2). The
-         effect was consistent across pre-specified strata
-         (Table 2)."
+    Pattern for one primary result:
+      "Intervention reduced X by 0.42 SD (95% CI 0.31-0.52;
+       n=412; mixed-effects model, p < 0.001; Figure 2). The
+       effect was consistent across pre-specified strata
+       (Table 2)."
 
-  - id: draft_secondary_and_sensitivity
-    name: Draft secondary + sensitivity results
-    description: |
-      Secondary outcomes get their own paragraph (or one paragraph
-      per secondary outcome when the paper has many). Sensitivity
-      analyses get a SHORT paragraph at the end of the block they
-      probe ("Sensitivity analyses excluding <X> did not change
-      the magnitude or direction of the effect (Table S3).").
+- id: draft_secondary_and_sensitivity
+  name: Draft secondary + sensitivity results
+  description: |
+    Secondary outcomes get their own paragraph (or one paragraph
+    per secondary outcome when the paper has many). Sensitivity
+    analyses get a SHORT paragraph at the end of the block they
+    probe ("Sensitivity analyses excluding <X> did not change
+    the magnitude or direction of the effect (Table S3).").
 
-      Exploratory analyses are LABELLED AS EXPLORATORY in the
-      prose AND in any figure / table caption. Mixing exploratory
-      results into the primary results without labelling is the
-      most common cause of post-hoc interpretation drift.
+    Exploratory analyses are LABELLED AS EXPLORATORY in the
+    prose AND in any figure / table caption. Mixing exploratory
+    results into the primary results without labelling is the
+    most common cause of post-hoc interpretation drift.
 
-  - id: figure_and_table_reference_check
-    name: Figure + table reference check
-    description: |
-      Walk every "Figure N" / "Table N" reference. For each:
-        - confirm the figure / table exists on disk in
-          workspace/<step>/outputs/figures or .../outputs/tables
-          OR in synthesis/figures / synthesis/tables
-        - confirm the figure has both caption sidecars
-          (.caption.md + .summary.md)
-        - confirm the table has a header row + values that match
-          the prose
+- id: figure_and_table_reference_check
+  name: Figure + table reference check
+  description: |
+    Walk every "Figure N" / "Table N" reference. For each:
+      - confirm the figure / table exists on disk in
+        workspace/<step>/outputs/figures or .../outputs/tables
+        OR in synthesis/figures / synthesis/tables
+      - confirm the figure has both caption sidecars
+        (.caption.md + .summary.md)
+      - confirm the table has a header row + values that match
+        the prose
 
-      Run tool_audit(scope='step', dimension='figure_full') on each cited figure if not
-      already done. Any failure becomes a blocker for the assembly.
+    Run tool_audit(scope='step', dimension='figure_full') on each cited figure if not
+    already done. Any failure becomes a blocker for the assembly.
 
-  - id: causal_language_pass
-    name: Causal-language pass (Results = associations only)
-    description: |
-      The Results section reports ASSOCIATIONS. Causal verbs
-      ("causes", "leads to", "drives", "improves") belong in the
-      Discussion when the design supports them — not in Results.
+- id: causal_language_pass
+  name: Causal-language pass (Results = associations only)
+  description: |
+    The Results section reports ASSOCIATIONS. Causal verbs
+    ("causes", "leads to", "drives", "improves") belong in the
+    Discussion when the design supports them — not in Results.
 
-      Walk the prose:
-        "Intervention CAUSED X reduction"             → no
-        "Intervention WAS ASSOCIATED WITH X reduction" → yes (for
-         observational)
-        "X RECEIVED Y, leading to Z"                  → no
-        "X RECEIVED Y; Z was lower in this arm"       → yes
+    Walk the prose:
+      "Intervention CAUSED X reduction"             → no
+      "Intervention WAS ASSOCIATED WITH X reduction" → yes (for
+       observational)
+      "X RECEIVED Y, leading to Z"                  → no
+      "X RECEIVED Y; Z was lower in this arm"       → yes
 
-      For RCTs, "intervention reduced X" is acceptable in Results
-      because the design supports the causal reading. For everything
-      else, use associational phrasing.
+    For RCTs, "intervention reduced X" is acceptable in Results
+    because the design supports the causal reading. For everything
+    else, use associational phrasing.
 
-  - id: number_format_pass
-    name: Number-format pass (field's convention)
-    description: |
-      Walk every statistic, applying the field's reporting convention
-      (writing_core carries the mechanical rules):
-        - p-values to the precision the field uses, very small values
-          floored rather than printed with spurious digits
-        - point estimates paired with an interval estimate (state the
-          coverage level), not a bare standard error
-        - significant figures match the precision of the measurement
-          (no spurious precision)
-        - units always present
-        - scientific notation for magnitudes outside the comfortable
-          decimal range
+- id: number_format_pass
+  name: Number-format pass (field's convention)
+  description: |
+    Walk every statistic, applying the field's reporting convention
+    (writing_core carries the mechanical rules):
+      - p-values to the precision the field uses, very small values
+        floored rather than printed with spurious digits
+      - point estimates paired with an interval estimate (state the
+        coverage level), not a bare standard error
+      - significant figures match the precision of the measurement
+        (no spurious precision)
+      - units always present
+      - scientific notation for magnitudes outside the comfortable
+        decimal range
 
-      Inconsistent formatting reads as careless; reviewers will
-      flag it. The protocol's job is to surface it before the
-      reviewer does.
+    Inconsistent formatting reads as careless; reviewers will
+    flag it. The protocol's job is to surface it before the
+    reviewer does.
 
-  - id: validate
-    name: Validate
-    description: |
-      sys_file_validate_md filepath="synthesis/results.md"
-        protocol_name="writing_core"
-      Run tool_audit(scope='project', dimension='claims') on synthesis/results.md — every number
-      must trace to a workspace artefact (the evidence table from
-      step `assemble_the_evidence_table`).
+- id: validate
+  name: Validate
+  description: |
+    tool_audit (scope=file, dimension=markdown) filepath="synthesis/results.md"
+      protocol_name="writing_core"
+    Run tool_audit(scope='project', dimension='claims') on synthesis/results.md — every number
+    must trace to a workspace artefact (the evidence table from
+    step `assemble_the_evidence_table`).
 
 expected_outputs:
-  - synthesis/results.md
-  - workspace/scratch/results_evidence.md
+- synthesis/results.md
+- workspace/scratch/results_evidence.md
 
 quality_bar:
   every_number_has_full_statistical_form: true
@@ -292,4 +280,20 @@ quality_bar:
 
 next_protocol: writing/writing_discussion
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: writing
+triggers:
+- draft the results
+- write the results
+- results section
+- report what we found
+- the results section needs work
+- tighten the results
+summary: Draft the Results section (report numbers, defer interpretation, full statistical form).
+token_estimate: 1500
+decomposition:
+- protocol: writing/writing_results
+  purpose: Build evidence table, draft per-structure, audit causal-language + number-format.
+- tool: tool_audit
+  purpose: Audit every number traces to a workspace output (scope='project', dimension='claims').

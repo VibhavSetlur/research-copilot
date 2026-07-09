@@ -88,7 +88,7 @@ def test_status_includes_config_block(tmp_path):
     cfg = d.status().to_dict()["config"]
     assert cfg["base_url"] == "http://127.0.0.1:8787"
     assert cfg["sandbox_mode"] == "auto"
-    assert cfg["enable_gateway"] is False
+    assert cfg["auth_token_env"] == "RESEARCH_OS_DAEMON_TOKEN"
 
 
 def test_serve_is_implemented(tmp_path):
@@ -238,7 +238,6 @@ def test_self_check_interval_config_default():
 
 def test_serve_starts_periodic_self_check_thread(tmp_path, monkeypatch):
     """B1: serve() launches a background thread that re-runs write_notes."""
-    import threading as _t
     from research_os.daemon import core as _core
     from research_os.daemon.config import DaemonConfig
 

@@ -28,14 +28,15 @@ logger = logging.getLogger("research_os.tools.config")
 # either way, only the comments are lost on the fallback path.
 try:
     from ruamel.yaml import YAML as _RuamelYAML  # type: ignore
-    _ruamel = _RuamelYAML()
+except ImportError:
+    _ruamel = None
+    _RUAMEL_AVAILABLE = False
+else:
+    _ruamel: Any = _RuamelYAML()
     _ruamel.preserve_quotes = True
     _ruamel.indent(mapping=2, sequence=4, offset=2)
     _ruamel.width = 4096  # don't reflow long strings
     _RUAMEL_AVAILABLE = True
-except ImportError:
-    _ruamel = None
-    _RUAMEL_AVAILABLE = False
 
 
 def _load_config_roundtrip(path: Path):
@@ -121,6 +122,11 @@ project_name: "{project_name}"
 #   multi_study → a portfolio of sub-studies with a shared codebook + roll-up.
 workspace:
   mode: "analysis"        # analysis | hybrid | tool_build | exploration | notebook | multi_study
+  offline: false           # air-gapped / no-network mode; defaults to false for backward compatibility
+
+compute:
+  offline: false           # canonical runtime offline flag; workspace.offline is accepted as an alias
+
   # workflow_shape:        # optional routing hint: proof | interview_study | linear_essay |
   #                        # experiment_pipeline | systems_benchmark | multi_study | exploration |
   #                        # tool_build | notebook. Leave blank to let the router infer it from
@@ -496,14 +502,14 @@ def get_interaction_policy(root: Path) -> dict[str, str]:
         return defaults
 
 
-VALID_WORKSPACE_MODES = (
-    "analysis", "tool_build", "exploration", "notebook", "multi_study",
-    # hybrid = a research project that ALSO ships software. Routes + scaffolds
-    # like analysis (numbered research steps) AND surfaces the inner software
-    # component(s) — the reaction-similarity shape: characterise a method in
-    # workspace/ steps, then implement it as a library in an inner repo.
-    "hybrid",
-)
+# VALID_WORKSPACE_MODES is a thin derived view of ModeMeta (mode_registry.py).
+# Adding a mode = one entry in state/mode_registry.py — no edit needed here.
+from research_os.state.mode_registry import ALL_MODES as _ALL_MODES  # noqa: E402
+
+VALID_WORKSPACE_MODES: tuple[str, ...] = _ALL_MODES
+# analysis, tool_build, exploration, notebook, multi_study, hybrid
+
+VALID_PERSONA_NAMES = ("scruffy", "neat", "critique", "delegation")
 
 
 def get_workspace_mode(root: Path) -> str:
@@ -945,7 +951,7 @@ def add_api_key(root: Path, provider: str, value: str) -> dict[str, Any]:
                 pass
         return {"status": "success", "provider": provider, "rotated": rotated}
     except Exception as e:
-        logger.exception("add_api_key failed")
+        logger.warning("add_api_key failed: %s", type(e).__name__)
         return {"status": "error", "message": str(e)}
 
 

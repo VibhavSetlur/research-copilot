@@ -1,16 +1,16 @@
 id: multi_panel_composition
 tier: 'synthesize'
 name: Multi-Panel Figure Composition (Figure 2 = A / B / C / D)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - visualization/figure_guidelines   # single-panel styling rules each panel still obeys
-  - visualization/figure_critique      # adversarial encoding check for a headline composite
+- visualization/figure_guidelines     # single-panel styling rules each panel still obeys
+- visualization/figure_critique        # adversarial encoding check for a headline composite
 description: |
   Compose a multi-panel figure — the kind where Figure 2 has panels
   A, B, C, D each making a related point. Real papers spend a lot of
@@ -32,212 +32,203 @@ trigger: |
   "make figure 2 with panels", "subplot layout".
 
 prerequisites:
-  - The panel candidates exist as separate figures OR the source data
-    + intended panel-by-panel structure are clear.
+- The panel candidates exist as separate figures OR the source data + intended panel-by-panel structure are clear.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "A multi-panel figure tells ONE story across the panels. If
-       the panels could be separated without losing meaning, they
-       should be separate figures."
-    - "Reading order is left-to-right, top-to-bottom unless the
-       narrative explicitly demands otherwise. Label A goes
-       top-left."
-    - "Shared structure makes panels READ as one figure. Same axis
-       ranges where the comparison is across panels; same colour
-       legend used in all panels where applicable; same panel size."
-    - "Panel labels (A / B / C / D) live in the same place across
-       all panels — typically top-left of each panel, NOT in the
-       title."
+  - "A multi-panel figure tells ONE story across the panels. If the panels could be separated without losing meaning, they should be separate figures."
+  - "Reading order is left-to-right, top-to-bottom unless the narrative explicitly demands otherwise. Label A goes top-left."
+  - "Shared structure makes panels READ as one figure. Same axis ranges where the comparison is across panels; same colour legend used in all panels where applicable; same panel size."
+  - "Panel labels (A / B / C / D) live in the same place across all panels — typically top-left of each panel, NOT in the title."
 
 steps:
-  - id: name_the_story
-    name: Name the story the multi-panel figure tells
-    description: |
-      Write ONE sentence (≤25 words) stating what the figure as a
-      WHOLE shows. Examples:
-        - "Performance scales with training data, holds across
-           three architectures, and shows diminishing returns past
-           N=10k."
-        - "The intervention effect is consistent across age strata
-           and survives sensitivity to two missingness assumptions."
-        - "Three replication attempts agree on the direction; two
-           agree on the magnitude; one diverges."
+- id: name_the_story
+  name: Name the story the multi-panel figure tells
+  description: |
+    Write ONE sentence (≤25 words) stating what the figure as a
+    WHOLE shows. Examples:
+      - "Performance scales with training data, holds across
+         three architectures, and shows diminishing returns past
+         N=10k."
+      - "The intervention effect is consistent across age strata
+         and survives sensitivity to two missingness assumptions."
+      - "Three replication attempts agree on the direction; two
+         agree on the magnitude; one diverges."
 
-      If the sentence requires "and also" / "as well as" to bind
-      multiple unrelated points, the panels probably belong in
-      separate figures. Refine the sentence until it expresses ONE
-      coherent claim.
+    If the sentence requires "and also" / "as well as" to bind
+    multiple unrelated points, the panels probably belong in
+    separate figures. Refine the sentence until it expresses ONE
+    coherent claim.
 
-  - id: enumerate_panels
-    name: Enumerate the panels (justify each)
-    description: |
-      For each panel, write:
-        - panel label (A, B, C, ... in reading order)
-        - one-sentence panel-specific claim
-        - chart family (per visualization/figure_guidelines)
-        - source data / table
-        - x-axis variable + range
-        - y-axis variable + range
-        - colour / facet variable (when used)
-        - whether axis / colour scales should be SHARED with other
-          panels
+- id: enumerate_panels
+  name: Enumerate the panels (justify each)
+  description: |
+    For each panel, write:
+      - panel label (A, B, C, ... in reading order)
+      - one-sentence panel-specific claim
+      - chart family (per visualization/figure_guidelines)
+      - source data / table
+      - x-axis variable + range
+      - y-axis variable + range
+      - colour / facet variable (when used)
+      - whether axis / colour scales should be SHARED with other
+        panels
 
-      Watch the panel count: when the panels stop reading at the
-      destination size, or when they no longer collapse to ONE
-      whole-figure claim, the figure is doing the work of two —
-      split it rather than cramming. Each panel must earn its place
-      in the single story from name_the_story.
+    Watch the panel count: when the panels stop reading at the
+    destination size, or when they no longer collapse to ONE
+    whole-figure claim, the figure is doing the work of two —
+    split it rather than cramming. Each panel must earn its place
+    in the single story from name_the_story.
 
-      Write the plan to workspace/scratch/multi_panel_<slug>.md.
+    Write the plan to workspace/scratch/multi_panel_<slug>.md.
 
-  - id: design_the_grid
-    name: Design the grid (rows × columns)
-    description: |
-      Pick the grid:
-        - 2 panels  →  1 × 2  (horizontal)  or  2 × 1  (vertical)
-        - 3 panels  →  1 × 3  or  3 × 1  (reading-order matters)
-        - 4 panels  →  2 × 2  (square — most balanced)
-        - 5 panels  →  reconsider; 5 rarely composes well
-        - 6 panels  →  2 × 3  or  3 × 2
+- id: design_the_grid
+  name: Design the grid (rows × columns)
+  description: |
+    Pick the grid:
+      - 2 panels  →  1 × 2  (horizontal)  or  2 × 1  (vertical)
+      - 3 panels  →  1 × 3  or  3 × 1  (reading-order matters)
+      - 4 panels  →  2 × 2  (square — most balanced)
+      - 5 panels  →  reconsider; 5 rarely composes well
+      - 6 panels  →  2 × 3  or  3 × 2
 
-      For 4-panel: 2 × 2 unless the panels form a clear sequence
-      (e.g. four time points), in which case 1 × 4 reads better.
+    For 4-panel: 2 × 2 unless the panels form a clear sequence
+    (e.g. four time points), in which case 1 × 4 reads better.
 
-      Set the final figure WIDTH from the destination's column
-      width — a single-column vs double-column journal slot, the
-      slide's safe area, the poster column. Use the target venue's
-      stated figure width; the common single-/double-column print
-      widths are a starting estimate, not the bound.
+    Set the final figure WIDTH from the destination's column
+    width — a single-column vs double-column journal slot, the
+    slide's safe area, the poster column. Use the target venue's
+    stated figure width; the common single-/double-column print
+    widths are a starting estimate, not the bound.
 
-      Choose ROW HEIGHT so each panel still reads at the destination
-      size — verify by opening the render at 100% (the
-      pre_publish self-review in figure_guidelines), not by a fixed
-      per-panel height.
+    Choose ROW HEIGHT so each panel still reads at the destination
+    size — verify by opening the render at 100% (the
+    pre_publish self-review in figure_guidelines), not by a fixed
+    per-panel height.
 
-  - id: align_scales_where_appropriate
-    name: Align axis + colour scales across panels (where appropriate)
-    description: |
-      For panels making a COMPARISON across panels:
-        - share the y-axis range across panels comparing the same
-          quantity (so the eye reads "panel B is higher than panel
-          A" without re-scaling)
-        - share the colour scale across panels with the same
-          colour-coded variable (one legend, not per-panel legends)
-        - share the x-axis when panels span the same dimension
-          (e.g. time)
+- id: align_scales_where_appropriate
+  name: Align axis + colour scales across panels (where appropriate)
+  description: |
+    For panels making a COMPARISON across panels:
+      - share the y-axis range across panels comparing the same
+        quantity (so the eye reads "panel B is higher than panel
+        A" without re-scaling)
+      - share the colour scale across panels with the same
+        colour-coded variable (one legend, not per-panel legends)
+      - share the x-axis when panels span the same dimension
+        (e.g. time)
 
-      For panels making INDEPENDENT points:
-        - per-panel axis ranges are fine; the panels are just
-          neighbouring figures, not a sequence
-        - per-panel colour scales are fine
+    For panels making INDEPENDENT points:
+      - per-panel axis ranges are fine; the panels are just
+        neighbouring figures, not a sequence
+      - per-panel colour scales are fine
 
-      Record the choice in the plan: "shared y across A and B;
-      independent in C and D" — this discipline becomes the script's
-      ylim / clim args.
+    Record the choice in the plan: "shared y across A and B;
+    independent in C and D" — this discipline becomes the script's
+    ylim / clim args.
 
-  - id: build_panels_individually
-    name: Build each panel individually
-    description: |
-      Write a plotting script per panel that captures:
-        - step_id (which analysis step the panel belongs to)
-        - name (<figure_slug>_panel<letter>)
-        - chart family (per visualization/figure_guidelines)
-        - data path + x / y columns
-        - caption (panel-specific finding)
-        - plain-English summary (panel-specific)
-        - palette aligned with the other panels
-        - style aligned with the other panels
+- id: build_panels_individually
+  name: Build each panel individually
+  description: |
+    Write a plotting script per panel that captures:
+      - step_id (which analysis step the panel belongs to)
+      - name (<figure_slug>_panel<letter>)
+      - chart family (per visualization/figure_guidelines)
+      - data path + x / y columns
+      - caption (panel-specific finding)
+      - plain-English summary (panel-specific)
+      - palette aligned with the other panels
+      - style aligned with the other panels
 
-      Each individual panel ends with both caption sidecars.
-      Outputs: workspace/<step>/outputs/figures/<figure_slug>_panel<letter>.png
+    Each individual panel ends with both caption sidecars.
+    Outputs: workspace/<step>/outputs/figures/<figure_slug>_panel<letter>.png
 
-      When the chart family is bespoke (network / map / custom),
-      use a small matplotlib script but apply the SAME palette / DPI /
-      aspect ratio as the rest of the deck, AND still write the
-      caption sidecar by hand.
+    When the chart family is bespoke (network / map / custom),
+    use a small matplotlib script but apply the SAME palette / DPI /
+    aspect ratio as the rest of the deck, AND still write the
+    caption sidecar by hand.
 
-  - id: compose_via_subplots_or_pdf_grid
-    name: Compose the panels into one figure
-    description: |
-      Two paths:
+- id: compose_via_subplots_or_pdf_grid
+  name: Compose the panels into one figure
+  description: |
+    Two paths:
 
-      (a) IN-CODE composition (preferred when source data lives in
-          one place):
-        Write a single python / R script
-        workspace/<step>/scripts/<NN>_<slug>_composite_v1.py that
-        builds all panels as subplots of one matplotlib / plotnine
-        Figure object, applies shared scales, places labels
-        (A / B / C / D) consistently top-left of each axes via
-        ax.text(...), and saves
-        workspace/<step>/outputs/figures/<slug>_composite.png at
-        ≥300 DPI + SVG companion.
+    (a) IN-CODE composition (preferred when source data lives in
+        one place):
+      Write a single python / R script
+      workspace/<step>/scripts/<NN>_<slug>_composite_v1.py that
+      builds all panels as subplots of one matplotlib / plotnine
+      Figure object, applies shared scales, places labels
+      (A / B / C / D) consistently top-left of each axes via
+      ax.text(...), and saves
+      workspace/<step>/outputs/figures/<slug>_composite.png at
+      ≥300 DPI + SVG companion.
 
-      (b) IMAGE-GRID composition (when panels were built separately
-          and you don't want to rebuild):
-        Use ImageMagick / Python PIL to tile the panel PNGs into a
-        grid. Apply panel labels via the same tool. This is faster
-        but loses some sharpness; preferred only for talks / posters,
-        not for paper figures.
+    (b) IMAGE-GRID composition (when panels were built separately
+        and you don't want to rebuild):
+      Use ImageMagick / Python PIL to tile the panel PNGs into a
+      grid. Apply panel labels via the same tool. This is faster
+      but loses some sharpness; preferred only for talks / posters,
+      not for paper figures.
 
-      Either way: produce workspace/<step>/outputs/figures/<slug>_composite.png
-      with the standard sidecar pair.
+    Either way: produce workspace/<step>/outputs/figures/<slug>_composite.png
+    with the standard sidecar pair.
 
-  - id: write_combined_caption
-    name: Write the combined caption
-    description: |
-      The combined caption (in <slug>_composite.caption.md and the
-      paper / poster / slide reference) follows a pattern:
+- id: write_combined_caption
+  name: Write the combined caption
+  description: |
+    The combined caption (in <slug>_composite.caption.md and the
+    paper / poster / slide reference) follows a pattern:
 
-        "<one-sentence whole-figure claim from name_the_story>.
-         (A) <one-sentence panel-A claim>. (B) <one-sentence
-         panel-B claim>. (C) <one-sentence panel-C claim>.
-         (D) <one-sentence panel-D claim>."
+      "<one-sentence whole-figure claim from name_the_story>.
+       (A) <one-sentence panel-A claim>. (B) <one-sentence
+       panel-B claim>. (C) <one-sentence panel-C claim>.
+       (D) <one-sentence panel-D claim>."
 
-      Hard rules:
-        - lead sentence is the whole-figure claim, not "Multi-panel
-          figure showing X"
-        - each panel sub-caption is ONE sentence; longer is a smell
-        - cite specific features ("note the inflection at N=10k")
-          when the panel's value depends on a feature the reader
-          might miss
+    Hard rules:
+      - lead sentence is the whole-figure claim, not "Multi-panel
+        figure showing X"
+      - each panel sub-caption is ONE sentence; longer is a smell
+      - cite specific features ("note the inflection at N=10k")
+        when the panel's value depends on a feature the reader
+        might miss
 
-      Write the plain-English summary (<slug>_composite.summary.md)
-      with the same whole-figure → panel structure, in non-expert
-      language.
+    Write the plain-English summary (<slug>_composite.summary.md)
+    with the same whole-figure → panel structure, in non-expert
+    language.
 
-  - id: audit_composite
-    name: Audit the composite figure
-    description: |
-      tool_audit(scope='step', dimension='figure_full') filepath="<composite.png>"
-      In addition, manually verify:
-        - panel labels (A, B, C, ...) visible and in consistent
-          position across all panels
-        - shared scales actually shared (eyeball the y-axes)
-        - no axis label overlap with neighbouring panels
-        - colour legend present once (not duplicated per panel)
-          when colour scale is shared
-        - aspect ratio readable at the destination (open at 100%
-          zoom and check)
-        - composite DPI ≥ 300
+- id: audit_composite
+  name: Audit the composite figure
+  description: |
+    tool_audit(scope='step', dimension='figure_full') filepath="<composite.png>"
+    In addition, manually verify:
+      - panel labels (A, B, C, ...) visible and in consistent
+        position across all panels
+      - shared scales actually shared (eyeball the y-axes)
+      - no axis label overlap with neighbouring panels
+      - colour legend present once (not duplicated per panel)
+        when colour scale is shared
+      - aspect ratio readable at the destination (open at 100%
+        zoom and check)
+      - composite DPI ≥ 300
 
-  - id: route_to_sensitivity
-    name: Sensitivity / alternative-encoding check (for headline figures)
-    description: |
-      If this composite is a HEADLINE figure (going in the paper /
-      poster / dashboard), route to `visualization/figure_critique`
-      for an adversarial encoding check. Multi-panel figures are
-      particularly prone to the "shared scale hides the difference"
-      failure mode; an alternative encoding (e.g. one panel as
-      relative-to-baseline instead of raw) often surfaces it.
+- id: route_to_sensitivity
+  name: Sensitivity / alternative-encoding check (for headline figures)
+  description: |
+    If this composite is a HEADLINE figure (going in the paper /
+    poster / dashboard), route to `visualization/figure_critique`
+    for an adversarial encoding check. Multi-panel figures are
+    particularly prone to the "shared scale hides the difference"
+    failure mode; an alternative encoding (e.g. one panel as
+    relative-to-baseline instead of raw) often surfaces it.
 
 expected_outputs:
-  - workspace/scratch/multi_panel_<slug>.md
-  - workspace/<step>/outputs/figures/<slug>_panel<letter>.png  (per panel)
-  - workspace/<step>/outputs/figures/<slug>_composite.png
-  - workspace/<step>/outputs/figures/<slug>_composite.caption.md
-  - workspace/<step>/outputs/figures/<slug>_composite.summary.md
+- workspace/scratch/multi_panel_<slug>.md
+- workspace/<step>/outputs/figures/<slug>_panel<letter>.png  (per panel)
+- workspace/<step>/outputs/figures/<slug>_composite.png
+- workspace/<step>/outputs/figures/<slug>_composite.caption.md
+- workspace/<step>/outputs/figures/<slug>_composite.summary.md
 
 quality_bar:
   every_panel_earns_its_place_in_one_story: true
@@ -247,6 +238,24 @@ quality_bar:
   caption_starts_with_whole_figure_claim: true
   composite_dpi_at_least_300: true
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: synthesize
+sub_intent: multi_panel
+triggers:
+- multi-panel figure
+- multi panel figure
+- figure with sub-panels
+- figure with subpanels
+- panels a b c
+- compose panels
+- combine these figures into one
+- make figure 2 with panels
+- subplot layout
+- composite figure
+summary: Compose a multi-panel figure (Figure 2 = A / B / C / D) with shared scales + combined caption.
+token_estimate: 1500
+decomposition:
+- protocol: visualization/multi_panel_composition
+  purpose: Name the story, design the grid, build panels, compose, caption.

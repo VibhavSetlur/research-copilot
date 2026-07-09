@@ -1,108 +1,116 @@
 id: systematic_review
 tier: 'ground'
 name: Systematic Review (PRISMA)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - literature/literature_search       # the search engine this review drives wider
-  - literature/evidence_synthesis      # grades the included corpus
-  - methodology/meta_analysis          # the quantitative-synthesis branch
+- literature/literature_search         # the search engine this review drives wider
+- literature/evidence_synthesis        # grades the included corpus
+- methodology/meta_analysis            # the quantitative-synthesis branch
 description: Full PRISMA workflow for a primary systematic review or meta-analysis project.
 trigger: Use when the project IS a systematic review (not just a background lit search for a primary study).
 prerequisites:
-  - docs/research_overview.md uses PICO/PECO format
-  - methodology_selection has been run (review type confirmed)
+- docs/research_overview.md uses PICO/PECO format
+- methodology_selection has been run (review type confirmed)
 
 steps:
-  - id: create_review_step
-    name: Create Review Experiment Folder
-    description: |
-      sys_path name="systematic_review" hypothesis="<one-sentence PICO question>"
+- id: create_review_step
+  name: Create Review Experiment Folder
+  description: |
+    tool_plan (operation='create_step', name="systematic_review", hypothesis="<one-sentence PICO question>")
 
-  - id: protocol_registration
-    name: Pre-register the Protocol
-    description: |
-      Draft a pre-registered review protocol (PROSPERO is the standard
-      registry for health-related reviews; other fields have their own):
-        - Background, objectives
-        - Eligibility criteria (PICO/PECO)
-        - Search strategy (databases, dates, languages)
-        - Screening + extraction process (independent reviewers, conflict resolution)
-        - Risk-of-bias appraisal — name the instrument the field treats
-          as standard for the design(s) being reviewed (the appropriate
-          tool differs for trials, observational studies, and prior
-          reviews) and cite it. Do not default-pick; the instrument
-          follows from the included designs.
-        - Synthesis plan (qualitative summary vs meta-analysis)
-        - Subgroup / sensitivity analyses
-      Write to workspace/<step>/outputs/reports/review_protocol.md.
+- id: protocol_registration
+  name: Pre-register the Protocol
+  description: |
+    Draft a pre-registered review protocol (PROSPERO is the standard
+    registry for health-related reviews; other fields have their own):
+      - Background, objectives
+      - Eligibility criteria (PICO/PECO)
+      - Search strategy (databases, dates, languages)
+      - Screening + extraction process (independent reviewers, conflict resolution)
+      - Risk-of-bias appraisal — name the instrument the field treats
+        as standard for the design(s) being reviewed (the appropriate
+        tool differs for trials, observational studies, and prior
+        reviews) and cite it. Do not default-pick; the instrument
+        follows from the included designs.
+      - Synthesis plan (qualitative summary vs meta-analysis)
+      - Subgroup / sensitivity analyses
+    Write to workspace/<step>/outputs/reports/review_protocol.md.
 
-  - id: execute_search
-    name: Execute Multi-Database Search
-    description: |
-      Follow the literature_search protocol BUT run it for COMPLETENESS,
-      not for a working corpus: a systematic review aims to find every
-      eligible study, so widen each provider's result limit well beyond a
-      background pass and prefer several narrow queries over one broad
-      one. Search until the recall stops growing. Save all raw results to
-      workspace/<step>/data/raw_search_results.json.
+- id: execute_search
+  name: Execute Multi-Database Search
+  description: |
+    Follow the literature_search protocol BUT run it for COMPLETENESS,
+    not for a working corpus: a systematic review aims to find every
+    eligible study, so widen each provider's result limit well beyond a
+    background pass and prefer several narrow queries over one broad
+    one. Search until the recall stops growing. Save all raw results to
+    workspace/<step>/data/raw_search_results.json.
 
-  - id: screening
-    name: Title/Abstract + Full-Text Screening
-    description: |
-      For each candidate apply the eligibility criteria. Track counts:
-        identified -> dedup -> title/abstract screened -> full-text retrieved
-        -> full-text screened -> included -> excluded with reasons.
-      Write the included list (with citation_key) to
-      workspace/<step>/outputs/reports/included_studies.md.
+- id: screening
+  name: Title/Abstract + Full-Text Screening
+  description: |
+    For each candidate apply the eligibility criteria. Track counts:
+      identified -> dedup -> title/abstract screened -> full-text retrieved
+      -> full-text screened -> included -> excluded with reasons.
+    Write the included list (with citation_key) to
+    workspace/<step>/outputs/reports/included_studies.md.
 
-  - id: risk_of_bias
-    name: Risk-of-Bias Assessment
-    description: |
-      Run the chosen tool on every included study. Tabulate per-domain judgements
-      (Low / Some concerns / High) in
-      workspace/<step>/outputs/tables/risk_of_bias.csv.
+- id: risk_of_bias
+  name: Risk-of-Bias Assessment
+  description: |
+    Run the chosen tool on every included study. Tabulate per-domain judgements
+    (Low / Some concerns / High) in
+    workspace/<step>/outputs/tables/risk_of_bias.csv.
 
-  - id: data_extraction
-    name: Standardised Data Extraction
-    description: |
-      Create workspace/<step>/outputs/tables/data_extraction.csv with one row per
-      study. Required columns:
-        citation_key, design, n, population, intervention, comparator, outcome,
-        effect_size, ci_low, ci_high, follow_up, risk_of_bias
-      Extract every value from the study's downloaded full text — a
-      systematic review cannot extract effect sizes or sample sizes from
-      an abstract. A study whose full text could not be retrieved is an
-      exclusion-with-reason, recorded in the screening counts.
-      Two reviewers should ideally extract independently; in autopilot, flag
-      "single-extractor" as a limitation.
+- id: data_extraction
+  name: Standardised Data Extraction
+  description: |
+    Create workspace/<step>/outputs/tables/data_extraction.csv with one row per
+    study. Required columns:
+      citation_key, design, n, population, intervention, comparator, outcome,
+      effect_size, ci_low, ci_high, follow_up, risk_of_bias
+    Extract every value from the study's downloaded full text — a
+    systematic review cannot extract effect sizes or sample sizes from
+    an abstract. A study whose full text could not be retrieved is an
+    exclusion-with-reason, recorded in the screening counts.
+    Two reviewers should ideally extract independently; in autopilot, flag
+    "single-extractor" as a limitation.
 
-  - id: prisma_diagram
-    name: Generate PRISMA Diagram
-    description: |
-      Generate a PRISMA 2020 flow diagram as PNG at
-      workspace/<step>/outputs/figures/prisma_flow.png using matplotlib /
-      networkx — or, if a domain library is available, prisma-py. Include the
-      counts from screening.
+- id: prisma_diagram
+  name: Generate PRISMA Diagram
+  description: |
+    Generate a PRISMA 2020 flow diagram as PNG at
+    workspace/<step>/outputs/figures/prisma_flow.png using matplotlib /
+    networkx — or, if a domain library is available, prisma-py. Include the
+    counts from screening.
 
-  - id: synthesis_or_meta
-    name: Qualitative Synthesis or Meta-Analysis
-    description: |
-      Qualitative: write a structured narrative organised by outcome.
-      Quantitative: load methodology/meta_analysis protocol and follow it.
+- id: synthesis_or_meta
+  name: Qualitative Synthesis or Meta-Analysis
+  description: |
+    Qualitative: write a structured narrative organised by outcome.
+    Quantitative: load methodology/meta_analysis protocol and follow it.
 
 expected_outputs:
-  - workspace/*/outputs/reports/review_protocol.md
-  - workspace/*/outputs/reports/included_studies.md
-  - workspace/*/outputs/tables/data_extraction.csv
-  - workspace/*/outputs/tables/risk_of_bias.csv
-  - workspace/*/outputs/figures/prisma_flow.png
+- workspace/*/outputs/reports/review_protocol.md
+- workspace/*/outputs/reports/included_studies.md
+- workspace/*/outputs/tables/data_extraction.csv
+- workspace/*/outputs/tables/risk_of_bias.csv
+- workspace/*/outputs/figures/prisma_flow.png
 
 next_protocol: literature/evidence_synthesis
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: literature
+sub_intent: systematic
+triggers:
+- systematic review
+- prisma
+- screen papers
+- scoping review
+summary: PRISMA-compliant systematic review.

@@ -111,6 +111,10 @@ def _check_notebook(root: Path) -> list[dict]:
     nb = root / "notebooks"
     if not nb.is_dir():
         return out
+    marker = root / ".ipynb_mode"
+    if marker.exists() and not any(nb.rglob("*.ipynb")):
+        out.append(_f("info", "notebook_marker_only",
+                      "notebook mode: notebook markers exist but no .ipynb files were found yet — seed a notebook to make the mode real."))
     notebooks = list(nb.glob("*.ipynb")) + list(nb.glob("**/*.ipynb"))
     if not notebooks:
         out.append(_f("info", "notebook_none_yet",
@@ -206,6 +210,10 @@ def _check_hybrid(root: Path) -> list[dict]:
     # hybrid = analysis spine + a tool/ half. If the tool half has code but no
     # tests, the software side is unguarded.
     tool = root / "tool"
+    notebooks = root / "notebooks"
+    if notebooks.is_dir() and any(notebooks.rglob("*.ipynb")) and tool.is_dir():
+        out.append(_f("info", "hybrid_notebook_tool_mix",
+                      "hybrid: both notebooks/ and tool/ are present — keep the notebook findings and the tool repo aligned."))
     if tool.is_dir() and any(tool.iterdir()):
         has_tests = _has_any(tool, "**/test_*.py") or _has_any(tool, "**/tests")
         has_code = _has_any(tool, "**/*.py") or _has_any(tool, "**/*.rs") \
@@ -218,7 +226,47 @@ def _check_hybrid(root: Path) -> list[dict]:
     return out
 
 
+def _check_analysis(root: Path) -> list[dict]:
+    """Health checks for the default analysis (numbered-step) mode.
+
+    Checks that the workspace has made meaningful progress: at least one
+    numbered step exists once the project is past the intake stage, and
+    that the synthesis dir hasn't been pre-populated with empty stubs.
+    Fail-open: any missing directory or IO error silently returns nothing.
+    """
+    out: list[dict] = []
+    ws = root / "workspace"
+    if not ws.is_dir():
+        return out
+    try:
+        import re
+        steps = [d for d in ws.iterdir()
+                 if d.is_dir() and re.match(r"^\d{1,3}_", d.name)]
+        # Only warn once the intake exists (project has been started).
+        intake = root / "inputs" / "intake.md"
+        if intake.exists() and not steps:
+            out.append(_f("info", "analysis_no_steps",
+                          "analysis: intake exists but no numbered step "
+                          "(workspace/NN_*) yet — create the first step to "
+                          "start the analysis."))
+        # Synthesis pre-populated before any steps are complete is likely
+        # AI noise — surface it so the researcher can review.
+        synthesis = root / "synthesis"
+        if synthesis.is_dir() and not steps:
+            real_syn = [f for f in synthesis.rglob("*") if f.is_file()
+                        and f.name.lower() not in ("readme.md", ".gitkeep")]
+            if real_syn:
+                out.append(_f("info", "analysis_premature_synthesis",
+                              "analysis: synthesis/ has content but no numbered "
+                              "step has been completed yet — confirm the "
+                              "deliverable is intentional at this stage."))
+    except Exception:
+        pass
+    return out
+
+
 _MODE_CHECKS = {
+    "analysis": _check_analysis,
     "tool_build": _check_tool_build,
     "notebook": _check_notebook,
     "multi_study": _check_multi_study,

@@ -136,11 +136,12 @@ def _save_ledger(step_dir: Path, ledger: dict[str, Any]) -> None:
     tmp.replace(path)
 
 
+import contextlib  # noqa: E402 - imported after ledger/bootstrap setup to keep lock helpers grouped
+
 # Cross-process lock around (read-ledger → pick n → mkdir vN → write-ledger).
 # fcntl.flock is POSIX-only; on platforms without it (Windows) the manager
 # falls back to a no-op — the single-process case is already safe because
 # _save_ledger is the only writer.
-import contextlib
 
 try:
     import fcntl  # type: ignore

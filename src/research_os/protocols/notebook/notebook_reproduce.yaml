@@ -1,18 +1,18 @@
 id: notebook_reproduce
 tier: 'execute'
 name: Notebook Reproduce (harden a notebook so anyone can re-run it)
-version: '4.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai, auditor]
   workflow_shape: [notebook, reproducibility]
 last_reviewed: '2026-06-25'
 see_also:
-  - notebook/notebook_workflow                  # the home loop this hardens
-  - reproducibility/reproducibility             # the project-wide repro discipline
-  - methodology/polyglot_analysis               # pinning a per-language env when the kernel isn't Python
-  - notebook/notebook_promote                   # where a hardened notebook graduates
+- notebook/notebook_workflow                    # the home loop this hardens
+- reproducibility/reproducibility               # the project-wide repro discipline
+- methodology/polyglot_analysis                 # pinning a per-language env when the kernel isn't Python
+- notebook/notebook_promote                     # where a hardened notebook graduates
 description: |
   The hardening pass for a notebook that already runs interactively but is
   not yet trustworthy to a stranger. notebook_workflow gets a notebook to
@@ -41,112 +41,112 @@ trigger: |
   notebook reproducible", "pin the environment", "parameterize this
   notebook", "will this run for anyone", "run this headless / in CI".
 prerequisites:
-  - The notebook already passes restart-and-run-all in-session (notebook_workflow), OR the researcher has pointed at a specific notebook to harden
-  - workspace.mode is notebook (sys_boot reports workspace_mode), OR the researcher is working in a Jupyter notebook
+- The notebook already passes restart-and-run-all in-session (notebook_workflow), OR the researcher has pointed at a specific notebook to harden
+- workspace.mode is notebook (sys_boot reports workspace_mode), OR the researcher is working in a Jupyter notebook
 
 steps:
-  - id: orient_repro
-    name: Orient on what reproducibility costs THIS notebook
-    description: |
-      If you haven't called sys_boot this session, do so once — it reports
-      workspace_mode + autonomy. Read the notebook end-to-end first and name
-      the things it silently depends on: a Python/R/Julia version, a set of
-      libraries at particular versions, files it reads (and from where),
-      randomness, wall-clock or network calls, and any value a human typed
-      that should really be a parameter. The hardening targets exactly those
-      dependencies — nothing more.
+- id: orient_repro
+  name: Orient on what reproducibility costs THIS notebook
+  description: |
+    If you haven't called sys_boot this session, do so once — it reports
+    workspace_mode + autonomy. Read the notebook end-to-end first and name
+    the things it silently depends on: a Python/R/Julia version, a set of
+    libraries at particular versions, files it reads (and from where),
+    randomness, wall-clock or network calls, and any value a human typed
+    that should really be a parameter. The hardening targets exactly those
+    dependencies — nothing more.
 
-  - id: pin_environment
-    name: Pin the environment so the kernel is reconstructable
-    description: |
-      A notebook is only reproducible if its kernel can be rebuilt. Capture
-      the environment in a form a stranger can recreate, appropriate to the
-      language:
-        - Python: an environment file (conda environment.yml or a pinned
-          requirements.txt / lockfile) recording the interpreter + library
-          versions the notebook needs. Match what the project already uses;
-          do not introduce a new packaging tool.
-        - R: the package set + versions (e.g. an renv lockfile or a recorded
-          sessionInfo()); Julia: the Project.toml + Manifest.toml.
-      The first cell already prints versions (notebook_workflow); this step
-      makes those versions INSTALLABLE, not just observable. Write the env
-      file into environment/ and note in the notebook which file rebuilds it.
+- id: pin_environment
+  name: Pin the environment so the kernel is reconstructable
+  description: |
+    A notebook is only reproducible if its kernel can be rebuilt. Capture
+    the environment in a form a stranger can recreate, appropriate to the
+    language:
+      - Python: an environment file (conda environment.yml or a pinned
+        requirements.txt / lockfile) recording the interpreter + library
+        versions the notebook needs. Match what the project already uses;
+        do not introduce a new packaging tool.
+      - R: the package set + versions (e.g. an renv lockfile or a recorded
+        sessionInfo()); Julia: the Project.toml + Manifest.toml.
+    The first cell already prints versions (notebook_workflow); this step
+    makes those versions INSTALLABLE, not just observable. Write the env
+    file into environment/ and note in the notebook which file rebuilds it.
 
-  - id: declare_inputs
-    name: Declare every input path explicitly
-    description: |
-      Hidden absolute paths ("/home/me/data/...") are the most common reason
-      a notebook fails for someone else. Make every input the notebook reads
-      explicit and relative to the project: immutable source from
-      inputs/raw_data/, working data from data/. If the notebook downloads
-      or generates an input, the code that produces it must be IN the
-      notebook (or a referenced script), not assumed already-present.
+- id: declare_inputs
+  name: Declare every input path explicitly
+  description: |
+    Hidden absolute paths ("/home/me/data/...") are the most common reason
+    a notebook fails for someone else. Make every input the notebook reads
+    explicit and relative to the project: immutable source from
+    inputs/raw_data/, working data from data/. If the notebook downloads
+    or generates an input, the code that produces it must be IN the
+    notebook (or a referenced script), not assumed already-present.
 
-      Reason about what a reader needs to obtain before cell 1 runs, and
-      state it in a short markdown cell at the top: "this notebook expects
-      <files> in <dirs>; obtain them via <how>." An input the reader can't
-      get is a reproducibility dead-end — surface it now.
+    Reason about what a reader needs to obtain before cell 1 runs, and
+    state it in a short markdown cell at the top: "this notebook expects
+    <files> in <dirs>; obtain them via <how>." An input the reader can't
+    get is a reproducibility dead-end — surface it now.
 
-  - id: make_deterministic
-    name: Make execution deterministic (or honestly bound the variance)
-    description: |
-      Re-running must give the same answer, or a quantified distribution —
-      not a different number each time. Reason about every source of
-      nondeterminism: RNG seeds (set in cell 1 per notebook_workflow, but
-      check library-level seeds too — numpy, torch, the framework's own),
-      hash-order dependence, parallelism, timestamps, and external state
-      (a live API, a mutable database) that can change under the notebook.
+- id: make_deterministic
+  name: Make execution deterministic (or honestly bound the variance)
+  description: |
+    Re-running must give the same answer, or a quantified distribution —
+    not a different number each time. Reason about every source of
+    nondeterminism: RNG seeds (set in cell 1 per notebook_workflow, but
+    check library-level seeds too — numpy, torch, the framework's own),
+    hash-order dependence, parallelism, timestamps, and external state
+    (a live API, a mutable database) that can change under the notebook.
 
-      Where a result is INTRINSICALLY stochastic, don't fake determinism —
-      run enough replicates to report the result with its uncertainty, and
-      say so. The goal is that a re-run reproduces the CLAIM, which for a
-      stochastic result is the distribution, not a single point.
+    Where a result is INTRINSICALLY stochastic, don't fake determinism —
+    run enough replicates to report the result with its uncertainty, and
+    say so. The goal is that a re-run reproduces the CLAIM, which for a
+    stochastic result is the distribution, not a single point.
 
-  - id: parameterize
-    name: Lift hand-tuned values into parameters
-    description: |
-      A notebook that only works because a human typed the right constants
-      in the right cells is not reproducible — it is operated. Identify the
-      values that are genuinely INPUTS to the analysis (a threshold, a date
-      range, an input filename, a model size) versus internal constants, and
-      lift the inputs into a single, clearly-marked parameters cell near the
-      top.
+- id: parameterize
+  name: Lift hand-tuned values into parameters
+  description: |
+    A notebook that only works because a human typed the right constants
+    in the right cells is not reproducible — it is operated. Identify the
+    values that are genuinely INPUTS to the analysis (a threshold, a date
+    range, an input filename, a model size) versus internal constants, and
+    lift the inputs into a single, clearly-marked parameters cell near the
+    top.
 
-      This is what lets the notebook run headless and across inputs: with a
-      parameters cell, the notebook can be re-executed end-to-end with
-      different parameters via the project's existing notebook execution
-      tooling (tool_notebook_exec; papermill/nbconvert-style parameterized
-      runs where available) instead of by hand-editing cells. Do not invent
-      a parameter for every literal — only the ones a re-runner would
-      legitimately change.
+    This is what lets the notebook run headless and across inputs: with a
+    parameters cell, the notebook can be re-executed end-to-end with
+    different parameters via the project's existing notebook execution
+    tooling (tool_notebook_exec; papermill/nbconvert-style parameterized
+    runs where available) instead of by hand-editing cells. Do not invent
+    a parameter for every literal — only the ones a re-runner would
+    legitimately change.
 
-      AUTONOMY GATE:
-        Risk: reversible — restructuring cells into a parameters block
-        changes layout, not results; the clean-kernel run re-validates it.
-        proceed (adaptive default, autopilot) → lift the genuine inputs into a parameters
-          cell, re-run clean to confirm identical outputs, and proceed.
-        confirm first (manual / supervised) → present which values you'd lift to
-          parameters and why; confirm before restructuring.
+    AUTONOMY GATE:
+      Risk: reversible — restructuring cells into a parameters block
+      changes layout, not results; the clean-kernel run re-validates it.
+      proceed (adaptive default, autopilot) → lift the genuine inputs into a parameters
+        cell, re-run clean to confirm identical outputs, and proceed.
+      confirm first (manual / supervised) → present which values you'd lift to
+        parameters and why; confirm before restructuring.
 
-  - id: verify_fresh
-    name: Verify against a fresh environment + clean kernel
-    description: |
-      The proof of reproducibility is a clean re-run that a stranger's setup
-      would mirror. Rebuild the kernel from the pinned environment where the
-      project's setup allows it, then restart-and-run-all from a clean kernel
-      (tool_notebook_exec) and confirm the outputs match. If parameterized,
-      run it once headless with the default parameters to confirm it does not
-      depend on interactive execution.
+- id: verify_fresh
+  name: Verify against a fresh environment + clean kernel
+  description: |
+    The proof of reproducibility is a clean re-run that a stranger's setup
+    would mirror. Rebuild the kernel from the pinned environment where the
+    project's setup allows it, then restart-and-run-all from a clean kernel
+    (tool_notebook_exec) and confirm the outputs match. If parameterized,
+    run it once headless with the default parameters to confirm it does not
+    depend on interactive execution.
 
-      If the fresh run diverges, a hidden dependency is still live — trace it
-      (unpinned dep, undeclared input, unseeded randomness) and fix the
-      class, not the symptom. mem_log "notebook <name> hardened: reproducible
-      from <env file>, inputs <declared>, params <n>" so the trail records
-      what makes it reproducible.
+    If the fresh run diverges, a hidden dependency is still live — trace it
+    (unpinned dep, undeclared input, unseeded randomness) and fix the
+    class, not the symptom. mem_log "notebook <name> hardened: reproducible
+    from <env file>, inputs <declared>, params <n>" so the trail records
+    what makes it reproducible.
 
 expected_outputs:
-  - environment/<env file>  (the reconstructable kernel)
-  - notebooks/<name>.ipynb  (parameterized, paths declared, deterministic)
+- environment/<env file>  (the reconstructable kernel)
+- notebooks/<name>.ipynb  (parameterized, paths declared, deterministic)
 
 quality_bar: |
   - The kernel is reconstructable from a pinned environment file in
@@ -160,3 +160,28 @@ quality_bar: |
 next_protocol: notebook/notebook_promote
 next_protocol_kind: forward_default
 on_failure: reproducibility/reproducibility
+intent_class: execute
+sub_intent: notebook_reproduce
+triggers:
+- make this notebook reproducible
+- make the notebook reproducible
+- make my notebook reproducible
+- make notebook reproducible
+- pin the environment
+- parameterize this notebook
+- parameterise this notebook
+- will this run for anyone
+- run this headless
+- run the notebook in ci
+- harden the notebook
+summary: 'Harden a notebook so anyone can re-run it: pin the environment, declare every input path, make execution deterministic, lift hand-tuned values into a parameters cell, verify against a clean kernel.'
+token_estimate: 1500
+decomposition:
+- protocol: notebook/notebook_reproduce
+  purpose: Pin the env, declare inputs, make deterministic, parameterize, verify against a fresh kernel.
+- tool: sys_env
+  purpose: Snapshot the interpreter + library versions into an environment file.
+- tool: tool_notebook_exec
+  purpose: Restart-and-run-all from a clean kernel; run headless with default params.
+- tool: mem_log
+  purpose: Record what makes the notebook reproducible (env file, inputs, params).

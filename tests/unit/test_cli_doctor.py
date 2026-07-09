@@ -29,9 +29,9 @@ from research_os import cli_doctor
 
 def test_check_python_version_passes_on_current_interpreter():
     status, msg, _ = cli_doctor.check_python_version()
-    # The conda env we run in is >= 3.10 — the project's own floor.
+    # The conda env we run in is >= 3.11 — the project's own floor.
     assert status == "pass"
-    assert ">= 3.10" in msg
+    assert ">= 3.11" in msg
 
 
 def test_check_conda_active_warns_when_unset(monkeypatch):
@@ -87,82 +87,53 @@ def test_check_external_pack_entrypoints_returns_pass():
 
 
 def test_check_embeddings_fresh_pass_when_embeddings_newer(tmp_path):
-    idx = tmp_path / "_router_index.yaml"
+    # P1: the router_index kwarg now points at the compiled bundle.
+    bundle = tmp_path / "_protocols.bundle"
     emb = tmp_path / "_embeddings.npz"
-    rm = tmp_path / "_route_meta.json"
-    idx.write_text("a: 1", encoding="utf-8")
+    bundle.write_bytes(b"fake-bundle")
     emb.write_bytes(b"fake")
-    rm.write_text("{}", encoding="utf-8")
-    # Force emb + route_meta mtime > idx mtime.
     import os
-    os.utime(idx, (0, 0))
+    os.utime(bundle, (0, 0))
     os.utime(emb, (10, 10))
-    os.utime(rm, (10, 10))
     status, _, _ = cli_doctor.check_embeddings_fresh(
-        embeddings=emb, router_index=idx)
+        embeddings=emb, router_index=bundle)
     assert status == "pass"
 
 
 def test_check_embeddings_fresh_warn_when_stale(tmp_path):
-    idx = tmp_path / "_router_index.yaml"
+    bundle = tmp_path / "_protocols.bundle"
     emb = tmp_path / "_embeddings.npz"
-    rm = tmp_path / "_route_meta.json"
-    idx.write_text("a: 1", encoding="utf-8")
+    bundle.write_bytes(b"fake-bundle")
     emb.write_bytes(b"fake")
-    rm.write_text("{}", encoding="utf-8")
     import os
     os.utime(emb, (0, 0))
-    os.utime(idx, (10, 10))
-    # route_meta is fresh so the stale signal under test is the embeddings one.
-    os.utime(rm, (10, 10))
+    os.utime(bundle, (10, 10))  # bundle newer than embeddings → stale
     status, msg, fix = cli_doctor.check_embeddings_fresh(
-        embeddings=emb, router_index=idx)
+        embeddings=emb, router_index=bundle)
     assert status == "warn"
     assert "stale" in msg.lower()
     assert fix
 
 
 def test_check_embeddings_fresh_warn_when_missing(tmp_path):
-    idx = tmp_path / "_router_index.yaml"
-    idx.write_text("a: 1", encoding="utf-8")
+    bundle = tmp_path / "_protocols.bundle"
+    bundle.write_bytes(b"fake-bundle")
     emb = tmp_path / "missing.npz"
     status, msg, _ = cli_doctor.check_embeddings_fresh(
-        embeddings=emb, router_index=idx)
+        embeddings=emb, router_index=bundle)
     assert status == "warn"
     assert "missing" in msg.lower()
 
 
-def test_check_embeddings_fresh_warn_when_route_meta_missing(tmp_path):
-    idx = tmp_path / "_router_index.yaml"
+def test_check_embeddings_fresh_warn_when_bundle_missing(tmp_path):
+    bundle = tmp_path / "missing.bundle"
     emb = tmp_path / "_embeddings.npz"
-    idx.write_text("a: 1", encoding="utf-8")
     emb.write_bytes(b"fake")
-    import os
-    os.utime(idx, (0, 0))
-    os.utime(emb, (10, 10))
-    # No _route_meta.json on disk → the routing sidecar is what routing loads.
     status, msg, fix = cli_doctor.check_embeddings_fresh(
-        embeddings=emb, router_index=idx)
+        embeddings=emb, router_index=bundle)
     assert status == "warn"
-    assert "sidecar" in msg.lower() and "missing" in msg.lower()
-    assert fix and "route-meta-only" in fix
-
-
-def test_check_embeddings_fresh_warn_when_route_meta_stale(tmp_path):
-    idx = tmp_path / "_router_index.yaml"
-    emb = tmp_path / "_embeddings.npz"
-    rm = tmp_path / "_route_meta.json"
-    idx.write_text("a: 1", encoding="utf-8")
-    emb.write_bytes(b"fake")
-    rm.write_text("{}", encoding="utf-8")
-    import os
-    os.utime(idx, (10, 10))
-    os.utime(emb, (10, 10))
-    os.utime(rm, (0, 0))  # sidecar older than the index
-    status, msg, _ = cli_doctor.check_embeddings_fresh(
-        embeddings=emb, router_index=idx)
-    assert status == "warn"
-    assert "sidecar" in msg.lower() and "stale" in msg.lower()
+    assert "bundle" in msg.lower() and "missing" in msg.lower()
+    assert fix and "build_protocols" in fix
 
 
 def test_check_typst_on_path_status_is_known():

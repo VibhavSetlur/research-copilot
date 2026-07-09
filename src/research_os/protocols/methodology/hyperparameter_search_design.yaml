@@ -1,16 +1,16 @@
 id: hyperparameter_search_design
 tier: 'plan'
 name: Hyperparameter Search Design (sweeps + budgets)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [systems_benchmark]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/method_comparison          # the sweep feeds a fair head-to-head
-  - methodology/evaluation_design          # the sweep runs INSIDE this split regime
+- methodology/method_comparison            # the sweep feeds a fair head-to-head
+- methodology/evaluation_design            # the sweep runs INSIDE this split regime
 description: |
   Design a hyperparameter sweep — the search space, the budget, the
   search strategy, the early-stopping rule, and the reporting
@@ -33,225 +33,210 @@ trigger: |
   stopping", "compute budget for tuning".
 
 prerequisites:
-  - A method family is chosen (or the candidate set from
-    methodology_selection is in hand).
-  - A train/val/test split exists (or is being designed in
-    evaluation_design).
+- A method family is chosen (or the candidate set from methodology_selection is in hand).
+- A train/val/test split exists (or is being designed in evaluation_design).
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Search what MATTERS. Most of a method family's tunable
-       hyperparameters carry little variance; a few dominate.
-       Tuning the long tail is compute spent on noise. The
-       literature names which hyperparameters drive each method
-       family for each task type; consult before searching."
-    - "Budget is part of the experiment, not a hidden choice. A
-       comparison between two methods given different trial
-       budgets is not a comparison."
-    - "Search strategy follows the cost regime. Random search tends
-       to beat grid for the same budget (Bergstra & Bengio 2012);
-       sequential model-based search is sample-efficient for
-       expensive evaluations but adds surrogate-model variance —
-       cite the source for the choice you make on THIS budget."
-    - "Early-stopping rules are part of the search definition. A
-       sweep with one method using a multi-fidelity early-stopper
-       and another using a fixed budget is comparing two designs,
-       not two methods."
+  - "Search what MATTERS. Most of a method family's tunable hyperparameters carry little variance; a few dominate. Tuning the long tail is compute spent on noise. The literature names which hyperparameters drive each method family for each task type; consult before searching."
+  - "Budget is part of the experiment, not a hidden choice. A comparison between two methods given different trial budgets is not a comparison."
+  - "Search strategy follows the cost regime. Random search tends to beat grid for the same budget (Bergstra & Bengio 2012); sequential model-based search is sample-efficient for expensive evaluations but adds surrogate-model variance — cite the source for the choice you make on THIS budget."
+  - "Early-stopping rules are part of the search definition. A sweep with one method using a multi-fidelity early-stopper and another using a fixed budget is comparing two designs, not two methods."
 
 steps:
-  - id: scope_the_sweep
-    name: Scope the sweep
-    description: |
-      Confirm:
-        - method family (one or several — if several, design ONE
-          sweep per family with equal-effort budgets)
-        - the evaluation regime the sweep runs INSIDE of (the
-          inner CV / inner val split from evaluation_design)
-        - the compute budget available (wall-clock; GPU-hours;
-          cost ceiling) — drives search strategy
-        - the goal of the sweep:
-            (a) FIND a single best configuration to deploy
-            (b) UNDERSTAND the hyperparameter landscape (which
-                params matter, in what ranges)
-            (c) BOTH
+- id: scope_the_sweep
+  name: Scope the sweep
+  description: |
+    Confirm:
+      - method family (one or several — if several, design ONE
+        sweep per family with equal-effort budgets)
+      - the evaluation regime the sweep runs INSIDE of (the
+        inner CV / inner val split from evaluation_design)
+      - the compute budget available (wall-clock; GPU-hours;
+        cost ceiling) — drives search strategy
+      - the goal of the sweep:
+          (a) FIND a single best configuration to deploy
+          (b) UNDERSTAND the hyperparameter landscape (which
+              params matter, in what ranges)
+          (c) BOTH
 
-  - id: identify_hyperparameters_that_matter
-    name: Identify hyperparameters that matter (literature + sanity)
-    description: |
-      For each method family in scope:
-        tool_research_method query="<method> hyperparameter
-                                    sensitivity for <task type>"
-      Read the returned methods + benchmark / sensitivity-analysis
-      papers to identify the SMALL SET of hyperparameters that drive
-      most of the variance for THIS task family — the literature's
-      sensitivity studies name them. Searching the long tail of
-      low-impact knobs spends budget on noise; defending which
-      hyperparameters you searched (and which you fixed at the
-      library default, and why) is part of the design.
+- id: identify_hyperparameters_that_matter
+  name: Identify hyperparameters that matter (literature + sanity)
+  description: |
+    For each method family in scope:
+      tool_search query="<method> hyperparameter
+                                  sensitivity for <task type>"
+    Read the returned methods + benchmark / sensitivity-analysis
+    papers to identify the SMALL SET of hyperparameters that drive
+    most of the variance for THIS task family — the literature's
+    sensitivity studies name them. Searching the long tail of
+    low-impact knobs spends budget on noise; defending which
+    hyperparameters you searched (and which you fixed at the
+    library default, and why) is part of the design.
 
-      For each searched hyperparameter, set a SEARCH RANGE from the
-      literature's reported good values widened by a margin, and cite
-      the source. Write to
-      workspace/<step>/outputs/reports/sweep_space.md.
+    For each searched hyperparameter, set a SEARCH RANGE from the
+    literature's reported good values widened by a margin, and cite
+    the source. Write to
+    workspace/<step>/outputs/reports/sweep_space.md.
 
-  - id: pick_search_strategy
-    name: Pick the search strategy
-    description: |
-      The strategy follows from a few axes; reason over them rather
-      than reading a cutoff table:
+- id: pick_search_strategy
+  name: Pick the search strategy
+  description: |
+    The strategy follows from a few axes; reason over them rather
+    than reading a cutoff table:
 
-        - DIMENSIONALITY of the search space. Exhaustive (grid)
-          enumeration is only tractable in low dimensions and over
-          discrete values; it degrades fast as dimensions grow.
-        - EVALUATION COST per trial. When each trial is cheap,
-          sampling-based search (random) with a generous budget is
-          hard to beat and trivially parallelises. When each trial
-          is expensive, sample-efficient sequential model-based
-          search (e.g. TPE / GP-based Bayesian optimisation) earns
-          its surrogate-model overhead.
-        - WHETHER COST SCALES with an iteration knob (epochs /
-          rounds / samples). When it does, a multi-fidelity
-          early-stopper (successive-halving family) can kill poor
-          configs early; when the method is non-iterative there is
-          no early signal to exploit.
-        - WHETHER THE SCHEDULE ITSELF benefits from tuning
-          mid-run (population-based training), which is rare outside
-          large-scale neural training.
+      - DIMENSIONALITY of the search space. Exhaustive (grid)
+        enumeration is only tractable in low dimensions and over
+        discrete values; it degrades fast as dimensions grow.
+      - EVALUATION COST per trial. When each trial is cheap,
+        sampling-based search (random) with a generous budget is
+        hard to beat and trivially parallelises. When each trial
+        is expensive, sample-efficient sequential model-based
+        search (e.g. TPE / GP-based Bayesian optimisation) earns
+        its surrogate-model overhead.
+      - WHETHER COST SCALES with an iteration knob (epochs /
+        rounds / samples). When it does, a multi-fidelity
+        early-stopper (successive-halving family) can kill poor
+        configs early; when the method is non-iterative there is
+        no early signal to exploit.
+      - WHETHER THE SCHEDULE ITSELF benefits from tuning
+        mid-run (population-based training), which is rare outside
+        large-scale neural training.
 
-      Surface the convention this method-family + budget combination
-      uses in the recent literature, pick, and cite the source that
-      motivated the choice. Save to
-      workspace/<step>/outputs/reports/sweep_strategy.md.
+    Surface the convention this method-family + budget combination
+    uses in the recent literature, pick, and cite the source that
+    motivated the choice. Save to
+    workspace/<step>/outputs/reports/sweep_strategy.md.
 
-  - id: define_the_budget
-    name: Define the trial / wall-clock budget
-    description: |
-      The budget unit follows the strategy: a trial count for
-      grid / random / Bayesian search; a total resource budget
-      (GPU-hours, epochs) for multi-fidelity early-stoppers. Pick
-      the magnitude from what the literature reports as sufficient
-      for a space of this size on this method family — and state
-      the source — rather than a fixed number.
+- id: define_the_budget
+  name: Define the trial / wall-clock budget
+  description: |
+    The budget unit follows the strategy: a trial count for
+    grid / random / Bayesian search; a total resource budget
+    (GPU-hours, epochs) for multi-fidelity early-stoppers. Pick
+    the magnitude from what the literature reports as sufficient
+    for a space of this size on this method family — and state
+    the source — rather than a fixed number.
 
-      Constraints:
-        - SAME budget across method variants when this sweep is
-          part of a comparison (carry to method_comparison)
-        - budget feasible within the compute deadline
-        - leave headroom for the final test-set evaluation
-          (which runs ONCE per variant)
-        - account for the seed budget: the final reporting runs the
-          winning config across multiple seeds, so total cost is
-          (search budget) + (seed count × final-fit cost)
+    Constraints:
+      - SAME budget across method variants when this sweep is
+        part of a comparison (carry to method_comparison)
+      - budget feasible within the compute deadline
+      - leave headroom for the final test-set evaluation
+        (which runs ONCE per variant)
+      - account for the seed budget: the final reporting runs the
+        winning config across multiple seeds, so total cost is
+        (search budget) + (seed count × final-fit cost)
 
-  - id: set_early_stopping_and_pruning
-    name: Set early-stopping + pruning rules
-    description: |
-      For iterative methods (gradient descent / boosting rounds /
-      epochs):
-        - early-stop on validation metric plateau (patience window
-          + min-delta threshold)
-        - prune trials that are clearly losing at intermediate
-          checkpoints (asha / hyperband / optuna pruners do this)
+- id: set_early_stopping_and_pruning
+  name: Set early-stopping + pruning rules
+  description: |
+    For iterative methods (gradient descent / boosting rounds /
+    epochs):
+      - early-stop on validation metric plateau (patience window
+        + min-delta threshold)
+      - prune trials that are clearly losing at intermediate
+        checkpoints (asha / hyperband / optuna pruners do this)
 
-      The pruning rule is part of the sweep definition. Document:
-        - the validation metric the pruner watches
-        - the patience window (epochs / rounds)
-        - the min-delta threshold
-        - the asha / hyperband bracket schedule when used
+    The pruning rule is part of the sweep definition. Document:
+      - the validation metric the pruner watches
+      - the patience window (epochs / rounds)
+      - the min-delta threshold
+      - the asha / hyperband bracket schedule when used
 
-  - id: pin_the_seed_strategy
-    name: Pin the seed strategy (reproducibility)
-    description: |
-      For each trial:
-        - SEED the data shuffling (so all trials see the same
-          fold split given the same fold id)
-        - SEED the model initialisation (per-trial seed; record
-          to the trial log)
-        - SEED any random aug / dropout etc.
+- id: pin_the_seed_strategy
+  name: Pin the seed strategy (reproducibility)
+  description: |
+    For each trial:
+      - SEED the data shuffling (so all trials see the same
+        fold split given the same fold id)
+      - SEED the model initialisation (per-trial seed; record
+        to the trial log)
+      - SEED any random aug / dropout etc.
 
-      For final reporting:
-        - run the BEST configuration across several different seeds
-          (enough that the variance estimate is stable — justify the
-          count from the observed seed-to-seed spread, not a default)
-        - report the central estimate ± spread across seeds on the
-          test set
-        - report the per-seed CI alongside the point estimate
+    For final reporting:
+      - run the BEST configuration across several different seeds
+        (enough that the variance estimate is stable — justify the
+        count from the observed seed-to-seed spread, not a default)
+      - report the central estimate ± spread across seeds on the
+        test set
+      - report the per-seed CI alongside the point estimate
 
-      Single-seed test-set numbers underestimate variance and
-      reviewers know it; the seed-variance budget pays off.
+    Single-seed test-set numbers underestimate variance and
+    reviewers know it; the seed-variance budget pays off.
 
-  - id: implement_via_supported_library
-    name: Implement via a supported library
-    description: |
-      Pick a maintained sweep library that implements the chosen
-      search strategy in the project's stack — every major language
-      ecosystem has one or more (some support grid / random /
-      model-based search / pruners in one API; others specialise in
-      distributed execution). Confirm the library implements your
-      strategy and is maintained; do not let library availability
-      silently re-pick the strategy decided above.
+- id: implement_via_supported_library
+  name: Implement via a supported library
+  description: |
+    Pick a maintained sweep library that implements the chosen
+    search strategy in the project's stack — every major language
+    ecosystem has one or more (some support grid / random /
+    model-based search / pruners in one API; others specialise in
+    distributed execution). Confirm the library implements your
+    strategy and is maintained; do not let library availability
+    silently re-pick the strategy decided above.
 
-      Configure trial logging so EACH trial writes:
-        - hyperparameters tried
-        - validation metric (per fold when CV-inside)
-        - training time
-        - early-stopping outcome (completed / pruned at step N)
-        - seed
-        - library / version
+    Configure trial logging so EACH trial writes:
+      - hyperparameters tried
+      - validation metric (per fold when CV-inside)
+      - training time
+      - early-stopping outcome (completed / pruned at step N)
+      - seed
+      - library / version
 
-      Trial log goes to
-      workspace/<step>/data/next_step_output/sweep_trials.parquet (or .csv
-      for small sweeps).
+    Trial log goes to
+    workspace/<step>/data/next_step_output/sweep_trials.parquet (or .csv
+    for small sweeps).
 
-  - id: visualise_the_landscape
-    name: Visualise the search landscape
-    description: |
-      Standard sweep figures (build in an AI-authored plotting script):
+- id: visualise_the_landscape
+  name: Visualise the search landscape
+  description: |
+    Standard sweep figures (build in an AI-authored plotting script):
 
-        - parallel-coordinates plot of trial hyperparameters
-          coloured by validation metric (see which regions of
-          space are good)
-        - per-hyperparameter slice plot (val metric vs one
-          hyperparameter, marginalising over others) — reveals
-          which hyperparameters matter
-        - optimisation history (best-so-far vs trial number) —
-          shows whether the search converged or stalled
-        - importance ranking (e.g. fANOVA) — gives a defensible
-          claim about which hyperparameters carried the variance
+      - parallel-coordinates plot of trial hyperparameters
+        coloured by validation metric (see which regions of
+        space are good)
+      - per-hyperparameter slice plot (val metric vs one
+        hyperparameter, marginalising over others) — reveals
+        which hyperparameters matter
+      - optimisation history (best-so-far vs trial number) —
+        shows whether the search converged or stalled
+      - importance ranking (e.g. fANOVA) — gives a defensible
+        claim about which hyperparameters carried the variance
 
-      Each figure ends with both caption sidecars. These figures
-      are valuable in the paper / appendix — they substantiate
-      the claim that the comparison was fair.
+    Each figure ends with both caption sidecars. These figures
+    are valuable in the paper / appendix — they substantiate
+    the claim that the comparison was fair.
 
-  - id: write_the_sweep_protocol
-    name: Write the sweep protocol document
-    description: |
-      sys_file_write filepath="workspace/<step>/sweep_protocol.md":
+- id: write_the_sweep_protocol
+  name: Write the sweep protocol document
+  description: |
+    sys_file_write filepath="workspace/<step>/sweep_protocol.md":
 
-        # Hyperparameter sweep protocol
-        ## Method family
-        ## Hyperparameters in scope + ranges + literature source
-        ## Search strategy + library + version
-        ## Budget (trials, wall-clock, compute)
-        ## Early-stopping + pruning rules
-        ## Seed strategy
-        ## Reporting
-          - mean ± std across N_seeds at the winning config
-          - per-trial log written to <path>
-          - landscape figures written to <path>
+      # Hyperparameter sweep protocol
+      ## Method family
+      ## Hyperparameters in scope + ranges + literature source
+      ## Search strategy + library + version
+      ## Budget (trials, wall-clock, compute)
+      ## Early-stopping + pruning rules
+      ## Seed strategy
+      ## Reporting
+        - mean ± std across N_seeds at the winning config
+        - per-trial log written to <path>
+        - landscape figures written to <path>
 
-      Freeze the protocol BEFORE the sweep starts. Deviations get
-      logged via mem_log; pre-registered sweeps refuse
-      mid-flight retuning ("just one more config" is when
-      sweeps go off the rails).
+    Freeze the protocol BEFORE the sweep starts. Deviations get
+    logged via mem_log; pre-registered sweeps refuse
+    mid-flight retuning ("just one more config" is when
+    sweeps go off the rails).
 
 expected_outputs:
-  - workspace/<step>/outputs/reports/sweep_space.md
-  - workspace/<step>/outputs/reports/sweep_strategy.md
-  - workspace/<step>/sweep_protocol.md
-  - workspace/<step>/data/next_step_output/sweep_trials.parquet
-  - workspace/<step>/outputs/figures/sweep_*.png
+- workspace/<step>/outputs/reports/sweep_space.md
+- workspace/<step>/outputs/reports/sweep_strategy.md
+- workspace/<step>/sweep_protocol.md
+- workspace/<step>/data/next_step_output/sweep_trials.parquet
+- workspace/<step>/outputs/figures/sweep_*.png
 
 quality_bar:
   search_space_grounded_in_literature: true
@@ -265,3 +250,23 @@ quality_bar:
 next_protocol: methodology/method_comparison
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: sweep
+triggers:
+- design the sweep
+- hyperparameter search
+- hyperparameter sweep
+- sweep design
+- what hyperparameters should i tune
+- design the grid
+- random search vs bayesian opt
+- compute budget for tuning
+- tune the model
+- tune the hyperparameters
+- without overfitting
+- avoid overfitting
+summary: Design a hyperparameter sweep (search space, budget, strategy, early-stopping, seeds).
+token_estimate: 1500
+decomposition:
+- protocol: methodology/hyperparameter_search_design
+  purpose: Identify params that matter, pick strategy, define budget, set pruning, pin seeds.

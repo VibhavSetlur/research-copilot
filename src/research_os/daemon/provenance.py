@@ -63,7 +63,9 @@ def git_provenance(root: str | Path) -> dict:
 
 
 def env_provenance(packages: list[str] | None = None,
-                   snapshot_env: bool = False) -> dict:
+                    snapshot_env: bool = False,
+                    offline: bool = False) -> dict:
+
     """Capture the runtime environment: python, platform, conda env, pkgs.
 
     When ``snapshot_env`` is True, also records the COMPLETE installed-package
@@ -80,6 +82,7 @@ def env_provenance(packages: list[str] | None = None,
     conda = os.environ.get("CONDA_DEFAULT_ENV")
     if conda:
         prov["conda_env"] = conda
+    prov["offline"] = bool(offline)
     venv = os.environ.get("VIRTUAL_ENV")
     if venv:
         prov["virtualenv"] = venv
@@ -174,12 +177,67 @@ def hash_fn_for_root(root: str | Path | None):
     return _hash
 
 
+def capture_environment() -> dict:
+    """Capture a restorable environment snapshot (schema_version 1.0).
+
+    Best-effort; never raises.  ``pip freeze`` and ``conda env export`` are
+    invoked via subprocess (timeout 30 s each) and omitted silently on any
+    error (missing binary, timeout, non-zero exit, permission denied).
+
+    Returns a dict with at least::
+
+        {
+            "schema_version": "1.0",
+            "platform": "<sys.platform>-<machine>",
+            "python_version": "<full sys.version>",
+            # optional, present only when captured successfully:
+            "pip_freeze": ["pkg==ver", ...],
+            "conda_export": ["- pkg=ver=build", ...],   # lines from stdout
+        }
+
+    This is CAPTURE-ONLY (observational). No restore logic is provided here.
+    The existing env_provenance / capture functions are unchanged.
+    """
+    snap: dict = {
+        "schema_version": "1.0",
+        "platform": f"{sys.platform}-{platform.machine()}",
+        "python_version": sys.version,
+    }
+
+    # ── pip freeze ──────────────────────────────────────────────────────────
+    try:
+        out = subprocess.check_output(
+            [sys.executable, "-m", "pip", "freeze"],
+            text=True,
+            timeout=10,
+            stderr=subprocess.DEVNULL,
+        )
+        snap["pip_freeze"] = out.splitlines()
+    except Exception:  # noqa: BLE001 - omit on any failure (binary, timeout, etc.)
+        pass
+
+    # ── conda env export --no-builds ────────────────────────────────────────
+    try:
+        out = subprocess.check_output(
+            ["conda", "env", "export", "--no-builds"],
+            text=True,
+            timeout=10,
+            stderr=subprocess.DEVNULL,
+        )
+        snap["conda_export"] = out.splitlines()
+    except Exception:  # noqa: BLE001 - omit on any failure
+        pass
+
+    return snap
+
+
 def capture(
     root: str | Path,
     *,
     inputs: Sequence[str | Path] | None = None,
     packages: list[str] | None = None,
     snapshot_env: bool = False,
+    offline: bool = False,
 ) -> dict:
     """Capture a full provenance record for a run. Never raises.
 
@@ -189,6 +247,7 @@ def capture(
         packages: package names whose versions matter for reproducibility.
         snapshot_env: also record the complete installed-package set so the
             exact environment is reproducible (recommended for long/HPC runs).
+        offline: mark the capture as air-gapped/no-network.
     """
     prov: dict = {}
     try:
@@ -198,7 +257,7 @@ def capture(
     except Exception:  # noqa: BLE001 - best effort
         pass
     try:
-        prov["env"] = env_provenance(packages, snapshot_env=snapshot_env)
+        prov["env"] = env_provenance(packages, snapshot_env=snapshot_env, offline=offline)
     except Exception:  # noqa: BLE001
         pass
     try:

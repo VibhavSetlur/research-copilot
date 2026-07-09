@@ -1,7 +1,7 @@
 id: qualitative_report_format
 name: Qualitative Report Format (COREQ for interviews | SRQR general)
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [qualitative, humanities]
   audience: [auditor]
@@ -35,32 +35,17 @@ trigger: |
   reporting guideline".
 
 prerequisites:
-  - workspace/manuscript/draft_v<N>.md exists with at least Methods +
-    Findings sections drafted.
-  - workspace/study_design.yaml records the method (interviews,
-    focus_groups, ethnography, document_analysis, mixed_qualitative)
-    so the standard can be auto-selected.
-  - workspace/codebooks/codebook_v<N>.yaml is finalised (coding
-    iteration protocol has run to completion).
+- workspace/manuscript/draft_v<N>.md exists with at least Methods + Findings sections drafted.
+- workspace/study_design.yaml records the method (interviews, focus_groups, ethnography, document_analysis, mixed_qualitative) so the standard can be auto-selected.
+- workspace/codebooks/codebook_v<N>.yaml is finalised (coding iteration protocol has run to completion).
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Pick the standard by method, not by convenience. COREQ for
-       interviews and focus groups; SRQR for everything else. Mixing
-       items from both because you like some of each is incoherent —
-       reviewers will notice."
-    - "Reflexivity items are not optional. If the manuscript has no
-       paragraph naming the researcher's positionality and how it
-       shaped the interpretation, COREQ items 1-8 and SRQR item 14
-       are absent, not partial. Don't soft-grade your own work."
-    - "Coverage is a floor, not a ceiling. 80% with the missing 20%
-       justified is the minimum for submission. Reviewer 2 will still
-       ask about the gaps; have answers ready in workspace/memos/."
-    - "Quotation density matters. SRQR item 17 and COREQ item 29 both
-       want 'participant quotations to illustrate themes'. One quote
-       per theme is thin; three to five per theme with participant IDs
-       is the working norm in the field."
+  - "Pick the standard by method, not by convenience. COREQ for interviews and focus groups; SRQR for everything else. Mixing items from both because you like some of each is incoherent — reviewers will notice."
+  - "Reflexivity items are not optional. If the manuscript has no paragraph naming the researcher's positionality and how it shaped the interpretation, COREQ items 1-8 and SRQR item 14 are absent, not partial. Don't soft-grade your own work."
+  - "Coverage is a floor, not a ceiling. 80% with the missing 20% justified is the minimum for submission. Reviewer 2 will still ask about the gaps; have answers ready in workspace/memos/."
+  - "Quotation density matters. SRQR item 17 and COREQ item 29 both want 'participant quotations to illustrate themes'. One quote per theme is thin; three to five per theme with participant IDs is the working norm in the field."
 
 quality_bar:
   coverage_floor_for_submission: 0.80
@@ -70,109 +55,127 @@ quality_bar:
   participant_id_scheme_mandatory: true        # P01, FG2-P3, etc.
 
 steps:
-  - id: select_standard
-    name: Select the reporting standard for this study
-    description: |
-      Call tool_qualitative_select_standard with standard='auto' (the
-      default). The tool reads workspace/study_design.yaml, picks
-      COREQ for interview / focus-group studies and SRQR for everything
-      else, and copies the matching bundled checklist
-      (templates/checklists/<standard>_<N>items.yaml — 32 items for
-      COREQ, 21 for SRQR) into
-      workspace/checklists/<standard>_coverage_v<N>.yaml so the next
-      step has a populated file to mark up. If the study combines
-      interviews with substantial non-interview data (e.g. interviews
-      + field observations), pass standard='srqr' explicitly and add
-      the COREQ interview-specific items as a sub-checklist in a
-      follow-up call. Record the final choice and the reason
-      (returned in the tool result) in
-      workspace/memos/reporting_standard_choice.md.
+- id: select_standard
+  name: Select the reporting standard for this study
+  description: |
+    Call tool_qualitative_select_standard with standard='auto' (the
+    default). The tool reads workspace/study_design.yaml, picks
+    COREQ for interview / focus-group studies and SRQR for everything
+    else, and copies the matching bundled checklist
+    (templates/checklists/<standard>_<N>items.yaml — 32 items for
+    COREQ, 21 for SRQR) into
+    workspace/checklists/<standard>_coverage_v<N>.yaml so the next
+    step has a populated file to mark up. If the study combines
+    interviews with substantial non-interview data (e.g. interviews
+    + field observations), pass standard='srqr' explicitly and add
+    the COREQ interview-specific items as a sub-checklist in a
+    follow-up call. Record the final choice and the reason
+    (returned in the tool result) in
+    workspace/memos/reporting_standard_choice.md.
 
-  - id: walk_checklist
-    name: Walk every item in the chosen standard
-    description: |
-      Load the full checklist (COREQ = 32 items across 3 domains:
-      research team + reflexivity, study design, analysis + findings;
-      SRQR = 21 items across title/abstract, introduction, methods,
-      results, discussion, other). For each item, scan the current
-      manuscript draft and mark one of: present (item is addressed
-      with specifics), partial (mentioned but underspecified), absent
-      (not addressed at all). Use tool_search to locate where each
-      item is covered in the draft. Output goes to
-      workspace/checklists/<standard>_coverage_v<N>.yaml with item
-      number, status, page/section reference, and a one-line note.
+- id: walk_checklist
+  name: Walk every item in the chosen standard
+  description: |
+    Load the full checklist (COREQ = 32 items across 3 domains:
+    research team + reflexivity, study design, analysis + findings;
+    SRQR = 21 items across title/abstract, introduction, methods,
+    results, discussion, other). For each item, scan the current
+    manuscript draft and mark one of: present (item is addressed
+    with specifics), partial (mentioned but underspecified), absent
+    (not addressed at all). Use tool_search to locate where each
+    item is covered in the draft. Output goes to
+    workspace/checklists/<standard>_coverage_v<N>.yaml with item
+    number, status, page/section reference, and a one-line note.
 
-  - id: justify_absences
-    name: Write a justification for every absent or partial item
-    description: |
-      For each item not marked present, write a short paragraph
-      (2-4 sentences) explaining why. Valid justifications: item does
-      not apply to this method (e.g. COREQ items on focus-group
-      facilitation in an interview-only study); item is genuinely
-      absent and the manuscript needs revision before submission;
-      item is covered in supplementary material with a pointer from
-      the main text. Invalid justifications: word count, "everyone
-      knows this", "we'll add it in revisions". File under
-      workspace/checklists/<standard>_justifications.md, item-numbered.
+- id: justify_absences
+  name: Write a justification for every absent or partial item
+  description: |
+    For each item not marked present, write a short paragraph
+    (2-4 sentences) explaining why. Valid justifications: item does
+    not apply to this method (e.g. COREQ items on focus-group
+    facilitation in an interview-only study); item is genuinely
+    absent and the manuscript needs revision before submission;
+    item is covered in supplementary material with a pointer from
+    the main text. Invalid justifications: word count, "everyone
+    knows this", "we'll add it in revisions". File under
+    workspace/checklists/<standard>_justifications.md, item-numbered.
 
-  - id: reflexivity_audit
-    name: Audit the reflexivity section specifically
-    description: |
-      Reflexivity is the single most-skipped category in qualitative
-      manuscripts and the one reviewers reject on most often. Locate
-      the reflexivity paragraph(s) in the draft. Check that they name:
-      who the researchers are (role, training, prior relationship with
-      the topic), what their stance is toward the phenomenon, and how
-      that stance shaped data collection AND interpretation. A bare
-      "the first author is a nurse" is not reflexivity; it is biography.
-      If the reflexivity content is thin, mark the relevant items
-      (COREQ 1-8, SRQR 14) as partial and flag for revision.
+- id: reflexivity_audit
+  name: Audit the reflexivity section specifically
+  description: |
+    Reflexivity is the single most-skipped category in qualitative
+    manuscripts and the one reviewers reject on most often. Locate
+    the reflexivity paragraph(s) in the draft. Check that they name:
+    who the researchers are (role, training, prior relationship with
+    the topic), what their stance is toward the phenomenon, and how
+    that stance shaped data collection AND interpretation. A bare
+    "the first author is a nurse" is not reflexivity; it is biography.
+    If the reflexivity content is thin, mark the relevant items
+    (COREQ 1-8, SRQR 14) as partial and flag for revision.
 
-  - id: quotation_audit
-    name: Audit quotation density and participant ID scheme
-    description: |
-      Count quotations per theme in the Findings section. Target is
-      3-5 per theme with participant identifiers (P01, FG2-P3, etc.)
-      attached. Themes with 0-1 quotes are under-evidenced; themes
-      with 10+ may be over-relying on a few voices — check whether
-      the quotes come from a diverse subset of participants or
-      whether one person is being quoted repeatedly. Log counts to
-      workspace/checklists/quotation_density.yaml. Flag any participant
-      who is quoted in 4+ themes — this is a sign of analytic
-      over-weighting one voice.
+- id: quotation_audit
+  name: Audit quotation density and participant ID scheme
+  description: |
+    Count quotations per theme in the Findings section. Target is
+    3-5 per theme with participant identifiers (P01, FG2-P3, etc.)
+    attached. Themes with 0-1 quotes are under-evidenced; themes
+    with 10+ may be over-relying on a few voices — check whether
+    the quotes come from a diverse subset of participants or
+    whether one person is being quoted repeatedly. Log counts to
+    workspace/checklists/quotation_density.yaml. Flag any participant
+    who is quoted in 4+ themes — this is a sign of analytic
+    over-weighting one voice.
 
-  - id: coverage_gate
-    name: Compute coverage and decide submission readiness
-    description: |
-      Coverage = (present + justified-absent + justified-partial) /
-      total items. If coverage ≥ 0.80 AND every absence has a written
-      justification AND the reflexivity section passed audit, mark
-      the manuscript submission-ready and write the gate decision to
-      workspace/memos/submission_gate.md. If not, list the specific
-      items that must be addressed before resubmission and route
-      back to the manuscript draft. Do not pass the gate on a
-      promise to fix things in revision — fix them now.
+- id: coverage_gate
+  name: Compute coverage and decide submission readiness
+  description: |
+    Coverage = (present + justified-absent + justified-partial) /
+    total items. If coverage ≥ 0.80 AND every absence has a written
+    justification AND the reflexivity section passed audit, mark
+    the manuscript submission-ready and write the gate decision to
+    workspace/memos/submission_gate.md. If not, list the specific
+    items that must be addressed before resubmission and route
+    back to the manuscript draft. Do not pass the gate on a
+    promise to fix things in revision — fix them now.
 
-  - id: emit_supplementary_checklist
-    name: Emit the completed checklist as supplementary material
-    description: |
-      Most journals require the completed COREQ or SRQR checklist as
-      a supplementary file at submission. Render the coverage YAML
-      into the journal's preferred format (usually a table with item
-      number, item description, location in manuscript, and notes).
-      Output to workspace/manuscript/supplementary/<standard>_checklist.pdf
-      via the project's typst or pandoc pipeline. Call mem_log to
-      record the final coverage percentage and any items that
-      remained absent-with-justification at submission.
+- id: emit_supplementary_checklist
+  name: Emit the completed checklist as supplementary material
+  description: |
+    Most journals require the completed COREQ or SRQR checklist as
+    a supplementary file at submission. Render the coverage YAML
+    into the journal's preferred format (usually a table with item
+    number, item description, location in manuscript, and notes).
+    Output to workspace/manuscript/supplementary/<standard>_checklist.pdf
+    via the project's typst or pandoc pipeline. Call mem_log to
+    record the final coverage percentage and any items that
+    remained absent-with-justification at submission.
 
 expected_outputs:
-  - workspace/memos/reporting_standard_choice.md
-  - workspace/checklists/<standard>_coverage_v<N>.yaml
-  - workspace/checklists/<standard>_justifications.md
-  - workspace/checklists/quotation_density.yaml
-  - workspace/memos/submission_gate.md
-  - workspace/manuscript/supplementary/<standard>_checklist.pdf
+- workspace/memos/reporting_standard_choice.md
+- workspace/checklists/<standard>_coverage_v<N>.yaml
+- workspace/checklists/<standard>_justifications.md
+- workspace/checklists/quotation_density.yaml
+- workspace/memos/submission_gate.md
+- workspace/manuscript/supplementary/<standard>_checklist.pdf
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: report
+triggers:
+- qualitative report
+- coreq
+- srqr
+- qualitative reporting standard
+- write up qualitative
+summary: 'Reporting standards: COREQ (interviews) | SRQR (general qualitative).'
+shortcut_tool: tool_qualitative_select_standard
+token_estimate: 1500
+decomposition:
+- protocol: qualitative/output/qualitative_report_format
+  purpose: Pick COREQ vs SRQR; build the report against it.
+- tool: tool_qualitative_select_standard
+  purpose: Auto-pick standard + copy 32- or 21-item checklist into workspace.
+- tool: tool_qualitative_quote_provenance
+  purpose: Audit every quote → registry entry.

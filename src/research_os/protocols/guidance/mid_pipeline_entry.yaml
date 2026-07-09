@@ -1,17 +1,17 @@
 id: mid_pipeline_entry
 tier: 'intake'
 name: Mid-Pipeline Entry (entering an in-progress project)
-version: '3.8.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:
   domain: [any]
   audience: [naive_ai]
   workflow_shape: [any]
 see_also:
-  - guidance/project_startup       # the fresh-intake path this protocol routes PAST
-  - guidance/session_resume        # distinct: resuming prior RO state vs importing outside work
-  - synthesis/synthesis_from_inputs # common entry when prior text needs re-grounding
+- guidance/project_startup         # the fresh-intake path this protocol routes PAST
+- guidance/session_resume          # distinct: resuming prior RO state vs importing outside work
+- synthesis/synthesis_from_inputs   # common entry when prior text needs re-grounding
 description: |
   Routing protocol for researchers entering Research-OS with WORK ALREADY
   DONE — not a fresh data dump, not a paused RO project to resume, but
@@ -45,198 +45,184 @@ prerequisites: []
 editorial_voice:
   mode: hybrid
   rules:
-    - "DO NOT make the researcher walk the full intake → domain →
-       design → methods → analysis chain when they have already
-       done it. The cost of doing redundant intake is more than the
-       benefit of having it 'on the record'."
-    - "Believe the researcher about where they are. They will often
-       under-claim ('we sort of have the methods') or over-claim
-       ('the analysis is done'). Probe just enough to assign a
-       plug-in point; don't audit their prior work as the entry
-       gate."
-    - "When the prior work is outside RO, the entry point is usually
-       `synthesis/synthesis_from_inputs` (for synthesis-ready
-       projects) or `guidance/project_startup` with skip flags (for
-       analysis-ready projects). The protocol's job is to PICK
-       between these honestly."
-    - "An entry that lies about its state poisons every downstream
-       audit. The provenance ceiling step is non-optional."
+  - "DO NOT make the researcher walk the full intake → domain → design → methods → analysis chain when they have already done it. The cost of doing redundant intake is more than the benefit of having it 'on the record'."
+  - "Believe the researcher about where they are. They will often under-claim ('we sort of have the methods') or over-claim ('the analysis is done'). Probe just enough to assign a plug-in point; don't audit their prior work as the entry gate."
+  - "When the prior work is outside RO, the entry point is usually `synthesis/synthesis_from_inputs` (for synthesis-ready projects) or `guidance/project_startup` with skip flags (for analysis-ready projects). The protocol's job is to PICK between these honestly."
+  - "An entry that lies about its state poisons every downstream audit. The provenance ceiling step is non-optional."
 
 steps:
-  - id: scope_the_prior_work
-    name: Scope what exists already
-    description: |
-      Ask ONE multi-part question and accept the bullet answer:
-        "What do you already have? Pick all that apply:
-          - raw data
-          - cleaned / processed data
-          - finished analyses (with results tables)
-          - finished figures
-          - drafted text (any sections)
-          - a research question + hypotheses
-          - a methods description
-          - prior reports / drafts / notes
-          - a previous Research-OS project (different folder)"
+- id: scope_the_prior_work
+  name: Scope what exists already
+  description: |
+    Ask ONE multi-part question and accept the bullet answer:
+      "What do you already have? Pick all that apply:
+        - raw data
+        - cleaned / processed data
+        - finished analyses (with results tables)
+        - finished figures
+        - drafted text (any sections)
+        - a research question + hypotheses
+        - a methods description
+        - prior reports / drafts / notes
+        - a previous Research-OS project (different folder)"
 
-      Then ask:
-        "Where does this all live? In this folder under inputs/?
-         In a separate folder I can read? In a Google Doc / Notion
-         page you'll paste? Mostly in your head?"
+    Then ask:
+      "Where does this all live? In this folder under inputs/?
+       In a separate folder I can read? In a Google Doc / Notion
+       page you'll paste? Mostly in your head?"
 
-      AUTONOMY GATE:
-        Risk: reversible — inferring the entry state reads files and
-        confirms; it changes nothing on its own.
-        proceed (adaptive default, autopilot) → infer from sys_file_list across inputs/,
-                              workspace/, docs/, plus any non-RO folders
-                              the researcher hints at; assume the
-                              maximum-plausible state and confirm in one line.
-        confirm first (manual / supervised) → wait for the researcher.
+    AUTONOMY GATE:
+      Risk: reversible — inferring the entry state reads files and
+      confirms; it changes nothing on its own.
+      proceed (adaptive default, autopilot) → infer from sys_file_list across inputs/,
+                            workspace/, docs/, plus any non-RO folders
+                            the researcher hints at; assume the
+                            maximum-plausible state and confirm in one line.
+      confirm first (manual / supervised) → wait for the researcher.
 
-  - id: classify_the_entry_point
-    name: Classify the entry point
-    description: |
-      Map the scoped prior work to ONE of these entry archetypes:
+- id: classify_the_entry_point
+  name: Classify the entry point
+  description: |
+    Map the scoped prior work to ONE of these entry archetypes:
 
-        A. DATA-READY — raw data + research question; no analyses,
-                        no figures, no drafted text. Route through
-                        normal pipeline starting at project_startup
-                        (intake) or methodology_selection (when
-                        intake is implicit).
-        B. ANALYSES-READY — raw / cleaned data + completed analyses
-                            with results tables; figures may be
-                            present; little / no drafted text. Route
-                            to one of:
-                              - analysis_plan (extend) — keep doing
-                                experiments in RO
-                              - visualization_workflow — polish the
-                                figures
-                              - synthesis/<target> — write up
-        C. FIGURES-READY — analyses + figures complete; drafted text
-                           in progress. Route to:
-                              - audit/audit_and_validation (catch
-                                quality gaps BEFORE synthesis)
-                              - synthesis/<target> directly
-        D. SYNTHESIS-READY — draft text in progress; needs help
-                             finishing / restructuring / converting
-                             between deliverable types. Route to:
-                              - synthesis/<target>
-                              - synthesis/synthesis_from_inputs (when
-                                the prior text isn't well-grounded
-                                and needs re-anchoring to artefacts)
-        E. PRIOR-RO-PROJECT — there's a Research-OS workspace
-                              elsewhere; this folder mirrors it. Route
-                              to session_resume after pointing at the
-                              prior workspace.
-        F. CONCEPTUAL — research question + intent only; no data, no
-                        prior analysis. Route to:
-                          - methodology/methodological_consultation
-                            (teach / think through methods)
-                          - methodology/power_analysis (for an
-                            upcoming study)
-                          - methodology/preregistration (to lock the
-                            SAP before data lands)
-        G. MIXED — some of multiple categories. Pick the FURTHEST-
-                   DOWN category that applies; the project plugs in
-                   there. Earlier-stage artefacts get back-filled
-                   only if a downstream gate (citation grounding,
-                   reproducibility audit) demands them.
+      A. DATA-READY — raw data + research question; no analyses,
+                      no figures, no drafted text. Route through
+                      normal pipeline starting at project_startup
+                      (intake) or methodology_selection (when
+                      intake is implicit).
+      B. ANALYSES-READY — raw / cleaned data + completed analyses
+                          with results tables; figures may be
+                          present; little / no drafted text. Route
+                          to one of:
+                            - analysis_plan (extend) — keep doing
+                              experiments in RO
+                            - visualization_workflow — polish the
+                              figures
+                            - synthesis/<target> — write up
+      C. FIGURES-READY — analyses + figures complete; drafted text
+                         in progress. Route to:
+                            - audit/audit_and_validation (catch
+                              quality gaps BEFORE synthesis)
+                            - synthesis/<target> directly
+      D. SYNTHESIS-READY — draft text in progress; needs help
+                           finishing / restructuring / converting
+                           between deliverable types. Route to:
+                            - synthesis/<target>
+                            - synthesis/synthesis_from_inputs (when
+                              the prior text isn't well-grounded
+                              and needs re-anchoring to artefacts)
+      E. PRIOR-RO-PROJECT — there's a Research-OS workspace
+                            elsewhere; this folder mirrors it. Route
+                            to session_resume after pointing at the
+                            prior workspace.
+      F. CONCEPTUAL — research question + intent only; no data, no
+                      prior analysis. Route to:
+                        - methodology/methodological_consultation
+                          (teach / think through methods)
+                        - methodology/power_analysis (for an
+                          upcoming study)
+                        - methodology/preregistration (to lock the
+                          SAP before data lands)
+      G. MIXED — some of multiple categories. Pick the FURTHEST-
+                 DOWN category that applies; the project plugs in
+                 there. Earlier-stage artefacts get back-filled
+                 only if a downstream gate (citation grounding,
+                 reproducibility audit) demands them.
 
-      Write the inferred archetype + the chosen entry protocol to
-      docs/entry_record.md as a short paragraph. This is the
-      provenance ceiling for everything downstream.
+    Write the inferred archetype + the chosen entry protocol to
+    docs/entry_record.md as a short paragraph. This is the
+    provenance ceiling for everything downstream.
 
-  - id: import_the_prior_artefacts
-    name: Import the prior artefacts into inputs/
-    description: |
-      For artefacts that live in this folder but not yet under
-      inputs/:
-        tool_context_intake also_autofill=false
-        - loose PDFs / docx / markdown / notebooks → inputs/context
-        - loose CSV / parquet → inputs/raw_data
-        - existing references / bibtex → inputs/literature_index.yaml
+- id: import_the_prior_artefacts
+  name: Import the prior artefacts into inputs/
+  description: |
+    For artefacts that live in this folder but not yet under
+    inputs/:
+      mem_log (operation='context_intake', also_autofill=false)
+      - loose PDFs / docx / markdown / notebooks → inputs/context
+      - loose CSV / parquet → inputs/raw_data
+      - existing references / bibtex → inputs/literature_index.yaml
 
-      For artefacts that live in another folder the researcher
-      will COPY in:
-        - tell the researcher exactly which folder to copy and
-          where; do not symlink across project boundaries (the
-          symlink leaves the provenance ambiguous later)
+    For artefacts that live in another folder the researcher
+    will COPY in:
+      - tell the researcher exactly which folder to copy and
+        where; do not symlink across project boundaries (the
+        symlink leaves the provenance ambiguous later)
 
-      For artefacts that live in a Google Doc / Notion / Slack
-      conversation:
-        - ask the researcher to export to markdown / PDF and drop
-          under inputs/context; the provenance ceiling note records
-          the export step
+    For artefacts that live in a Google Doc / Notion / Slack
+    conversation:
+      - ask the researcher to export to markdown / PDF and drop
+        under inputs/context; the provenance ceiling note records
+        the export step
 
-      For prior RO projects elsewhere:
-        - DO NOT auto-import; route the researcher to
-          session_resume in that folder, OR walk them through a
-          deliberate migration (copy synthesis/*, copy state ledger,
-          re-init the manifest)
+    For prior RO projects elsewhere:
+      - DO NOT auto-import; route the researcher to
+        session_resume in that folder, OR walk them through a
+        deliberate migration (copy synthesis/*, copy state ledger,
+        re-init the manifest)
 
-  - id: backfill_only_what_a_gate_demands
-    name: Back-fill only the prior artefacts a downstream gate demands
-    description: |
-      The temptation is to back-fill everything (intake, domain,
-      design, methods, citations) for "completeness." Resist.
-      Back-fill only what a DOWNSTREAM GATE will block on:
+- id: backfill_only_what_a_gate_demands
+  name: Back-fill only the prior artefacts a downstream gate demands
+  description: |
+    The temptation is to back-fill everything (intake, domain,
+    design, methods, citations) for "completeness." Resist.
+    Back-fill only what a DOWNSTREAM GATE will block on:
 
-        - synthesis target needs workspace/methods.md? Seed it
-          from the prior methods doc (or the methods section of
-          the prior draft).
-        - synthesis target needs workspace/citations.md? Seed from
-          the prior bibtex / references list; run
-          tool_citations_verify.
-        - synthesis target needs at least ONE step's conclusions.md?
-          Use synthesis/synthesis_from_inputs to build a SHADOW
-          step that anchors the synthesis honestly.
-        - audit gate needs research_overview.md? Write it from the
-          paper draft's introduction in one paragraph.
+      - synthesis target needs workspace/methods.md? Seed it
+        from the prior methods doc (or the methods section of
+        the prior draft).
+      - synthesis target needs workspace/citations.md? Seed from
+        the prior bibtex / references list; run
+        tool_audit (scope='project', dimension='citations').
+      - synthesis target needs at least ONE step's conclusions.md?
+        Use synthesis/synthesis_from_inputs to build a SHADOW
+        step that anchors the synthesis honestly.
+      - audit gate needs research_overview.md? Write it from the
+        paper draft's introduction in one paragraph.
 
-      Each back-filled artefact carries an explicit "back-filled
-      from <source>" note in its metadata header. Audits later
-      can see what was reasoned vs imported.
+    Each back-filled artefact carries an explicit "back-filled
+    from <source>" note in its metadata header. Audits later
+    can see what was reasoned vs imported.
 
-  - id: route_to_chosen_protocol
-    name: Route to the chosen protocol
-    description: |
-      Call sys_protocol_log status="completed" for
-      guidance/mid_pipeline_entry with the chosen entry archetype +
-      next protocol recorded.
+- id: route_to_chosen_protocol
+  name: Route to the chosen protocol
+  description: |
+    Call mem_log entry="mid_pipeline_entry completed: archetype=<X> next=<protocol>"
+    with the chosen entry archetype + next protocol recorded.
 
-      Then route to the chosen next protocol (the one from
-      classify_the_entry_point). The active plan from any preceding
-      tool_route call is updated to reflect the new entry point;
-      OR the researcher is told "no decomposition needed; just call
-      <protocol> directly" when the entry skips the long planning.
+    Then route to the chosen next protocol (the one from
+    classify_the_entry_point). The active plan from any preceding
+    tool_route call is updated to reflect the new entry point;
+    OR the researcher is told "no decomposition needed; just call
+    <protocol> directly" when the entry skips the long planning.
 
-  - id: record_the_provenance_ceiling
-    name: Record the provenance ceiling (mandatory)
-    description: |
-      sys_file_write filepath="docs/entry_record.md" appending:
+- id: record_the_provenance_ceiling
+  name: Record the provenance ceiling (mandatory)
+  description: |
+    sys_file_write filepath="docs/entry_record.md" appending:
 
-        ## Provenance ceiling
-        This project was entered into Research-OS at the
-        <archetype> entry point on <date>. Prior work imported:
-          - <artefact list with source>
-        Prior work NOT in Research-OS (provenance limited):
-          - <list>
-        Downstream gates (synthesis claims audit, reproducibility
-        audit, dashboard outstanding-artefacts panel) reference this
-        record. Any claim drawn from prior work cites the imported
-        artefact; full upstream reproducibility cannot be
-        guaranteed beyond what was imported.
+      ## Provenance ceiling
+      This project was entered into Research-OS at the
+      <archetype> entry point on <date>. Prior work imported:
+        - <artefact list with source>
+      Prior work NOT in Research-OS (provenance limited):
+        - <list>
+      Downstream gates (synthesis claims audit, reproducibility
+      audit, dashboard outstanding-artefacts panel) reference this
+      record. Any claim drawn from prior work cites the imported
+      artefact; full upstream reproducibility cannot be
+      guaranteed beyond what was imported.
 
-      For projects intended for external review, this paragraph
-      appears in the final deliverable's "Code & data availability"
-      / "Reproducibility" section verbatim. Surface this to the
-      researcher; they'll often want to edit the wording before
-      it lands in a paper.
+    For projects intended for external review, this paragraph
+    appears in the final deliverable's "Code & data availability"
+    / "Reproducibility" section verbatim. Surface this to the
+    researcher; they'll often want to edit the wording before
+    it lands in a paper.
 
 expected_outputs:
-  - docs/entry_record.md
-  - inputs/context/<imported artefacts>            (when applicable)
-  - workspace/<NN>_<slug>_shadow_synthesis/        (when route was
-                                                   synthesis_from_inputs)
+- docs/entry_record.md
+- inputs/context/<imported artefacts>            (when applicable)
+- workspace/<NN>_<slug>_shadow_synthesis/        (when route was synthesis_from_inputs)
 
 quality_bar:
   entry_archetype_classified: true
@@ -244,6 +230,40 @@ quality_bar:
   no_redundant_intake_when_researcher_already_did_it: true
   back_filled_artefacts_marked_as_such: true
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: discover
+sub_intent: mid_entry
+triggers:
+- i'm mid-way through
+- i'm midway through
+- i already have results
+- i have a draft just need
+- i have a draft, just need
+- we've been working on this for months
+- i'm bringing this into research-os
+- bringing this into ro
+- import this project
+- migrate this into ro
+- fork a pipeline
+- fork this pipeline
+- fork an existing pipeline
+- fork the pipeline
+- inherited
+- took over
+- took over from
+- former student
+- previous student
+- predecessor
+- migrate this into research-os
+- starting from in-progress
+- i have the analysis i need the writing
+- i have the writing i need the figures
+- this project started outside
+summary: Enter Research-OS with work already done outside it (route past redundant intake).
+token_estimate: 1400
+decomposition:
+- protocol: guidance/mid_pipeline_entry
+  purpose: Classify entry archetype + route to the right downstream protocol.
+- tool: mem_log

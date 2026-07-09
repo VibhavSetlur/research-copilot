@@ -1,7 +1,7 @@
 id: member_checking
 name: Member Checking — sharing interpretations back with participants
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [qualitative]
   audience: [auditor, maintainer]
@@ -42,38 +42,18 @@ trigger: |
   "send the themes to the interviewees".
 
 prerequisites:
-  - workspace/codebooks/codebook_v<N>.yaml exists and the round
-    is closed out (coding_scheme_iteration completed).
-  - workspace/transcripts/ has the source transcripts so quotes
-    can be re-located and re-contextualised when sharing back.
-  - Consent forms permit sharing interpretations back AND quoting
-    the participant's response. If not, amend the IRB protocol via
-    your institutional process before contacting any participant.
+- workspace/codebooks/codebook_v<N>.yaml exists and the round is closed out (coding_scheme_iteration completed).
+- workspace/transcripts/ has the source transcripts so quotes can be re-located and re-contextualised when sharing back.
+- Consent forms permit sharing interpretations back AND quoting the participant's response. If not, amend the IRB protocol via your institutional process before contacting any participant.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Member checking is not validation theater. If the only thing
-       you record is 'participant agreed', you are doing PR, not
-       analysis. Capture disagreement, hesitation, and the
-       'I never thought of it that way' moments verbatim — those
-       are the highest-information responses."
-    - "Mode matters. Validation, elaboration, and dialogic checks
-       ask different questions and produce different kinds of
-       data. Don't blur them. Name the mode in every round memo."
-    - "Participants are experts on their experience, not
-       necessarily on your interpretation. Sandelowski's critique
-       holds: a participant may reject a coherent theme because
-       it surfaces something uncomfortable. Disagreement is
-       evidence to weigh, not a veto."
-    - "Power asymmetry is real. The researcher chose the codes,
-       picked the quotes, wrote the prompt. Acknowledge this in
-       the participant-facing materials and make declining (or
-       partial response) easy and consequence-free."
-    - "Every round leaves an audit trail another researcher can
-       reconstruct in a year: who was contacted when, what they
-       saw, what they said verbatim, how it changed (or didn't
-       change) the analysis."
+  - "Member checking is not validation theater. If the only thing you record is 'participant agreed', you are doing PR, not analysis. Capture disagreement, hesitation, and the 'I never thought of it that way' moments verbatim — those are the highest-information responses."
+  - "Mode matters. Validation, elaboration, and dialogic checks ask different questions and produce different kinds of data. Don't blur them. Name the mode in every round memo."
+  - "Participants are experts on their experience, not necessarily on your interpretation. Sandelowski's critique holds: a participant may reject a coherent theme because it surfaces something uncomfortable. Disagreement is evidence to weigh, not a veto."
+  - "Power asymmetry is real. The researcher chose the codes, picked the quotes, wrote the prompt. Acknowledge this in the participant-facing materials and make declining (or partial response) easy and consequence-free."
+  - "Every round leaves an audit trail another researcher can reconstruct in a year: who was contacted when, what they saw, what they said verbatim, how it changed (or didn't change) the analysis."
 
 quality_bar:
   participants_offered_minimum_pct: 100        # everyone in sample offered the check
@@ -84,132 +64,145 @@ quality_bar:
   rounds_per_mode_minimum: 1                   # at least one round in chosen mode(s)
 
 steps:
-  - id: select_mode_and_scope
-    name: Select the mode(s) and scope for this round
-    description: |
-      Before contacting anyone, decide:
-        - which mode (validation / elaboration / dialogic)
-        - which participants (all? a stratified subset? only those
-          whose data drove the core category?)
-        - what artifact they will see (codebook excerpt with their
-          quotes? a 2-page theme summary? the full draft findings?)
-      Run `tool_search` for prior member-checking protocols in your
-      pack or in Birt et al. 2016 to anchor the choice. Log the
-      decision + reasoning to workspace/memos/member_check_round_<N>.md
-      with the mode named at the top. Different participants can
-      get different modes — document why.
+- id: select_mode_and_scope
+  name: Select the mode(s) and scope for this round
+  description: |
+    Before contacting anyone, decide:
+      - which mode (validation / elaboration / dialogic)
+      - which participants (all? a stratified subset? only those
+        whose data drove the core category?)
+      - what artifact they will see (codebook excerpt with their
+        quotes? a 2-page theme summary? the full draft findings?)
+    Run `tool_search` for prior member-checking protocols in your
+    pack or in Birt et al. 2016 to anchor the choice. Log the
+    decision + reasoning to workspace/memos/member_check_round_<N>.md
+    with the mode named at the top. Different participants can
+    get different modes — document why.
 
-  - id: prepare_participant_materials
-    name: Prepare participant-facing materials
-    description: |
-      For each participant, assemble:
-        - their own quotes in context (not stripped to fragments)
-        - the codes / themes those quotes support, in plain language
-          (no jargon — "openness to experience" not "trait_O")
-        - the specific question the mode is asking (validation:
-          "do these match what you meant?"; elaboration: "what's
-          missing or wrong-emphasis?"; dialogic: "where would you
-          push back, and what would you change?")
-        - a clear path to decline or respond partially
-      Save under workspace/member_checks/round_<N>/<participant_id>/
-      packet.md. Manually redact any third-party names appearing in
-      the quotes that the participant didn't consent to surface
-      (regex sweep + a re-read; there is no automated redactor in
-      v1.9.3).
+- id: prepare_participant_materials
+  name: Prepare participant-facing materials
+  description: |
+    For each participant, assemble:
+      - their own quotes in context (not stripped to fragments)
+      - the codes / themes those quotes support, in plain language
+        (no jargon — "openness to experience" not "trait_O")
+      - the specific question the mode is asking (validation:
+        "do these match what you meant?"; elaboration: "what's
+        missing or wrong-emphasis?"; dialogic: "where would you
+        push back, and what would you change?")
+      - a clear path to decline or respond partially
+    Save under workspace/member_checks/round_<N>/<participant_id>/
+    packet.md. Manually redact any third-party names appearing in
+    the quotes that the participant didn't consent to surface
+    (regex sweep + a re-read; there is no automated redactor in
+    v1.9.3).
 
-  - id: send_and_track
-    name: Send the materials and track responses
-    description: |
-      Send via the channel each participant previously preferred
-      (email, mail, in-person session, video call). Log every send
-      with date + channel to workspace/member_checks/round_<N>/
-      contact_log.md. Use `mem_log` to record outgoing contact so
-      the audit trail persists across sessions.
+- id: send_and_track
+  name: Send the materials and track responses
+  description: |
+    Send via the channel each participant previously preferred
+    (email, mail, in-person session, video call). Log every send
+    with date + channel to workspace/member_checks/round_<N>/
+    contact_log.md. Use `mem_log` to record outgoing contact so
+    the audit trail persists across sessions.
 
-      Set a response window (typically 2-4 weeks). Send ONE polite
-      reminder at the midpoint. Do not chase. Non-response is
-      itself data — record it as "no response" not "declined" unless
-      the participant explicitly declined.
+    Set a response window (typically 2-4 weeks). Send ONE polite
+    reminder at the midpoint. Do not chase. Non-response is
+    itself data — record it as "no response" not "declined" unless
+    the participant explicitly declined.
 
-  - id: capture_responses_verbatim
-    name: Capture responses verbatim with consent
-    description: |
-      For each respondent:
-        - if recorded (with consent): transcribe in full
-        - if written: paste the reply verbatim
-        - if verbal-only (e.g. phone): paraphrase, then read the
-          paraphrase back to the participant and capture their
-          confirmation or correction VERBATIM
-      Save under workspace/member_checks/round_<N>/<participant_id>/
-      response.md. Tag each response by mode and by which code /
-      theme it addresses. Hesitations, qualifications, and tangents
-      stay in — they often carry the interpretive weight.
+- id: capture_responses_verbatim
+  name: Capture responses verbatim with consent
+  description: |
+    For each respondent:
+      - if recorded (with consent): transcribe in full
+      - if written: paste the reply verbatim
+      - if verbal-only (e.g. phone): paraphrase, then read the
+        paraphrase back to the participant and capture their
+        confirmation or correction VERBATIM
+    Save under workspace/member_checks/round_<N>/<participant_id>/
+    response.md. Tag each response by mode and by which code /
+    theme it addresses. Hesitations, qualifications, and tangents
+    stay in — they often carry the interpretive weight.
 
-  - id: integrate_or_log_divergence
-    name: Integrate agreements, log divergences with reasoning
-    description: |
-      Walk every response. For each substantive point:
-        - if the participant correction is factually right
-          (misattributed quote, wrong date, misidentified
-          referent) → fix immediately in the codebook + memo
-        - if the participant elaborates or adds nuance → revise
-          the code's inclusion / exclusion criteria + log to
-          workspace/codebooks/changelog.md as
-          "member_check_round_<N>:<participant_id>"
-        - if the participant disagrees with the interpretation
-          and you are persuaded → revise and document the shift
-        - if the participant disagrees and you are NOT persuaded
-          → log a divergence entry in workspace/member_checks/
-          round_<N>/divergences.md with: what the participant
-          said verbatim, what you kept, your reasoning (theory,
-          counter-evidence from other transcripts, structural
-          context the participant may not have access to)
-      Divergences are NOT failures. Documenting them is what
-      separates member checking from validation theater.
+- id: integrate_or_log_divergence
+  name: Integrate agreements, log divergences with reasoning
+  description: |
+    Walk every response. For each substantive point:
+      - if the participant correction is factually right
+        (misattributed quote, wrong date, misidentified
+        referent) → fix immediately in the codebook + memo
+      - if the participant elaborates or adds nuance → revise
+        the code's inclusion / exclusion criteria + log to
+        workspace/codebooks/changelog.md as
+        "member_check_round_<N>:<participant_id>"
+      - if the participant disagrees with the interpretation
+        and you are persuaded → revise and document the shift
+      - if the participant disagrees and you are NOT persuaded
+        → log a divergence entry in workspace/member_checks/
+        round_<N>/divergences.md with: what the participant
+        said verbatim, what you kept, your reasoning (theory,
+        counter-evidence from other transcripts, structural
+        context the participant may not have access to)
+    Divergences are NOT failures. Documenting them is what
+    separates member checking from validation theater.
 
-  - id: write_round_memo
-    name: Write the round memo
-    description: |
-      A 1-2 page reflective memo per round, dated. Cover:
-        - mode used, who was contacted, response rate
-        - what changed in the codebook / themes as a result
-        - what divergences were kept and why
-        - what the round surfaced about your analytic blind spots
-          (the elaboration mode in particular tends to reveal
-          codes you assumed were exhaustive)
-        - whether another round (same mode or different) is
-          warranted, and on what trigger
-      File under workspace/memos/member_check_round_<N>.md. This
-      memo + the verbatim responses + the divergence log are the
-      three artifacts that survive into the qualitative report.
+- id: write_round_memo
+  name: Write the round memo
+  description: |
+    A 1-2 page reflective memo per round, dated. Cover:
+      - mode used, who was contacted, response rate
+      - what changed in the codebook / themes as a result
+      - what divergences were kept and why
+      - what the round surfaced about your analytic blind spots
+        (the elaboration mode in particular tends to reveal
+        codes you assumed were exhaustive)
+      - whether another round (same mode or different) is
+        warranted, and on what trigger
+    File under workspace/memos/member_check_round_<N>.md. This
+    memo + the verbatim responses + the divergence log are the
+    three artifacts that survive into the qualitative report.
 
-  - id: close_round_or_schedule_next
-    name: Close the round or schedule the next mode
-    description: |
-      A round closes when:
-        - every offered participant has responded or the window
-          has elapsed
-        - every substantive response has been integrated or
-          divergence-logged
-        - the round memo is written
-        - workspace/codebooks/codebook_v<N+1>.yaml reflects any
-          codebook changes
-      If a different mode is warranted (e.g. validation surfaced
-      gaps that need an elaboration round), schedule it now and
-      log the trigger. Otherwise, hand off to the qualitative
-      report. Use `sys_file_list` to confirm the next protocol's
-      input artifacts exist before declaring the validity phase
-      complete.
+- id: close_round_or_schedule_next
+  name: Close the round or schedule the next mode
+  description: |
+    A round closes when:
+      - every offered participant has responded or the window
+        has elapsed
+      - every substantive response has been integrated or
+        divergence-logged
+      - the round memo is written
+      - workspace/codebooks/codebook_v<N+1>.yaml reflects any
+        codebook changes
+    If a different mode is warranted (e.g. validation surfaced
+    gaps that need an elaboration round), schedule it now and
+    log the trigger. Otherwise, hand off to the qualitative
+    report. Use `sys_file_list` to confirm the next protocol's
+    input artifacts exist before declaring the validity phase
+    complete.
 
 expected_outputs:
-  - workspace/member_checks/round_<N>/contact_log.md
-  - workspace/member_checks/round_<N>/<participant_id>/packet.md
-  - workspace/member_checks/round_<N>/<participant_id>/response.md
-  - workspace/member_checks/round_<N>/divergences.md
-  - workspace/memos/member_check_round_<N>.md
-  - workspace/codebooks/codebook_v<N+1>.yaml          # if changes resulted
-  - workspace/codebooks/changelog.md                  # appended
+- workspace/member_checks/round_<N>/contact_log.md
+- workspace/member_checks/round_<N>/<participant_id>/packet.md
+- workspace/member_checks/round_<N>/<participant_id>/response.md
+- workspace/member_checks/round_<N>/divergences.md
+- workspace/memos/member_check_round_<N>.md
+- workspace/codebooks/codebook_v<N+1>.yaml            # if changes resulted
+- workspace/codebooks/changelog.md                    # appended
 
 next_protocol: qualitative/output/qualitative_report_format
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: audit_wrap
+sub_intent: validity
+triggers:
+- member checking
+- respondent validation
+- share findings with participants
+- participant validation
+- interpretive validity
+summary: Share interpretations back with participants; record + integrate their feedback.
+token_estimate: 1500
+decomposition:
+- protocol: qualitative/validity/member_checking
+  purpose: Plan + run + record member-check rounds.

@@ -8,6 +8,7 @@ envelope.
 """
 from __future__ import annotations
 
+# ruff: noqa: F403, F405  # legacy handler runtime star-import compatibility
 from .._handlers_runtime import *  # noqa: F401,F403
 
 __all__ = [

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "build": {
+      "model": "argo/gpt54"
+    },
+    "general": {
+      "model": "argo/gpt41"
+    },
+    "explore": {
+      "model": "opencode/deepseek-v4-flash-free"
+    }
+  },
+  "mcp": {
+    "research-os": {
+      "type": "local",
+      "enabled": true,
+      "command": "/scratch/vsetlur/anaconda3/envs/research-os/bin/research-os",
+      "args": ["start"]
+    }
+  }
+}

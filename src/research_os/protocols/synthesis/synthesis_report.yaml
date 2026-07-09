@@ -1,15 +1,15 @@
 id: synthesis_report
 tier: 'synthesize'
 name: Synthesis — Internal / Technical Report
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - synthesis/synthesis_progress_update   # shorter sibling for a busy reader
+- synthesis/synthesis_progress_update     # shorter sibling for a busy reader
 description: Compile a non-journal report for internal stakeholders, clients, or a technical audience.
 trigger: Researcher asks "write a report" / "write up findings for my PI / client / team"; OR `research_goal.output_types` includes "report".
 
@@ -48,57 +48,65 @@ audience_profile:
       by 2-3 policy options.
 
 steps:
-  - id: select_audience
-    name: Select Audience Profile
-    description: |
-      Ask: "Audience? internal_team | client | technical_audit | policy_brief"
+- id: select_audience
+  name: Select Audience Profile
+  description: |
+    Ask: "Audience? internal_team | client | technical_audit | policy_brief"
 
-  - id: draft_executive_summary
-    name: Draft Executive Summary FIRST
-    description: |
-      A single paragraph or a short bullet list — skimmable in a
-      minute, because this is the only section many readers will read.
-      Cover:
-        - What we were asked to do.
-        - What we found (the headline numbers).
-        - What we recommend.
+- id: draft_executive_summary
+  name: Draft Executive Summary FIRST
+  description: |
+    A single paragraph or a short bullet list — skimmable in a
+    minute, because this is the only section many readers will read.
+    Cover:
+      - What we were asked to do.
+      - What we found (the headline numbers).
+      - What we recommend.
 
-  - id: gather_workspace_content
-    name: Gather Content from workspace
-    description: |
-      Pull every conclusions.md + reports/*.md from active experiments.
-      Pull workspace/methods.md.
-      Pull citations.md.
+- id: gather_workspace_content
+  name: Gather Content from workspace
+  description: |
+    Pull every conclusions.md + reports/*.md from active experiments.
+    Pull workspace/methods.md.
+    Pull citations.md.
 
-  - id: draft_each_section
-    name: Draft Each Audience Section
-    description: |
-      For each section in audience.sections, author the prose directly
-      into `synthesis/report.md` (or `synthesis/report.typ` for a
-      print-ready PDF). Apply tone (informal_technical / formal_concise
-      / structured_formal / policy_concise). For technical_audit, each
-      Finding entry MUST include severity + remediation.
+- id: draft_each_section
+  name: Draft Each Audience Section
+  description: |
+    For each section in audience.sections, author the prose directly
+    into `synthesis/report.md` (or `synthesis/report.typ` for a
+    print-ready PDF). Apply tone (informal_technical / formal_concise
+    / structured_formal / policy_concise). For technical_audit, each
+    Finding entry MUST include severity + remediation.
 
-  - id: draft_recommendations
-    name: Draft Recommendations (evidence-linked)
-    description: |
-      Every recommendation MUST cite either:
-        - a specific workspace experiment (link conclusions.md path), OR
-        - a verified citation from workspace/citations.md.
-      No vague "explore further" without evidence backing.
+- id: draft_recommendations
+  name: Draft Recommendations (evidence-linked)
+  description: |
+    Every recommendation MUST cite either:
+      - a specific workspace experiment (link conclusions.md path), OR
+      - a verified citation from workspace/citations.md.
+    No vague "explore further" without evidence backing.
 
-  - id: assemble
-    name: Audit + Compile
-    description: |
-      tool_synthesis_check(file='synthesis/report.md') — checks
-      substantiveness, cliches, section coverage.
-      tool_citations_verify — every citation resolves.
-      tool_typst_compile(source='synthesis/report.typ') when a PDF is
-      needed (otherwise the markdown is the deliverable).
+- id: assemble
+  name: Audit + Compile
+  description: |
+    tool_synthesis_scaffold (operation=check)(file='synthesis/report.md') — checks
+    substantiveness, cliches, section coverage.
+    tool_audit (scope=project, dimension=citations) — every citation resolves.
+    tool_typst_compile(source='synthesis/report.typ') when a PDF is
+    needed (otherwise the markdown is the deliverable).
 
 expected_outputs:
-  - synthesis/report.md
+- synthesis/report.md
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: report
+triggers:
+- technical report
+- internal report
+- stakeholder report
+summary: AI authors a technical / executive report.
+shortcut_tool: tool_synthesis_scaffold (operation=plan)

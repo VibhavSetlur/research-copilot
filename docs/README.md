@@ -64,7 +64,7 @@ Reference, as you need it:
 
 ## For AI agents + plugin authors
 
-**AI agents:** start at [**AI_GUIDE.md**](AI_GUIDE.md). At runtime, prefer `sys_help` and `sys_tool_describe` over the docs — they reflect what's actually installed.
+**AI agents:** start at [**AI_GUIDE.md**](AI_GUIDE.md). At runtime, prefer `sys_boot` and `sys_active_tools` over the docs — they reflect what's actually installed.
 
 **Plugin authors:** start at [**PLUGIN_AUTHORING.md**](PLUGIN_AUTHORING.md). The in-tree packs under `src/research_os_<pack>/` are working templates.
 

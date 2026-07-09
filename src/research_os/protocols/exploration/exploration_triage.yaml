@@ -1,17 +1,17 @@
 id: exploration_triage
 tier: 'plan'
 name: Exploration Triage (what's cheaply worth probing first)
-version: '3.8.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai]
   workflow_shape: [exploration, triage]
 last_reviewed: '2026-06-16'
 see_also:
-  - exploration/exploration_loop               # the loop this triage feeds probes into
-  - methodology/exploratory_data_analysis       # the rigorous, scoped EDA alternative
-  - guidance/project_startup                     # the analysis-mode intake this parallels
+- exploration/exploration_loop                 # the loop this triage feeds probes into
+- methodology/exploratory_data_analysis         # the rigorous, scoped EDA alternative
+- guidance/project_startup                       # the analysis-mode intake this parallels
 description: |
   The orienting pass for an exploration-mode workspace facing a fresh,
   un-triaged dataset: a cheap landscape read that produces a short,
@@ -37,72 +37,72 @@ trigger: |
   says "where do I start", "what's worth looking at here", "what's in this
   data", "help me prioritise", "what should I poke at first".
 prerequisites:
-  - workspace.mode is exploration (sys_boot reports workspace_mode)
-  - At least one dataset is available under inputs/raw_data/ (or the researcher has pointed at one)
+- workspace.mode is exploration (sys_boot reports workspace_mode)
+- At least one dataset is available under inputs/raw_data/ (or the researcher has pointed at one)
 
 steps:
-  - id: read_the_landscape
-    name: Read the data landscape cheaply
-    description: |
-      Get the shape of what's here without analysing it: for each dataset
-      in inputs/raw_data/, a cheap read of rows × columns, dtypes, obvious
-      keys, and gross missingness (a sample, not the whole file). Run this
-      in scratch (tool_scratch) — it's a probe in service of planning, not
-      a finding.
+- id: read_the_landscape
+  name: Read the data landscape cheaply
+  description: |
+    Get the shape of what's here without analysing it: for each dataset
+    in inputs/raw_data/, a cheap read of rows × columns, dtypes, obvious
+    keys, and gross missingness (a sample, not the whole file). Run this
+    in scratch (tool_scratch) — it's a probe in service of planning, not
+    a finding.
 
-      Note what the data plausibly supports: is it tabular cross-section?
-      a time series? grouped/longitudinal? text? The structure constrains
-      which questions are even askable cheaply.
+    Note what the data plausibly supports: is it tabular cross-section?
+    a time series? grouped/longitudinal? text? The structure constrains
+    which questions are even askable cheaply.
 
-  - id: surface_what_matters
-    name: Surface what the researcher actually cares about
-    description: |
-      A landscape read alone doesn't rank questions — intent does. Pull in
-      whatever signal exists about what matters:
-        - inputs/context/ notes, the research question(s) in config/state,
-          anything the researcher said this session.
-      If there's NO stated intent, ask one short question rather than
-      guessing: "anything specific you're hoping to find, or should I just
-      flag what looks most interesting?" — exploration mode is allowed to
-      proceed on "just flag it", but say so explicitly.
+- id: surface_what_matters
+  name: Surface what the researcher actually cares about
+  description: |
+    A landscape read alone doesn't rank questions — intent does. Pull in
+    whatever signal exists about what matters:
+      - inputs/context/ notes, the research question(s) in config/state,
+        anything the researcher said this session.
+    If there's NO stated intent, ask one short question rather than
+    guessing: "anything specific you're hoping to find, or should I just
+    flag what looks most interesting?" — exploration mode is allowed to
+    proceed on "just flag it", but say so explicitly.
 
-  - id: rank_the_probes
-    name: Rank a short list of cheap, high-information probes
-    description: |
-      Produce 3-5 candidate probes, each a one-line falsifiable question
-      (the kind exploration_loop's frame_the_question would accept), ranked
-      by (information if it pans out) × (cheapness to probe). Favour probes
-      that can come back "no" quickly — a cheap kill is as valuable as a
-      cheap hit.
+- id: rank_the_probes
+  name: Rank a short list of cheap, high-information probes
+  description: |
+    Produce 3-5 candidate probes, each a one-line falsifiable question
+    (the kind exploration_loop's frame_the_question would accept), ranked
+    by (information if it pans out) × (cheapness to probe). Favour probes
+    that can come back "no" quickly — a cheap kill is as valuable as a
+    cheap hit.
 
-      For each, note in one phrase WHY it's worth a probe (e.g. "the
-      headline relationship the question implies", "a data-quality
-      blocker that would invalidate everything downstream", "the obvious
-      group difference a reader would ask about first"). Avoid a generic
-      "make a histogram of every column" sweep — that's not triage, it's
-      noise.
+    For each, note in one phrase WHY it's worth a probe (e.g. "the
+    headline relationship the question implies", "a data-quality
+    blocker that would invalidate everything downstream", "the obvious
+    group difference a reader would ask about first"). Avoid a generic
+    "make a histogram of every column" sweep — that's not triage, it's
+    noise.
 
-      Write the ranked list to workspace/scratch/triage.md so the loop
-      (and a later session) can pick up where this left off.
+    Write the ranked list to workspace/scratch/triage.md so the loop
+    (and a later session) can pick up where this left off.
 
-  - id: handoff_to_loop
-    name: Hand the top probe to the loop
-    description: |
-      Triage's output is a queue, not an answer. Take the top-ranked probe
-      and enter exploration/exploration_loop to actually run it (frame →
-      probe → observe → decide). The rest of the ranked list stays in
-      triage.md as the backlog.
+- id: handoff_to_loop
+  name: Hand the top probe to the loop
+  description: |
+    Triage's output is a queue, not an answer. Take the top-ranked probe
+    and enter exploration/exploration_loop to actually run it (frame →
+    probe → observe → decide). The rest of the ranked list stays in
+    triage.md as the backlog.
 
-      AUTONOMY GATE:
-        Risk: reversible + cheap — running the top probe is scratch work
-        and the backlog stays available to reorder later.
-        proceed (adaptive default, autopilot) → run the top probe via exploration_loop; keep
-          the rest as the backlog.
-        confirm first (manual / supervised) → present the ranked list; let the researcher
-          pick which probe to run first (they may reorder).
+    AUTONOMY GATE:
+      Risk: reversible + cheap — running the top probe is scratch work
+      and the backlog stays available to reorder later.
+      proceed (adaptive default, autopilot) → run the top probe via exploration_loop; keep
+        the rest as the backlog.
+      confirm first (manual / supervised) → present the ranked list; let the researcher
+        pick which probe to run first (they may reorder).
 
 expected_outputs:
-  - workspace/scratch/triage.md  (the ranked probe backlog)
+- workspace/scratch/triage.md  (the ranked probe backlog)
 
 quality_bar: |
   - The probe list is RANKED by information × cheapness, not an
@@ -114,3 +114,24 @@ quality_bar: |
 next_protocol: exploration/exploration_loop
 next_protocol_kind: forward_default
 on_failure: guidance/casual_exploration
+intent_class: discover
+sub_intent: explore_triage
+triggers:
+- where do i start
+- where should i start
+- what's worth looking at
+- what should i poke at first
+- what's in this data
+- help me prioritise
+- help me prioritize
+- triage the data
+- what looks interesting
+summary: Orient on fresh data and produce a short, ranked list of cheap, high-information probes for the exploration loop to run first.
+token_estimate: 1100
+decomposition:
+- protocol: exploration/exploration_triage
+  purpose: Read the landscape, surface intent, rank cheap high-information probes, hand the top one to the loop.
+- tool: tool_scratch
+  purpose: Cheap landscape read of shape / dtypes / missingness.
+- tool: sys_file_write
+  purpose: Write the ranked probe backlog to workspace/scratch/triage.md.

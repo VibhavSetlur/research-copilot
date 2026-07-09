@@ -1,7 +1,7 @@
 id: archival_research
 name: Archival Research — locate, capture, transcribe, annotate, cite
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [humanities]
   audience: [researcher]
@@ -25,90 +25,104 @@ trigger: |
   "let's catalogue this collection".
 
 prerequisites:
-  - At least one image / scan / facsimile is available, OR an archive
-    holding has been identified (call it out by shelfmark).
+- At least one image / scan / facsimile is available, OR an archive holding has been identified (call it out by shelfmark).
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Every transcription preserves the source image's line breaks
-       and folio numbers. The transcription is a witness, not a
-       cleaned-up rendition."
-    - "Doubtful readings live in `[brackets]` with an editorial note;
-       silent emendations are forbidden — the reader must be able to
-       see the editor's hand."
-    - "A quotation without a recoverable manuscript reference is a
-       quotation under suspicion until the chain is closed."
+  - "Every transcription preserves the source image's line breaks and folio numbers. The transcription is a witness, not a cleaned-up rendition."
+  - "Doubtful readings live in `[brackets]` with an editorial note; silent emendations are forbidden — the reader must be able to see the editor's hand."
+  - "A quotation without a recoverable manuscript reference is a quotation under suspicion until the chain is closed."
 
 steps:
-  - id: locate_holding
-    name: Locate the holding
-    description: |
-      Identify the manuscript / archive / collection by:
-        - institution + shelfmark (e.g. BL Cotton Vespasian A.i)
-        - foliation / pagination range
-        - reproductions policy (does the institution allow
-          publication? do they require credit?)
-      Call tool_humanities_archive_lookup if the holding is not yet
-      known — it plans queries against Internet Archive / HathiTrust
-      / DPLA / Europeana / Gallica / LoC.
-      Output: inputs/archival/holdings_register.md with the citation
-      already formatted for the eventual paper.
+- id: locate_holding
+  name: Locate the holding
+  description: |
+    Identify the manuscript / archive / collection by:
+      - institution + shelfmark (e.g. BL Cotton Vespasian A.i)
+      - foliation / pagination range
+      - reproductions policy (does the institution allow
+        publication? do they require credit?)
+    Call tool_humanities_archive_lookup if the holding is not yet
+    known — it plans queries against Internet Archive / HathiTrust
+    / DPLA / Europeana / Gallica / LoC.
+    Output: inputs/archival/holdings_register.md with the citation
+    already formatted for the eventual paper.
 
-  - id: capture
-    name: Capture (image / scan / request reproduction)
-    description: |
-      Get a working image. Options in priority order:
-        1. Institutional IIIF / digital facsimile (preferred — stable URI).
-        2. On-site photography (researcher's own; record metadata
-           sidecar with date + camera + lighting).
-        3. Microfilm scan (lossy; flag in the transcription).
-        4. Request reproduction (slow; budget weeks).
-      Land images under inputs/archival/<holding_id>/<folio>.jpg.
-      For each image, also write a `.meta.json` sidecar with:
-        {institution, shelfmark, folio, capture_method, date_captured,
-         photographer, rights_notice}.
+- id: capture
+  name: Capture (image / scan / request reproduction)
+  description: |
+    Get a working image. Options in priority order:
+      1. Institutional IIIF / digital facsimile (preferred — stable URI).
+      2. On-site photography (researcher's own; record metadata
+         sidecar with date + camera + lighting).
+      3. Microfilm scan (lossy; flag in the transcription).
+      4. Request reproduction (slow; budget weeks).
+    Land images under inputs/archival/<holding_id>/<folio>.jpg.
+    For each image, also write a `.meta.json` sidecar with:
+      {institution, shelfmark, folio, capture_method, date_captured,
+       photographer, rights_notice}.
 
-  - id: transcribe
-    name: Transcribe with editorial conventions
-    description: |
-      Call tool_humanities_transcribe per image. The tool scaffolds a
-      side-by-side template (First-pass | Corrected) under
-      workspace/transcriptions/<image_stem>.md.
-      Declare editorial conventions UP-TOP in the file:
-        - line-break marker (`|`)
-        - abbreviation handling (silent expansion? bracketed?)
-        - doubtful readings (`[X?]`)
-        - lacunae (`[...]`)
-        - emendations (`<X>` or footnote)
-      Do TWO passes: machine OCR (if engine!='manual') then a
-      side-by-side hand correction. Both passes timestamped.
+- id: transcribe
+  name: Transcribe with editorial conventions
+  description: |
+    Call tool_humanities_transcribe per image. The tool scaffolds a
+    side-by-side template (First-pass | Corrected) under
+    workspace/transcriptions/<image_stem>.md.
+    Declare editorial conventions UP-TOP in the file:
+      - line-break marker (`|`)
+      - abbreviation handling (silent expansion? bracketed?)
+      - doubtful readings (`[X?]`)
+      - lacunae (`[...]`)
+      - emendations (`<X>` or footnote)
+    Do TWO passes: machine OCR (if engine!='manual') then a
+    side-by-side hand correction. Both passes timestamped.
 
-  - id: annotate
-    name: Annotate the apparatus
-    description: |
-      For each substantive variant / disputed reading / interesting
-      lacuna, add an editorial note in the transcription file's
-      "Editorial notes" section, keyed to a folio + line number.
-      An annotation is substantive iff it would survive into the
-      apparatus criticus of a critical edition (synthesis/output/
-      scholarly_edition consumes these).
+- id: annotate
+  name: Annotate the apparatus
+  description: |
+    For each substantive variant / disputed reading / interesting
+    lacuna, add an editorial note in the transcription file's
+    "Editorial notes" section, keyed to a folio + line number.
+    An annotation is substantive iff it would survive into the
+    apparatus criticus of a critical edition (synthesis/output/
+    scholarly_edition consumes these).
 
-  - id: cite_chain
-    name: Build the citation chain
-    description: |
-      For every quotation you'll use in writing, call
-      tool_humanities_citation_chain to scaffold a chain-of-custody
-      markdown. Fill in: secondary citation → translation → critical
-      edition → manuscript → (possibly) earlier lost source.
-      Verify every link is recoverable — no "as quoted in X" loops.
-      Output: workspace/citations/chain_<slug>.md per quotation.
+- id: cite_chain
+  name: Build the citation chain
+  description: |
+    For every quotation you'll use in writing, call
+    tool_humanities_citation_chain to scaffold a chain-of-custody
+    markdown. Fill in: secondary citation → translation → critical
+    edition → manuscript → (possibly) earlier lost source.
+    Verify every link is recoverable — no "as quoted in X" loops.
+    Output: workspace/citations/chain_<slug>.md per quotation.
 
 expected_outputs:
-  - inputs/archival/holdings_register.md
-  - workspace/transcriptions/<image_stem>.md  # one per image
-  - workspace/citations/chain_<slug>.md       # one per cited quotation
+- inputs/archival/holdings_register.md
+- workspace/transcriptions/<image_stem>.md    # one per image
+- workspace/citations/chain_<slug>.md         # one per cited quotation
 
 next_protocol: humanities/textual/close_reading
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: execute
+sub_intent: new_experiment
+triggers:
+- archival research
+- work with primary sources
+- go to the archive
+- manuscript work
+- archive trip
+- primary source
+- transcribe a manuscript
+summary: 'Workflow for working with primary sources: locate → photograph/scan → transcribe → annotate → cite.'
+shortcut_tool: tool_humanities_archive_lookup
+token_estimate: 1700
+decomposition:
+- tool: tool_humanities_archive_lookup
+  purpose: Plan + execute archive queries.
+- tool: tool_humanities_transcribe
+  purpose: OCR + side-by-side correction template per image.
+- protocol: humanities/archival/archival_research
+  purpose: Walk the locate → transcribe → annotate loop.

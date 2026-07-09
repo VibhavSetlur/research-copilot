@@ -1,16 +1,16 @@
 id: synthesis_lay_summary
 tier: 'synthesize'
 name: Synthesis — Lay Summary (public / press / outreach)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - synthesis/synthesis_paper        # the technical version the lay summary links to
-  - synthesis/synthesis_dashboard    # the "teaching" audience profile is a sibling surface
+- synthesis/synthesis_paper          # the technical version the lay summary links to
+- synthesis/synthesis_dashboard      # the "teaching" audience profile is a sibling surface
 description: |
   Compile a plain-language summary of the project for a NON-EXPERT
   audience — funder lay-summary section, press release, university
@@ -38,15 +38,8 @@ trigger: |
   "for my mom / family / grandma".
 
 prerequisites:
-  - "The project has a synthesis-eligible state — at least one
-    conclusions.md with a substantive Findings section, OR an existing
-    synthesis/* deliverable to derive from."
-  - "Researcher's `research_goal.output_types`
-    (inputs/researcher_config.yaml) includes `lay_summary`. If
-    it doesn't, tool_synthesis_scaffold returns status=ask instead
-    of writing — confirm with the researcher first. Empty
-    output_types is treated as 'open' so unfilled projects don't
-    trip the gate."
+- "The project has a synthesis-eligible state — at least one conclusions.md with a substantive Findings section, OR an existing synthesis/* deliverable to derive from."
+- "Researcher's `research_goal.output_types` (inputs/researcher_config.yaml) includes `lay_summary`. If it doesn't, tool_synthesis_scaffold returns status=ask instead of writing — confirm with the researcher first. Empty output_types is treated as 'open' so unfilled projects don't trip the gate."
 
 quality_bar:
   reading_grade_within_audience_ceiling: true   # the outlet/funder sets the
@@ -124,151 +117,170 @@ audience_profile:
 editorial_voice:
   mode: hybrid
   rules:
-    - "Pick concrete words over abstract ones. 'Doubled' beats
-       'increased substantially'. 'Three patients in 100' beats
-       'a 3% incidence rate'."
-    - "Anchor numbers in something the reader can compare to. '50
-       mg/dL' means nothing on its own; 'about the level the FDA
-       flags as concerning' or 'about a third of a soft-drink
-       serving of sugar' means something."
-    - "Every claim about cause-and-effect must match the study
-       design. The lay reader hears 'X reduces Y' as a causal claim
-       and acts on it — so when the design is observational, say
-       so explicitly even when the technical paper hedges."
-    - "Acknowledge the boundary. Lay readers who walk away knowing
-       what the study CANNOT say trust the field more, not less."
+  - "Pick concrete words over abstract ones. 'Doubled' beats 'increased substantially'. 'Three patients in 100' beats 'a 3% incidence rate'."
+  - "Anchor numbers in something the reader can compare to. '50 mg/dL' means nothing on its own; 'about the level the FDA flags as concerning' or 'about a third of a soft-drink serving of sugar' means something."
+  - "Every claim about cause-and-effect must match the study design. The lay reader hears 'X reduces Y' as a causal claim and acts on it — so when the design is observational, say so explicitly even when the technical paper hedges."
+  - "Acknowledge the boundary. Lay readers who walk away knowing what the study CANNOT say trust the field more, not less."
 
 steps:
-  - id: select_audience
-    name: Select audience profile
-    description: |
-      Ask: "Audience? general_public | press_release | funder_lay_section
-      | patient_or_participant | social_thread | blog_post."
-      For mixed audiences (the most common case for a press release),
-      pick the strictest reading level (funder_lay_section is usually
-      the tightest constraint).
+- id: select_audience
+  name: Select audience profile
+  description: |
+    Ask: "Audience? general_public | press_release | funder_lay_section
+    | patient_or_participant | social_thread | blog_post."
+    For mixed audiences (the most common case for a press release),
+    pick the strictest reading level (funder_lay_section is usually
+    the tightest constraint).
 
-  - id: source_the_headline_finding
-    name: Source the headline finding from the workspace
-    description: |
-      Pull in ONE batch:
-        - mem_hypothesis_list status=supported
-        - the most recent conclusions.md per active step
-        - synthesis/synthesis_spec.yaml#findings  (when present)
-        - workspace/citations.md                   (for "more info" links)
+- id: source_the_headline_finding
+  name: Source the headline finding from the workspace
+  description: |
+    Pull in ONE batch:
+      - mem_hypothesis (operation=list) status=supported
+      - the most recent conclusions.md per active step
+      - synthesis/synthesis_spec.yaml#findings  (when present)
+      - workspace/citations.md                   (for "more info" links)
 
-      Distil the project to ONE headline finding the lay summary
-      will lead with. If the project has more than one supported
-      hypothesis, list them in priority order — the lay summary
-      leads with one, the others appear as subordinate findings.
+    Distil the project to ONE headline finding the lay summary
+    will lead with. If the project has more than one supported
+    hypothesis, list them in priority order — the lay summary
+    leads with one, the others appear as subordinate findings.
 
-  - id: extract_and_translate_jargon
-    name: Extract jargon + write a translation map
-    description: |
-      Walk the source artefacts (conclusions.md, methods.md, paper.md)
-      and extract every disciplinary term that the audience cannot be
-      assumed to know. For each, write:
-        - the term
-        - a one-phrase plain-language definition the audience would
-          accept ("logistic regression" → "a way of estimating how
-          likely an outcome is from a set of inputs")
-        - the alternative WORD or PHRASE the lay summary will use in
-          place of the term (often a shorter, looser word — "estimate"
-          for "regression coefficient", "linked" for "associated")
+- id: extract_and_translate_jargon
+  name: Extract jargon + write a translation map
+  description: |
+    Walk the source artefacts (conclusions.md, methods.md, paper.md)
+    and extract every disciplinary term that the audience cannot be
+    assumed to know. For each, write:
+      - the term
+      - a one-phrase plain-language definition the audience would
+        accept ("logistic regression" → "a way of estimating how
+        likely an outcome is from a set of inputs")
+      - the alternative WORD or PHRASE the lay summary will use in
+        place of the term (often a shorter, looser word — "estimate"
+        for "regression coefficient", "linked" for "associated")
 
-      Save the translation map to workspace/scratch/lay_glossary.md.
-      This becomes the reusable layer for future lay-summary work.
+    Save the translation map to workspace/scratch/lay_glossary.md.
+    This becomes the reusable layer for future lay-summary work.
 
-  - id: write_anchor_comparisons
-    name: Write at least 2 anchor comparisons for every key number
-    description: |
-      Numbers without anchors are noise to the lay reader. For each
-      number the summary intends to keep:
-        - find at LEAST ONE anchor the reader can compare it to (a
-          familiar scale, a daily-life equivalent, a previous-study
-          benchmark) — prefer concrete over technical
-        - find at LEAST ONE second anchor that is harder to over-read
-          (a range from prior literature, a population baseline, a
-          known noise floor) — prevents the number from being read as
-          more impressive than it is
+- id: write_anchor_comparisons
+  name: Write at least 2 anchor comparisons for every key number
+  description: |
+    Numbers without anchors are noise to the lay reader. For each
+    number the summary intends to keep:
+      - find at LEAST ONE anchor the reader can compare it to (a
+        familiar scale, a daily-life equivalent, a previous-study
+        benchmark) — prefer concrete over technical
+      - find at LEAST ONE second anchor that is harder to over-read
+        (a range from prior literature, a population baseline, a
+        known noise floor) — prevents the number from being read as
+        more impressive than it is
 
-      Record the anchors inline in the draft so the audit step can
-      verify each number has at least one survivor.
+    Record the anchors inline in the draft so the audit step can
+    verify each number has at least one survivor.
 
-  - id: draft_per_section
-    name: Draft each section in the audience profile
-    description: |
-      For each section in audience.sections, author the prose directly
-      into `synthesis/lay_summary.md` (or .typ for a press-kit one-pager
-      that compiles via tool_typst_compile). Apply the audience
-      profile's tone. Replace each occurrence of a jargon term with the
-      translation map's alternative. Keep the reading grade level within
-      the audience's ceiling (the outlet's stated max, or the
-      least-expert reader when none is stated).
+- id: draft_per_section
+  name: Draft each section in the audience profile
+  description: |
+    For each section in audience.sections, author the prose directly
+    into `synthesis/lay_summary.md` (or .typ for a press-kit one-pager
+    that compiles via tool_typst_compile). Apply the audience
+    profile's tone. Replace each occurrence of a jargon term with the
+    translation map's alternative. Keep the reading grade level within
+    the audience's ceiling (the outlet's stated max, or the
+    least-expert reader when none is stated).
 
-      For press_release: write the headline as the FINDING, not the
-      topic. "Vaccine cuts hospital admissions in half in over-65s"
-      beats "Researchers study vaccine effects in over-65s."
+    For press_release: write the headline as the FINDING, not the
+    topic. "Vaccine cuts hospital admissions in half in over-65s"
+    beats "Researchers study vaccine effects in over-65s."
 
-      For social_thread: number each post (1/N) and write each post as
-      a standalone unit; threads are skimmed, not read.
+    For social_thread: number each post (1/N) and write each post as
+    a standalone unit; threads are skimmed, not read.
 
-  - id: cite_minimally_and_link
-    name: Cite minimally; link to the technical version
-    description: |
-      Lay summaries are not the place for a bibliography. Cap citations
-      at the audience profile's `citations_maximum` (often 0-3). The
-      one piece of citation work that ALWAYS belongs:
+- id: cite_minimally_and_link
+  name: Cite minimally; link to the technical version
+  description: |
+    Lay summaries are not the place for a bibliography. Cap citations
+    at the audience profile's `citations_maximum` (often 0-3). The
+    one piece of citation work that ALWAYS belongs:
 
-        - a "Read the technical version here:" link to the paper /
-          preprint / dashboard
-        - one or two anchor citations for the comparisons step (so
-          the reader can chase down the source if they want to)
+      - a "Read the technical version here:" link to the paper /
+        preprint / dashboard
+      - one or two anchor citations for the comparisons step (so
+        the reader can chase down the source if they want to)
 
-      For funder lay sections and patient-facing summaries, add a
-      contact line — name, role, where to ask follow-up questions.
+    For funder lay sections and patient-facing summaries, add a
+    contact line — name, role, where to ask follow-up questions.
 
-  - id: audit_for_overclaim_and_jargon
-    name: Audit for overclaim, jargon, reading level
-    description: |
-      Walk the draft:
-        - every causal verb in the draft licensed by the study design
-          (no "X reduces Y" for observational data)
-        - every disciplinary term either replaced or unpacked inline
-        - reading grade level under the audience profile's floor
-          (a public tool or the embedded textstat-style check applies
-          here)
-        - every retained number paired with at least one anchor
-          comparison
-        - acronyms unpacked the first time they appear (and re-unpacked
-          for the patient/general_public profiles even on later mentions)
-        - no untrue precision ("50.2%" reads as more precise than the
-          study supports; round to the precision the data warrant)
+- id: audit_for_overclaim_and_jargon
+  name: Audit for overclaim, jargon, reading level
+  description: |
+    Walk the draft:
+      - every causal verb in the draft licensed by the study design
+        (no "X reduces Y" for observational data)
+      - every disciplinary term either replaced or unpacked inline
+      - reading grade level under the audience profile's floor
+        (a public tool or the embedded textstat-style check applies
+        here)
+      - every retained number paired with at least one anchor
+        comparison
+      - acronyms unpacked the first time they appear (and re-unpacked
+        for the patient/general_public profiles even on later mentions)
+      - no untrue precision ("50.2%" reads as more precise than the
+        study supports; round to the precision the data warrant)
 
-      tool_audit(scope='synthesis', dimension='all') paper_path="synthesis/lay_summary.md"
-      and tool_audit(scope='project', dimension='claims') if the source numbers came from the
-      workspace.
+    tool_audit(scope='synthesis', dimension='all') paper_path="synthesis/lay_summary.md"
+    and tool_audit(scope='project', dimension='claims') if the source numbers came from the
+    workspace.
 
-  - id: handback
-    name: Hand back + suggest the human review pass
-    description: |
-      Report:
-        - section-by-section word counts
-        - reading grade level
-        - number of jargon terms replaced + number unpacked
-        - link to the technical version
+- id: handback
+  name: Hand back + suggest the human review pass
+  description: |
+    Report:
+      - section-by-section word counts
+      - reading grade level
+      - number of jargon terms replaced + number unpacked
+      - link to the technical version
 
-      For press releases, funder lay sections, and patient-facing
-      summaries: recommend a human review pass by someone from the
-      target audience (a comms officer, a patient advocate, a lay
-      friend). LLM-drafted lay summaries pass technical audits but
-      fail the "real person reads it cold" test more often than they
-      should.
+    For press releases, funder lay sections, and patient-facing
+    summaries: recommend a human review pass by someone from the
+    target audience (a comms officer, a patient advocate, a lay
+    friend). LLM-drafted lay summaries pass technical audits but
+    fail the "real person reads it cold" test more often than they
+    should.
 
 expected_outputs:
-  - synthesis/lay_summary.md
-  - workspace/scratch/lay_glossary.md
+- synthesis/lay_summary.md
+- workspace/scratch/lay_glossary.md
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: synthesize
+sub_intent: lay
+triggers:
+- lay summary
+- press release
+- explain this to a non-scientist
+- for the public
+- for the patient newsletter
+- blog post about this
+- blog post for
+- social media summary
+- twitter thread
+- x thread
+- explain for my grandma
+- explain for my mom
+- for non-experts
+- patient-facing
+- outreach summary
+- funder lay section
+- translate this for a non-expert
+summary: Plain-language summary for non-experts (press / public / patient / funder / blog / social).
+token_estimate: 1400
+decomposition:
+- protocol: synthesis/synthesis_lay_summary
+  purpose: Pick lay audience + translate jargon + anchor numbers.
+- tool: tool_synthesis_scaffold (operation=check)
+  args:
+    file: synthesis/lay_summary.md

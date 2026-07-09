@@ -1,17 +1,17 @@
 id: organize_existing_project
 tier: 'intake'
 name: Organize an Existing Project into Research-OS
-version: '4.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [naive_ai, researcher]
   workflow_shape: [any, migration]
 last_reviewed: '2026-06-25'
 see_also:
-  - guidance/project_startup        # the clean-start path (no prior chaos to migrate)
-  - guidance/mid_pipeline_entry     # when prior RO work exists but you're resuming
-  - methodology/data_quality_audit  # audit the DATA after the structure is sound
+- guidance/project_startup          # the clean-start path (no prior chaos to migrate)
+- guidance/mid_pipeline_entry       # when prior RO work exists but you're resuming
+- methodology/data_quality_audit    # audit the DATA after the structure is sound
 description: >
   Bring an existing, unstructured project (a folder that grew organically:
   loose data files, scripts, notebooks, notes) into Research-OS format SAFELY,
@@ -23,97 +23,115 @@ trigger: >
   data and scripts everywhere", "migrate my project", "can you structure
   this"). NOT for a fresh project (use project_startup).
 prerequisites:
-  - sys_boot has run this session
-  - the researcher has pointed you at the existing project directory
+- sys_boot has run this session
+- the researcher has pointed you at the existing project directory
 
 steps:
-  - id: understand_the_ask
-    name: Confirm what they want organized, and where it lives
-    description: |
-      In ONE sentence, confirm the source: which existing directory holds the
-      chaos, and that the goal is to bring it into THIS RO project (or a new
-      one). Do not start moving anything until you know the source path.
+- id: understand_the_ask
+  name: Confirm what they want organized, and where it lives
+  description: |
+    In ONE sentence, confirm the source: which existing directory holds the
+    chaos, and that the goal is to bring it into THIS RO project (or a new
+    one). Do not start moving anything until you know the source path.
 
-      Reassure them of the safety contract up front: the migration COPIES —
-      their original folder is never moved, deleted, or modified. They lose
-      nothing by trying it.
+    Reassure them of the safety contract up front: the migration COPIES —
+    their original folder is never moved, deleted, or modified. They lose
+    nothing by trying it.
 
-  - id: audit_the_chaos
-    name: See what's actually there (read-only)
-    description: |
-      Call tool_migrate_audit(source_dir=<their path>). This is READ-ONLY: it
-      classifies every file (data / code / notebook / doc / figure /
-      environment / other) and shows the proposed RO home for each, plus
-      counts and total size.
+- id: audit_the_chaos
+  name: See what's actually there (read-only)
+  description: |
+    Call tool_migrate_audit(source_dir=<their path>). This is READ-ONLY: it
+    classifies every file (data / code / notebook / doc / figure /
+    environment / other) and shows the proposed RO home for each, plus
+    counts and total size.
 
-      Read the result with the researcher's eyes, not a machine's. Surface:
-        - what kinds of files they have (so they recognize their own project),
-        - anything surprising (a 40 GB data dir; a dozen notebook variants),
-        - anything classified "other" that you're unsure about — ASK rather
-          than guess where ambiguous files belong.
+    Read the result with the researcher's eyes, not a machine's. Surface:
+      - what kinds of files they have (so they recognize their own project),
+      - anything surprising (a 40 GB data dir; a dozen notebook variants),
+      - anything classified "other" that you're unsure about — ASK rather
+        than guess where ambiguous files belong.
 
-      The goal of this step is shared understanding, not a decision yet.
+    The goal of this step is shared understanding, not a decision yet.
 
-  - id: plan_the_move
-    name: Produce the exact source→destination map and review it
-    description: |
-      Call tool_migrate_audit(source_dir=<src>, dest_dir=<the RO root>) to get
-      the concrete copy plan: every file's exact destination + any collisions
-      (a file already present at the RO path).
+- id: plan_the_move
+  name: Produce the exact source→destination map and review it
+  description: |
+    Call tool_migrate_audit(source_dir=<src>, dest_dir=<the RO root>) to get
+    the concrete copy plan: every file's exact destination + any collisions
+    (a file already present at the RO path).
 
-      Review the plan WITH the researcher before applying. This is a judgment
-      moment, not a rubber stamp:
-        - Are data files heading to inputs/raw_data (the immutable source of
-          record)? Good.
-        - Are legacy scripts/notebooks landing under inputs/context/legacy_*?
-          They're preserved for reference, not auto-run — confirm that's what
-          they want (some may become real workspace steps later).
-        - Do any collisions matter? Collisions are SKIPPED (never overwritten);
-          decide together whether a skipped file needs a manual home.
-      Adjust the source/destination if the researcher wants a different split.
+    Review the plan WITH the researcher before applying. This is a judgment
+    moment, not a rubber stamp:
+      - Are data files heading to inputs/raw_data (the immutable source of
+        record)? Good.
+      - Are legacy scripts/notebooks landing under inputs/context/legacy_*?
+        They're preserved for reference, not auto-run — confirm that's what
+        they want (some may become real workspace steps later).
+      - Do any collisions matter? Collisions are SKIPPED (never overwritten);
+        decide together whether a skipped file needs a manual home.
+    Adjust the source/destination if the researcher wants a different split.
 
-  - id: apply_safely
-    name: Copy into RO format (original untouched) and verify
-    description: |
-      Once the plan is agreed, call tool_migrate_apply(source_dir=<src>,
-      dest_dir=<dest>). It COPIES (never moves/deletes the source), skips
-      collisions, verifies every copy by size + hash, and writes an auditable
-      migration_manifest.json under .os_state/.
+- id: apply_safely
+  name: Copy into RO format (original untouched) and verify
+  description: |
+    Once the plan is agreed, call tool_migrate_audit (operation=apply)(source_dir=<src>,
+    dest_dir=<dest>). It COPIES (never moves/deletes the source), skips
+    collisions, verifies every copy by size + hash, and writes an auditable
+    migration_manifest.json under .os_state/.
 
-      Report the outcome honestly: how many files copied, skipped, or FAILED
-      verification. If anything failed, do NOT pretend the migration is clean —
-      point at the manifest and resolve the failures (often a permissions or
-      disk-space issue) before moving on.
+    Report the outcome honestly: how many files copied, skipped, or FAILED
+    verification. If anything failed, do NOT pretend the migration is clean —
+    point at the manifest and resolve the failures (often a permissions or
+    disk-space issue) before moving on.
 
-  - id: verify_alignment
-    name: Confirm the result is a structurally sound RO project
-    description: |
-      A pile of correctly-placed files is not yet a coherent RO project. Run:
-        - tool_structure_audit — verifies steps are well-formed, the state
-          ledger matches disk, no orphaned outputs. Fix any BLOCK findings.
-        - tool_workspace_repair (dry_run first) — heals any missing scaffold
-          dirs / state drift the copy didn't create.
+- id: verify_alignment
+  name: Confirm the result is a structurally sound RO project
+  description: |
+    A pile of correctly-placed files is not yet a coherent RO project. Run:
+      - tool_audit (scope='project', dimension='structure') — verifies steps are well-formed, the state
+        ledger matches disk, no orphaned outputs. Fix any BLOCK findings.
+      - tool_migrate_audit (operation='repair', dry_run=true first) — heals any missing scaffold
+        dirs / state drift the copy didn't create.
 
-      Then run tool_intake_autofill so the project gets a real research
-      question + domain inferred from the now-organized inputs (or capture
-      what the researcher tells you in chat). The migrated project should end
-      this protocol indistinguishable from one that started clean.
+    Then run mem_log (operation='intake_autofill') so the project gets a real research
+    question + domain inferred from the now-organized inputs (or capture
+    what the researcher tells you in chat). The migrated project should end
+    this protocol indistinguishable from one that started clean.
 
-  - id: hand_off
-    name: Tell them what changed and what's next
-    description: |
-      Summarize in plain language: their original folder is untouched; here's
-      the new organized project; here's where their data / code / notes now
-      live; here's the one next thing to do (usually: frame the research
-      question, then a baseline analysis). Point them at STATE.md.
+- id: hand_off
+  name: Tell them what changed and what's next
+  description: |
+    Summarize in plain language: their original folder is untouched; here's
+    the new organized project; here's where their data / code / notes now
+    live; here's the one next thing to do (usually: frame the research
+    question, then a baseline analysis). Point them at STATE.md.
 
 quality_bar: |
   - The researcher's original directory is provably untouched (copy-only).
   - Every file is accounted for — copied, intentionally skipped, or flagged.
-  - tool_structure_audit reports zero BLOCK findings at the end.
+  - tool_audit (scope='project', dimension='structure') reports zero BLOCK findings at the end.
   - The migrated project has a real research question + domain set.
   - Nothing important silently landed in "other" without the researcher seeing it.
 
 next_protocol: guidance/project_startup
 next_protocol_kind: forward_default
 on_failure: guidance/scope_clarification
+intent_class: discover
+sub_intent: intake
+triggers:
+- organize this into research-os
+- organize my project
+- organize this project
+- i have a messy folder
+- i have a messy project
+- migrate my project
+- migrate this to research-os
+- move my project into research-os
+- bring my project into research-os
+- structure my existing project
+- i already have data and scripts everywhere
+- import my existing project
+- convert this folder to research-os
+- clean up my project structure
+summary: Bring an existing messy project into RO format safely (audit→plan→copy→verify).

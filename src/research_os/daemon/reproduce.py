@@ -14,11 +14,41 @@ single most valuable thing a research OS offers a computational scientist:
 
 The comparison is pure and stdlib-only so it is trivially testable and
 never depends on the daemon being up. ``compare_artifacts`` is the core;
-the daemon wires the actual re-run around it.
+the daemon wires the actual re-run around it. The verdict also carries a
+compact environment diff so reproducibility regressions can be diagnosed
+without dumping the full environment.
 """
 from __future__ import annotations
 
 from typing import Any
+
+_SENSITIVE_ENV_TOKENS = ("TOKEN", "KEY", "SECRET", "PASSWORD", "CREDENTIAL", "AUTH")
+
+
+def _redact_env_value(key: str, value: object) -> object:
+    if any(token in key.upper() for token in _SENSITIVE_ENV_TOKENS):
+        return "[REDACTED]"
+    return value
+
+
+def _env_diff(recorded: dict[str, object] | None, current: dict[str, object] | None) -> dict[str, Any]:
+    recorded = recorded or {}
+    current = current or {}
+    added = sorted(k for k in current if k not in recorded)
+    removed = sorted(k for k in recorded if k not in current)
+    changed: dict[str, dict[str, object]] = {}
+    for key in sorted(recorded.keys() & current.keys()):
+        if recorded[key] != current[key]:
+            changed[key] = {
+                "expected": _redact_env_value(key, recorded[key]),
+                "actual": _redact_env_value(key, current[key]),
+            }
+    return {"added": added, "removed": removed, "changed": changed}
+
+
+def env_diff(recorded: dict[str, object] | None, current: dict[str, object] | None) -> dict[str, Any]:
+    """Public env diff helper used by reproduce verdict payloads and tests."""
+    return _env_diff(recorded, current)
 
 # Verdict constants — stable strings used by the CLI, HTTP, and tests.
 REPRODUCED = "reproduced"
@@ -119,6 +149,7 @@ def compare_artifacts(
         "missing": missing,
         "added": added,
         "unhashed": unhashed,
+        "env_diff": _env_diff(recorded if isinstance(recorded, dict) else None, fresh if isinstance(fresh, dict) else None),
         "counts": {
             "recorded": len(rec),
             "fresh": len(new),

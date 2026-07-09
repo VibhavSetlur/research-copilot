@@ -1,98 +1,105 @@
 id: domain_analysis
 tier: 'plan'
 name: Domain Analysis
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - domain/research_design                 # consumes the domain + biases this surfaces
-  - methodology/deep_domain_research       # the canonical-pipeline survey for non-generic subfields
+- domain/research_design                   # consumes the domain + biases this surfaces
+- methodology/deep_domain_research         # the canonical-pipeline survey for non-generic subfields
 description: Classify the research domain, surface the reporting standard the field actually uses, and list the biases this kind of study is prone to — each grounded in current practice, not a built-in table.
 trigger: After project_startup, OR whenever the data class changes (e.g. new modality added to inputs/raw_data/).
 
 steps:
-  - id: identify_domain
-    name: Identify Domain
-    description: |
-      Triangulate the domain from the evidence on hand: the data modalities in
-      inputs/raw_data/ (file types, what they encode), the variables in tabular
-      files (what entities and measurements the columns name), the researcher's
-      stated field in config, and any notes in inputs/context/. A file extension
-      or a column name is a signal, not a verdict — the same extension serves
-      several fields. Pick ONE primary domain (and optional secondary) and state
-      the signals that pointed there. If the signals conflict, ask the
-      researcher rather than guessing.
+- id: identify_domain
+  name: Identify Domain
+  description: |
+    Triangulate the domain from the evidence on hand: the data modalities in
+    inputs/raw_data/ (file types, what they encode), the variables in tabular
+    files (what entities and measurements the columns name), the researcher's
+    stated field in config, and any notes in inputs/context/. A file extension
+    or a column name is a signal, not a verdict — the same extension serves
+    several fields. Pick ONE primary domain (and optional secondary) and state
+    the signals that pointed there. If the signals conflict, ask the
+    researcher rather than guessing.
 
-  - id: select_reporting_standard
-    name: Select Reporting Standard
-    description: |
-      Identify the reporting standard the eventual deliverable should follow.
-      The standard is a function of the STUDY TYPE (interventional vs
-      observational, review vs primary, qualitative vs quantitative, the data
-      modality), and every field maintains its own — CONSORT, STROBE, PRISMA,
-      STARD, SRQR/COREQ, ARRIVE, TRIPOD-AI / Model Cards, MIAME/MINSEQE, APA
-      JARS and others are examples, not an exhaustive map to copy from. The
-      catalogue also evolves; the right reference is whatever the target venues
-      in this subfield currently require.
+- id: select_reporting_standard
+  name: Select Reporting Standard
+  description: |
+    Identify the reporting standard the eventual deliverable should follow.
+    The standard is a function of the STUDY TYPE (interventional vs
+    observational, review vs primary, qualitative vs quantitative, the data
+    modality), and every field maintains its own — CONSORT, STROBE, PRISMA,
+    STARD, SRQR/COREQ, ARRIVE, TRIPOD-AI / Model Cards, MIAME/MINSEQE, APA
+    JARS and others are examples, not an exhaustive map to copy from. The
+    catalogue also evolves; the right reference is whatever the target venues
+    in this subfield currently require.
 
-      Confirm the current canonical standard for THIS study type (the EQUATOR
-      Network catalogue and recent papers in the target venue are good anchors)
-      rather than asserting it from memory. Cite the chosen standard explicitly
-      in docs/domain_summary.md and append it to workspace/methods.md as a
-      "Reporting standard" entry.
+    Confirm the current canonical standard for THIS study type (the EQUATOR
+    Network catalogue and recent papers in the target venue are good anchors)
+    rather than asserting it from memory. Cite the chosen standard explicitly
+    in docs/domain_summary.md and append it to workspace/methods.md as a
+    "Reporting standard" entry.
 
-  - id: surface_biases
-    name: Surface Domain-Specific Biases
-    description: |
-      Name the biases THIS kind of study is structurally prone to — the ones
-      that arise from how its data is generated, sampled, and measured. Reason
-      from the data-generating process: where could selection enter, where could
-      measurement be systematically off, what artefacts does the instrument /
-      assay / collection method introduce, what temporal or spatial dependence
-      breaks the independence assumptions. (Clinical confounding-by-indication,
-      finance survivorship/look-ahead, survey non-response, genomics batch
-      effects, geospatial autocorrelation, ML leakage/shift are illustrations of
-      the KIND of bias to hunt for, not a list to transcribe.) For each bias,
-      write a one-line "How we'll mitigate" companion in docs/domain_summary.md;
-      the design-level mitigations are worked out in domain/research_design.
+- id: surface_biases
+  name: Surface Domain-Specific Biases
+  description: |
+    Name the biases THIS kind of study is structurally prone to — the ones
+    that arise from how its data is generated, sampled, and measured. Reason
+    from the data-generating process: where could selection enter, where could
+    measurement be systematically off, what artefacts does the instrument /
+    assay / collection method introduce, what temporal or spatial dependence
+    breaks the independence assumptions. (Clinical confounding-by-indication,
+    finance survivorship/look-ahead, survey non-response, genomics batch
+    effects, geospatial autocorrelation, ML leakage/shift are illustrations of
+    the KIND of bias to hunt for, not a list to transcribe.) For each bias,
+    write a one-line "How we'll mitigate" companion in docs/domain_summary.md;
+    the design-level mitigations are worked out in domain/research_design.
 
-  - id: ground_with_search
-    name: Ground the Classification in Literature
-    description: |
-      tool_search query="<domain> reporting standard <year>"
-      tool_search query="<domain> systematic review"
-      Cite at least one anchor source in docs/domain_summary.md confirming the
-      reporting standard and the bias list reflect current practice in this
-      subfield — the classification is a claim about the field and needs
-      grounding like any other.
+- id: ground_with_search
+  name: Ground the Classification in Literature
+  description: |
+    tool_search query="<domain> reporting standard <year>"
+    tool_search query="<domain> systematic review"
+    Cite at least one anchor source in docs/domain_summary.md confirming the
+    reporting standard and the bias list reflect current practice in this
+    subfield — the classification is a claim about the field and needs
+    grounding like any other.
 
-  - id: route_to_deep_domain_research
-    name: Route to Deep Domain Research (when subfield needs the canonical pipeline)
-    description: |
-      If the project is in a subfield where the right analysis is a
-      multi-stage canonical pipeline (snRNA-seq, metagenomics, protein
-      embeddings, fMRI, MD simulations, structural causal inference,
-      ...) — i.e. anywhere "what tools do people actually use here?"
-      is a non-trivial question — route to
-      `methodology/deep_domain_research` BEFORE `research_design`.
+- id: route_to_deep_domain_research
+  name: Route to Deep Domain Research (when subfield needs the canonical pipeline)
+  description: |
+    If the project is in a subfield where the right analysis is a
+    multi-stage canonical pipeline (snRNA-seq, metagenomics, protein
+    embeddings, fMRI, MD simulations, structural causal inference,
+    ...) — i.e. anywhere "what tools do people actually use here?"
+    is a non-trivial question — route to
+    `methodology/deep_domain_research` BEFORE `research_design`.
 
-      That protocol identifies the specific subfield, surveys the
-      literature for the canonical pipeline (≥3 cited sources), and
-      writes `docs/pipeline_plan.md` + `docs/assumption_matrix.md`.
-      `research_design` then operates on top of a committed pipeline
-      rather than from a blank slate.
+    That protocol identifies the specific subfield, surveys the
+    literature for the canonical pipeline (≥3 cited sources), and
+    writes `docs/pipeline_plan.md` + `docs/assumption_matrix.md`.
+    `research_design` then operates on top of a committed pipeline
+    rather than from a blank slate.
 
-      Skip this if the domain is generic (a simple t-test of two means
-      on a clean tabular dataset, a basic linear regression) — go
-      straight to `research_design`.
+    Skip this if the domain is generic (a simple t-test of two means
+    on a clean tabular dataset, a basic linear regression) — go
+    straight to `research_design`.
 
 expected_outputs:
-  - docs/domain_summary.md
+- docs/domain_summary.md
 
 next_protocol: methodology/deep_domain_research
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: design
+triggers:
+- classify domain
+- what reporting standard
+- domain summary
+summary: Classify domain + bias profile + reporting standard.

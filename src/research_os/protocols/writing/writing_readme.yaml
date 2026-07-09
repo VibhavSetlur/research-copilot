@@ -1,19 +1,19 @@
 id: writing_readme
 tier: 'synthesize'
 name: Writing — README
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - writing/writing_conclusions        # the finding artefact the README's plain-English summary derives from
+- writing/writing_conclusions          # the finding artefact the README's plain-English summary derives from
 description: |
   Maintain the project-level README and per-step READMEs. Per-step
   READMEs are 60-second OVERVIEWS for non-experts — the thorough
-  statistical record lives in conclusions.md. tool_path_finalize
+  statistical record lives in conclusions.md. tool_plan (operation=finalize_step)
   derives the README from conclusions.md, the decision log, and
   context/notes.md; do NOT hand-write the README directly.
 
@@ -86,30 +86,37 @@ per_step_readme_template: |
   - [context/notes.md](./context/notes.md) — narrative rationale.
 
 steps:
-  - id: update_project
-    name: Update Project README
-    description: |
-      After synthesis completes, populate README.md at the project root using the
-      template above. Lead with the "In plain English" section so any reader
-      (researcher, sponsor, journalist) can understand the project before
-      diving into the methodology. sys_file_write filepath="README.md" force=true.
+- id: update_project
+  name: Update Project README
+  description: |
+    After synthesis completes, populate README.md at the project root using the
+    template above. Lead with the "In plain English" section so any reader
+    (researcher, sponsor, journalist) can understand the project before
+    diving into the methodology. sys_file_write filepath="README.md" force=true.
 
-  - id: update_step
-    name: Update Step README (via tool_path_finalize, NOT manually)
-    description: |
-      After each experiment step's conclusions are written, call
-      tool_path_finalize. This rewrites README.md from conclusions.md,
-      the decision log, context/notes.md plain-language summary, and
-      the actual outputs inventory. Manual edits get clobbered.
+- id: update_step
+  name: Update Step README (via tool_plan (operation=finalize_step), NOT manually)
+  description: |
+    After each experiment step's conclusions are written, call
+    tool_plan (operation=finalize_step). This rewrites README.md from conclusions.md,
+    the decision log, context/notes.md plain-language summary, and
+    the actual outputs inventory. Manual edits get clobbered.
 
-      To override what shows up in the README's "In plain English"
-      section, edit context/notes.md under "## Plain-language summary"
-      then re-run tool_path_finalize — the finalizer pulls from there.
+    To override what shows up in the README's "In plain English"
+    section, edit context/notes.md under "## Plain-language summary"
+    then re-run tool_plan (operation=finalize_step) — the finalizer pulls from there.
 
 expected_outputs:
-  - README.md
-  - workspace/*/README.md
+- README.md
+- workspace/*/README.md
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: writing
+triggers:
+- update readme
+- step readme
+- project readme
+summary: Maintain the project + per-step READMEs.

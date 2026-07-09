@@ -1,17 +1,17 @@
 id: figure_guidelines
 tier: 'synthesize'
 name: Figure Guidelines
-version: '4.3.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - visualization/visualization_workflow      # the workflow that consults these rules
-  - visualization/color_accessibility_audit    # deeper CVD/contrast/grayscale audit
-  - visualization/figure_critique              # reviewer-style critique of one figure
+- visualization/visualization_workflow        # the workflow that consults these rules
+- visualization/color_accessibility_audit      # deeper CVD/contrast/grayscale audit
+- visualization/figure_critique                # reviewer-style critique of one figure
 description: |
   The reasoning scaffold for producing publication-grade figures.
 
@@ -34,13 +34,13 @@ description: |
        briefly research the right tool, not default to matplotlib.
     2. A chart-chooser table (which kind for which question).
     3. The Okabe-Ito / viridis / PuOr CVD-safe palettes (call
-       `tool_figure_palette` or copy the hex codes from
+       `pick CVD-safe hex colors inline` or copy the hex codes from
        `visualization/color_accessibility_audit`).
     4. A `common_pitfalls_to_avoid` catalog drawn from real
        reviewer-blocking mistakes — label overlap, clipped y-axes,
        legends-on-data, untitled colour legends, DejaVu Sans.
     5. A pre-publish self-review checklist run BEFORE
-       `tool_path_finalize` so the audit gate stays cheap.
+       `tool_plan (operation=finalize_step)` so the audit gate stays cheap.
 
   What the SERVER then enforces (so you can't accidentally ship a
   figure without these): DPI ≥300, both `.caption.md` + `.summary.md`
@@ -89,7 +89,7 @@ research_the_right_library_first:
     answer; it goes stale at the rate the field's tooling does.
   how: |
     Quick check (skip if obvious):
-      - tool_research_tool topic="<chart kind> for <data type> in <field>"
+      - tool_search topic="<chart kind> for <data type> in <field>"
         — returns the dominant tool in current literature.
       - tool_search query="best <chart_kind> python|R 2025 <domain>"
         — surfaces "this is how people in this field plot this".
@@ -97,30 +97,16 @@ research_the_right_library_first:
     (Nature / Cell / poster) and pin it in environment/requirements.txt
     so the figure is reproducible.
   domain_defaults:
-    bulk_rna_seq:
-      "ggplot2 + EnhancedVolcano (volcano), pheatmap / ComplexHeatmap (heatmaps),
-       PCAtools (PCA), ggrepel for any labeled scatter; matplotlib + scanpy
-       acceptable in python-only environments."
-    single_cell:
-      "scanpy.pl (UMAP/violin/dotplot), scvi / cellxgene for interactive,
-       Seurat::DimPlot / DotPlot in R."
-    proteomics:
-      "MSstats reports, R Bioconductor — ggplot2 + ggrepel for volcanoes."
-    variant_data_gwas:
-      "qqman::manhattan / qqman::qq (R), or pyqtl / pygenometracks (python)."
-    structural_biology:
-      "PyMOL session / py3Dmol; ChimeraX for publication renders."
-    networks_pathways:
-      "Cytoscape for layout, networkx + matplotlib for static, pyvis / d3
-       for interactive."
-    geospatial:
-      "geopandas + matplotlib, leafmap / kepler.gl for interactive maps."
-    survival_analysis:
-      "ggsurvfit (R), lifelines.plot_logifs (python)."
-    timeseries:
-      "altair / plotly for interactive; matplotlib + seaborn for static."
-    multi_panel_paper_figure:
-      "patchwork (R), matplotlib gridspec, or Affinity Designer post-hoc."
+    bulk_rna_seq: "ggplot2 + EnhancedVolcano (volcano), pheatmap / ComplexHeatmap (heatmaps), PCAtools (PCA), ggrepel for any labeled scatter; matplotlib + scanpy acceptable in python-only environments."
+    single_cell: "scanpy.pl (UMAP/violin/dotplot), scvi / cellxgene for interactive, Seurat::DimPlot / DotPlot in R."
+    proteomics: "MSstats reports, R Bioconductor — ggplot2 + ggrepel for volcanoes."
+    variant_data_gwas: "qqman::manhattan / qqman::qq (R), or pyqtl / pygenometracks (python)."
+    structural_biology: "PyMOL session / py3Dmol; ChimeraX for publication renders."
+    networks_pathways: "Cytoscape for layout, networkx + matplotlib for static, pyvis / d3 for interactive."
+    geospatial: "geopandas + matplotlib, leafmap / kepler.gl for interactive maps."
+    survival_analysis: "ggsurvfit (R), lifelines.plot_logifs (python)."
+    timeseries: "altair / plotly for interactive; matplotlib + seaborn for static."
+    multi_panel_paper_figure: "patchwork (R), matplotlib gridspec, or Affinity Designer post-hoc."
   override: |
     Domain defaults are starting points, not commandments. If the
     researcher's lab / target journal / deliverable has a different
@@ -144,7 +130,7 @@ pull_visualization_skills:
        kind + domain you are about to render.
     2. If none fits, search for a best-practice skill / reference for
        this specific chart type in this field —
-       tool_research_tool topic="<chart kind> best practice in <field>"
+       tool_search topic="<chart kind> best practice in <field>"
        or tool_search query="<chart_kind> skill <domain>".
     3. Prefer the field's canonical idioms the skill encodes over a
        generic default — the skill captures what reviewers in this venue
@@ -437,7 +423,7 @@ mandatory_per_step_figure:
     even if the step's role is data plumbing or methodology selection.
     A step with no visual representation is hard to follow, hard to
     review, and gets skipped in dashboards. tool_audit(scope='step', dimension='completeness')
-    flags this as a BLOCKER that surfaces on tool_synthesis_check.
+    flags this as a BLOCKER that surfaces on tool_synthesis_scaffold (operation=check).
   rationale: |
     Researchers follow analysis visually before they follow it
     numerically. A focal figure makes each step legible at a glance
@@ -448,9 +434,7 @@ mandatory_per_step_figure:
     background: white
     formats: PNG (raster) + SVG (vector when possible — enables deeper audit)
     caption_sidecar: required — <name>.caption.md (technical)
-    summary_sidecar: required — <name>.summary.md (plain-English;
-                     the AI authors this directly when saving the
-                     figure, drawing on the step's Findings)
+    summary_sidecar: required — <name>.summary.md (plain-English; the AI authors this directly when saving the figure, drawing on the step's Findings)
 
 figure_family_when_step_has_a_model:
   rule: |
@@ -477,15 +461,15 @@ figure_family_when_step_has_a_model:
     step and the AI promotes the best ones into the paper /
     poster / dashboard with no extra work later.
   domain_specific_picks:
-    survival:      "KM curve + Schoenfeld + cumulative hazard"
-    bayesian:      "trace + posterior + posterior predictive"
+    survival: "KM curve + Schoenfeld + cumulative hazard"
+    bayesian: "trace + posterior + posterior predictive"
     ml_classifier: "ROC + PR + calibration + confusion (heatmap)"
     meta_analysis: "forest + funnel + L'Abbe (when binary)"
-    causal:        "balance + sensitivity + E-value contour"
-    timeseries:    "decomposition + ACF/PACF + residual diagnostics"
-    rna_seq_de:    "volcano + MA + heatmap of top-K + sample PCA"
-    network:       "adjacency / louvain layout + degree distribution"
-    geospatial:    "choropleth + cluster overlay + uncertainty band"
+    causal: "balance + sensitivity + E-value contour"
+    timeseries: "decomposition + ACF/PACF + residual diagnostics"
+    rna_seq_de: "volcano + MA + heatmap of top-K + sample PCA"
+    network: "adjacency / louvain layout + degree distribution"
+    geospatial: "choropleth + cluster overlay + uncertainty band"
   go_deeper_protocols: |
     For non-trivial figures, load the matching specialist protocol
     rather than freehand-coding the chart:
@@ -523,18 +507,15 @@ formatting:
   palettes:
     sequential: viridis
     diverging: PuOr / RdBu_r
-    qualitative: Okabe-Ito (CVD-safe; call tool_figure_palette(kind='qualitative') for hex codes)
+    qualitative: Okabe-Ito (CVD-safe; call pick CVD-safe hex colors inline(kind='qualitative') for hex codes)
   typography:
     axis_label_size: ≥10pt
     tick_label_size: ≥9pt
     title_size: ≥11-12pt
   technical:
-    dpi: ≥300 (print); ≥150 (screen only). audit_figure_quality flags
-         <200 as a BLOCKER.
-    figure_format: PNG primary; SVG for editable vectors and the
-                   label-overlap audit; PDF for LaTeX inclusion
-    axis_units: always include units in parentheses
-                (e.g. "Blood pressure (mmHg)")
+    dpi: ≥300 (print); ≥150 (screen only). audit_figure_quality flags <200 as a BLOCKER.
+    figure_format: PNG primary; SVG for editable vectors and the label-overlap audit; PDF for LaTeX inclusion
+    axis_units: always include units in parentheses (e.g. "Blood pressure (mmHg)")
     error_indicator:
       # State the interval level + what it represents in the caption;
       # use the level conventional for the field, not a default.
@@ -623,31 +604,18 @@ publication_aesthetics:
       The legend then only carries variables that NEED both color and
       shape simultaneously.
   references_to_consult_online:
-    - "Wong, B. (2011). Points of view: Color blindness. *Nature
-       Methods* 8:441 — origin of Okabe-Ito palette + WHY."
-    - "Wilke, C. (2019). *Fundamentals of Data Visualization* (free
-       online: clauswilke.com/dataviz) — the canonical modern
-       reference. Read ch. 4-6 + ch. 19 (proportional ink) + ch. 28
-       (don't use 3D)."
-    - "Tufte, E. R. (2001). *The Visual Display of Quantitative
-       Information* (2nd ed.) — data-ink-ratio, small multiples,
-       sparklines."
-    - "Cleveland, W. S., & McGill, R. (1984). Graphical perception:
-       theory, experimentation, and application. *JASA* — the
-       Cleveland hierarchy of perceptual tasks (length > angle >
-       area > volume > color saturation)."
-    - "Heer & Bostock (2010). Crowdsourcing graphical perception:
-       using Mechanical Turk to assess visualization design. *CHI
-       2010* — empirical update of Cleveland for the web era."
-    - "Healy, K. (2018). *Data Visualization: A Practical
-       Introduction* — ggplot2 case studies in modern aesthetic."
-    - "BBR / R Cookbook by Frank Harrell — clinical-statistical
-       figure conventions; forest, calibration, residual diagnostics."
+  - "Wong, B. (2011). Points of view: Color blindness. *Nature Methods* 8:441 — origin of Okabe-Ito palette + WHY."
+  - "Wilke, C. (2019). *Fundamentals of Data Visualization* (free online: clauswilke.com/dataviz) — the canonical modern reference. Read ch. 4-6 + ch. 19 (proportional ink) + ch. 28 (don't use 3D)."
+  - "Tufte, E. R. (2001). *The Visual Display of Quantitative Information* (2nd ed.) — data-ink-ratio, small multiples, sparklines."
+  - "Cleveland, W. S., & McGill, R. (1984). Graphical perception: theory, experimentation, and application. *JASA* — the Cleveland hierarchy of perceptual tasks (length > angle > area > volume > color saturation)."
+  - "Heer & Bostock (2010). Crowdsourcing graphical perception: using Mechanical Turk to assess visualization design. *CHI 2010* — empirical update of Cleveland for the web era."
+  - "Healy, K. (2018). *Data Visualization: A Practical Introduction* — ggplot2 case studies in modern aesthetic."
+  - "BBR / R Cookbook by Frank Harrell — clinical-statistical figure conventions; forest, calibration, residual diagnostics."
   research_online_before_coding: |
     For figure kinds you're unfamiliar with, run a quick literature
     pass BEFORE coding:
       tool_search query="best <chart_kind> python 2025 publication"
-      tool_research_tool topic="<chart_kind> for <data type>"
+      tool_search topic="<chart_kind> for <data type>"
     Read 1-2 results, note any tool / package recommendation that
     consistently appears, and pin it in `environment/requirements.txt`.
 
@@ -664,11 +632,9 @@ caption_rules:
       verification status). The audit warns if the `## Caption` prose is
       missing or is only bullets/metadata.
     caption_voice:
-      - Lead with the substantive finding ("STATIC scores cluster at
-        the high end" — not "Histogram of STATIC scores").
-      - Name the unit on each axis if not self-evident.
-      - "Write it as the caption a journal would print: full sentences a
-        reader can copy verbatim, not a list of stats."
+    - Lead with the substantive finding ("STATIC scores cluster at the high end" — not "Histogram of STATIC scores").
+    - Name the unit on each axis if not self-evident.
+    - "Write it as the caption a journal would print: full sentences a reader can copy verbatim, not a list of stats."
   plain_english_summary:
     file: <name>.summary.md (mandatory for synthesis-bound figures)
     length: 2-3 short paragraphs
@@ -683,217 +649,227 @@ caption_rules:
       Either write it yourself in your voice, OR run
       authoring the <stem>.summary.md sidecar directly to produce a
       competent draft from the existing caption + the step's
-      conclusions.md Findings section, OR run tool_path_finalize
+      conclusions.md Findings section, OR run tool_plan (operation=finalize_step)
       which auto-synthesises missing summaries for every figure in
       the step.
 
 steps:
-  - id: pick_chart
-    name: Pick the Chart Type
-    description: |
-      Use the chart_chooser table. Default to the simplest chart that
-      conveys the comparison. Avoid 3-D charts, dual-y-axes, and pie
-      charts with >4 slices.
+- id: pick_chart
+  name: Pick the Chart Type
+  description: |
+    Use the chart_chooser table. Default to the simplest chart that
+    conveys the comparison. Avoid 3-D charts, dual-y-axes, and pie
+    charts with >4 slices.
 
-  - id: pick_library
-    name: Pick the Right Plotting Library FOR THIS Data Type
-    description: |
-      ~1-minute decision before you write any code. Check the
-      `research_the_right_library_first.domain_defaults` table above
-      — your field probably has a canonical stack (RNA-seq → ggplot2
-      + EnhancedVolcano, single-cell → scanpy, GWAS → qqman, etc.).
-      If you're unsure, call `tool_research_tool` or `tool_search`
-      for "best <chart_kind> <language> <field>" before coding.
+- id: pick_library
+  name: Pick the Right Plotting Library FOR THIS Data Type
+  description: |
+    ~1-minute decision before you write any code. Check the
+    `research_the_right_library_first.domain_defaults` table above
+    — your field probably has a canonical stack (RNA-seq → ggplot2
+    + EnhancedVolcano, single-cell → scanpy, GWAS → qqman, etc.).
+    If you're unsure, call `tool_search` or `tool_search`
+    for "best <chart_kind> <language> <field>" before coding.
 
-      Record the choice + the reason in workspace/methods.md so the
-      synthesis stage knows which environment to re-create for the
-      paper figures.
+    Record the choice + the reason in workspace/methods.md so the
+    synthesis stage knows which environment to re-create for the
+    paper figures.
 
-  - id: set_up_canvas
-    name: Set Up the Canvas FIRST (style + figsize + spacing reserve)
-    description: |
-      BEFORE writing the plotting code, set the canvas so the FIRST
-      render lands close to publication-ready. This is the difference
-      between v1=v_final and v1→v2→v3.
+- id: set_up_canvas
+  name: Set Up the Canvas FIRST (style + figsize + spacing reserve)
+  description: |
+    BEFORE writing the plotting code, set the canvas so the FIRST
+    render lands close to publication-ready. This is the difference
+    between v1=v_final and v1→v2→v3.
 
-      For matplotlib (the dominant case):
+    For matplotlib (the dominant case):
 
-        from research_os.tools.actions.viz import (
-            apply_research_os_style, label_bars_above,
-            label_diverging_bars, polish_axes, apply_suptitle,
-        )
-        style = apply_research_os_style(destination="single_col")
-        fig, ax = plt.subplots(figsize=style["figsize"])
+      from research_os.tools.actions.viz import (
+          apply_research_os_style, label_bars_above,
+          label_diverging_bars, polish_axes, apply_suptitle,
+      )
+      style = apply_research_os_style(destination="single_col")
+      fig, ax = plt.subplots(figsize=style["figsize"])
 
-      Then walk the `first_render_spacing_discipline` checklist above:
-      reserve y-margin for value labels, plan legend placement,
-      decide tick rotation, choose panel-title formatting. Each item
-      takes seconds to plan but minutes to fix after a v1→view round-trip.
+    Then walk the `first_render_spacing_discipline` checklist above:
+    reserve y-margin for value labels, plan legend placement,
+    decide tick rotation, choose panel-title formatting. Each item
+    takes seconds to plan but minutes to fix after a v1→view round-trip.
 
-      For ggplot2 / Altair / d3, set the equivalents:
-        ggplot2: theme_classic(base_family = "EB Garamond") +
-                 theme(plot.title = element_text(face = "italic"),
-                       plot.background = element_rect(fill = "#FBF8F3"),
-                       panel.grid.major.x = element_blank())
-        Altair:  alt.themes.register('research_os', ...) with the
-                 RO_PALETTE colours; .properties(width=350, height=250)
-                 for single_col.
+    For ggplot2 / Altair / d3, set the equivalents:
+      ggplot2: theme_classic(base_family = "EB Garamond") +
+               theme(plot.title = element_text(face = "italic"),
+                     plot.background = element_rect(fill = "#FBF8F3"),
+                     panel.grid.major.x = element_blank())
+      Altair:  alt.themes.register('research_os', ...) with the
+               RO_PALETTE colours; .properties(width=350, height=250)
+               for single_col.
 
-  - id: write_the_script
-    name: Write the Script
-    description: |
-      Write the actual plotting code in scripts/<NN>_<slug>_v<k>.py
-      (or .R, .qmd, .ipynb). Apply every rule from
-      `common_pitfalls_to_avoid` as you go — they're the
-      reviewer-blocking mistakes. Apply the bundled helpers from
-      step `set_up_canvas`:
-        - `label_bars_above(ax, bars, unit=...)` for vertical bar labels
-        - `label_diverging_bars(ax, bars, values)` for signed deltas
-        - `polish_axes(ax)` to re-assert spines + grid per-axes
-        - `apply_suptitle(fig, title, subtitle=...)` for the italic
-          serif figure header in the Research-OS aesthetic
+- id: write_the_script
+  name: Write the Script
+  description: |
+    Write the actual plotting code in scripts/<NN>_<slug>_v<k>.py
+    (or .R, .qmd, .ipynb). Apply every rule from
+    `common_pitfalls_to_avoid` as you go — they're the
+    reviewer-blocking mistakes. Apply the bundled helpers from
+    step `set_up_canvas`:
+      - `label_bars_above(ax, bars, unit=...)` for vertical bar labels
+      - `label_diverging_bars(ax, bars, values)` for signed deltas
+      - `polish_axes(ax)` to re-assert spines + grid per-axes
+      - `apply_suptitle(fig, title, subtitle=...)` for the italic
+        serif figure header in the Research-OS aesthetic
 
-      Save to:
-        workspace/<step>/outputs/figures/<NN>_<short_descriptor>.png
-        workspace/<step>/outputs/figures/<NN>_<short_descriptor>.svg
-            (highly recommended — enables the SVG label-overlap audit)
-      DPI ≥ 300. Palette CVD-safe (the `apply_research_os_style()`
-      preset sets the accent palette automatically; for other stacks
-      call `tool_figure_palette(kind='qualitative'|'sequential'|'diverging'|'accent')`).
+    Save to:
+      workspace/<step>/outputs/figures/<NN>_<short_descriptor>.png
+      workspace/<step>/outputs/figures/<NN>_<short_descriptor>.svg
+          (highly recommended — enables the SVG label-overlap audit)
+    DPI ≥ 300. Palette CVD-safe (the `apply_research_os_style()`
+    preset sets the accent palette automatically; for other stacks
+    call `pick CVD-safe hex colors inline(kind='qualitative'|'sequential'|'diverging'|'accent')`).
 
-  - id: write_caption
-    name: Write the Technical Caption
-    description: |
-      Mandatory sibling <name>.caption.md. Lead with a `## Caption` section
-      holding the PAPER-READY caption — the continuous-prose text a reader
-      pastes under the figure in a manuscript:
-        1. Lead with the substantive finding.
-        2. Name the unit on each axis if not self-evident.
-        3. Write full sentences a journal would print (copy-pasteable), not
-           a bullet list of stats.
-      Below `## Caption`, keep `## Panels / details` (per-panel breakdown +
-      exact statistics) and `## Scope / caveats` (observational-vs-causal,
-      open asks, verification status) as supporting material.
+- id: write_caption
+  name: Write the Technical Caption
+  description: |
+    Mandatory sibling <name>.caption.md. Lead with a `## Caption` section
+    holding the PAPER-READY caption — the continuous-prose text a reader
+    pastes under the figure in a manuscript:
+      1. Lead with the substantive finding.
+      2. Name the unit on each axis if not self-evident.
+      3. Write full sentences a journal would print (copy-pasteable), not
+         a bullet list of stats.
+    Below `## Caption`, keep `## Panels / details` (per-panel breakdown +
+    exact statistics) and `## Scope / caveats` (observational-vs-causal,
+    open asks, verification status) as supporting material.
 
-  - id: write_plain_english_summary
-    name: Write the Plain-English Summary (mandatory for synthesis figures)
-    description: |
-      Mandatory sibling <name>.summary.md. The dashboard's executive
-      and teaching audiences surface this verbatim. Structure:
+- id: write_plain_english_summary
+  name: Write the Plain-English Summary (mandatory for synthesis figures)
+  description: |
+    Mandatory sibling <name>.summary.md. The dashboard's executive
+    and teaching audiences surface this verbatim. Structure:
 
-        **What it shows.** [chart family + variables]
-        **How to read it.** [axes / colour / trend cue in plain language]
-        **Why it matters.** [link to the step's headline finding]
+      **What it shows.** [chart family + variables]
+      **How to read it.** [axes / colour / trend cue in plain language]
+      **Why it matters.** [link to the step's headline finding]
 
-      Quickest path: authoring the <stem>.summary.md sidecar directly drafts from the existing caption + the step's
-      conclusions.md Findings. Polish in your voice.
+    Quickest path: authoring the <stem>.summary.md sidecar directly drafts from the existing caption + the step's
+    conclusions.md Findings. Polish in your voice.
 
-  - id: pre_publish_self_review
-    name: Pre-publish visual self-review (MANDATORY render → view → v2 loop)
-    description: |
-      Once the script has rendered v1 of the figure to disk, you MUST
-      open the rendered PNG and look at it before declaring the
-      figure done. Reading the script is NOT a substitute. The
-      reviewer / dashboard reader sees the pixels, not the matplotlib
-      call. This is the single change that catches the most
-      reviewer-blocking mistakes — and the audit gate cannot catch
-      everything a human eye sees in 5 seconds.
+- id: pre_publish_self_review
+  name: Pre-publish visual self-review (MANDATORY render → view → v2 loop)
+  description: |
+    Once the script has rendered v1 of the figure to disk, you MUST
+    open the rendered PNG and look at it before declaring the
+    figure done. Reading the script is NOT a substitute. The
+    reviewer / dashboard reader sees the pixels, not the matplotlib
+    call. This is the single change that catches the most
+    reviewer-blocking mistakes — and the audit gate cannot catch
+    everything a human eye sees in 5 seconds.
 
-      THE LOOP (mandatory; do not skip):
+    THE LOOP (mandatory; do not skip):
 
-        1. Render v1 → workspace/<step>/outputs/figures/<NN>_<slug>.png
-        2. OPEN the PNG and look at it. Two options:
-           - sys_file_read filepath="workspace/<step>/outputs/figures/<NN>_<slug>.png"
-             (returns the file contents; in an IDE with image preview,
-             this surfaces the pixels you need to see)
-           - read it directly in your IDE's image viewer if you have
-             native vision (Claude Code, Cursor, Continue, etc.)
-        3. Walk the OBSERVATION checklist below — ACTUALLY check each
-           item against the rendered pixels, not the source code.
-        4. If ANY item fails (overlap, clip, ugly autoscale, missing
-           legend title, busy grid on a scatter, mis-rotated tick
-           labels): write v2 of the script in
-           scripts/<NN>_<slug>_v2.py with the fixes, render to
-           <NN>_<slug>.png (overwriting v1 — only the final ships),
-           and return to step 2.
-        5. Only when the figure passes EVERY observation item does it
-           leave the loop. Record the iteration count in
-           workspace/<step>/scratch/figure_revisions.md so finalize
-           knows the figure had a human-style review.
+      1. Render v1 → workspace/<step>/outputs/figures/<NN>_<slug>.png
+      2. OPEN the PNG and look at it. Two options:
+         - sys_file_read filepath="workspace/<step>/outputs/figures/<NN>_<slug>.png"
+           (returns the file contents; in an IDE with image preview,
+           this surfaces the pixels you need to see)
+         - read it directly in your IDE's image viewer if you have
+           native vision (Claude Code, Cursor, Continue, etc.)
+      3. Walk the OBSERVATION checklist below — ACTUALLY check each
+         item against the rendered pixels, not the source code.
+      4. If ANY item fails (overlap, clip, ugly autoscale, missing
+         legend title, busy grid on a scatter, mis-rotated tick
+         labels): write v2 of the script in
+         scripts/<NN>_<slug>_v2.py with the fixes, render to
+         <NN>_<slug>.png (overwriting v1 — only the final ships),
+         and return to step 2.
+      5. Only when the figure passes EVERY observation item does it
+         leave the loop. Record the iteration count in
+         workspace/<step>/scratch/figure_revisions.md so finalize
+         knows the figure had a human-style review.
 
-      OBSERVATION (the human-eye checklist):
-      - [ ] No label / value text overlaps another label, a bar, a
-            data mark, the legend, or the title. (The #1 ship-blocker.)
-      - [ ] No marker / bar / line is clipped by an axis edge.
-      - [ ] Legend has a title naming what colour / shape encodes.
-      - [ ] Legend is NOT sitting on top of data points or marks.
-      - [ ] Axis labels include units in parentheses where applicable
-            ("Body mass (g)" not "body_mass_g").
-      - [ ] Title sits ABOVE the plot, not overlapping the top spine
-            and not crashing into the panel titles.
-      - [ ] Tick labels are readable (no overlap; rotated 30° with
-            ha='right' when long).
-      - [ ] Point / gene / sample labels don't overlap each other
-            (use ggrepel / adjustText / explicit jittered offsets).
-      - [ ] y-axis is NOT clipped at -log10(1e-300) — cap p-values or
-            break the axis if the range is enormous.
-      - [ ] Every labelled point is actually plotted at real
-            coordinates — no labels left over from genes that got
-            filtered out (would appear at y=0).
-      - [ ] No gridlines competing with scatter / forest / dot-whisker
-            marks. Faint horizontal grid OK for bar / line / hist.
-      - [ ] Top + right spines off. Spines for non-numeric axes off.
-      - [ ] Sample-size annotation is light grey, corner, no box.
-      - [ ] Palette is CVD-safe (RO_PALETTE / Okabe-Ito / viridis / PuOr).
-      - [ ] At least 300 DPI on save.
-      - [ ] Figure looks readable at FINAL print size (set figsize to
-            the slot you're targeting; ≥9 pt fonts).
-      - [ ] Cohesive with sibling figures in this step — same palette
-            family, same suptitle style, same panel-title formatting.
+    OBSERVATION (the human-eye checklist):
+    - [ ] No label / value text overlaps another label, a bar, a
+          data mark, the legend, or the title. (The #1 ship-blocker.)
+    - [ ] No marker / bar / line is clipped by an axis edge.
+    - [ ] Legend has a title naming what colour / shape encodes.
+    - [ ] Legend is NOT sitting on top of data points or marks.
+    - [ ] Axis labels include units in parentheses where applicable
+          ("Body mass (g)" not "body_mass_g").
+    - [ ] Title sits ABOVE the plot, not overlapping the top spine
+          and not crashing into the panel titles.
+    - [ ] Tick labels are readable (no overlap; rotated 30° with
+          ha='right' when long).
+    - [ ] Point / gene / sample labels don't overlap each other
+          (use ggrepel / adjustText / explicit jittered offsets).
+    - [ ] y-axis is NOT clipped at -log10(1e-300) — cap p-values or
+          break the axis if the range is enormous.
+    - [ ] Every labelled point is actually plotted at real
+          coordinates — no labels left over from genes that got
+          filtered out (would appear at y=0).
+    - [ ] No gridlines competing with scatter / forest / dot-whisker
+          marks. Faint horizontal grid OK for bar / line / hist.
+    - [ ] Top + right spines off. Spines for non-numeric axes off.
+    - [ ] Sample-size annotation is light grey, corner, no box.
+    - [ ] Palette is CVD-safe (RO_PALETTE / Okabe-Ito / viridis / PuOr).
+    - [ ] At least 300 DPI on save.
+    - [ ] Figure looks readable at FINAL print size (set figsize to
+          the slot you're targeting; ≥9 pt fonts).
+    - [ ] Cohesive with sibling figures in this step — same palette
+          family, same suptitle style, same panel-title formatting.
 
-      SCRIPT + SIDECARS:
-      - [ ] PNG + SVG dual export.
-      - [ ] `<name>.caption.md` exists, ≤3 sentences, lead with the
-            substantive finding.
-      - [ ] `<name>.summary.md` exists when researcher_config has
-            summary_sidecar=true; otherwise interpret the figure inline
-            in conclusions.md.
-      - [ ] File named `<step_number>_<short_descriptor>.png`.
-      - [ ] Script is in `scripts/`, not hand-pasted into a notebook
-            cell that won't survive a re-run.
+    SCRIPT + SIDECARS:
+    - [ ] PNG + SVG dual export.
+    - [ ] `<name>.caption.md` exists, ≤3 sentences, lead with the
+          substantive finding.
+    - [ ] `<name>.summary.md` exists when researcher_config has
+          summary_sidecar=true; otherwise interpret the figure inline
+          in conclusions.md.
+    - [ ] File named `<step_number>_<short_descriptor>.png`.
+    - [ ] Script is in `scripts/`, not hand-pasted into a notebook
+          cell that won't survive a re-run.
 
-      WHY THIS LOOP IS NON-NEGOTIABLE: the `audit_figure_quality`
-      server gate catches DPI, sidecars, and (with SVG) a text-bbox
-      overlap heuristic — but it cannot see a legend on a scatter
-      cloud, a suptitle crashing a panel title, a label off the
-      figure edge, or merged stacked-bar segments. The spacing
-      discipline + style preset prevent most of these upfront; the
-      eye on the pixel is the final check. Without it, "the AI
-      rendered a figure" is not "the AI produced a publishable one".
+    WHY THIS LOOP IS NON-NEGOTIABLE: the `audit_figure_quality`
+    server gate catches DPI, sidecars, and (with SVG) a text-bbox
+    overlap heuristic — but it cannot see a legend on a scatter
+    cloud, a suptitle crashing a panel title, a label off the
+    figure edge, or merged stacked-bar segments. The spacing
+    discipline + style preset prevent most of these upfront; the
+    eye on the pixel is the final check. Without it, "the AI
+    rendered a figure" is not "the AI produced a publishable one".
 
-  - id: audit
-    name: Audit the Figure (server-enforced gate)
-    description: |
-      tool_audit(scope='step', dimension='figure_full') filepath="workspace/<step>/outputs/figures/<name>.png"
-      Checks DPI, dimensions, caption + summary presence, SVG companion,
-      aspect-ratio sanity for time series, AND (when SVG is present)
-      a text-overlap heuristic that catches the "stacked labels"
-      pitfall above. Emits BLOCKERs and warnings that
-      tool_audit(scope='step', dimension='completeness') aggregates.
+- id: audit
+  name: Audit the Figure (server-enforced gate)
+  description: |
+    tool_audit(scope='step', dimension='figure_full') filepath="workspace/<step>/outputs/figures/<name>.png"
+    Checks DPI, dimensions, caption + summary presence, SVG companion,
+    aspect-ratio sanity for time series, AND (when SVG is present)
+    a text-overlap heuristic that catches the "stacked labels"
+    pitfall above. Emits BLOCKERs and warnings that
+    tool_audit(scope='step', dimension='completeness') aggregates.
 
-      `tool_path_finalize` ALSO runs this audit on every figure in
-      the step automatically, and surfaces blockers / warnings in
-      the finalize response's `figure_audit` field. Don't skip the
-      per-figure audit just because finalize will catch it — fixing
-      in-context is cheaper than fixing after finalize fails.
+    `tool_plan (operation=finalize_step)` ALSO runs this audit on every figure in
+    the step automatically, and surfaces blockers / warnings in
+    the finalize response's `figure_audit` field. Don't skip the
+    per-figure audit just because finalize will catch it — fixing
+    in-context is cheaper than fixing after finalize fails.
 
 expected_outputs:
-  - workspace/*/outputs/figures
-  - workspace/*/outputs/figures/*.png
-  - workspace/*/outputs/figures/*.svg
-  - workspace/*/outputs/figures/*.caption.md
-  - workspace/*/outputs/figures/*.summary.md
+- workspace/*/outputs/figures
+- workspace/*/outputs/figures/*.png
+- workspace/*/outputs/figures/*.svg
+- workspace/*/outputs/figures/*.caption.md
+- workspace/*/outputs/figures/*.summary.md
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: figures
+triggers:
+- figure
+- chart
+- plot type
+- color palette
+- dpi
+- axis labels
+summary: Picking the right chart type and styling for publication.

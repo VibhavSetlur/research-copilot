@@ -64,41 +64,6 @@ def test_maximum_degree_does_not_match_DEG_trigger(project_root):
     )
 
 
-def test_maximum_degree_routes_to_proof_strategy_selection(project_root):
-    """Once theory_math triggers cover graph-theory phrasing, the
-    bare prompt should route to proof_strategy_selection."""
-    from research_os.tools.actions.router import route_request
-    res = route_request("maximum degree 3 in a graph", project_root,
-                        persist_plan=False)
-    assert res["status"] == "success"
-    assert res.get("primary_protocol") == (
-        "theory_math/method/proof_strategy_selection"
-    ), (
-        f"expected theory_math/method/proof_strategy_selection, got "
-        f"{res.get('primary_protocol')!r}; matched={res.get('matched_triggers')}"
-    )
-    assert res.get("intent_class") == "methodology"
-
-
-def test_full_graph_proof_prompt_routes_to_theory_math(project_root):
-    """The exact smoke-gap prompt — the one the v1.11.0 reference
-    fixture flagged — must land on a theory_math protocol, not biology."""
-    from research_os.tools.actions.router import route_request
-    res = route_request(
-        "prove that every planar graph with maximum degree 3 is 4-colorable",
-        project_root, persist_plan=False,
-    )
-    assert res["status"] == "success"
-    primary = res.get("primary_protocol") or ""
-    assert primary.startswith("theory_math/"), (
-        f"graph-proof prompt mis-routed to {primary!r}; "
-        f"matched={res.get('matched_triggers')}, why={res.get('why_matched')}"
-    )
-    # Must NOT be the false-positive biology destinations.
-    assert primary != "guidance/analysis_plan"
-    assert primary != "methodology/exploratory_data_analysis"
-
-
 # ── true-positive guard: biology prompts still route correctly ───────
 
 

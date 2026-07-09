@@ -4,7 +4,9 @@ Carved out of handlers/meta.py to stay under the 600-line ceiling.
 """
 from __future__ import annotations
 
+# ruff: noqa: F403, F405  # legacy handler runtime star-import compatibility
 from .._handlers_runtime import *  # noqa: F401,F403
+from .._handlers_runtime import Any, Path, _build_tree, _error, _profile_inputs, _success, _text, abandon_path, compute_file_hash, create_checkpoint, json, list_checkpoints, list_paths, load_state, rollback_checkpoint, scaffold_minimal_workspace, _update_manifest
 # mem_log dispatcher delegates to a methodology handler — pull it into scope.
 from research_os.errors import WriteProtectedError, check_write_permitted
 from research_os.tools.actions.audit.script_naming import (
@@ -66,6 +68,7 @@ __all__ = [
     "_handle_sys_where",
     "_handle_sys_daemon",
     "_handle_sys_consent",
+    "_handle_sys_mode",
 ]
 
 def _handle_sys_workspace_scaffold(name, arguments, root):
@@ -107,6 +110,16 @@ def _handle_sys_workspace_tree(name, arguments, root):
 
 
 def _handle_sys_state_get(name, arguments, root):
+    arguments = arguments or {}
+    operation = arguments.get("operation", "state_get")
+    if operation not in ("state_get", ""):
+        # Delegate to _handle_sys_path — map sys_state_get's `operation`
+        # directly onto sys_path's `operation` arg (same names: create,
+        # abandon, list, rename, group).
+        mapped = dict(arguments)
+        mapped["operation"] = operation
+        return _handle_sys_path(name, mapped, root)
+
     fmt = (arguments.get("format") or "full").lower()
     state = load_state(root)
     if fmt == "minimal":
@@ -582,6 +595,19 @@ def _handle_sys_where(name, arguments, root):
     except Exception:
         pass
 
+    # §13.1 active_persona — directive returned as MCP context (text only).
+    try:
+        from research_os.server.personas import PERSONAS, get_active_persona
+
+        active = get_active_persona(Path(root))
+        persona = PERSONAS.get(active, PERSONAS["scruffy"])
+        payload["active_persona"] = {
+            "name": active,
+            "directive": persona["directive"],
+        }
+    except Exception:
+        pass
+
     return _text(_success(payload))
 
 
@@ -651,24 +677,24 @@ def _daemon_http_get(base_url, path, timeout):
     local name so existing tests that monkeypatch ``mw._daemon_http_get``
     keep working). Pure stdlib; the daemon is an opaque local HTTP service —
     the reasoning layer never imports research_os.daemon.
+
+    Unwraps the (status_code, body) tuple returned by http_get and returns
+    only the body (or None on failure) so existing call-sites are unchanged.
     """
     from research_os.server import daemon_bridge as _bridge
 
-    return _bridge.http_get(base_url, path, timeout)
+    _status, body = _bridge.http_get(base_url, path, timeout)
+    return body
 
 
 def _handle_sys_daemon(name, arguments, root):
     """Bridge the MCP session to a running daemon (Phase 3).
 
-    Discovers the daemon via its self-advertised descriptor at
-    <root>/.os_state/daemon.json, confirms the PID is alive, then pulls
-    the read-only /v1/orient + /v1/jobs telemetry over localhost HTTP.
+    Discovers the daemon through daemon_bridge's canonical descriptor and
+    liveness helpers, then pulls read-only telemetry over localhost HTTP.
     Degrades to running=false with a start hint when nothing is running.
-
-    Stdlib-only by design: the reasoning layer must not import the daemon
-    package, so this re-implements the trivial descriptor read rather than
-    importing research_os.daemon.discovery (same on-disk SHAPE, no import).
     """
+    from research_os.server import daemon_bridge as _bridge
     timeout = arguments.get("timeout")
     try:
         timeout = float(timeout) if timeout is not None else 2.0
@@ -683,35 +709,30 @@ def _handle_sys_daemon(name, arguments, root):
         "freshness, and a recommended next action.",
     }
 
-    desc_path = Path(root) / ".os_state" / "daemon.json"
-    try:
-        if not desc_path.exists():
-            return _text(_success(not_running))
-        desc = json.loads(desc_path.read_text(encoding="utf-8"))
-        if not isinstance(desc, dict):
-            return _text(_success(not_running))
-    except (OSError, ValueError):
+    desc = _bridge.read_descriptor(root)
+    if desc is None:
         return _text(_success(not_running))
 
-    # Confirm the advertised PID is actually alive — a stale descriptor
-    # (daemon crashed without cleanup) must not read as "running".
     pid = desc.get("pid")
-    if isinstance(pid, int):
-        try:
-            os.kill(pid, 0)
-        except ProcessLookupError:
-            stale = dict(not_running)
+    if not _bridge.daemon_present(root):
+        stale = dict(not_running)
+        if isinstance(pid, int):
             stale["hint"] = (
                 "Found a stale daemon descriptor (pid %s not alive). "
                 "Start a fresh daemon with 'research-os daemon start'." % pid
             )
-            return _text(_success(stale))
-        except PermissionError:
-            pass  # alive, owned by another user
-        except OSError:
-            pass
+        return _text(_success(stale))
 
-    base_url = desc.get("base_url") or f"http://{desc.get('host')}:{desc.get('port')}"
+    base_url = _bridge.daemon_base_url(root)
+    if not base_url:
+        return _text(_success({
+            "running": True,
+            "reachable": False,
+            "version": desc.get("version"),
+            "pid": pid,
+            "hint": "Daemon process is alive but its descriptor does not "
+            "advertise an HTTP base URL; restart it with 'research-os daemon start'.",
+        }))
     orient = _daemon_http_get(base_url, "/v1/orient", timeout)
     jobs = _daemon_http_get(base_url, "/v1/jobs", timeout)
     # Also surface the execution bound (resource budget) and any
@@ -847,8 +868,10 @@ def _handle_sys_consent(name, arguments, root):
         ))
 
     if action == "status":
-        pending = _bridge.http_get(base_url, "/v1/consent/pending", timeout) or {}
-        grants = _bridge.http_get(base_url, "/v1/consent/grants", timeout) or {}
+        _, pending = _bridge.http_get(base_url, "/v1/consent/pending", timeout)
+        pending = pending or {}
+        _, grants = _bridge.http_get(base_url, "/v1/consent/grants", timeout)
+        grants = grants or {}
         return _text(_success({
             "available": True,
             "pending": pending.get("requests") or pending.get("pending") or [],
@@ -862,7 +885,8 @@ def _handle_sys_consent(name, arguments, root):
             return _text(_error(
                 "gate_key and arg_fingerprint are required for action='token'"
             ))
-        grants = _bridge.http_get(base_url, "/v1/consent/grants", timeout) or {}
+        _, grants = _bridge.http_get(base_url, "/v1/consent/grants", timeout)
+        grants = grants or {}
         token = None
         for g in (grants.get("grants") or []):
             if not isinstance(g, dict):
@@ -895,6 +919,54 @@ def _handle_sys_consent(name, arguments, root):
     ))
 
 
+def _handle_sys_mode(name, arguments, root):
+    """Query or switch the active persona (scruffy/neat/critique/delegation).
+
+    Called with no ``persona`` argument: returns the current persona +
+    all available personas.
+    Called with ``persona=<name>``: activates that persona and persists
+    to ``.os_state/config.yaml``.
+    """
+    from research_os.server.personas import (
+        PERSONAS,
+        VALID_PERSONA_NAMES,
+        get_active_persona,
+        set_active_persona,
+    )
+
+    target = (arguments.get("persona") or "").strip()
+    if not target:
+        # Query mode — return current + catalog.
+        active = get_active_persona(Path(root))
+        record = PERSONAS[active]
+        catalog = {
+            n: {
+                "directive": p["directive"],
+                "tool_visibility": p["tool_visibility"],
+                "execution_policy": p["execution_policy"],
+            }
+            for n, p in PERSONAS.items()
+        }
+        return _text(_success({
+            "active_persona": active,
+            "directive": record["directive"],
+            "tool_visibility": record["tool_visibility"],
+            "execution_policy": record["execution_policy"],
+            "available_personas": catalog,
+        }))
+
+    if target not in VALID_PERSONA_NAMES:
+        return _text(_error(
+            what=f"unknown persona {target!r}",
+            why=f"valid persona names are: {list(VALID_PERSONA_NAMES)}",
+            next_action="call sys_mode() with no argument to list available personas",
+        ))
+    result = set_active_persona(Path(root), target)
+    if result.get("status") == "error":
+        return _text(_error(result.get("message", "set_active_persona failed")))
+    return _text(_success(result))
+
+
 def _handle_sys_workspace_mode(name, arguments, root):
     """Report or transition the workspace mode (first-class, additive)."""
     op = (arguments.get("operation") or "status").strip().lower()
@@ -923,24 +995,11 @@ def _handle_sys_workspace_mode(name, arguments, root):
 
 
 HANDLERS = {
-    "sys_workspace_mode": _handle_sys_workspace_mode,
-    "sys_workspace_scaffold": _handle_sys_workspace_scaffold,
     "sys_workspace_tree": _handle_sys_workspace_tree,
     "sys_state_get": _handle_sys_state_get,
     "sys_file_read": _handle_sys_file_read,
     "sys_file_write": _handle_sys_file_write,
     "sys_file_list": _handle_sys_file_list,
-    "sys_file_delete": _handle_sys_file_delete,
-    "sys_file_validate_md": _handle_sys_file_validate_md,
-    "tool_path_finalize": _handle_tool_path_finalize,
-    "tool_synthesis_curate_figures": _handle_tool_synthesis_curate_figures,
-    "sys_export_share_archive": _handle_sys_export_share_archive,
-    "sys_export_ro_crate": _handle_sys_export_ro_crate,
-    "sys_checkpoint_create": _handle_sys_checkpoint_create,
-    "sys_checkpoint_rollback": _handle_sys_checkpoint_rollback,
-    "sys_checkpoint_list": _handle_sys_checkpoint_list,
-    "sys_path": _handle_sys_path,
-    "sys_where": _handle_sys_where,
-    "sys_daemon": _handle_sys_daemon,
-    "sys_consent": _handle_sys_consent,
+    "sys_mode": _handle_sys_mode,
+    "sys_workspace_mode": _handle_sys_workspace_mode,
 }

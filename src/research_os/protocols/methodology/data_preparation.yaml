@@ -1,18 +1,18 @@
 id: data_preparation
 tier: 'plan'
 name: Data Preparation (raw → analysis-ready, every decision recorded)
-version: '3.12.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [naive_ai, auditor]
   workflow_shape: [experiment_pipeline]
 last_reviewed: '2026-06-24'
 see_also:
-  - methodology/data_quality_audit         # diagnoses what's wrong BEFORE this fixes it
-  - methodology/missing_data_strategy       # the dedicated scaffold for the missingness decision
-  - methodology/exploratory_data_analysis   # the hypothesis-generating pass on the prepared data
-  - methodology/preregistration             # cleaning rules belong in the SAP when work is confirmatory
+- methodology/data_quality_audit           # diagnoses what's wrong BEFORE this fixes it
+- methodology/missing_data_strategy         # the dedicated scaffold for the missingness decision
+- methodology/exploratory_data_analysis     # the hypothesis-generating pass on the prepared data
+- methodology/preregistration               # cleaning rules belong in the SAP when work is confirmatory
 description: |
   The bridge between a raw dataset and an analysis. `data_quality_audit`
   DIAGNOSES what is wrong with the data (read-only); this protocol scaffolds
@@ -49,168 +49,148 @@ trigger: |
   `methodology/data_quality_audit` once its findings are in hand.
 
 prerequisites:
-  - At least one raw dataset exists (inputs/raw_data/ or a path) AND
-    ideally a data_quality_audit report naming the problems to address.
-  - The research question is known well enough to judge which variables
-    matter (you cannot decide what to drop without knowing what you need).
+- At least one raw dataset exists (inputs/raw_data/ or a path) AND ideally a data_quality_audit report naming the problems to address.
+- The research question is known well enough to judge which variables matter (you cannot decide what to drop without knowing what you need).
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Raw data is immutable. Every transform reads from raw (or a prior
-       recorded stage) and writes a NEW file; the raw input is never edited
-       in place. If you cannot reproduce the analysis table by re-running
-       the recorded transforms against the untouched raw, the preparation is
-       not reproducible."
-    - "Every cleaning decision is a CHOICE with a stated reason, not a
-       default. Dropping rows, coercing a type, capping an outlier, choosing
-       a join key — each one changes the result and each one must say WHY,
-       grounded in the data's meaning or the field's convention, not in a
-       remembered rule of thumb."
-    - "An outlier is not an error until you can say why it is impossible.
-       'Outside 3 SD' is a description, not a justification — a real
-       extreme value carries signal. Decide per variable from its plausible
-       range and the mechanism that generated it; record the rule and the
-       count it removed."
-    - "A row dropped silently is a bias introduced silently. Every filter
-       reports how many rows it removed and whether the removed rows differ
-       systematically from the kept ones (dropping non-randomly changes who
-       the sample represents)."
-    - "Cleaning decisions made AFTER seeing how they move the result are a
-       degree of freedom. When the work is confirmatory, the cleaning rules
-       belong in the pre-registered plan; decide them from the data's
-       structure, not from their effect on the finding."
+  - "Raw data is immutable. Every transform reads from raw (or a prior recorded stage) and writes a NEW file; the raw input is never edited in place. If you cannot reproduce the analysis table by re-running the recorded transforms against the untouched raw, the preparation is not reproducible."
+  - "Every cleaning decision is a CHOICE with a stated reason, not a default. Dropping rows, coercing a type, capping an outlier, choosing a join key — each one changes the result and each one must say WHY, grounded in the data's meaning or the field's convention, not in a remembered rule of thumb."
+  - "An outlier is not an error until you can say why it is impossible. 'Outside 3 SD' is a description, not a justification — a real extreme value carries signal. Decide per variable from its plausible range and the mechanism that generated it; record the rule and the count it removed."
+  - "A row dropped silently is a bias introduced silently. Every filter reports how many rows it removed and whether the removed rows differ systematically from the kept ones (dropping non-randomly changes who the sample represents)."
+  - "Cleaning decisions made AFTER seeing how they move the result are a degree of freedom. When the work is confirmatory, the cleaning rules belong in the pre-registered plan; decide them from the data's structure, not from their effect on the finding."
 
 steps:
-  - id: inventory_and_target
-    name: Inventory the raw inputs + name the target shape
-    description: |
-      Before transforming anything, state where you are going. Capture:
-        - each raw source (path, format, row/column count, the grain — what
-          one row represents),
-        - the analysis-ready TARGET: what one row should represent, which
-          variables the research question needs, their intended types + units,
-        - the gap between the two — the list of transformations this protocol
-          will reason through.
+- id: inventory_and_target
+  name: Inventory the raw inputs + name the target shape
+  description: |
+    Before transforming anything, state where you are going. Capture:
+      - each raw source (path, format, row/column count, the grain — what
+        one row represents),
+      - the analysis-ready TARGET: what one row should represent, which
+        variables the research question needs, their intended types + units,
+      - the gap between the two — the list of transformations this protocol
+        will reason through.
 
-      If a data_quality_audit report exists, read it; its findings are the
-      worklist. If not, run methodology/data_quality_audit first — preparing
-      data you have not profiled is guessing.
+    If a data_quality_audit report exists, read it; its findings are the
+    worklist. If not, run methodology/data_quality_audit first — preparing
+    data you have not profiled is guessing.
 
-      Write workspace/<step>/data_prep_plan.md with the source inventory +
-      target spec + the transformation worklist.
+    Write workspace/<step>/data_prep_plan.md with the source inventory +
+    target spec + the transformation worklist.
 
-  - id: structural_transforms
-    name: Reshape, join, and harmonise structure
-    description: |
-      Reason through the transforms that change the table's SHAPE before the
-      ones that change its values:
-        - JOINS / MERGES — name the key, its grain on each side, and the join
-          type. A many-to-many join that should have been one-to-many silently
-          multiplies rows; verify the row count against the expectation and
-          record it. State what happens to non-matching keys.
-        - RESHAPING — long↔wide changes what a row means; state the new grain.
-        - HARMONISATION — when sources disagree on units, encodings, category
-          labels, or date formats, define the canonical form and map each
-          source to it. The mapping is data, not a side effect — record it.
+- id: structural_transforms
+  name: Reshape, join, and harmonise structure
+  description: |
+    Reason through the transforms that change the table's SHAPE before the
+    ones that change its values:
+      - JOINS / MERGES — name the key, its grain on each side, and the join
+        type. A many-to-many join that should have been one-to-many silently
+        multiplies rows; verify the row count against the expectation and
+        record it. State what happens to non-matching keys.
+      - RESHAPING — long↔wide changes what a row means; state the new grain.
+      - HARMONISATION — when sources disagree on units, encodings, category
+        labels, or date formats, define the canonical form and map each
+        source to it. The mapping is data, not a side effect — record it.
 
-      Each transform is an AI-authored, re-runnable script that reads the
-      prior stage and writes a new one. Persist the row/column count before
-      and after so an unexpected change is visible.
+    Each transform is an AI-authored, re-runnable script that reads the
+    prior stage and writes a new one. Persist the row/column count before
+    and after so an unexpected change is visible.
 
-  - id: typing_and_recoding
-    name: Coerce types + recode values
-    description: |
-      Reason through value-level transforms:
-        - TYPE COERCION — make each variable the type its meaning requires
-          (a date is a date, an ordinal is ordered, an ID is not a number to
-          average). Coercion that fails on some rows is a finding, not a
-          warning to swallow — report what failed to parse and why.
-        - RECODING — collapsing categories, deriving variables, binning a
-          continuous measure: each is a modelling choice that the analysis
-          inherits. Binning especially destroys information and can
-          manufacture or hide an effect — justify the cut points from the
-          variable's meaning or a cited convention, never from how they move
-          the result.
-        - STRING NORMALISATION — trimming, casing, canonicalising free text
-          before it becomes a category; record the rule so the categories are
-          reproducible.
+- id: typing_and_recoding
+  name: Coerce types + recode values
+  description: |
+    Reason through value-level transforms:
+      - TYPE COERCION — make each variable the type its meaning requires
+        (a date is a date, an ordinal is ordered, an ID is not a number to
+        average). Coercion that fails on some rows is a finding, not a
+        warning to swallow — report what failed to parse and why.
+      - RECODING — collapsing categories, deriving variables, binning a
+        continuous measure: each is a modelling choice that the analysis
+        inherits. Binning especially destroys information and can
+        manufacture or hide an effect — justify the cut points from the
+        variable's meaning or a cited convention, never from how they move
+        the result.
+      - STRING NORMALISATION — trimming, casing, canonicalising free text
+        before it becomes a category; record the rule so the categories are
+        reproducible.
 
-      Keep derived variables alongside their source, not in place of it, so
-      the derivation stays auditable.
+    Keep derived variables alongside their source, not in place of it, so
+    the derivation stays auditable.
 
-  - id: outliers_and_impossibles
-    name: Decide outlier + impossible-value handling
-    description: |
-      Separate two distinct cases and treat them differently:
-        - IMPOSSIBLE values (a negative age, a future timestamp, a code
-          outside the codebook) — these are errors; decide correct, drop, or
-          set-missing, and record the rule + the count per variable.
-        - EXTREME but POSSIBLE values — these may be the most informative
-          rows. The decision (keep / cap / transform / model robustly) is the
-          analyst's, made from the variable's plausible range and the
-          generating mechanism, justified per variable. A blanket "remove
-          outliers" rule across all columns is the wrong default.
+- id: outliers_and_impossibles
+  name: Decide outlier + impossible-value handling
+  description: |
+    Separate two distinct cases and treat them differently:
+      - IMPOSSIBLE values (a negative age, a future timestamp, a code
+        outside the codebook) — these are errors; decide correct, drop, or
+        set-missing, and record the rule + the count per variable.
+      - EXTREME but POSSIBLE values — these may be the most informative
+        rows. The decision (keep / cap / transform / model robustly) is the
+        analyst's, made from the variable's plausible range and the
+        generating mechanism, justified per variable. A blanket "remove
+        outliers" rule across all columns is the wrong default.
 
-      For anything that becomes missing here, do NOT decide imputation now —
-      record that a missingness plan is required and DEFER to
-      methodology/missing_data_strategy. Write the outlier/impossible rules +
-      counts to the prep report.
+    For anything that becomes missing here, do NOT decide imputation now —
+    record that a missingness plan is required and DEFER to
+    methodology/missing_data_strategy. Write the outlier/impossible rules +
+    counts to the prep report.
 
-  - id: filtering_and_sample
-    name: Apply inclusion/exclusion filters + check for selection bias
-    description: |
-      Every filter that removes rows defines the analysed sample, and so
-      defines who the results generalise to. For each inclusion/exclusion
-      rule:
-        - state the rule + its scientific rationale (eligibility, quality
-          floor, scope of the question) BEFORE applying it,
-        - report how many rows it removed,
-        - check whether the removed rows differ systematically from the kept
-          ones on the variables that matter; if they do, that is a
-          selection-bias finding for the limitations, not a silent drop.
+- id: filtering_and_sample
+  name: Apply inclusion/exclusion filters + check for selection bias
+  description: |
+    Every filter that removes rows defines the analysed sample, and so
+    defines who the results generalise to. For each inclusion/exclusion
+    rule:
+      - state the rule + its scientific rationale (eligibility, quality
+        floor, scope of the question) BEFORE applying it,
+      - report how many rows it removed,
+      - check whether the removed rows differ systematically from the kept
+        ones on the variables that matter; if they do, that is a
+        selection-bias finding for the limitations, not a silent drop.
 
-      Record a CONSORT-style accounting (raw N → after each filter → final
-      analysis N) so the sample's provenance is reconstructable.
+    Record a CONSORT-style accounting (raw N → after each filter → final
+    analysis N) so the sample's provenance is reconstructable.
 
-  - id: validate_prepared
-    name: Validate the analysis-ready table
-    description: |
-      Confirm the prepared table actually meets the target spec from step 1:
-        - the grain is what was intended (one row = the stated unit),
-        - every needed variable is present with its intended type + unit,
-        - the value ranges are now plausible (re-profile and compare against
-          the pre-prep profile to confirm each fix landed and nothing new
-          broke),
-        - the raw → prepared path re-runs end to end from the untouched raw
-          and reproduces the table.
+- id: validate_prepared
+  name: Validate the analysis-ready table
+  description: |
+    Confirm the prepared table actually meets the target spec from step 1:
+      - the grain is what was intended (one row = the stated unit),
+      - every needed variable is present with its intended type + unit,
+      - the value ranges are now plausible (re-profile and compare against
+        the pre-prep profile to confirm each fix landed and nothing new
+        broke),
+      - the raw → prepared path re-runs end to end from the untouched raw
+        and reproduces the table.
 
-      Write the before/after profile comparison to the prep report.
+    Write the before/after profile comparison to the prep report.
 
-  - id: record_provenance
-    name: Record the preparation provenance
-    description: |
-      The deliverable is not just the clean table — it is the clean table
-      PLUS its reproducible lineage. Persist:
-        - the ordered transform scripts (re-runnable, raw → prepared),
-        - workspace/<step>/outputs/reports/data_prep_report.md: the decision
-          log (one entry per transform: what, why, rows affected),
-        - a data dictionary for the prepared table (each variable: meaning,
-          type, unit, allowed values, derivation if derived).
+- id: record_provenance
+  name: Record the preparation provenance
+  description: |
+    The deliverable is not just the clean table — it is the clean table
+    PLUS its reproducible lineage. Persist:
+      - the ordered transform scripts (re-runnable, raw → prepared),
+      - workspace/<step>/outputs/reports/data_prep_report.md: the decision
+        log (one entry per transform: what, why, rows affected),
+      - a data dictionary for the prepared table (each variable: meaning,
+        type, unit, allowed values, derivation if derived).
 
-      mem_log method="Data preparation" parameters="<key decisions: join keys,
-      recode maps, outlier rules, filter rules>" justification="<grounding for
-      the consequential choices>" so the methods section can render the
-      preparation from the audit trail. Append the inclusion/exclusion
-      accounting to conclusions.md ## Limitations where it bears on
-      generalisability.
+    mem_log method="Data preparation" parameters="<key decisions: join keys,
+    recode maps, outlier rules, filter rules>" justification="<grounding for
+    the consequential choices>" so the methods section can render the
+    preparation from the audit trail. Append the inclusion/exclusion
+    accounting to conclusions.md ## Limitations where it bears on
+    generalisability.
 
 expected_outputs:
-  - workspace/<step>/data_prep_plan.md
-  - workspace/<step>/data/next_step_output/                       # the prepared table(s)
-  - workspace/<step>/scripts/                           # ordered, re-runnable transforms
-  - workspace/<step>/outputs/reports/data_prep_report.md
-  - workspace/<step>/outputs/reports/data_dictionary.md
+- workspace/<step>/data_prep_plan.md
+- workspace/<step>/data/next_step_output/                         # the prepared table(s)
+- workspace/<step>/scripts/                             # ordered, re-runnable transforms
+- workspace/<step>/outputs/reports/data_prep_report.md
+- workspace/<step>/outputs/reports/data_dictionary.md
 
 quality_bar:
   raw_inputs_immutable_and_transforms_rerunnable: true
@@ -224,3 +204,33 @@ quality_bar:
 next_protocol: methodology/exploratory_data_analysis
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: data_prep
+triggers:
+- prepare the data
+- prepare my data
+- get the data analysis-ready
+- make the data analysis ready
+- build the analysis table
+- wrangle this
+- wrangle the data
+- transform the raw data
+- recode these variables
+- recode the variables
+- merge these datasets
+- join these datasets
+- reshape this
+- reshape the data
+- deal with the outliers
+- handle the outliers
+- harmonise units
+- harmonize units
+- fix the data types
+- the data needs cleaning before i can analyse it
+- the data needs cleaning before i can analyze it
+summary: 'Raw → analysis-ready: reshape / join / recode / type / outlier / filter, every decision recorded + re-runnable.'
+token_estimate: 1500
+decomposition:
+- protocol: methodology/data_preparation
+  purpose: Reason + record each transform from raw to the analysis-ready table; raw stays immutable.
+- tool: tool_data

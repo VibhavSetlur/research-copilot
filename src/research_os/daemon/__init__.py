@@ -1,8 +1,9 @@
-"""Research OS daemon — the multi-protocol gateway.
+"""Research OS daemon — the enforcement + execution + notification kernel.
 
 A persistent, headless, localhost daemon that owns the master execution state
 machine and exposes Research OS to any client (IDE, web UI, CLI, MCP sidecar)
-at once.
+at once. RO calls no LLM and has no chat gateway — clients reason over the MCP
+tools directly.
 
 DESIGN STANCE (read docs/ARCHITECTURE.md before extending this):
 
@@ -20,9 +21,8 @@ What it provides: a multi-root state registry, a background task queue, a
 universal subprocess + scheduler (SLURM) runner, a durable run journal with
 crash recovery, provenance / lineage / staleness / reproduce, resumable runs,
 sandbox tiers + resource budgets, a notification spine, consent / hard gates,
-an event bus, orientation, and HTTP endpoints (read-only + auth-gated mutating,
-including an opt-in OpenAI-compatible gateway). A read-only web dashboard is the
-one surface still to come.
+an event bus, orientation, and HTTP endpoints (read-only + bearer-auth-gated
+mutating). A read-only web dashboard is the one surface still to come.
 """
 from __future__ import annotations
 
@@ -44,7 +44,9 @@ from .lineage import (
     ancestors,
     build_lineage,
     descendants,
+    downstream,
     lineage_to_mermaid,
+    provenance as lineage_provenance,
     topo_order,
 )
 from .registry import Workspace, WorkspaceRegistry
@@ -55,6 +57,8 @@ from .schedulers import SchedulerResult, SchedulerRunner, SlurmAdapter, get_adap
 from .staleness import assess as assess_staleness
 from .staleness import check_input_staleness
 from .tasks import Job, JobStatus, TaskQueue
+from .protocol_driver import ProtocolDriver
+from .dag_executor import DAGExecutor, Digraph
 
 __all__ = [
     "Daemon",
@@ -82,6 +86,8 @@ __all__ = [
     "lineage_to_mermaid",
     "ancestors",
     "descendants",
+    "downstream",
+    "lineage_provenance",
     "topo_order",
     "assess_staleness",
     "check_input_staleness",
@@ -95,4 +101,7 @@ __all__ = [
     "get_profile",
     "all_profiles",
     "GENERIC",
+    "DAGExecutor",
+    "Digraph",
+    "ProtocolDriver",
 ]

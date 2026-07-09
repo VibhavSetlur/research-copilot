@@ -41,6 +41,12 @@ it — so the seam is ONE thing, defined once, not N copies.
   imports `research_os.daemon` (preflight-enforced seam). It reads the
   daemon's self-advertised descriptor + sidecars by shape, exactly as the
   copies did. The daemon remains an opaque local service.
+* It preserves the v5 safety split: **daemon absent means degrade-open** for
+  ordinary stdio MCP users (the tool surface behaves as it did before); **daemon
+  present but enforcement ambiguous means fail-safe closed** for hard gates (no
+  silent pass, no forged approval). This aligns with
+  [UNSKIPPABLE_GATES.md](UNSKIPPABLE_GATES.md), [PRECONDITION_GATE.md](PRECONDITION_GATE.md),
+  and [STALENESS_GATE.md](STALENESS_GATE.md).
 
 ## Contents
 

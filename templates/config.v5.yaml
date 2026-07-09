@@ -1,0 +1,49 @@
+# Research OS v5 — configuration reference
+#
+# v5 splits the old monolithic inputs/researcher_config.yaml into two files:
+#
+#   ~/.research-os/profile.yaml          (user profile — per-machine, not committed)
+#   <project>/.os_state/config.yaml      (project config — committed with the repo)
+#
+# Run `research-os init --migrate` in an existing project to auto-generate
+# both files from the old inputs/researcher_config.yaml.
+#
+# This file is documentation only.  The actual defaults are defined in
+# src/research_os/config/project.py (_DEFAULT_USER_PROFILE and
+# _DEFAULT_PROJECT_CONFIG).  Do NOT modify this template directly.
+
+# ============================================================
+# FILE 1: ~/.research-os/profile.yaml
+#         (or $RESEARCH_OS_HOME/profile.yaml)
+#
+# One file per machine/user.  Shared across all projects.
+# Permissions: chmod 600 (set automatically).
+# ============================================================
+
+# user:
+#   name: "Ada Lovelace"          # auto-detected from git config user.name
+#   orcid: "0000-0001-2345-6789"  # optional ORCID iD
+
+# compute:
+#   default: "local"              # local | hpc | docker | conda env: myenv
+#   hpc_partition: ""             # e.g. "gpu" (HPC only)
+
+# model:
+#   preferred: ""                 # inferred from IDE marker (e.g. "CLAUDE.md")
+
+
+# ============================================================
+# FILE 2: <project>/.os_state/config.yaml
+#
+# One file per project.  Safe to commit (no secrets).
+# ============================================================
+
+# project:
+#   name: "my-study"              # auto-filled from directory name on init
+#   output_types:                 # paper | abstract | poster | slides | ...
+#     - paper
+#     - figures
+
+# autonomy:
+#   level: "semi"                 # semi | full | manual
+#   quality_gate: "normal"        # normal | strict | light

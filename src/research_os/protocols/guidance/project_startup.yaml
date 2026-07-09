@@ -1,237 +1,285 @@
 id: project_startup
 tier: 'intake'
 name: Project Startup
-version: '3.1.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [naive_ai, researcher]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - guidance/mid_pipeline_entry    # use INSTEAD when the researcher already has work done
-  - domain/domain_analysis         # the linear successor (next_protocol)
+- guidance/mid_pipeline_entry      # use INSTEAD when the researcher already has work done
+- domain/domain_analysis           # the linear successor (next_protocol)
 description: First substantive protocol. Auto-fills intake from researcher dumps, locks in research question, classifies domain, snapshots the base environment.
 trigger: Second protocol every new project — and any time inputs/ changes substantially.
 prerequisites:
-  - session_boot has completed this session (sys_boot was called)
-  - inputs/researcher_config.yaml exists (auto-created on `research-os init`)
+- session_boot has completed this session (sys_boot was called)
+- inputs/researcher_config.yaml exists (auto-created on `research-os init`)
 
 steps:
-  - id: route_first
-    name: Route Through tool_route Before Loading the Full Protocol
-    description: |
-      If you got here via session_boot's tool_route call, you already have
-      the right protocol — skip this step.
+- id: route_first
+  name: Route Through tool_route Before Loading the Full Protocol
+  description: |
+    If you got here via session_boot's tool_route call, you already have
+    the right protocol — skip this step.
 
-      Otherwise, before loading this YAML at format='full', call
-      tool_route(prompt=<researcher's ask>). For an intake-shaped ask
-      ("fill the intake", "I dropped files", "what do I have") tool_route
-      will recommend tool_intake_autofill as a SHORTCUT — you can call
-      that directly without the full project_startup load.
+    Otherwise, before loading this YAML at format='full', call
+    tool_route(prompt=<researcher's ask>). For an intake-shaped ask
+    ("fill the intake", "I dropped files", "what do I have") tool_route
+    will recommend mem_log (operation='intake_autofill') as a SHORTCUT — you can call
+    that directly without the full project_startup load.
 
-  - id: scan_inputs
-    name: Scan inputs/ at Coarse Granularity
-    description: |
-      In ONE batch:
-        - sys_file_list directory="inputs/raw_data"
-        - sys_file_list directory="inputs/literature"
-        - sys_file_list directory="inputs/context"
-      If all three are empty, do NOT dead-end. Many researchers never touch
-      inputs/ files — they just describe the project in chat. So:
-        - If the researcher already TOLD you the question / domain / data
-          location / hypotheses conversationally, capture it now via the chat
-          path of autofill_intake (below) — don't make them write files.
-        - Only if you have neither files NOR any chat description, ask them in
-          one line: "Describe your project (question + what data you have), or
-          drop files into inputs/raw_data, inputs/literature, inputs/context."
-      Either input path is fine; proceed once you have files OR a chat
-      description.
+- id: scan_inputs
+  name: Scan inputs/ at Coarse Granularity
+  description: |
+    In ONE batch:
+      - sys_file_list directory="inputs/raw_data"
+      - sys_file_list directory="inputs/literature"
+      - sys_file_list directory="inputs/context"
+    If all three are empty, do NOT dead-end. Many researchers never touch
+    inputs/ files — they just describe the project in chat. So:
+      - If the researcher already TOLD you the question / domain / data
+        location / hypotheses conversationally, capture it now via the chat
+        path of autofill_intake (below) — don't make them write files.
+      - Only if you have neither files NOR any chat description, ask them in
+        one line: "Describe your project (question + what data you have), or
+        drop files into inputs/raw_data, inputs/literature, inputs/context."
+    Either input path is fine; proceed once you have files OR a chat
+    description.
 
-  - id: check_intake_freshness
-    name: Skip / refresh / regenerate based on intake freshness
-    description: |
-      MANDATORY before autofill_intake. Avoids regenerating an
-      already-approved intake mid-pipeline.
+- id: check_intake_freshness
+  name: Skip / refresh / regenerate based on intake freshness
+  description: |
+    MANDATORY before autofill_intake. Avoids regenerating an
+    already-approved intake mid-pipeline.
 
-        tool_intake_freshness  → returns {recommended_depth, mid_pipeline_entry_recommended}
+      tool_audit (operation='intake_freshness')  → returns {recommended_depth, mid_pipeline_entry_recommended}
 
-      recommended_depth values:
-        full         — intake.md missing, stub, or contains template
-                       markers. Continue to autofill_intake.
-        refresh-only — intake.md is substantive but > 90 days old. Read
-                       it, surface a 2-sentence summary to the
-                       researcher, ask whether anything has changed.
-                       Do NOT regenerate.
-        skip         — intake.md is substantive and < 90 days old. Skip
-                       autofill_intake entirely; jump to
-                       profile_each_dataset.
+    recommended_depth values:
+      full         — intake.md missing, stub, or contains template
+                     markers. Continue to autofill_intake.
+      refresh-only — intake.md is substantive but > 90 days old. Read
+                     it, surface a 2-sentence summary to the
+                     researcher, ask whether anything has changed.
+                     Do NOT regenerate.
+      skip         — intake.md is substantive and < 90 days old. Skip
+                     autofill_intake entirely; jump to
+                     profile_each_dataset.
 
-      mid_pipeline_entry_recommended == true means at least one numbered
-      step has conclusions.md. Load `guidance/mid_pipeline_entry`
-      instead of continuing project_startup — the researcher is
-      resuming, not starting.
+    mid_pipeline_entry_recommended == true means at least one numbered
+    step has conclusions.md. Load `guidance/mid_pipeline_entry`
+    instead of continuing project_startup — the researcher is
+    resuming, not starting.
 
-  - id: autofill_intake
-    name: Auto-fill Intake from Files AND/OR Chat
-    description: |
-      ONLY when check_intake_freshness returned recommended_depth='full'.
-      Skip otherwise.
+- id: autofill_intake
+  name: Auto-fill Intake from Files AND/OR Chat
+  description: |
+    ONLY when check_intake_freshness returned recommended_depth='full'.
+    Skip otherwise.
 
-      tool_intake_autofill takes TWO input paths, combinable:
+    mem_log (operation='intake_autofill') takes TWO input paths, combinable:
 
-      CHAT path (use whenever the researcher described the project in chat —
-      most common): pass what they SAID directly so they never have to edit a
-      file —
-        tool_intake_autofill(
-          question="<their research question>",
-          domain="<their field, if stated>",
-          hypotheses=["<H1>", "<H2>", ...],
-          context_note="<design / data location / constraints they mentioned>")
-      Explicit args win over inference, so this works even with an empty
-      inputs/ folder.
+    CHAT path (use whenever the researcher described the project in chat —
+    most common): pass what they SAID directly so they never have to edit a
+    file —
+      mem_log(
+        operation='intake_autofill',
+        question="<their research question>",
+        domain="<their field, if stated>",
+        hypotheses=["<H1>", "<H2>", ...],
+        context_note="<design / data location / constraints they mentioned>")
+    Explicit args win over inference, so this works even with an empty
+    inputs/ folder.
 
-      FILE path (when they dropped files): call tool_intake_autofill() with no
-      args. It:
-        - infers domain from columns / file extensions / context keywords
-        - extracts research_question from context notes ("Research question:" /
-          "Aim:" / "Objective:" or the first sentence ending in "?")
-        - extracts hypotheses (H1/H2/H3 lines, or "Hypothesis:")
+    FILE path (when they dropped files): call mem_log(operation='intake_autofill') with no
+    extra args. It:
+      - infers domain from columns / file extensions / context keywords
+      - extracts research_question from context notes ("Research question:" /
+        "Aim:" / "Objective:" or the first sentence ending in "?")
+      - extracts hypotheses (H1/H2/H3 lines, or "Hypothesis:")
 
-      You can combine both (pass the chat fields AND let it read the files).
-      Either way it rewrites inputs/intake.md + docs/research_overview.md and
-      registers each hypothesis in state.active_hypotheses.
+    You can combine both (pass the chat fields AND let it read the files).
+    Either way it rewrites inputs/intake.md + docs/research_overview.md and
+    registers each hypothesis in state.active_hypotheses.
 
-      Then show the researcher the proposed (question, domain, hypotheses) in
-      one short message and ask "Approve, or refine?" Wait for approval before
-      any code is written.
+    Then show the researcher the proposed (question, domain, hypotheses) in
+    one short message and ask "Approve, or refine?" Wait for approval before
+    any code is written.
 
-  - id: bring_in_external_data
-    name: Bring external data into the project (copy or symlink, with provenance)
-    description: |
-      If the researcher says their data lives OUTSIDE the project (e.g. "my
-      data is at /scratch/lab/run42/" or "it's on the shared drive"), don't
-      analyse it in place — bring it under inputs/raw_data/ so the project is
-      self-contained, reproducible, and the immutability guard + intake SHA-256
-      inventory apply. Reason about COPY vs SYMLINK from the actual situation,
-      not a rule:
+- id: bring_in_external_data
+  name: Bring external data into the project (copy or symlink, with provenance)
+  description: |
+    If the researcher says their data lives OUTSIDE the project (e.g. "my
+    data is at /scratch/lab/run42/" or "it's on the shared drive"), don't
+    analyse it in place — bring it under inputs/raw_data/ so the project is
+    self-contained, reproducible, and the immutability guard + intake SHA-256
+    inventory apply. Reason about COPY vs SYMLINK from the actual situation,
+    not a rule:
 
-        COPY (the default) when the data is small-to-moderate and portable, or
-          when the project must stay reproducible if the source moves/changes,
-          or when you'll share/zip the project. A copy freezes provenance.
+      COPY (the default) when the data is small-to-moderate and portable, or
+        when the project must stay reproducible if the source moves/changes,
+        or when you'll share/zip the project. A copy freezes provenance.
 
-        SYMLINK when the dataset is very large (tens of GB+) and duplicating it
-          would waste shared-server disk, OR it's a read-only shared/reference
-          dataset many projects point at. A symlink keeps one physical copy but
-          means the project is NOT self-contained — record the absolute source
-          path + a content hash so staleness is detectable if the source
-          changes underneath you.
+      SYMLINK when the dataset is very large (tens of GB+) and duplicating it
+        would waste shared-server disk, OR it's a read-only shared/reference
+        dataset many projects point at. A symlink keeps one physical copy but
+        means the project is NOT self-contained — record the absolute source
+        path + a content hash so staleness is detectable if the source
+        changes underneath you.
 
-      Either way: place it under inputs/raw_data/ (copy) or link it there
-      (symlink), then record what you did + the source path in inputs/intake.md
-      so provenance is explicit. On a shared server, prefer symlink for large
-      data and FLAG to the researcher that the project won't be self-contained.
-      Ask before copying a very large dataset (it may fill shared disk — see the
-      resource discipline the researcher_config declares).
+    Either way: place it under inputs/raw_data/ (copy) or link it there
+    (symlink), then record what you did + the source path in inputs/intake.md
+    so provenance is explicit. On a shared server, prefer symlink for large
+    data and FLAG to the researcher that the project won't be self-contained.
+    Ask before copying a very large dataset (it may fill shared disk — see the
+    resource discipline the researcher_config declares).
 
-      AUTONOMY GATE:
-        Risk: copying large data can fill shared disk; symlinking trades
-        self-containment for space — both are researcher-visible trade-offs.
-        proceed (adaptive default, autopilot) → for small/moderate data, copy into
-          inputs/raw_data/ and record provenance in intake.md.
-        confirm first (manual / supervised) → for large data or any symlink,
-          present the copy-vs-symlink trade-off + disk impact and let the
-          researcher choose before bringing it in.
+    AUTONOMY GATE:
+      Risk: copying large data can fill shared disk; symlinking trades
+      self-containment for space — both are researcher-visible trade-offs.
+      proceed (adaptive default, autopilot) → for small/moderate data, copy into
+        inputs/raw_data/ and record provenance in intake.md.
+      confirm first (manual / supervised) → for large data or any symlink,
+        present the copy-vs-symlink trade-off + disk impact and let the
+        researcher choose before bringing it in.
 
-  - id: profile_each_dataset
-    name: Profile Each Data File (sampled)
-    description: |
-      For every tabular file (csv|tsv|parquet|feather|xlsx|json|jsonl) in
-      inputs/raw_data/, call tool_data(operation='profile', filepath=<that file>).
-      Read the resulting reports — note any high-missingness columns or tiny
-      sample sizes. These constraints feed methodology_selection later.
-      For non-tabular files (.fasta, .nii, .dcm, …) just note their presence
-      and size; defer specialised inspection to the methodology protocol.
+- id: profile_each_dataset
+  name: Profile Each Data File (sampled)
+  description: |
+    For every tabular file (csv|tsv|parquet|feather|xlsx|json|jsonl) in
+    inputs/raw_data/, call tool_data(operation='profile', filepath=<that file>).
+    Read the resulting reports — note any high-missingness columns or tiny
+    sample sizes. These constraints feed methodology_selection later.
+    For non-tabular files (.fasta, .nii, .dcm, …) just note their presence
+    and size; defer specialised inspection to the methodology protocol.
 
-  - id: snapshot_global_environment
-    name: Initialise Global Environment
-    description: |
-      sys_env(operation='snapshot') — writes the current interpreter's packages to
-      environment/requirements.txt. Per-experiment environments inherit from
-      this baseline. R / Julia / conda lockfiles are picked up automatically
-      if they exist at the project root.
+- id: snapshot_global_environment
+  name: Initialise Global Environment
+  description: |
+    sys_env(operation='snapshot') — writes the current interpreter's packages to
+    environment/requirements.txt. Per-experiment environments inherit from
+    this baseline. R / Julia / conda lockfiles are picked up automatically
+    if they exist at the project root.
 
-  - id: ground_in_recent_literature
-    name: Ground the project in CURRENT literature (mandatory)
-    description: |
-      Before declaring startup complete, run AT LEAST ONE online
-      literature pass. The AI's pre-training cutoff is months old; the
-      research-recency story has to start with whatever's actually
-      published THIS year, not what the model remembers.
+- id: ground_in_recent_literature
+  name: Ground the project in CURRENT literature (mandatory)
+  description: |
+    Before declaring startup complete, run AT LEAST ONE online
+    literature pass. The AI's pre-training cutoff is months old; the
+    research-recency story has to start with whatever's actually
+    published THIS year, not what the model remembers.
 
-      Required calls (parallel; use whichever providers the
-      researcher has API keys for — see researcher_config.api_keys):
+    Required calls (parallel; use whichever providers the
+    researcher has API keys for — see researcher_config.api_keys):
 
-        tool_search        query=<domain + research_question>
-                                  year_min=<recent window — see below>
-        tool_search        query=<central method or dataset name>
-                                  year_min=<recent window — see below>
-        tool_research_method method=<the canonical method the PI
-                                  likely expects> domain=<domain>
+      tool_search        query=<domain + research_question>
+                                year_min=<recent window — see below>
+      tool_search        query=<central method or dataset name>
+                                year_min=<recent window — see below>
+      tool_search        query=<central method or dataset name>
+                                mode=literature domain=<domain>
 
-      Choose the recency window from the FIELD's pace, not a fixed
-      number: a fast-moving area (single-cell, foundation models,
-      LLM-as-judge, …) warrants a tighter, last-year-or-two pass;
-      a slow-moving area tolerates a wider window. State the window
-      you picked and why in the search log.
+    Choose the recency window from the FIELD's pace, not a fixed
+    number: a fast-moving area (single-cell, foundation models,
+    LLM-as-judge, …) warrants a tighter, last-year-or-two pass;
+    a slow-moving area tolerates a wider window. State the window
+    you picked and why in the search log.
 
-      Specific patterns:
-        - PI brief named papers ("Cite Himes 2014", "GTEx airway
-          atlas") → tool_literature_search_and_save for each.
-        - intake_autofill returned a `named_paper_references` list
-          → fetch every entry.
+    Specific patterns:
+      - PI brief named papers ("Cite Himes 2014", "GTEx airway
+        atlas") → tool_search (mode=literature) for each.
+      - intake_autofill returned a `named_paper_references` list
+        → fetch every entry.
 
-      Save successful hits to inputs/literature/. Record the search
-      itself in workspace/logs/search_log.md (write it with sys_file_write —
-      the query, window, providers, and which hits you kept). Note the
-      empty searches too — "no hits" is a meaningful finding.
+    Save successful hits to inputs/literature/. Record the search
+    itself in workspace/logs/search_log.md (write it with sys_file_write —
+    the query, window, providers, and which hits you kept). Note the
+    empty searches too — "no hits" is a meaningful finding.
 
-      Why this is mandatory: the AI must NOT silently pretend its
-      pre-training memory is current literature. A reviewer will ask
-      "did you check the 2026 work on X?" and the answer must be
-      verifiable in the search log.
+    Why this is mandatory: the AI must NOT silently pretend its
+    pre-training memory is current literature. A reviewer will ask
+    "did you check the 2026 work on X?" and the answer must be
+    verifiable in the search log.
 
-      Register the PI brief / context files as the FIRST grounding
-      records, so every downstream decision can trace back to the
-      source brief:
-        tool_ground
-            claim="project intake framing (question, hypotheses, scope)"
-            mode="from_context"
-            context_paths=["inputs/context/<brief.md>", ...]
-            decision_id="project_intake"
-            notes="initial project framing — used to derive the
-                   question, hypotheses, and per-step scope"
-      Writes to workspace/.grounding/grounding.jsonl. Subsequent
-      tool_ground / tool_verify calls can reference
-      decision_id="project_intake" as the upstream anchor.
+    Register the PI brief / context files as the FIRST grounding
+    records, so every downstream decision can trace back to the
+    source brief:
+      tool_ground
+          claim="project intake framing (question, hypotheses, scope)"
+          mode="from_context"
+          context_paths=["inputs/context/<brief.md>", ...]
+          decision_id="project_intake"
+          notes="initial project framing — used to derive the
+                 question, hypotheses, and per-step scope"
+    Writes to workspace/.grounding/grounding.jsonl. Subsequent
+    tool_ground / tool_verify calls can reference
+    decision_id="project_intake" as the upstream anchor.
 
-  - id: present_startup_summary
-    name: Summarise to Researcher
-    description: |
-      Format:
-        **Startup summary**
-        - Inputs: N data files (top types), M PDFs, K notes
-        - Domain: <classified domain> · reporting standard candidate: <name>
-        - Question: <confirmed question>
-        - Hypotheses: <H1, H2, ...> (each tracked in state)
-        - Data quality flags: <missingness / small-n / class imbalance>
-        - Recommended next: domain_analysis (light formal classification + bias list)
-                            OR jump straight to analysis_plan if exploratory and tiny.
+- id: present_startup_summary
+  name: Summarise to Researcher
+  description: |
+    Format:
+      **Startup summary**
+      - Inputs: N data files (top types), M PDFs, K notes
+      - Domain: <classified domain> · reporting standard candidate: <name>
+      - Question: <confirmed question>
+      - Hypotheses: <H1, H2, ...> (each tracked in state)
+      - Data quality flags: <missingness / small-n / class imbalance>
+      - Recommended next: domain_analysis (light formal classification + bias list)
+                          OR jump straight to analysis_plan if exploratory and tiny.
 
 expected_outputs:
-  - inputs/intake.md
-  - docs/research_overview.md
+- inputs/intake.md
+- docs/research_overview.md
 
 next_protocol: domain/domain_analysis
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: discover
+sub_intent: intake
+triggers:
+- fill the intake
+- fill intake
+- fill out the intake
+- fill out intake
+- do the intake
+- do intake
+- run the intake
+- run intake
+- intake autofill
+- autofill
+- autofill the intake
+- autofill intake
+- read my data
+- read my inputs
+- read the inputs
+- what do I have
+- what's in inputs
+- i dropped some files
+- i dropped a csv
+- dropped a csv
+- dropped some data
+- dropped a note
+- new project
+- figure out what's going on
+- tell me what you're going to do
+- i have a csv what do i do
+- i have a csv
+- i have a dataset what do i do
+- i have some data what do i do
+- what do i do with this data
+- what do i do with my data
+- where do i start with this data
+- i have data what now
+- got a csv
+summary: 'First substantive protocol: intake + classify + question lock-in.'
+shortcut_tool: mem_log
+token_estimate: 1400
+decomposition:
+- tool: mem_log
+  purpose: Route any loose files into inputs/ first (operation='context_intake').
+- tool: mem_log
+  purpose: Infer domain + question + hypotheses from inputs (operation='intake_autofill').
+- tool: sys_state_get
+  purpose: Confirm registered hypotheses + new docs.

@@ -89,10 +89,11 @@ class TestCheckConfigPerms:
         init_config(tmp_path)
         cfg = tmp_path / "inputs" / "researcher_config.yaml"
         # Simulate a researcher who chmod'd it to default-umask perms.
-        os.chmod(cfg, 0o644)
+        os.chmod(cfg, 0o640 | 0o004)
+        expected_mode = oct(cfg.stat().st_mode & 0o777)[2:]
         status, msg, hint = check_config_perms(workspace=tmp_path)
         assert status == "warn"
-        assert "644" in msg or "readable" in msg
+        assert expected_mode in msg or "readable" in msg
         assert hint and "chmod 600" in hint
 
     def test_passes_when_no_workspace(self):

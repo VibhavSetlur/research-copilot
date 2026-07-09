@@ -1,16 +1,16 @@
 id: literature_per_step
 tier: 'ground'
 name: Per-Step Literature Loop (find → download → cite → validate)
-version: '4.3.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - literature/literature_search       # builds the project-wide corpus this loop draws from
-  - writing/writing_discussion         # consumes the verdicts this loop produces
+- literature/literature_search         # builds the project-wide corpus this loop draws from
+- writing/writing_discussion           # consumes the verdicts this loop produces
 description: |
   After every analysis step writes its findings, RO grounds those
   findings in the published literature: searches → downloads PDFs to
@@ -124,270 +124,270 @@ trigger: |
       trace the inheritance chain.
 
 prerequisites:
-  - "`workspace/<step>/conclusions.md` exists with at least `## Findings`."
-  - "`inputs/researcher_config.yaml.api_keys` is at least partially populated (Semantic Scholar + Crossref are free + keyless; PubMed is free + keyless)."
-  - "Network access. If offline (no DNS), tag step `literature_deferred: ['offline']` and proceed; gate will block synthesis until resolved."
+- "`workspace/<step>/conclusions.md` exists with at least `## Findings`."
+- "`inputs/researcher_config.yaml.api_keys` is at least partially populated (Semantic Scholar + Crossref are free + keyless; PubMed is free + keyless)."
+- "Network access. If offline (no DNS), tag step `literature_deferred: ['offline']` and proceed; gate will block synthesis until resolved."
 
 steps:
-  - id: extract_step_claims
-    name: Extract the step's groundable claims
-    description: |
-      Read `workspace/<step>/conclusions.md` → `## Findings` section.
-      For each finding, identify:
-        - the EFFECT (gene X up-regulated, module Y enriched, hazard
-          ratio Z significant)
-        - the CONDITION (cohort, tissue, contrast)
-        - the QUANTITATIVE anchor (log2FC, padj, HR, CI)
+- id: extract_step_claims
+  name: Extract the step's groundable claims
+  description: |
+    Read `workspace/<step>/conclusions.md` → `## Findings` section.
+    For each finding, identify:
+      - the EFFECT (gene X up-regulated, module Y enriched, hazard
+        ratio Z significant)
+      - the CONDITION (cohort, tissue, contrast)
+      - the QUANTITATIVE anchor (log2FC, padj, HR, CI)
 
-      Write the claim list to
-      `workspace/<step>/literature/claims_to_ground.md`. Ground the
-      claims that actually carry the step's conclusion — the ones a
-      reader would challenge. Exhaustive grounding of every sub-claim
-      is the synthesis stage's job, not the per-step loop's.
+    Write the claim list to
+    `workspace/<step>/literature/claims_to_ground.md`. Ground the
+    claims that actually carry the step's conclusion — the ones a
+    reader would challenge. Exhaustive grounding of every sub-claim
+    is the synthesis stage's job, not the per-step loop's.
 
-  - id: build_search_queries
-    name: Build a search query per claim
-    description: |
-      For each claim, construct two queries:
-        - SPECIFIC: "<gene/module/method> <condition> <effect_direction>"
-          e.g. "APOE Alzheimer's disease hippocampus down-regulated"
-        - METHODOLOGICAL: "<method_family> <condition>"
-          e.g. "WGCNA module preservation cross-cohort"
+- id: build_search_queries
+  name: Build a search query per claim
+  description: |
+    For each claim, construct two queries:
+      - SPECIFIC: "<gene/module/method> <condition> <effect_direction>"
+        e.g. "APOE Alzheimer's disease hippocampus down-regulated"
+      - METHODOLOGICAL: "<method_family> <condition>"
+        e.g. "WGCNA module preservation cross-cohort"
 
-      Specific catches confirmations; methodological catches papers
-      that validate the analytical approach.
+    Specific catches confirmations; methodological catches papers
+    that validate the analytical approach.
 
-  - id: search_literature
-    name: Search literature per claim
-    description: |
-      Per claim, run both the specific and the methodological query
-      across more than one provider — single-provider coverage is
-      always partial. Choose the providers that index this field's
-      venues authoritatively (name the choice). The specific query
-      catches confirmations of the result; the methodological query
-      catches papers that validate the analytical approach.
+- id: search_literature
+  name: Search literature per claim
+  description: |
+    Per claim, run both the specific and the methodological query
+    across more than one provider — single-provider coverage is
+    always partial. Choose the providers that index this field's
+    venues authoritatively (name the choice). The specific query
+    catches confirmations of the result; the methodological query
+    catches papers that validate the analytical approach.
 
-      Capture results in `workspace/<step>/literature/search_results.yaml`.
+    Capture results in `workspace/<step>/literature/search_results.yaml`.
 
-  - id: download_relevant
-    name: Download the relevant PDFs per claim
-    description: |
-      Rank the search results for each claim, reasoning over (not
-      mechanically thresholding on) these dimensions:
-        1. Recency vs. seminality — recent work for the current state,
-           the foundational paper for the result the field still cites.
-           The age boundary is field-specific.
-        2. Standing — citation count is a noisy proxy for influence;
-           weigh it against venue and how niche the method is, rather
-           than applying one cutoff across fields.
-        3. Title / abstract relevance — does the paper actually speak
-           to THIS claim? Drop reviews unless the finding is itself a
-           review-level claim.
+- id: download_relevant
+  name: Download the relevant PDFs per claim
+  description: |
+    Rank the search results for each claim, reasoning over (not
+    mechanically thresholding on) these dimensions:
+      1. Recency vs. seminality — recent work for the current state,
+         the foundational paper for the result the field still cites.
+         The age boundary is field-specific.
+      2. Standing — citation count is a noisy proxy for influence;
+         weigh it against venue and how niche the method is, rather
+         than applying one cutoff across fields.
+      3. Title / abstract relevance — does the paper actually speak
+         to THIS claim? Drop reviews unless the finding is itself a
+         review-level claim.
 
-      Download the full text of the papers a reader would need to
-      adjudicate the claim. A claim is grounded only against papers
-      whose PDFs are on disk and validated — an abstract is a lead.
+    Download the full text of the papers a reader would need to
+    adjudicate the claim. A claim is grounded only against papers
+    whose PDFs are on disk and validated — an abstract is a lead.
 
-      Do this DURING the step, the moment a claim's numbers exist, not
-      as a single batch bolted on at the end. If the pre-loaded
-      `inputs/literature/` corpus does not already contain a paper that
-      speaks to THIS claim's exact effect or quantity, that is the
-      signal to pull a new one now, into this step's
-      `workspace/<step>/literature/`. Saving a paper that CHALLENGES
-      the claim is as valuable as one that confirms it: a
-      disagreement you surfaced yourself is stronger grounding than
-      silence.
+    Do this DURING the step, the moment a claim's numbers exist, not
+    as a single batch bolted on at the end. If the pre-loaded
+    `inputs/literature/` corpus does not already contain a paper that
+    speaks to THIS claim's exact effect or quantity, that is the
+    signal to pull a new one now, into this step's
+    `workspace/<step>/literature/`. Saving a paper that CHALLENGES
+    the claim is as valuable as one that confirms it: a
+    disagreement you surfaced yourself is stronger grounding than
+    silence.
 
-      For each survivor:
-        tool_literature_download url="<pdf_url>" filename="<key>.pdf"
-            step_id="<NN_slug>"
-            metadata={"title":..., "year":..., "authors":[...],
-                      "doi":..., "url":...}
+    For each survivor:
+      tool_search (mode=literature, url="<pdf_url>", filename="<key>.pdf",
+          step_id="<NN_slug>",
+          metadata={"title":..., "year":..., "authors":[...],
+                    "doi":..., "url":...})
 
-      `tool_literature_download` auto-skips paywalls (Unpaywall check);
-      paywalled hits go to `workspace/logs/errors.log` but don't
-      block. Annotate paywalled-but-relevant entries in
-      `claims_to_ground.md` with "PAYWALL — read abstract only".
+    `tool_search (mode=literature)` auto-skips paywalls (Unpaywall check);
+    paywalled hits go to `workspace/logs/errors.log` but don't
+    block. Annotate paywalled-but-relevant entries in
+    `claims_to_ground.md` with "PAYWALL — read abstract only".
 
-  - id: write_findings_vs_literature
-    name: Write findings_vs_literature.md (structured comparison)
-    description: |
-      For each claim, write a block in
-      `workspace/<step>/literature/findings_vs_literature.md`:
+- id: write_findings_vs_literature
+  name: Write findings_vs_literature.md (structured comparison)
+  description: |
+    For each claim, write a block in
+    `workspace/<step>/literature/findings_vs_literature.md`:
 
-        ## Claim: <one-line restatement>
+      ## Claim: <one-line restatement>
 
-        **Our finding:** <effect + condition + quantitative anchor>
+      **Our finding:** <effect + condition + quantitative anchor>
 
-        **Literature says:** <consensus from the downloaded papers>
+      **Literature says:** <consensus from the downloaded papers>
 
-        **Verdict:** AGREES | DISAGREES | EXTENDS | IMPORTED_AS_CITED | SPECIALIZES | DEFERRED
+      **Verdict:** AGREES | DISAGREES | EXTENDS | IMPORTED_AS_CITED | SPECIALIZES | DEFERRED
 
-        **Evidence:**
-        - [@key1] (year) — one-sentence relevant finding
-        - [@key2] (year) — …
+      **Evidence:**
+      - [@key1] (year) — one-sentence relevant finding
+      - [@key2] (year) — …
 
-        **Discussion implication:**
-        <one paragraph: if AGREES, where to anchor the synthesis;
-         if DISAGREES, what to investigate or qualify; if EXTENDS,
-         what novelty boundary to acknowledge; if IMPORTED_AS_CITED,
-         where in the step the cited result is used (no
-         agreement claim is made); if SPECIALIZES, name the parent
-         result + the specialisation conditions; if DEFERRED, why
-         + what would unblock>
+      **Discussion implication:**
+      <one paragraph: if AGREES, where to anchor the synthesis;
+       if DISAGREES, what to investigate or qualify; if EXTENDS,
+       what novelty boundary to acknowledge; if IMPORTED_AS_CITED,
+       where in the step the cited result is used (no
+       agreement claim is made); if SPECIALIZES, name the parent
+       result + the specialisation conditions; if DEFERRED, why
+       + what would unblock>
 
-      VERDICT SELECTION GUIDE (most-common confusions):
-        - "I used DESeq2 to run DE" → IMPORTED_AS_CITED on the DESeq2
-          paper, NOT AGREES.
-        - "My corollary applies Theorem 3.2 with k=2" → SPECIALIZES
-          on the parent theorem.
-        - "My finding contradicts the consensus, but I haven't found
-          a single paper to point at" → DISAGREES (cite the
-          textbook / review article that states the consensus); do
-          NOT use DEFERRED to dodge the disagreement.
-        - "My null result agrees with the null literature" → AGREES
-          on the null-result papers.
-        - "There genuinely is no recent literature" → DEFERRED with
-          `literature_deferred: ["claim_N: no_literature_in_10y_window"]`
-          and a one-sentence justification.
+    VERDICT SELECTION GUIDE (most-common confusions):
+      - "I used DESeq2 to run DE" → IMPORTED_AS_CITED on the DESeq2
+        paper, NOT AGREES.
+      - "My corollary applies Theorem 3.2 with k=2" → SPECIALIZES
+        on the parent theorem.
+      - "My finding contradicts the consensus, but I haven't found
+        a single paper to point at" → DISAGREES (cite the
+        textbook / review article that states the consensus); do
+        NOT use DEFERRED to dodge the disagreement.
+      - "My null result agrees with the null literature" → AGREES
+        on the null-result papers.
+      - "There genuinely is no recent literature" → DEFERRED with
+        `literature_deferred: ["claim_N: no_literature_in_10y_window"]`
+        and a one-sentence justification.
 
-      Save the file at `workspace/<step>/literature/findings_vs_literature.md`.
+    Save the file at `workspace/<step>/literature/findings_vs_literature.md`.
 
-  - id: register_grounding
-    name: Register grounding records per claim
-    description: |
-      For every claim with verdict ≠ DEFERRED:
-        tool_ground
-            claim="<one-line restatement of the step's claim>"
-            mode="explicit"
-            sources=[{type: "paper", key: "<cite_key>", relevance: "high"}, ...]
-            decision_id="<step>_claim_<n>"
-            confidence="high"|"medium"|"low"
-            notes="<one-line summary of how literature supports/refutes>"
+- id: register_grounding
+  name: Register grounding records per claim
+  description: |
+    For every claim with verdict ≠ DEFERRED:
+      tool_ground
+          claim="<one-line restatement of the step's claim>"
+          mode="explicit"
+          sources=[{type: "paper", key: "<cite_key>", relevance: "high"}, ...]
+          decision_id="<step>_claim_<n>"
+          confidence="high"|"medium"|"low"
+          notes="<one-line summary of how literature supports/refutes>"
 
-      Writes to `workspace/.grounding/grounding.jsonl`. The synthesis
-      audit will cross-check that every cited claim has a grounding
-      entry.
+    Writes to `workspace/.grounding/grounding.jsonl`. The synthesis
+    audit will cross-check that every cited claim has a grounding
+    entry.
 
-  - id: verify_key_claims
-    name: CoVe-style claim verification on the load-bearing claims
-    description: |
-      For the highest-stakes claims (those that will lead paragraphs
-      in the synthesis):
-        tool_verify
-            scope="claim"
-            claim="<original claim>"
-            verifications=[
-              {question: "Does <paper1> measure the same effect direction?",
-               answer: "<your finding>", supports: true,
-               evidence: {type: "cited_paper",
-                          path: "workspace/<step>/literature/<file>.pdf",
-                          cited_text: "<verbatim span from source>"}},
-              {question: "Was the cohort comparable (sample size, demographics)?",
-               answer: "...", supports: true,
-               evidence: {type: "cited_paper", path: "...", cited_text: "..."}},
-              {question: "Is the quantitative anchor (log2FC, HR) in the same range?",
-               answer: "...", supports: true,
-               evidence: {type: "cited_paper", path: "...", cited_text: "..."}},
-            ]
+- id: verify_key_claims
+  name: CoVe-style claim verification on the load-bearing claims
+  description: |
+    For the highest-stakes claims (those that will lead paragraphs
+    in the synthesis):
+      tool_verify
+          scope="claim"
+          claim="<original claim>"
+          verifications=[
+            {question: "Does <paper1> measure the same effect direction?",
+             answer: "<your finding>", supports: true,
+             evidence: {type: "cited_paper",
+                        path: "workspace/<step>/literature/<file>.pdf",
+                        cited_text: "<verbatim span from source>"}},
+            {question: "Was the cohort comparable (sample size, demographics)?",
+             answer: "...", supports: true,
+             evidence: {type: "cited_paper", path: "...", cited_text: "..."}},
+            {question: "Is the quantitative anchor (log2FC, HR) in the same range?",
+             answer: "...", supports: true,
+             evidence: {type: "cited_paper", path: "...", cited_text: "..."}},
+          ]
 
-      `supports` is per-verification-entry. A claim is VERIFIED only if
-      EVERY entry has supports==true AND its `evidence.path` resolves
-      with the `cited_text` present in that file; otherwise the entry
-      downgrades to needs_revision / unverifiable and the claim verdict
-      is never `verified`. Failures route to discussion as caveats.
+    `supports` is per-verification-entry. A claim is VERIFIED only if
+    EVERY entry has supports==true AND its `evidence.path` resolves
+    with the `cited_text` present in that file; otherwise the entry
+    downgrades to needs_revision / unverifiable and the claim verdict
+    is never `verified`. Failures route to discussion as caveats.
 
-  - id: append_citations_md
-    name: Append citation entries to workspace/citations.md
-    description: |
-      For every downloaded PDF, ensure an entry exists in
-      `workspace/citations.md`:
+- id: append_citations_md
+  name: Append citation entries to workspace/citations.md
+  description: |
+    For every downloaded PDF, ensure an entry exists in
+    `workspace/citations.md`:
 
-        ### `<cite_key>`
-        - Status: ✅ verified  (or ⏳ pending verification if no DOI)
-        - Scope: step:<NN_slug>
-        - Title: <full title>
-        - Authors: <Last1, F. & Last2, F.>
-        - Year: <YYYY>
-        - DOI: <doi or empty>
-        - URL: <url>
+      ### `<cite_key>`
+      - Status: ✅ verified  (or ⏳ pending verification if no DOI)
+      - Scope: step:<NN_slug>
+      - Title: <full title>
+      - Authors: <Last1, F. & Last2, F.>
+      - Year: <YYYY>
+      - DOI: <doi or empty>
+      - URL: <url>
 
-      `tool_path_finalize` auto-regenerates citations.md from per-step
-      literature_index.yaml — manual edits here will be overwritten.
-      If a citation needs to live ONLY in narrative (no PDF on disk),
-      add it to `inputs/literature_index.yaml` directly.
+    `tool_plan (operation='finalize_step')` auto-regenerates citations.md from per-step
+    literature_index.yaml — manual edits here will be overwritten.
+    If a citation needs to live ONLY in narrative (no PDF on disk),
+    add it to `inputs/literature_index.yaml` directly.
 
-      Corpus of record. When the step finalizes, `tool_path_finalize`
-      MIRRORS this step's PDFs into the project-root `literature/`
-      folder (under `literature/steps/<NN_slug>/`) alongside the
-      mirrored `inputs/literature/` set (under `literature/inputs/`).
-      That root `literature/` folder is the single complete
-      corpus-of-record for the project: everything the project leans
-      on, pre-loaded and pulled mid-step, lands there. This is why
-      mid-step pulls matter beyond the step itself: each paper you
-      save here becomes part of the project's permanent corpus, not a
-      throwaway lookup. The daemon watches whether the root corpus has
-      fallen behind its sources: if a step's `literature/` or
-      `inputs/literature/` holds papers the root `literature/` has not
-      absorbed, it flags `literature_corpus_behind`, and a step that
-      makes claims yet saved no literature of its own is flagged
-      `step_ungrounded_no_literature`. Finalizing the step is what
-      keeps the root corpus current.
+    Corpus of record. When the step finalizes, `tool_plan (operation='finalize_step')`
+    MIRRORS this step's PDFs into the project-root `literature/`
+    folder (under `literature/steps/<NN_slug>/`) alongside the
+    mirrored `inputs/literature/` set (under `literature/inputs/`).
+    That root `literature/` folder is the single complete
+    corpus-of-record for the project: everything the project leans
+    on, pre-loaded and pulled mid-step, lands there. This is why
+    mid-step pulls matter beyond the step itself: each paper you
+    save here becomes part of the project's permanent corpus, not a
+    throwaway lookup. The daemon watches whether the root corpus has
+    fallen behind its sources: if a step's `literature/` or
+    `inputs/literature/` holds papers the root `literature/` has not
+    absorbed, it flags `literature_corpus_behind`, and a step that
+    makes claims yet saved no literature of its own is flagged
+    `step_ungrounded_no_literature`. Finalizing the step is what
+    keeps the root corpus current.
 
-  - id: update_step_summary
-    name: Update step_summary.yaml with literature fields
-    description: |
-      Append to (or update) `workspace/<step>/step_summary.yaml`:
+- id: update_step_summary
+  name: Update step_summary.yaml with literature fields
+  description: |
+    Append to (or update) `workspace/<step>/step_summary.yaml`:
 
-        literature:
-          claims_grounded: <int>           # number of claims with verdict ≠ DEFERRED
-          claims_deferred: <int>           # number with verdict == DEFERRED
-          papers_downloaded: <int>
-          verdicts:
-            agrees: N
-            disagrees: N
-            extends: N
-            imported_as_cited: N
-            specializes: N
-          findings_vs_literature_path: "workspace/<step>/literature/findings_vs_literature.md"
-          inherits_from: ""                # set only for step_intent: visualise
-        literature_deferred:               # list of deferral reasons
-          - "offline"          # if applicable
-          - "claim_3: no_literature_in_10y_window"
+      literature:
+        claims_grounded: <int>           # number of claims with verdict ≠ DEFERRED
+        claims_deferred: <int>           # number with verdict == DEFERRED
+        papers_downloaded: <int>
+        verdicts:
+          agrees: N
+          disagrees: N
+          extends: N
+          imported_as_cited: N
+          specializes: N
+        findings_vs_literature_path: "workspace/<step>/literature/findings_vs_literature.md"
+        inherits_from: ""                # set only for step_intent: visualise
+      literature_deferred:               # list of deferral reasons
+        - "offline"          # if applicable
+        - "claim_3: no_literature_in_10y_window"
 
-      `tool_audit(scope='step', dimension='literature')` reads this block.
+    `tool_audit(scope='step', dimension='literature')` reads this block.
 
-  - id: gate
-    name: Gate — block step finalize if literature loop incomplete
-    description: |
-      Before `tool_path_finalize`:
-        tool_audit(scope='step', dimension='literature') step_id="<NN_slug>"
+- id: gate
+  name: Gate — block step finalize if literature loop incomplete
+  description: |
+    Before `tool_plan (operation=finalize_step)`:
+      tool_audit(scope='step', dimension='literature') step_id="<NN_slug>"
 
-      BLOCKS when:
-        - `findings_vs_literature.md` missing
-        - `step_summary.yaml.literature.claims_grounded` == 0 AND
-          `claims_deferred` does not justify it
-        - Any claim with verdict DISAGREES lacks a discussion block
-        - `literature_deferred` non-empty without override
+    BLOCKS when:
+      - `findings_vs_literature.md` missing
+      - `step_summary.yaml.literature.claims_grounded` == 0 AND
+        `claims_deferred` does not justify it
+      - Any claim with verdict DISAGREES lacks a discussion block
+      - `literature_deferred` non-empty without override
 
-      Override path:
-        tool_path_finalize override_literature_gate=true
-            override_rationale="<why deferral is acceptable here>"
+    Override path:
+      tool_plan (operation='finalize_step', override_literature_gate=true,
+          override_rationale="<why deferral is acceptable here>")
 
-      Override logged to `workspace/logs/override_log.md` and
-      resurfaced by `audit_synthesis`.
+    Override logged to `workspace/logs/override_log.md` and
+    resurfaced by `audit_synthesis`.
 
 expected_outputs:
-  - workspace/<step>/literature/claims_to_ground.md
-  - workspace/<step>/literature/search_results.yaml
-  - workspace/<step>/literature/findings_vs_literature.md
-  - workspace/<step>/literature/<key>.pdf  (one per downloaded paper)
-  - workspace/<step>/literature/<key>.pdf.meta.yaml  (sidecar)
-  - workspace/<step>/literature/literature_index.yaml  (regenerated)
-  - workspace/<step>/step_summary.yaml  (literature: block appended)
-  - workspace/.grounding/grounding.jsonl  (grounding records appended)
-  - workspace/.grounding/verifications.jsonl  (CoVe records appended)
-  - workspace/citations.md  (regenerated by path_finalize)
+- workspace/<step>/literature/claims_to_ground.md
+- workspace/<step>/literature/search_results.yaml
+- workspace/<step>/literature/findings_vs_literature.md
+- workspace/<step>/literature/<key>.pdf  (one per downloaded paper)
+- workspace/<step>/literature/<key>.pdf.meta.yaml  (sidecar)
+- workspace/<step>/literature/literature_index.yaml  (regenerated)
+- workspace/<step>/step_summary.yaml  (literature: block appended)
+- workspace/.grounding/grounding.jsonl  (grounding records appended)
+- workspace/.grounding/verifications.jsonl  (CoVe records appended)
+- workspace/citations.md  (regenerated by path_finalize)
 
 quality_bar:
   every_step_with_findings_has_findings_vs_literature_md: true
@@ -399,6 +399,26 @@ quality_bar:
   load_bearing_claims_have_cove_verification: true
   visualise_steps_either_inherit_or_set_literature_required_false: true
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: literature
+sub_intent: per_step_grounding
+triggers:
+- ground this step
+- literature for this step
+- validate findings
+- compare to literature
+- literature check
+- is this novel
+- does the literature support
+- findings vs literature
+- per-step literature
+- per step literature
+- ground my findings
+summary: After a step writes Findings, search → download → cite → write findings_vs_literature.md (AGREES|DISAGREES|EXTENDS|DEFERRED) → register grounding. Gated by tool_audit (scope='step', dimension='literature').
+decomposition:
+- protocol: literature/literature_per_step
+  purpose: Find + download + cite + write structured comparison per claim.
+- tool: tool_audit
+  purpose: "Gate before path_finalize (scope='step', dimension='literature'): blocks if findings_vs_literature.md missing or DISAGREES lacks discussion."

@@ -1,18 +1,18 @@
 id: dependency_integration
 tier: 'execute'
 name: Dependency Integration (promote a proven candidate into the real build)
-version: '3.12.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]
   audience: [naive_ai, auditor]
   workflow_shape: [tool_build, hybrid]
 last_reviewed: '2026-06-23'
 see_also:
-  - build/integration_spike      # the spike that proved this candidate; its provenance feeds this step
-  - build/implement_iteration    # the inner loop this integration becomes one increment of
-  - build/test_strategy          # the regime that must cover the newly integrated surface
-  - reproducibility/reproducibility # the project-wide reproducibility discipline this upholds
+- build/integration_spike        # the spike that proved this candidate; its provenance feeds this step
+- build/implement_iteration      # the inner loop this integration becomes one increment of
+- build/test_strategy            # the regime that must cover the newly integrated surface
+- reproducibility/reproducibility   # the project-wide reproducibility discipline this upholds
 description: |
   The closing step of the "borrow it or build it" arc: take a candidate that
   SURVIVED build/integration_spike and wire it into the real tool — once,
@@ -45,151 +45,179 @@ description: |
       provenance and version discipline.
 trigger: After build/integration_spike returns ADOPT, or whenever the researcher says "integrate it", "wire it in", "add this dependency for real", "promote the spike", or "make it part of the tool".
 prerequisites:
-  - A candidate that passed build/integration_spike, with its pinned version + input hash + verdict recorded (mem_log / a checkpoint)
-  - The inner repo exists and is under git (tool_git); the build/test commands are declared in workspace.commands
-  - workspace.mode is tool_build or hybrid
+- A candidate that passed build/integration_spike, with its pinned version + input hash + verdict recorded (mem_log / a checkpoint)
+- The inner repo exists and is under git (tool_git); the build/test commands are declared in workspace.commands
+- workspace.mode is tool_build or hybrid
 
 steps:
-  - id: carry_provenance_forward
-    name: Carry the spike's provenance into the integration
-    description: |
-      Start from what the spike proved, do not re-decide it. Pull the
-      recorded verdict (mem_log) and the checkpoint from
-      build/integration_spike: the EXACT version that passed, the input hash
-      it was proven on, and the pass/fail bar it cleared. The version you
-      integrate MUST be the version you proved — if it differs, you have not
-      proven what you are about to ship, so go back and spike the version you
-      actually intend to use.
+- id: carry_provenance_forward
+  name: Carry the spike's provenance into the integration
+  description: |
+    Start from what the spike proved, do not re-decide it. Pull the
+    recorded verdict (mem_log) and the checkpoint from
+    build/integration_spike: the EXACT version that passed, the input hash
+    it was proven on, and the pass/fail bar it cleared. The version you
+    integrate MUST be the version you proved — if it differs, you have not
+    proven what you are about to ship, so go back and spike the version you
+    actually intend to use.
 
-      Confirm the inner repo is in a known state before you touch it:
-      tool_git(operation='status') + tool_git(operation='log'). Never wire a
-      dependency into a dirty tree you cannot cleanly revert.
+    Confirm the inner repo is in a known state before you touch it:
+    tool_git(operation='status') + tool_git(operation='log'). Never wire a
+    dependency into a dirty tree you cannot cleanly revert.
 
-  - id: pin_the_version
-    name: Pin the exact version and record the licence
-    description: |
-      Add the dependency at the exact proven version, not a floating range:
-        - Python → tool_package_install pins it into environment/requirements.txt;
-          tighten to ==X.Y.Z (or the proven commit SHA for a from-source dep).
-        - other languages → pin in the manifest/lockfile via tool_bash_exec.
-      Then sys_dep_inventory to confirm the dependency tree is what you
-      expect and to surface any transitive surprises the pin pulled in.
+- id: pin_the_version
+  name: Pin the exact version and record the licence
+  description: |
+    Add the dependency at the exact proven version, not a floating range:
+      - Python → tool_package_install pins it into environment/requirements.txt;
+        tighten to ==X.Y.Z (or the proven commit SHA for a from-source dep).
+      - other languages → pin in the manifest/lockfile via tool_bash_exec.
+    Then sys_env (operation=inventory) to confirm the dependency tree is what you
+    expect and to surface any transitive surprises the pin pulled in.
 
-      Record the dependency's LICENCE and its obligations in the tool's
-      notices/attribution surface — a proven dependency with an unrecorded
-      or incompatible licence is still a liability. If the licence is
-      incompatible with how the tool ships, STOP: a passing spike does not
-      override a licence reject.
+    Record the dependency's LICENCE and its obligations in the tool's
+    notices/attribution surface — a proven dependency with an unrecorded
+    or incompatible licence is still a liability. If the licence is
+    incompatible with how the tool ships, STOP: a passing spike does not
+    override a licence reject.
 
-  - id: integrate_behind_a_seam
-    name: Wire it in behind a seam, not sprayed across the codebase
-    description: |
-      Integrate the dependency behind a thin adapter / interface owned by
-      the tool, so the rest of the code depends on YOUR seam, not on the
-      dependency's surface directly. This is what makes a future version
-      bump, or a swap to a different implementation, a local change instead
-      of a sprawling one. Reason about the right seam for THIS dependency —
-      a wrapper module, an interface/protocol, a single integration point —
-      rather than calling it from everywhere.
+- id: integrate_behind_a_seam
+  name: Wire it in behind a seam, not sprayed across the codebase
+  description: |
+    Integrate the dependency behind a thin adapter / interface owned by
+    the tool, so the rest of the code depends on YOUR seam, not on the
+    dependency's surface directly. This is what makes a future version
+    bump, or a swap to a different implementation, a local change instead
+    of a sprawling one. Reason about the right seam for THIS dependency —
+    a wrapper module, an interface/protocol, a single integration point —
+    rather than calling it from everywhere.
 
-      Implement the integration as a normal build increment (this is one
-      pass of build/implement_iteration): keep the change scoped to wiring
-      the dependency in behind its seam, and resolve any contract question
-      the dependency forces with a quick ADR in decisions/ rather than
-      silently adapting to its quirks.
+    Implement the integration as a normal build increment (this is one
+    pass of build/implement_iteration): keep the change scoped to wiring
+    the dependency in behind its seam, and resolve any contract question
+    the dependency forces with a quick ADR in decisions/ rather than
+    silently adapting to its quirks.
 
-  - id: test_the_integrated_surface
-    name: Test the integrated surface, not just the spike
-    description: |
-      The spike proved the candidate in isolation; integration can still
-      break at the seam. Add tests that exercise the dependency THROUGH your
-      seam on a real input — ideally re-using the input the spike was proven
-      on (you have its hash) so the integrated tool reproduces the spike's
-      result. Then run the gate:
-        - tool_build(operation='test') — the new tests AND the existing suite
-          pass (guard against regressions the dependency introduced);
-        - tool_build(operation='build') / tool_build(operation='lint') — the
-          build and static checks stay clean with the new dependency present;
-        - tool_audit(scope='tool', dimension='tests') for the gate verdict in
-          one call (it blocks a zero-test or failing run).
+- id: test_the_integrated_surface
+  name: Test the integrated surface, not just the spike
+  description: |
+    The spike proved the candidate in isolation; integration can still
+    break at the seam. Add tests that exercise the dependency THROUGH your
+    seam on a real input — ideally re-using the input the spike was proven
+    on (you have its hash) so the integrated tool reproduces the spike's
+    result. Then run the gate:
+      - tool_build(operation='test') — the new tests AND the existing suite
+        pass (guard against regressions the dependency introduced);
+      - tool_build(operation='build') / tool_build(operation='lint') — the
+        build and static checks stay clean with the new dependency present;
+      - tool_audit(scope='tool', dimension='tests') for the gate verdict in
+        one call (it blocks a zero-test or failing run).
 
-      If the integrated behaviour does not match what the spike proved, the
-      seam or the version is wrong — fix it here, before committing, not
-      "next increment".
+    If the integrated behaviour does not match what the spike proved, the
+    seam or the version is wrong — fix it here, before committing, not
+    "next increment".
 
-  - id: version_case_policy
-    name: Decide the version-change policy before it bites
-    description: |
-      A pinned dependency is safe today and a hazard tomorrow unless you
-      decide, now, how its future versions will be handled. Reason about and
-      record (in decisions/ or governance.md):
-        - The update posture: what triggers re-evaluating the pin (a
-          security advisory, a needed feature, a cadence) and what does NOT.
-        - The re-proof rule: a version bump on a load-bearing dependency
-          re-enters build/integration_spike — you re-prove the NEW version
-          against the same bar + input hash before the pin moves. The
-          recorded (version, input-hash, verdict) triple is what makes that
-          re-proof cheap and honest.
-        - Breaking-change handling: what the seam protects against, and the
-          fallback if upstream breaks or is abandoned (pin-and-hold, fork,
-          or the in-house alternative the scout already identified).
-        - Deprecation watch: tool_deprecations_summary / sys_dep_inventory to
-          keep the pin's health visible over time.
+- id: version_case_policy
+  name: Decide the version-change policy before it bites
+  description: |
+    A pinned dependency is safe today and a hazard tomorrow unless you
+    decide, now, how its future versions will be handled. Reason about and
+    record (in decisions/ or governance.md):
+      - The update posture: what triggers re-evaluating the pin (a
+        security advisory, a needed feature, a cadence) and what does NOT.
+      - The re-proof rule: a version bump on a load-bearing dependency
+        re-enters build/integration_spike — you re-prove the NEW version
+        against the same bar + input hash before the pin moves. The
+        recorded (version, input-hash, verdict) triple is what makes that
+        re-proof cheap and honest.
+      - Breaking-change handling: what the seam protects against, and the
+        fallback if upstream breaks or is abandoned (pin-and-hold, fork,
+        or the in-house alternative the scout already identified).
+      - Deprecation watch: sys_env (operation=deprecations) / sys_env (operation=inventory) to
+        keep the pin's health visible over time.
 
-      The point is that the next person to bump this dependency inherits a
-      policy and a re-proof path, not a guessing game.
+    The point is that the next person to bump this dependency inherits a
+    policy and a re-proof path, not a guessing game.
 
-  - id: commit_with_provenance
-    name: Commit the integration with full provenance, behind a rollback
-    description: |
-      Before committing, make the step reversible: sys_checkpoint_create so
-      the pre-integration / post-integration boundary is a state you can
-      return to (sys_checkpoint_rollback) if a later problem traces back to
-      this dependency.
+- id: commit_with_provenance
+  name: Commit the integration with full provenance, behind a rollback
+  description: |
+    Before committing, make the step reversible: tool_git (operation=commit) so
+    the pre-integration / post-integration boundary is a state you can
+    return to (tool_git (operation=rollback)) if a later problem traces back to
+    this dependency.
 
-      Commit in the inner repo via tool_git(operation='commit', step_id=...)
-      so the commit carries the Research-OS-Step trailer. The message must
-      record the provenance a future maintainer needs:
-        - WHAT was integrated, at WHICH pinned version;
-        - WHY — the gap it fills, linked to the scout decision + the spike
-          verdict (the bar it cleared, the input hash it was proven on);
-        - the licence and the version-change policy reference.
+    Commit in the inner repo via tool_git(operation='commit', step_id=...)
+    so the commit carries the Research-OS-Step trailer. The message must
+    record the provenance a future maintainer needs:
+      - WHAT was integrated, at WHICH pinned version;
+      - WHY — the gap it fills, linked to the scout decision + the spike
+        verdict (the bar it cleared, the input hash it was proven on);
+      - the licence and the version-change policy reference.
 
-      mem_log the integration as the durable record tying the gap →
-      scout → spike → integrated version together. Update CHANGELOG.md
-      (Unreleased) if the dependency changes observable behaviour, and
-      milestones.md if it advances one.
+    mem_log the integration as the durable record tying the gap →
+    scout → spike → integrated version together. Update CHANGELOG.md
+    (Unreleased) if the dependency changes observable behaviour, and
+    milestones.md if it advances one.
 
-      AUTONOMY GATE:
-        Risk: irreversible-ish — once code depends on the seam, removing the
-        dependency is real work; but the pin, seam, checkpoint, and policy
-        make a later swap local rather than catastrophic.
-        proceed (adaptive default, autopilot) → if the proven version is
-          pinned, the integrated tests pass through the seam, the licence is
-          compatible, and the version policy is recorded, commit with full
-          provenance behind a checkpoint and log it; loop back to
-          build/implement_iteration for the next increment.
-        confirm first (manual / supervised) → present the pinned version, the
-          seam, the test result, and the version policy; commit on
-          confirmation.
+    AUTONOMY GATE:
+      Risk: irreversible-ish — once code depends on the seam, removing the
+      dependency is real work; but the pin, seam, checkpoint, and policy
+      make a later swap local rather than catastrophic.
+      proceed (adaptive default, autopilot) → if the proven version is
+        pinned, the integrated tests pass through the seam, the licence is
+        compatible, and the version policy is recorded, commit with full
+        provenance behind a checkpoint and log it; loop back to
+        build/implement_iteration for the next increment.
+      confirm first (manual / supervised) → present the pinned version, the
+        seam, the test result, and the version policy; commit on
+        confirmation.
 
-  - id: return_to_build
-    name: Return to the build loop
-    description: |
-      Integration of a proven dependency is one increment, not the whole
-      job. Hand control back to build/implement_iteration for the next
-      increment — now able to build ON the integrated capability. If
-      integrating surfaced a NEW capability gap, that is a fresh
-      build/method_scouting; if the dependency's seam needs a hardening
-      regime, that is build/test_strategy.
+- id: return_to_build
+  name: Return to the build loop
+  description: |
+    Integration of a proven dependency is one increment, not the whole
+    job. Hand control back to build/implement_iteration for the next
+    increment — now able to build ON the integrated capability. If
+    integrating surfaced a NEW capability gap, that is a fresh
+    build/method_scouting; if the dependency's seam needs a hardening
+    regime, that is build/test_strategy.
 
 expected_outputs:
-  - The dependency pinned at the proven version in the manifest/lockfile (e.g. environment/requirements.txt)
-  - An adapter/seam isolating the dependency, with tests exercising it through the seam
-  - A version-change + re-proof policy recorded (decisions/ or governance.md), licence recorded
-  - A sys_checkpoint_create snapshot at the integration boundary + a provenance-bearing commit (Research-OS-Step trailer)
-  - mem_log entry tying gap → scout → spike → integrated version
+- The dependency pinned at the proven version in the manifest/lockfile (e.g. environment/requirements.txt)
+- An adapter/seam isolating the dependency, with tests exercising it through the seam
+- A version-change + re-proof policy recorded (decisions/ or governance.md), licence recorded
+- A tool_git (operation=commit) snapshot at the integration boundary + a provenance-bearing commit (Research-OS-Step trailer)
+- mem_log entry tying gap → scout → spike → integrated version
 
 next_protocol: build/implement_iteration
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: execute
+sub_intent: build_integrate
+triggers:
+- integrate it
+- integrate the library
+- wire it in
+- wire it up
+- add this dependency
+- add the dependency for real
+- promote the spike
+- make it part of the tool
+- adopt the dependency
+- pin the version
+- version policy
+- how do we handle upgrades
+summary: 'Promote a proven candidate into the real build: carry the spike provenance forward, pin the exact proven version + record licence, wire it in behind a seam, test through the seam, set a version-change + re-proof policy, and commit with provenance behind a rollback checkpoint.'
+token_estimate: 1800
+decomposition:
+- protocol: build/dependency_integration
+  purpose: Carry provenance forward, pin the proven version, integrate behind a seam, test through it, set a version-change policy, commit with provenance behind a checkpoint.
+- tool: tool_package_install
+  purpose: Pin the dependency at the exact proven version in the manifest/lockfile.
+- tool: sys_env (operation=inventory)
+  purpose: Confirm the dependency tree + surface transitive surprises.
+- tool: tool_git (operation=commit)
+  purpose: Snapshot the integration boundary so it can be rolled back if it goes wrong.
+- tool: mem_log
+  purpose: Tie gap → scout → spike → integrated version into one durable record.

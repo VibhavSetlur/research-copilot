@@ -6,6 +6,7 @@ bottom is merged into the canonical _HANDLERS map by handlers/__init__.py.
 """
 from __future__ import annotations
 
+# ruff: noqa: F403, F405  # legacy handler runtime star-import compatibility
 from .._handlers_runtime import *  # noqa: F401,F403
 
 __all__ = [
@@ -41,7 +42,4 @@ def _handle_tool_deliverable_chooser(name, arguments, root):
     return _text(_error(res.get("message", "tool_deliverable_chooser failed")))
 
 
-HANDLERS = {
-    "tool_explain": _handle_tool_explain,
-    "tool_deliverable_chooser": _handle_tool_deliverable_chooser,
-}
+HANDLERS: dict[str, object] = {}

@@ -1,17 +1,17 @@
 id: reviewer_response
 tier: 'review'
 name: Synthesis — Pre-submission Reviewer Simulation + Rebuttal Scaffold
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - synthesis/synthesis_paper            # the draft this red-teams
-  - audit/pre_submission_checklist       # the linear successor gate
-  - synthesis/defense_prep               # the spoken-defense analogue
+- synthesis/synthesis_paper              # the draft this red-teams
+- audit/pre_submission_checklist         # the linear successor gate
+- synthesis/defense_prep                 # the spoken-defense analogue
 description: |
   Run a 7-persona adversarial self-review against the FINISHED paper
   BEFORE submission, then draft + audit per-comment rebuttals so the
@@ -44,142 +44,158 @@ trigger: |
   practice".
 
 prerequisites:
-  - synthesis/paper.md exists and has been through `tool_audit(scope='synthesis', dimension='all')`.
-  - At least one experiment step has a substantive conclusions.md.
+- synthesis/paper.md exists and has been through `tool_audit(scope='synthesis', dimension='all')`.
+- At least one experiment step has a substantive conclusions.md.
 
 # Machine-checkable subset (precondition gate). The audit having run stays
 # prose; the paper + at least one step's conclusions are checkable.
 requires:
   checks:
-    - kind: file_exists
-      path: synthesis/paper.md
-      because: a reviewer response addresses comments on a written paper
-    - kind: glob_min
-      pattern: workspace/**/conclusions.md
-      min: 1
-      because: responses cite the study's recorded findings
+  - kind: file_exists
+    path: synthesis/paper.md
+    because: a reviewer response addresses comments on a written paper
+  - kind: glob_min
+    pattern: workspace/**/conclusions.md
+    min: 1
+    because: responses cite the study's recorded findings
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Each persona is a STANCE, not a person. The AI walks the paper
-       through each lens in turn — not a single composite reviewer."
-    - "Every comment becomes a rebuttal even if the response is
-       'ACCEPT — we will revise'. Silently dropping a comment in the
-       internal pass means the AI never learns the lesson."
-    - "Rebuttals MUST cite concrete workspace evidence (script, figure,
-       table, prior-art citation). Assertion is not evidence."
-    - "Hand-waving language ('we believe', 'future work will address')
-       is blocked at the audit step. Re-draft until the rebuttal
-       grounds in evidence or honestly accepts the comment."
-    - "The dry-run rebuttals become the FIRST DRAFT of the real
-       response_to_reviewers if the same comment lands from a real
-       reviewer. Keep them in version control."
+  - "Each persona is a STANCE, not a person. The AI walks the paper through each lens in turn — not a single composite reviewer."
+  - "Every comment becomes a rebuttal even if the response is 'ACCEPT — we will revise'. Silently dropping a comment in the internal pass means the AI never learns the lesson."
+  - "Rebuttals MUST cite concrete workspace evidence (script, figure, table, prior-art citation). Assertion is not evidence."
+  - "Hand-waving language ('we believe', 'future work will address') is blocked at the audit step. Re-draft until the rebuttal grounds in evidence or honestly accepts the comment."
+  - "The dry-run rebuttals become the FIRST DRAFT of the real response_to_reviewers if the same comment lands from a real reviewer. Keep them in version control."
 
 steps:
-  - id: bootstrap_simulation
-    name: Build the reviewer simulation brief
-    description: |
-      tool_reviewer(operation='simulate')
-      Loads all 7 personas + the paper, writes
-      workspace/reviewer/simulation_brief.md.
-      Pass `personas=[...]` to run a focused subset (e.g. just
-      statistician + reproducibility_advocate for a quick stats pass).
+- id: bootstrap_simulation
+  name: Build the reviewer simulation brief
+  description: |
+    tool_reviewer(operation='simulate')
+    Loads all 7 personas + the paper, writes
+    workspace/reviewer/simulation_brief.md.
+    Pass `personas=[...]` to run a focused subset (e.g. just
+    statistician + reproducibility_advocate for a quick stats pass).
 
-  - id: walk_each_persona
-    name: Walk the paper through each persona
-    description: |
-      For each persona in the brief:
-        1. Re-read synthesis/paper.md with the persona's lens.
-        2. Cross-check every `red_flag` — any hit becomes an
-           automatic numbered comment.
-        3. Pose each `typical_question` to the paper; if the paper
-           does not answer convincingly, write a comment.
-        4. Phrase each comment in one of the persona's
-           `signature_phrasings` so the simulation feels real.
-        5. Append numbered comments to
-           workspace/reviewer/<persona_id>_comments.md.
+- id: walk_each_persona
+  name: Walk the paper through each persona
+  description: |
+    For each persona in the brief:
+      1. Re-read synthesis/paper.md with the persona's lens.
+      2. Cross-check every `red_flag` — any hit becomes an
+         automatic numbered comment.
+      3. Pose each `typical_question` to the paper; if the paper
+         does not answer convincingly, write a comment.
+      4. Phrase each comment in one of the persona's
+         `signature_phrasings` so the simulation feels real.
+      5. Append numbered comments to
+         workspace/reviewer/<persona_id>_comments.md.
 
-      Aim for 3-10 substantive comments per persona; quality over
-      volume. A persona with zero comments is suspicious — the AI
-      should re-read with sharper adversarial intent.
+    Aim for 3-10 substantive comments per persona; quality over
+    volume. A persona with zero comments is suspicious — the AI
+    should re-read with sharper adversarial intent.
 
-  - id: triage_comments
-    name: Triage comments by response posture
-    description: |
-      For each comment, decide:
-        - ACCEPT — the persona is right; the paper needs revision.
-          (Rebuttal = "we agree, see revised section X")
-        - ACCEPT WITH CLARIFICATION — the comment reveals an
-          ambiguity even if the substance is defensible.
-          (Rebuttal = "to clarify, we added the following sentence")
-        - PUSH BACK — the comment is wrong or misframed.
-          (Rebuttal = "we respectfully disagree; the evidence in X
-          shows Y" — never just assertion)
+- id: triage_comments
+  name: Triage comments by response posture
+  description: |
+    For each comment, decide:
+      - ACCEPT — the persona is right; the paper needs revision.
+        (Rebuttal = "we agree, see revised section X")
+      - ACCEPT WITH CLARIFICATION — the comment reveals an
+        ambiguity even if the substance is defensible.
+        (Rebuttal = "to clarify, we added the following sentence")
+      - PUSH BACK — the comment is wrong or misframed.
+        (Rebuttal = "we respectfully disagree; the evidence in X
+        shows Y" — never just assertion)
 
-      Push-backs without evidence are the single most common reason
-      a rebuttal letter loses the editor. The audit step blocks them.
+    Push-backs without evidence are the single most common reason
+    a rebuttal letter loses the editor. The audit step blocks them.
 
-  - id: draft_rebuttals
-    name: Draft rebuttals one comment at a time
-    description: |
-      For each comment requiring a substantive response:
-        tool_reviewer(operation='rebuttal', comment=<verbatim>,
-                      persona=<id>, evidence_paths=[...])
-      Writes workspace/reviewer/rebuttals/<slug>.md with a scaffold
-      that surfaces the auto-discovered evidence inventory (methods
-      record, per-step findings_vs_literature, outputs, paper
-      sections). The AI then fills the Response section.
+- id: draft_rebuttals
+  name: Draft rebuttals one comment at a time
+  description: |
+    For each comment requiring a substantive response:
+      tool_reviewer(operation='rebuttal', comment=<verbatim>,
+                    persona=<id>, evidence_paths=[...])
+    Writes workspace/reviewer/rebuttals/<slug>.md with a scaffold
+    that surfaces the auto-discovered evidence inventory (methods
+    record, per-step findings_vs_literature, outputs, paper
+    sections). The AI then fills the Response section.
 
-      Minor / presentation comments may be batched into a single
-      editorial-pass rebuttal per persona.
+    Minor / presentation comments may be batched into a single
+    editorial-pass rebuttal per persona.
 
-  - id: compile_response
-    name: Compile rebuttals into response_to_reviewers
-    description: |
-      tool_reviewer(operation='compile')
-      Concatenates workspace/reviewer/rebuttals/*.md grouped by
-      persona into workspace/reviewer/response_to_reviewers.md and
-      attempts a PDF compile via the bundled Typst
-      generic_two_column template (status='skipped' when typst is
-      not on PATH — markdown still produced).
+- id: compile_response
+  name: Compile rebuttals into response_to_reviewers
+  description: |
+    tool_reviewer(operation='compile')
+    Concatenates workspace/reviewer/rebuttals/*.md grouped by
+    persona into workspace/reviewer/response_to_reviewers.md and
+    attempts a PDF compile via the bundled Typst
+    generic_two_column template (status='skipped' when typst is
+    not on PATH — markdown still produced).
 
-  - id: audit_responses
-    name: Audit rebuttals — block hand-waving + missing evidence
-    description: |
-      tool_audit(scope='synthesis', dimension='reviewer_responses')
-      WARNs on:
-        - hand-waving language ("we believe", "future work will
-          address", "the reviewer misunderstands")
-        - rebuttals whose Response section is empty (only the
-          scaffold comment is left)
-        - rebuttals that cite no concrete evidence path
-        - rebuttals whose researcher-supplied evidence paths are
-          missing on disk
+- id: audit_responses
+  name: Audit rebuttals — block hand-waving + missing evidence
+  description: |
+    tool_audit(scope='synthesis', dimension='reviewer_responses')
+    WARNs on:
+      - hand-waving language ("we believe", "future work will
+        address", "the reviewer misunderstands")
+      - rebuttals whose Response section is empty (only the
+        scaffold comment is left)
+      - rebuttals that cite no concrete evidence path
+      - rebuttals whose researcher-supplied evidence paths are
+        missing on disk
 
-      Re-draft until the audit returns status='success'. The audit
-      writes workspace/reviewer/audit_report.md.
+    Re-draft until the audit returns status='success'. The audit
+    writes workspace/reviewer/audit_report.md.
 
-  - id: integrate_into_paper
-    name: Apply ACCEPT rebuttals back to the paper
-    description: |
-      For every rebuttal classified ACCEPT or ACCEPT WITH
-      CLARIFICATION: edit synthesis/paper.md accordingly. Re-run
-      tool_audit(scope='synthesis', dimension='all') after the edits.
+- id: integrate_into_paper
+  name: Apply ACCEPT rebuttals back to the paper
+  description: |
+    For every rebuttal classified ACCEPT or ACCEPT WITH
+    CLARIFICATION: edit synthesis/paper.md accordingly. Re-run
+    tool_audit(scope='synthesis', dimension='all') after the edits.
 
-      The dry-run rebuttals stay in version control as the first
-      draft of the real response letter — if the same concern lands
-      from a real reviewer at the journal, the rebuttal is already
-      written and grounded.
+    The dry-run rebuttals stay in version control as the first
+    draft of the real response letter — if the same concern lands
+    from a real reviewer at the journal, the rebuttal is already
+    written and grounded.
 
 expected_outputs:
-  - workspace/reviewer/simulation_brief.md
-  - workspace/reviewer/<persona_id>_comments.md  (one per persona)
-  - workspace/reviewer/rebuttals/*.md
-  - workspace/reviewer/response_to_reviewers.md
-  - workspace/reviewer/response_to_reviewers.pdf  (when typst present)
-  - workspace/reviewer/audit_report.md
+- workspace/reviewer/simulation_brief.md
+- workspace/reviewer/<persona_id>_comments.md  (one per persona)
+- workspace/reviewer/rebuttals/*.md
+- workspace/reviewer/response_to_reviewers.md
+- workspace/reviewer/response_to_reviewers.pdf  (when typst present)
+- workspace/reviewer/audit_report.md
 
 next_protocol: audit/pre_submission_checklist
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: synthesize
+sub_intent: reviewer_sim
+triggers:
+- simulate reviewers
+- pre-submission review
+- red-team my paper
+- red team the paper
+- what will reviewers say
+- stress-test the paper
+- internal review pass
+- rebuttal practice
+- dry-run review
+- adversarial review of the paper
+summary: Pre-submission 7-persona adversarial self-review + per-comment rebuttal scaffold + audit. Internal dry-run companion to guidance/peer_review_response.
+shortcut_tool: tool_reviewer
+decomposition:
+- tool: tool_reviewer
+  purpose: Build the 7-persona pre-submission simulation brief (operation='simulate').
+- tool: tool_reviewer
+  purpose: Scaffold one rebuttal markdown per substantive comment (operation='rebuttal', comment=..., persona=...).
+- tool: tool_reviewer
+  purpose: Assemble rebuttals into response_to_reviewers.md + Typst PDF (operation='compile').
+- tool: tool_audit
+  purpose: Audit rebuttals for hand-waving + missing evidence (scope='synthesis', dimension='reviewer_responses').

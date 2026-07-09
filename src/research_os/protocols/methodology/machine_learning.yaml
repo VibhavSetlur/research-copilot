@@ -1,17 +1,17 @@
 id: machine_learning
 tier: 'plan'
 name: Machine Learning / Predictive Modelling
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [experiment_pipeline, systems_benchmark]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/evaluation_design           # designs the split this protocol assumes
-  - methodology/hyperparameter_search_design # the tuning the train+tune step references
-  - methodology/fairness_audit              # when the model drives group-impacting decisions
+- methodology/evaluation_design             # designs the split this protocol assumes
+- methodology/hyperparameter_search_design   # the tuning the train+tune step references
+- methodology/fairness_audit                # when the model drives group-impacting decisions
 description: |
   Reasoning scaffold for a predictive-modelling workflow. Names the
   decisions an ML analysis must reason through (evaluation regime,
@@ -25,147 +25,148 @@ trigger: Goal is prediction or classification; an ML approach was selected durin
 editorial_voice:
   mode: guidance
   rules:
-    - "The evaluation regime mirrors the deployment regime. A model
-       deployed on next-month data needs a temporal split; a model
-       deployed across hospitals needs a leave-one-hospital-out
-       split; the random k-fold default is wrong as often as right."
-    - "Baseline choice IS a methodology decision. A complex model
-       beating a trivial baseline is a meaningful claim; a complex
-       model beating a hand-tuned strong baseline is a more
-       meaningful one. The field's recent literature names the
-       fair-comparison baseline — surface it, don't guess."
-    - "Report failure modes, not just headline metrics. An aggregate
-       AUROC of 0.85 with a 0.55 AUROC on a subgroup is a worse
-       model than the headline suggests."
-    - "Reporting follows the deployment story. Clinical → TRIPOD-AI /
-       CONSORT-AI; high-stakes decisions → Model Cards + Data
-       Sheets; pure benchmark → the benchmark's reporting card.
-       Surface the standard from the literature; don't default."
+  - "The evaluation regime mirrors the deployment regime. A model deployed on next-month data needs a temporal split; a model deployed across hospitals needs a leave-one-hospital-out split; the random k-fold default is wrong as often as right."
+  - "Baseline choice IS a methodology decision. A complex model beating a trivial baseline is a meaningful claim; a complex model beating a hand-tuned strong baseline is a more meaningful one. The field's recent literature names the fair-comparison baseline — surface it, don't guess."
+  - "Report failure modes, not just headline metrics. An aggregate AUROC of 0.85 with a 0.55 AUROC on a subgroup is a worse model than the headline suggests."
+  - "Reporting follows the deployment story. Clinical → TRIPOD-AI / CONSORT-AI; high-stakes decisions → Model Cards + Data Sheets; pure benchmark → the benchmark's reporting card. Surface the standard from the literature; don't default."
 
 steps:
-  - id: frame_the_task
-    name: Frame the prediction task + deployment regime
-    description: |
-      Write to `outputs/reports/task_framing.md`:
-        - Prediction target + outcome type (binary, multi-class,
-          regression, ranking, sequence, structured, ...).
-        - Deployment regime: who consumes the prediction, when, on
-          which population?
-        - The temporal / spatial / institutional gap between training
-          data and the deployment distribution.
-        - The decision the prediction informs + the cost of false
-          positives vs. false negatives in that decision context.
+- id: frame_the_task
+  name: Frame the prediction task + deployment regime
+  description: |
+    Write to `outputs/reports/task_framing.md`:
+      - Prediction target + outcome type (binary, multi-class,
+        regression, ranking, sequence, structured, ...).
+      - Deployment regime: who consumes the prediction, when, on
+        which population?
+      - The temporal / spatial / institutional gap between training
+        data and the deployment distribution.
+      - The decision the prediction informs + the cost of false
+        positives vs. false negatives in that decision context.
 
-      Every downstream choice — split, metric, baseline,
-      interpretation — follows from this framing.
+    Every downstream choice — split, metric, baseline,
+    interpretation — follows from this framing.
 
-  - id: evaluation_regime
-    name: Choose the evaluation regime (split → deployment match)
-    description: |
-      The split must mirror the deployment gap from the previous
-      step. Reason about:
-        - Time: if deployment is forward in time, split by time.
-        - Group: if deployment is across institutions / subjects /
-          devices, split by group (no leakage across the split).
-        - Distribution shift: if deployment is on a shifted
-          distribution, hold out a shifted slice for evaluation.
-        - Small data: cross-validation or bootstrap; report
-          uncertainty across folds.
+- id: evaluation_regime
+  name: Choose the evaluation regime (split → deployment match)
+  description: |
+    The split must mirror the deployment gap from the previous
+    step. Reason about:
+      - Time: if deployment is forward in time, split by time.
+      - Group: if deployment is across institutions / subjects /
+        devices, split by group (no leakage across the split).
+      - Distribution shift: if deployment is on a shifted
+        distribution, hold out a shifted slice for evaluation.
+      - Small data: cross-validation or bootstrap; report
+        uncertainty across folds.
 
-      Document the split rationale + sizes in
-      `outputs/reports/evaluation_regime.md`. A random k-fold split
-      requires a positive justification, not a default.
+    Document the split rationale + sizes in
+    `outputs/reports/evaluation_regime.md`. A random k-fold split
+    requires a positive justification, not a default.
 
-  - id: leakage_audit
-    name: Leakage audit BEFORE training
-    description: |
-      Walk every feature + every preprocessing step and ask: could
-      this carry information from the held-out target distribution
-      into the training set? Common sources to reason about:
-        - Target encoding without proper CV.
-        - Time-dependent features in a temporal split.
-        - Group-identifying features in a group split.
-        - Imputation / normalisation fit on the full data.
-        - Look-ahead features (e.g. "patient eventually diagnosed").
-        - Shared upstream corpora (LLM eval contamination).
+- id: leakage_audit
+  name: Leakage audit BEFORE training
+  description: |
+    Walk every feature + every preprocessing step and ask: could
+    this carry information from the held-out target distribution
+    into the training set? Common sources to reason about:
+      - Target encoding without proper CV.
+      - Time-dependent features in a temporal split.
+      - Group-identifying features in a group split.
+      - Imputation / normalisation fit on the full data.
+      - Look-ahead features (e.g. "patient eventually diagnosed").
+      - Shared upstream corpora (LLM eval contamination).
 
-      Document the audit + the wrapping discipline (pipeline,
-      transformer-on-train-only, fold-aware preprocessing) in
-      `outputs/reports/leakage_audit.md`.
+    Document the audit + the wrapping discipline (pipeline,
+    transformer-on-train-only, fold-aware preprocessing) in
+    `outputs/reports/leakage_audit.md`.
 
-  - id: baselines
-    name: Choose baselines — trivial AND strong
-    description: |
-      Always fit a trivial baseline (most-frequent / mean predictor
-      / random / nearest-neighbour) — sets the floor. Also fit the
-      strong baseline the field's recent benchmark literature names —
-      this is what the main model must actually beat. Surface the
-      strong baseline via `tool_research_method`; do not pick from
-      memory.
+- id: baselines
+  name: Choose baselines — trivial AND strong
+  description: |
+    Always fit a trivial baseline (most-frequent / mean predictor
+    / random / nearest-neighbour) — sets the floor. Also fit the
+    strong baseline the field's recent benchmark literature names —
+    this is what the main model must actually beat. Surface the
+    strong baseline via `tool_search`; do not pick from
+    memory.
 
-  - id: train_and_tune
-    name: Train + tune
-    description: |
-      Hyperparameter search uses only the training portion + the
-      evaluation regime's CV folds. Document the search space, the
-      search strategy + its budget, the chosen hyperparameters. Set
-      seeds explicitly; report whether results are seed-sensitive.
+- id: train_and_tune
+  name: Train + tune
+  description: |
+    Hyperparameter search uses only the training portion + the
+    evaluation regime's CV folds. Document the search space, the
+    search strategy + its budget, the chosen hyperparameters. Set
+    seeds explicitly; report whether results are seed-sensitive.
 
-  - id: held_out_metrics
-    name: Held-out metrics matched to the deployment cost structure
-    description: |
-      Compute on the held-out set ONLY. Which metrics to report
-      follows from the task framing's cost structure:
-        - Asymmetric costs → precision-recall + cost-weighted error.
-        - Probabilistic decisions → calibration + Brier / NLL.
-        - Ranking decisions → AUROC + AUPRC.
-        - Continuous outcomes → error + residual diagnostics.
-        - Subgroup-sensitive deployment → per-subgroup breakdown.
-      The benchmark literature for the field names the headline
-      metric; surface it.
+- id: held_out_metrics
+  name: Held-out metrics matched to the deployment cost structure
+  description: |
+    Compute on the held-out set ONLY. Which metrics to report
+    follows from the task framing's cost structure:
+      - Asymmetric costs → precision-recall + cost-weighted error.
+      - Probabilistic decisions → calibration + Brier / NLL.
+      - Ranking decisions → AUROC + AUPRC.
+      - Continuous outcomes → error + residual diagnostics.
+      - Subgroup-sensitive deployment → per-subgroup breakdown.
+    The benchmark literature for the field names the headline
+    metric; surface it.
 
-  - id: interpretation
-    name: Interpretation — match method to model + audience
-    description: |
-      Pick interpretation tools that fit the model family + the
-      deployment audience. Surface options via `tool_research_method`
-      framed as "interpretability for <model family> in <deployment
-      context>". Document which option was chosen + why, with
-      citation. Aggregate explanations alone are insufficient when
-      individual predictions drive decisions — include per-instance
-      explanations on representative cases.
+- id: interpretation
+  name: Interpretation — match method to model + audience
+  description: |
+    Pick interpretation tools that fit the model family + the
+    deployment audience. Surface options via `tool_search`
+    framed as "interpretability for <model family> in <deployment
+    context>". Document which option was chosen + why, with
+    citation. Aggregate explanations alone are insufficient when
+    individual predictions drive decisions — include per-instance
+    explanations on representative cases.
 
-  - id: failure_mode_analysis
-    name: Failure-mode + subgroup analysis
-    description: |
-      Slice errors by every subgroup the deployment story makes
-      relevant (demographics, institutions, time bins, distribution
-      slices). Flag any subgroup where the headline metric drops
-      meaningfully — what counts as "meaningfully" depends on the
-      cost structure. Document candidate causes (data quantity,
-      label noise, distribution shift) for each flagged subgroup.
+- id: failure_mode_analysis
+  name: Failure-mode + subgroup analysis
+  description: |
+    Slice errors by every subgroup the deployment story makes
+    relevant (demographics, institutions, time bins, distribution
+    slices). Flag any subgroup where the headline metric drops
+    meaningfully — what counts as "meaningfully" depends on the
+    cost structure. Document candidate causes (data quantity,
+    label noise, distribution shift) for each flagged subgroup.
 
-  - id: model_card
-    name: Model card / reporting-standard compliance
-    description: |
-      Write a model card at `outputs/reports/model_card.md` covering:
-        - intended use + out-of-scope use
-        - training-data provenance + known biases
-        - evaluation regime + held-out metrics + per-subgroup
-          breakdown
-        - failure modes observed during the audit above
-        - ethical considerations the deployment context raises
-      If the field has a stricter reporting standard (TRIPOD-AI for
-      clinical, Data Sheets for foundational datasets, the
-      benchmark's official card for benchmarks) — that standard
-      governs; the model card extends it, doesn't replace it.
+- id: model_card
+  name: Model card / reporting-standard compliance
+  description: |
+    Write a model card at `outputs/reports/model_card.md` covering:
+      - intended use + out-of-scope use
+      - training-data provenance + known biases
+      - evaluation regime + held-out metrics + per-subgroup
+        breakdown
+      - failure modes observed during the audit above
+      - ethical considerations the deployment context raises
+    If the field has a stricter reporting standard (TRIPOD-AI for
+    clinical, Data Sheets for foundational datasets, the
+    benchmark's official card for benchmarks) — that standard
+    governs; the model card extends it, doesn't replace it.
 
 expected_outputs:
-  - workspace/*/outputs/reports/task_framing.md
-  - workspace/*/outputs/reports/evaluation_regime.md
-  - workspace/*/outputs/reports/leakage_audit.md
-  - workspace/*/outputs/reports/model_card.md
+- workspace/*/outputs/reports/task_framing.md
+- workspace/*/outputs/reports/evaluation_regime.md
+- workspace/*/outputs/reports/leakage_audit.md
+- workspace/*/outputs/reports/model_card.md
 
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: ml
+triggers:
+- ml pipeline
+- train a model
+- classification
+- regression model
+- random forest
+- xgboost
+- neural net
+- deep learning
+- gradient boosting
+summary: TRIPOD-AI ML pipeline (split, baseline, tune, eval, interpret).

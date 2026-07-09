@@ -21,17 +21,205 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import msgpack
 import yaml
+
+from research_os.protocols.schema import Protocol
 
 logger = logging.getLogger("research_os.tools.protocol")
 
 PROTOCOLS_DIR = Path(__file__).parent.parent.parent / "protocols"
+BUNDLE_PATH = PROTOCOLS_DIR / "_protocols.bundle"
 PROTOCOL_LOG_FILE = "protocol_execution_log.jsonl"
 DEPRECATIONS_LOG_FILE = "deprecations.log"
+
+
+# ---------------------------------------------------------------------------
+# ProtocolRegistry — single-source reader for the compiled _protocols.bundle
+# ---------------------------------------------------------------------------
+#
+# P1 Protocol Unification: one Pydantic model validates every protocol, one
+# build script (scripts/build_protocols.py) compiles them into ONE msgpack
+# ``_protocols.bundle``. This registry is the single runtime reader — the
+# router, gate engine, precondition verifier, semantic layer, and listers
+# all go through it instead of parsing YAML or five JSON sidecars.
+
+
+class _RegistryData:
+    """The decoded bundle plus pack-contributed routing entries (immutable)."""
+
+    __slots__ = (
+        "schema_version",
+        "source_hash",
+        "hierarchy",
+        "shortcut_intents",
+        "protocols",
+        "gates",
+        "gate_built_from",
+        "preconditions",
+    )
+
+    def __init__(self, bundle: dict[str, Any]) -> None:
+        self.schema_version: str = bundle.get("schema_version", "3.0")
+        self.source_hash: str = bundle.get("source_hash", "")
+        self.hierarchy: dict[str, Any] = bundle.get("hierarchy", {}) or {}
+        self.shortcut_intents: dict[str, Any] = bundle.get("shortcut_intents", {}) or {}
+        self.protocols: dict[str, Any] = dict(bundle.get("protocols", {}) or {})
+        self.gates: list[dict] = list(bundle.get("gates", []) or [])
+        self.gate_built_from: list[str] = list(bundle.get("gate_built_from", []) or [])
+        self.preconditions: dict[str, list[dict]] = dict(
+            bundle.get("preconditions", {}) or {}
+        )
+
+
+class ProtocolRegistry:
+    """Read the compiled bundle; serve typed protocols + derived views.
+
+    All methods are classmethods over a process-lifetime cache. Call
+    :meth:`reload` (test hook) after rebuilding the bundle.
+    """
+
+    _data: _RegistryData | None = None
+    _lock = threading.Lock()
+
+    # ── loading ──────────────────────────────────────────────────────
+    @classmethod
+    def _load(cls) -> _RegistryData:
+        if cls._data is not None:
+            return cls._data
+        with cls._lock:
+            if cls._data is not None:
+                return cls._data
+            bundle = cls._read_bundle()
+            data = _RegistryData(bundle)
+            cls._merge_pack_router_entries(data)
+            cls._data = data
+            return data
+
+    @staticmethod
+    def _read_bundle() -> dict[str, Any]:
+        """Decode _protocols.bundle. Fail-safe to an empty shape.
+
+        The bundle ships in the package; a missing/garbage bundle yields an
+        empty registry (callers keep behaving, just with nothing to route),
+        which preflight's check_bundle_fresh turns into a hard CI failure.
+        """
+        try:
+            raw = BUNDLE_PATH.read_bytes()
+            data = msgpack.unpackb(raw, raw=False)
+            if isinstance(data, dict):
+                return data
+        except FileNotFoundError:
+            logger.warning("_protocols.bundle missing — run build_protocols.py")
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("_protocols.bundle unreadable: %s", exc)
+        return {
+            "schema_version": "3.0",
+            "source_hash": "",
+            "hierarchy": {},
+            "shortcut_intents": {},
+            "protocols": {},
+            "gates": [],
+            "gate_built_from": [],
+            "preconditions": {},
+        }
+
+    @staticmethod
+    def _merge_pack_router_entries(data: _RegistryData) -> None:
+        """Fold pack-contributed routing entries into the protocols map."""
+        try:
+            from research_os.plugins.loader import pack_router_entries
+
+            for pid, entry in (pack_router_entries() or {}).items():
+                if isinstance(entry, dict):
+                    merged = dict(entry)
+                    merged.setdefault("id", pid.split("/")[-1])
+                    data.protocols.setdefault(pid, merged)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("pack router-entry merge skipped: %s", exc)
+
+    @classmethod
+    def reload(cls) -> None:
+        """Drop the cache so a rebuilt bundle is picked up (test hook)."""
+        with cls._lock:
+            cls._data = None
+
+    # ── typed protocol access ────────────────────────────────────────
+    @classmethod
+    def get_protocol(cls, name: str) -> Protocol:
+        """Return the fully-validated ``Protocol`` model for ``name``.
+
+        Reads the protocol body YAML from disk (core or pack) and validates
+        it against the model. The bundle holds the compact routing view; the
+        full body (steps, descriptions, …) is loaded from source so callers
+        that need the whole protocol get it typed.
+        """
+        file = _find_protocol_file(name)
+        if not file:
+            from research_os.server.errors import RoError
+
+            raise RoError(
+                what=f"Protocol '{name}' not found",
+                why=f"no YAML at {PROTOCOLS_DIR}/{name}.yaml or in installed packs",
+                next_action="call sys_protocol_list to see the live catalog.",
+            )
+        raw = yaml.safe_load(file.read_text(encoding="utf-8")) or {}
+        return Protocol.model_validate(raw)
+
+    # ── derived views (served from the bundle) ───────────────────────
+    @classmethod
+    def get_hierarchy(cls) -> dict[str, Any]:
+        """L1 intent_class → {label, sub_intents} taxonomy."""
+        return cls._load().hierarchy
+
+    @classmethod
+    def get_shortcut_intents(cls) -> dict[str, Any]:
+        """Cross-intent tool shortcuts (trigger set → tool)."""
+        return cls._load().shortcut_intents
+
+    @classmethod
+    def get_routing_map(cls) -> dict[str, Any]:
+        """The compact per-protocol routing entries (intent_class, triggers…).
+
+        Shape-compatible with the legacy ``_route_meta.json['protocols']`` so
+        the router/semantic layers consume it unchanged.
+        """
+        return cls._load().protocols
+
+    @classmethod
+    def get_index(cls) -> dict[str, Any]:
+        """Legacy ``_load_index()`` shape: {protocols, shortcut_intents, hierarchy}."""
+        d = cls._load()
+        return {
+            "protocols": d.protocols,
+            "shortcut_intents": d.shortcut_intents,
+            "hierarchy": d.hierarchy,
+        }
+
+    @classmethod
+    def get_gates(cls) -> list[dict]:
+        """Every declared floor gate (was ``_gate_meta.json['gates']``)."""
+        return cls._load().gates
+
+    @classmethod
+    def get_preconditions(cls) -> dict[str, list[dict]]:
+        """protocol_id → checkable preconditions (was ``_precondition_meta.json``)."""
+        return cls._load().preconditions
+
+    @classmethod
+    def list_protocols(cls) -> list[str]:
+        """Sorted protocol ids known to the bundle (+ pack entries)."""
+        return sorted(cls._load().protocols)
+
+    @classmethod
+    def source_hash(cls) -> str:
+        """The bundle's compiled source hash (over all protocol YAMLs)."""
+        return cls._load().source_hash
 
 
 def _log_redirect(source: str, target: str, params: dict | None = None) -> None:
@@ -398,7 +586,13 @@ def load_protocol(
         name: ``"guidance/project_startup"`` or bare ``"project_startup"``.
         model_profile: ``small`` | ``medium`` | ``large``. ``small`` trims verbose
                        keys (model_adaptations, examples, etc.) to save tokens.
-        format: ``full`` (default) | ``summary`` | ``step`` | ``lean`` | ``dryrun``.
+        format: ``ref`` | ``full`` (default) | ``summary`` | ``step`` |
+                ``lean`` | ``dryrun``. The three canonical load tiers are
+                ``ref`` (~50 tok: id + summary + step count), ``summary``
+                (~200 tok), and ``full``; ``step`` / ``lean`` / ``dryrun``
+                are specialised variants.
+                * ``ref`` returns id + name + one-line summary + step
+                  count — the cheapest peek before pulling more.
                 * ``summary`` returns id + name + description + step
                   headings + expected_outputs + next_protocol + quality_bar
                   — roughly 300 tokens vs 2K for the full load.
@@ -479,7 +673,7 @@ def load_protocol(
             step_id=step_id,
             _redirect_chain=chain,
         )
-        if isinstance(resolved, dict):
+        if isinstance(resolved, dict) and format != "ref":
             resolved.setdefault("_redirected_from", name)
             if params:
                 resolved.setdefault("_redirect_params", params)
@@ -517,6 +711,55 @@ def load_protocol(
             except ValueError:
                 continue
     data.setdefault("_path", rel)
+
+    if format == "ref":
+        # Cheapest load (~50 tokens): identity + one-line summary + step
+        # count. For the router/AI to decide whether to pull summary/full.
+        steps = data.get("steps", []) or []
+        registry_summary = ""
+        try:
+            registry_summary = (
+                ProtocolRegistry.get_routing_map().get(name, {}).get("summary", "")
+            )
+        except Exception:
+            registry_summary = ""
+        _raw_summary = (
+            data.get("summary")
+            or registry_summary
+            or (data.get("description") or "").split("\n")[0]
+        )
+        # Truncate by JSON-encoded length to guarantee ≤75 tokens regardless
+        # of Unicode content (non-ASCII chars expand in ASCII JSON).
+        # Budget: 300 bytes total; fixed overhead ~209 bytes (keys + id + path
+        # + hint + step_count); remaining 91 bytes split as name≤35, summary≤56.
+        import json as _json
+
+        def _jtrunc(s: str, json_cap: int) -> str:
+            """Truncate *s* so its JSON-encoded content fits in *json_cap* chars."""
+            s = s or ""
+            encoded_len = len(_json.dumps(s)) - 2  # strip surrounding quotes
+            if encoded_len <= json_cap:
+                return s
+            # Binary-search the cut point; reserve 3 chars for trailing "..."
+            lo, hi = 0, len(s)
+            while lo < hi:
+                mid = (lo + hi + 1) // 2
+                if len(_json.dumps(s[:mid])) - 2 <= json_cap - 3:
+                    lo = mid
+                else:
+                    hi = mid - 1
+            return s[:lo] + "..." if lo < len(s) else s
+
+        _name = _jtrunc(data.get("name", ""), 35)
+        _summary = _jtrunc(_raw_summary, 56)
+        return {
+            "id": data.get("id", name.split("/")[-1]),
+            "name": _name,
+            "summary": _summary,
+            "step_count": len([s for s in steps if isinstance(s, dict)]),
+            "_path": data.get("_path"),
+            "_load_hint": "ref only; use format='summary' or 'full' for more",
+        }
 
     if format == "summary":
         steps = data.get("steps", []) or []
@@ -731,14 +974,12 @@ def list_protocols_flat(
     ``intent_class``. Protocols that exist on disk but are missing from
     the router index appear with ``intent_class=None``.
     """
-    # One-shot router-index pull so each protocol's intent_class lookup
-    # is O(1). The router cache is internal; we don't reach into it.
+    # One-shot routing-map pull from the bundle so each protocol's
+    # intent_class lookup is O(1).
     try:
-        from research_os.tools.actions.router import _load_index
-        index = _load_index()
+        router_protocols = ProtocolRegistry.get_routing_map()
     except Exception:
-        index = {}
-    router_protocols = (index.get("protocols") or {}) if isinstance(index, dict) else {}
+        router_protocols = {}
 
     out: list[dict] = []
     for name, yaml_file, source in _iter_protocol_files():

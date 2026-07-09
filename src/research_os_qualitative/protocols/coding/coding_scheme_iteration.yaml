@@ -1,7 +1,7 @@
 id: coding_scheme_iteration
 name: Coding Scheme Iteration (open → axial → selective)
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [qualitative]
   audience: [auditor, maintainer]
@@ -25,22 +25,15 @@ trigger: |
   "we hit theoretical saturation".
 
 prerequisites:
-  - workspace/transcripts/ has at least one segmented transcript.
-  - workspace/codebooks/codebook_v1.yaml exists (initial open codes
-    from coding_scheme_development).
+- workspace/transcripts/ has at least one segmented transcript.
+- workspace/codebooks/codebook_v1.yaml exists (initial open codes from coding_scheme_development).
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Round transitions are NOT cosmetic. Moving from open to axial
-       means the analytic posture changes from 'name what's here' to
-       'how do these names relate'. Don't merge codes just to shrink
-       the codebook."
-    - "Every retained code carries inclusion + exclusion criteria.
-       'I know it when I see it' fails IRR — it fails interpretation too."
-    - "Saturation is empirical, not declarative. If you can't show
-       the curve flattening (codes-per-transcript over time), you
-       haven't saturated; you've gotten tired."
+  - "Round transitions are NOT cosmetic. Moving from open to axial means the analytic posture changes from 'name what's here' to 'how do these names relate'. Don't merge codes just to shrink the codebook."
+  - "Every retained code carries inclusion + exclusion criteria. 'I know it when I see it' fails IRR — it fails interpretation too."
+  - "Saturation is empirical, not declarative. If you can't show the curve flattening (codes-per-transcript over time), you haven't saturated; you've gotten tired."
 
 quality_bar:
   # Canonical Landis & Koch (1977) table:
@@ -57,72 +50,89 @@ quality_bar:
   inclusion_exclusion_per_code_mandatory: true
 
 steps:
-  - id: round_close_out
-    name: Close out the current round
-    description: |
-      Confirm the current round (e.g. v1 open coding) is finished:
-        - all transcripts in this round's sample fully coded
-        - per-code frequencies tallied
-        - rater notes captured per transcript
-      Run `tool_audit_step_completeness` over workspace/coding/round_<N>/.
+- id: round_close_out
+  name: Close out the current round
+  description: |
+    Confirm the current round (e.g. v1 open coding) is finished:
+      - all transcripts in this round's sample fully coded
+      - per-code frequencies tallied
+      - rater notes captured per transcript
+    Run `tool_audit_step_completeness` over workspace/coding/round_<N>/.
 
-  - id: compute_round_kappa
-    name: Compute per-code κ for the current round
-    description: |
-      Call tool_qualitative_codebook_diff with the current and prior
-      codebooks AND the applied-codes files from both rounds. The
-      tool returns per-code Cohen's κ and flags codes with κ<0.60.
-      Output: workspace/codebooks/diff_v{N-1}_to_v{N}.md.
+- id: compute_round_kappa
+  name: Compute per-code κ for the current round
+  description: |
+    Call tool_qualitative_codebook_diff with the current and prior
+    codebooks AND the applied-codes files from both rounds. The
+    tool returns per-code Cohen's κ and flags codes with κ<0.60.
+    Output: workspace/codebooks/diff_v{N-1}_to_v{N}.md.
 
-  - id: triage_low_kappa
-    name: Triage low-κ codes BEFORE the next round
-    description: |
-      For each code flagged κ<0.60:
-        - rewrite inclusion / exclusion criteria with concrete
-          examples + concrete near-misses
-        - OR split into two codes if the disagreement is about a
-          real conceptual boundary
-        - OR merge with a sibling if both raters agree the codes are
-          collapsing
-      Log every change to workspace/codebooks/changelog.md with the
-      κ before + (hypothesised) after.
+- id: triage_low_kappa
+  name: Triage low-κ codes BEFORE the next round
+  description: |
+    For each code flagged κ<0.60:
+      - rewrite inclusion / exclusion criteria with concrete
+        examples + concrete near-misses
+      - OR split into two codes if the disagreement is about a
+        real conceptual boundary
+      - OR merge with a sibling if both raters agree the codes are
+        collapsing
+    Log every change to workspace/codebooks/changelog.md with the
+    κ before + (hypothesised) after.
 
-  - id: write_round_memo
-    name: Write the round memo
-    description: |
-      A 1-2 page reflective memo per round, dated. What changed in your
-      analytic posture? Which codes surprised you? Which transcripts
-      pushed back against the developing scheme? File under
-      workspace/memos/round_<N>.md. This memo is part of the audit
-      trail other researchers will read in a year.
+- id: write_round_memo
+  name: Write the round memo
+  description: |
+    A 1-2 page reflective memo per round, dated. What changed in your
+    analytic posture? Which codes surprised you? Which transcripts
+    pushed back against the developing scheme? File under
+    workspace/memos/round_<N>.md. This memo is part of the audit
+    trail other researchers will read in a year.
 
-  - id: phase_transition_check
-    name: Decide whether to transition rounds (open → axial → selective)
-    description: |
-      Do NOT transition until:
-        - per-code κ floor met (0.60 default)
-        - round memo written
-        - changelog up to date
-      Document the transition in workspace/memos/round_<N>.md:
-        "Moving from open to axial because <reason>." Concrete reason,
-        not 'we've coded a lot'.
+- id: phase_transition_check
+  name: Decide whether to transition rounds (open → axial → selective)
+  description: |
+    Do NOT transition until:
+      - per-code κ floor met (0.60 default)
+      - round memo written
+      - changelog up to date
+    Document the transition in workspace/memos/round_<N>.md:
+      "Moving from open to axial because <reason>." Concrete reason,
+      not 'we've coded a lot'.
 
-  - id: saturation_check
-    name: Saturation check (selective rounds only)
-    description: |
-      For selective coding rounds: compute new-codes-per-transcript
-      over time. Plot it (workspace/figures/saturation_curve.png) and
-      check whether the last 2-3 transcripts added <1 new code each.
-      If yes → flag potential saturation, schedule one more transcript
-      to confirm. If no → keep sampling.
+- id: saturation_check
+  name: Saturation check (selective rounds only)
+  description: |
+    For selective coding rounds: compute new-codes-per-transcript
+    over time. Plot it (workspace/figures/saturation_curve.png) and
+    check whether the last 2-3 transcripts added <1 new code each.
+    If yes → flag potential saturation, schedule one more transcript
+    to confirm. If no → keep sampling.
 
 expected_outputs:
-  - workspace/codebooks/codebook_v<N>.yaml
-  - workspace/codebooks/diff_v<N-1>_to_v<N>.md
-  - workspace/codebooks/changelog.md
-  - workspace/memos/round_<N>.md
-  - workspace/figures/saturation_curve.png   # selective rounds only
+- workspace/codebooks/codebook_v<N>.yaml
+- workspace/codebooks/diff_v<N-1>_to_v<N>.md
+- workspace/codebooks/changelog.md
+- workspace/memos/round_<N>.md
+- workspace/figures/saturation_curve.png     # selective rounds only
 
 next_protocol: qualitative/validity/member_checking
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: methodology
+sub_intent: method_pick
+triggers:
+- coding scheme iteration
+- open coding
+- axial coding
+- selective coding
+- code refinement
+- second round of coding
+summary: 'Multi-round coding: open → axial → selective (Strauss & Corbin) with version tracking.'
+shortcut_tool: tool_qualitative_codebook_diff
+token_estimate: 1700
+decomposition:
+- protocol: qualitative/coding/coding_scheme_iteration
+  purpose: Walk the open → axial → selective loop.
+- tool: tool_qualitative_codebook_diff
+  purpose: Per-round diff + κ per code.

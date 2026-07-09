@@ -4,7 +4,20 @@ Carved out of handlers/research.py to stay under the 600-line ceiling.
 """
 from __future__ import annotations
 
-from .._handlers_runtime import *  # noqa: F401,F403
+from .._handlers_runtime import (
+    _error,
+    _log_search,
+    _success,
+    _text,
+    download_literature,
+    scrape_web,
+    search_arxiv,
+    search_crossref,
+    search_pubmed,
+    search_semantic_scholar,
+    search_web,
+)
+
 
 __all__ = [
     "_handle_tool_search",
@@ -25,8 +38,35 @@ __all__ = [
     "_handle_tool_citations_verify",
 ]
 
+def _search_pointer_envelope(root, full_payload, results_list):
+    """Store *full_payload* in the blob store and return a small pointer envelope.
+
+    Falls back to returning the full payload inline if the blob store is
+    unavailable (degrade-open behaviour — no daemon required).
+    """
+    import json as _json
+
+    try:
+        from research_os.context.blobstore import put_blob
+        pointer = put_blob(root, full_payload)
+        summary = _json.dumps(results_list, default=str)[:500]
+        return _text(_success({
+            "pointer": pointer,
+            "summary": summary,
+            "count": len(results_list) if isinstance(results_list, list) else 1,
+            "hint": "Full results stored as a blob. Call mem_retrieve(pointer=...) to fetch them.",
+        }))
+    except Exception:
+        # Blob store unavailable — return inline (degrade-open)
+        return _text(_success(full_payload))
+
+
 def _handle_tool_search(name, arguments, root):
     """Unified search dispatcher (this-release consolidation of 5 search tools).
+
+    mode='search'     (default) — literature/web search by source/auto
+    mode='scrape'               — web scrape a URL (delegates to tool_web_scrape)
+    mode='literature'           — search + save to inputs/literature/
 
     Selects provider by:
       1. Explicit `source` arg (one of: semantic_scholar | pubmed | crossref |
@@ -35,6 +75,13 @@ def _handle_tool_search(name, arguments, root):
          (tool_search_<provider>), pick that provider for back-compat.
       3. Default 'auto' — picks providers based on a quick keyword heuristic.
     """
+    arguments = arguments or {}
+    mode = arguments.get("mode", "search")
+    if mode == "scrape":
+        return _handle_tool_web_scrape(name, arguments, root)
+    if mode == "literature":
+        return _handle_tool_literature_search_and_save(name, arguments, root)
+
     q = arguments["query"]
     limit = arguments.get("limit", 5)
 
@@ -89,8 +136,8 @@ def _handle_tool_search(name, arguments, root):
                     merged.append(sub)
             except Exception as e:
                 merged.append({"_source": src, "_error": str(e)})
-        return _text(_success({"results": merged[:limit], "sources": picks,
-                               "mode": "auto"}))
+        full_payload = {"results": merged[:limit], "sources": picks, "mode": "auto"}
+        return _search_pointer_envelope(root, full_payload, merged[:limit])
 
     if source not in provider_fn:
         return _text(_error(
@@ -100,7 +147,13 @@ def _handle_tool_search(name, arguments, root):
     fn = provider_fn[source]
     _log_search(root, f"tool_search:{source}", q, 0)
     res = fn(q, limit)
-    return _text(_success(res))
+    if isinstance(res, list):
+        results_list = res
+    elif isinstance(res, dict):
+        results_list = res.get("results", [])
+    else:
+        results_list = [res]
+    return _search_pointer_envelope(root, res, results_list)
 
 
 def _handle_tool_web_scrape(name, arguments, root):
@@ -301,16 +354,5 @@ def _handle_tool_citations_verify(name, arguments, root):
 
 HANDLERS = {
     "tool_search": _handle_tool_search,
-    "tool_web_scrape": _handle_tool_web_scrape,
-    "tool_literature_download": _handle_tool_literature_download,
-    "tool_literature_search_and_save": _handle_tool_literature_search_and_save,
-    "tool_step_literature_list": _handle_tool_step_literature_list,
     "tool_data": _handle_tool_data,
-    "tool_research_method": _handle_tool_research_method,
-    "tool_research_tool": _handle_tool_research_tool,
-    "tool_external_tool_instructions": _handle_tool_external_tool_instructions,
-    "tool_alternative_path_propose": _handle_tool_alternative_path_propose,
-    "tool_intake_autofill": _handle_tool_intake_autofill,
-    "tool_context_intake": _handle_tool_context_intake,
-    "tool_citations_verify": _handle_tool_citations_verify,
 }

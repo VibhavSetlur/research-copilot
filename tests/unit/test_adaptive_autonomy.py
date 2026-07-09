@@ -44,11 +44,8 @@ def _write_cfg(root: Path, *, autonomy: str, gate_strictness: str | None = None,
 # (tool_name, arguments, gate_key) for every adaptive-classified gate.
 GATES: list[tuple[str, dict, str]] = [
     ("tool_package_install", {"packages": ["numpy"]}, "tool_package_install"),
-    ("sys_checkpoint_rollback", {"checkpoint_id": "c1"}, "sys_checkpoint_rollback"),
-    ("sys_path", {"operation": "abandon", "path_name": "p", "rationale": "x"},
-     "sys_path:abandon"),
-    ("tool_research_tool", {"task": "lit", "source": "paid"},
-     "tool_research_tool:paid"),
+    ("tool_search", {"query": "lit", "source": "paid"},
+     "search_paid_sources"),
     ("tool_typst_compile", {}, "tool_typst_compile"),
     ("tool_audit", {"scope": "step", "dimension": "reproducibility"},
      "tool_audit:reproducibility"),
@@ -170,7 +167,7 @@ def test_light_floor_gates_are_irreversible():
     light_gates = {k for k, v in _GATE_FLOOR.items() if v == "light"}
     assert light_gates == {
         "tool_package_install",
-        "sys_checkpoint_rollback",
-        "sys_path:abandon",
-        "tool_research_tool:paid",
+        "tool_git (operation=rollback)",
+        "dead_end_abandon",
+        "search_paid_sources",
     }

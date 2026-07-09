@@ -9,7 +9,6 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-import pytest
 
 from research_os.tools.actions.synthesis import scaffold as S
 from research_os.tools.actions.viz import palettes as P

@@ -32,9 +32,9 @@ Versioning rules (see also [RELEASING.md](RELEASING.md)):
 If you depend on any of the below, you can pin a `~=X.Y` range and
 trust nothing here moves under you.
 
-### A.1 Public tool names + input schemas
+### A.1 Public tool names and input schemas
 
-Three name prefixes are public:
+Public tool-name prefixes:
 
 * `sys_*` — system / state / config / packs / files / help / boot.
   Examples: `sys_boot`, `sys_state_get`, `sys_protocol_get`,
@@ -61,24 +61,25 @@ first-wave aliases (21 names — see Phase 14a in
 `CHANGELOG.md [2.0.0]`) were hard-removed
 in v2.0.0 after their 4-minor-version deprecation runway.
 
-Every tool definition carries two MAJOR-stable metadata fields:
+Every tool definition carries MAJOR-stable metadata fields; these
+fields are stable across the public tool surface:
 
 * `status` — `live` (visible in `list_tools`) / `alias` (back-compat
   pointer) / `deprecated` (callable, telemetry to
   `.os_state/deprecations.log`). `list_tools` returns `status='live'`
   only.
-* `pack` — `core` or one of the 5 domain packs (`humanities`,
-  `qualitative`, `theory_math`, `wet_lab`, `engineering`) or the 6
+* `pack` — `core` or one of the domain packs (`humanities`,
+  `qualitative`, `theory_math`, `wet_lab`, `engineering`) or the
   infrastructure adapters (`slurm`, `snakemake`, `nextflow`,
-  `cytoscape`, `redcap`, `synapse`). Adding a new pack/adapter label
-  is MINOR; renaming or removing an existing one is MAJOR.
+  `cytoscape`, `redcap`, `synapse`). Adding a new pack or adapter
+  label is MINOR; renaming or removing an existing one is MAJOR.
 
 The canonical, machine-readable list is whatever
 `sys_tool_describe`, `tool_tools_list`, and the MCP `tools/list`
 handshake return for the running server — a core set plus tools
-contributed by the 5 domain packs + 8 infrastructure adapters
-(13 extension modules) above. Query the running server rather than
-relying on a hand-maintained count.
+contributed by the domain packs and infrastructure adapters above.
+Query the running server rather than relying on a hand-maintained
+inventory.
 
 ### A.2 Audit-finding JSON schema
 
@@ -108,6 +109,7 @@ sections are stable in v2:
 * `ai`
 * `writing_preferences`
 * `runtime`
+* `compute`
 * `daemon`
 * `figures`
 * `synthesis`
@@ -153,7 +155,7 @@ write any of these paths.
 Renaming or relocating any of these directories is MAJOR. Adding a
 new sibling directory or a new file inside `.os_state/` is MINOR.
 
-### A.5 Protocol routing `intent_class` enum
+### Protocol routing `intent_class` enum
 
 `tool_route` resolves a researcher prompt down to one of ten L1
 intent classes. The enum is fixed in v2:
@@ -167,7 +169,7 @@ Adding a new value is MAJOR (existing dispatch tables would not
 handle it). Renaming or removing one is MAJOR. The `sub_intent` L2
 vocabulary is intent-class-scoped and additions there are MINOR.
 
-### A.6 Protocol `tier` enum
+### Protocol `tier` enum
 
 Every protocol carries a `tier:` annotation (v2.0.0 new) placing it
 in the project lifecycle. The enum is fixed in v2:
@@ -181,7 +183,7 @@ the response envelope. Adding a new tier or reordering is MAJOR.
 The `current_tier` advance machinery in `tool_step_complete` reads
 this enum.
 
-### A.6.1 Tool response envelope (v2.1.0)
+### Tool response envelope contract
 
 Every tool handler returns a v2.1.0 envelope (the helper
 `research_os.server.envelopes._success` / `_error` produces it; every
@@ -219,7 +221,7 @@ adapter code should call `research_os.server.envelopes._success` /
 but the normalizer guarantees no pack-tool response reaches a client
 without the full envelope.
 
-### A.6.2 RoError exception primitive (v2.1.0)
+### A.6.2 RoError exception contract
 
 Internal layers raise `research_os.server.errors.RoError(what, why=None,
 next_action=None)`. The server dispatcher catches it and renders the
@@ -352,34 +354,12 @@ correct bump.
 
 ---
 
-## E. v2.0.0 freeze snapshot
+## E. Freeze snapshot reference
 
-The following counts are the v2.0.0 release-time snapshot. Section A
-forbids changing the structure that produced them under a MINOR /
-PATCH bump; growth (e.g. adding a tool to `pack='theory_math'`) is
-MINOR.
+The release-time inventory snapshot is documented in
+[`docs/_STALE_COUNTS_REFERENCE.md`](./_STALE_COUNTS_REFERENCE.md). Section A
+forbids changing the structure that produced it under a MINOR / PATCH bump;
+growth (e.g. adding a tool to `pack='theory_math'`) is MINOR.
 
-| Surface | v2.0.0 count |
-|---|---|
-| Live tools (`status='live'` in `TOOL_DEFINITIONS`) | 144 |
-| Back-compat aliases (`_ALIASES`) | 80 |
-| Deprecated aliases (`_DEPRECATED_ALIASES`, dispatch + telemetry) | 78 |
-| Hard-removed names (`_REMOVED_TOOLS`, friendly-error) | 24 |
-| Handlers wired (`_HANDLERS`) | 144 |
-| Core protocols (`src/research_os/protocols/`) | 117 |
-| Pack protocols (humanities + qualitative + theory_math) | 36 |
-| Protocols with `tier:` annotation | 117 / 117 |
-| Protocols with `scope_tags:` block | 117 / 117 |
-| Pack labels (incl. `core`) | 12 |
-| L1 `intent_class` enum values | 10 |
-| Tier enum values | 7 |
-| Audit dimensions accepted by `tool_audit` | ~21 |
-| Preflight wiring checks | 38 |
-| Top-level `researcher_config.yaml` sections | 15 |
-
-The v2.0.0 release notes and migration table live at
-`CHANGELOG.md [2.0.0]`,
-`CHANGELOG.md [2.0.0]`, and
-`CHANGELOG.md [2.0.0]`. The 20-agent
-validation report (Phase 15b) is
-`CHANGELOG.md [2.0.0]`.
+Refer to the stale-counts reference for the current canonical counts and
+historical snapshot notes.

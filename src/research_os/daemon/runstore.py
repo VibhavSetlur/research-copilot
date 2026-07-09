@@ -10,7 +10,7 @@ The RunStore persists each run to ``<root>/.os_state/runs/<run_id>/`` as:
                     run.json is for quick reads; this is the complete log).
 
 This makes jobs survive a daemon restart (durability), makes every run
-reproducible (provenance), and gives the gateway/dashboard a permanent,
+reproducible (provenance), and gives the daemon/dashboard a permanent,
 queryable history (observability) — all from one file format.
 
 stdlib only (json, os, time, pathlib, tempfile). No locking beyond atomic
@@ -40,6 +40,10 @@ class RunStore:
 
     def __init__(self, root: str | Path) -> None:
         self.root = Path(root)
+        # FIX 6: per-store lock guards read_manifest+write_manifest in
+        # patch_manifest() so the env-snapshot background thread and the
+        # journal pump thread can never clobber each other's writes.
+        self._manifest_lock = threading.Lock()
 
     @property
     def runs_dir(self) -> Path:
@@ -49,12 +53,47 @@ class RunStore:
         return self.runs_dir / run_id
 
     # ── writing ────────────────────────────────────────────────────────
-    def write_manifest(self, run_id: str, manifest: dict) -> Path:
-        """Atomically write a run's manifest. Creates the run dir if needed."""
+    def patch_manifest(self, run_id: str, patch_fn) -> bool:
+        """Atomically apply ``patch_fn(manifest) → None`` under the store lock.
+
+        Reads the current manifest, calls ``patch_fn`` (which mutates it
+        in-place), then writes it back — all under ``_manifest_lock``.  This
+        prevents the env-snapshot background thread from clobbering fields
+        written by the journal pump thread (or vice versa).
+
+        FIX 6: the env-snapshot thread uses this instead of a bare
+        read→mutate→write so the transition never loses ``result``,
+        ``duration_s``, or any other field written concurrently.
+
+        Returns ``True`` if the patch was applied, ``False`` if the manifest
+        didn't exist or the write failed.  Never raises.
+        """
+        with self._manifest_lock:
+            try:
+                manifest = self.read_manifest(run_id)
+                if manifest is None:
+                    return False
+                patch_fn(manifest)
+                self._write_manifest_unlocked(run_id, manifest)
+                return True
+            except Exception:  # noqa: BLE001 - best-effort, never raises
+                return False
+
+    def write_manifest(self, run_id: str, manifest: dict) -> "Path":
+        """Atomically write a run's manifest under the store lock.
+
+        Wraps the internal ``_write_manifest_unlocked`` so callers that
+        already hold ``_manifest_lock`` (e.g. ``patch_manifest``) can call
+        the unlocked variant, while all other callers get the lock for free.
+        """
+        with self._manifest_lock:
+            return self._write_manifest_unlocked(run_id, manifest)
+
+    def _write_manifest_unlocked(self, run_id: str, manifest: dict) -> "Path":
+        """Write a run's manifest without acquiring the lock (caller holds it)."""
         run_dir = self._run_dir(run_id)
         run_dir.mkdir(parents=True, exist_ok=True)
         target = run_dir / MANIFEST_NAME
-        # Atomic: write to a temp file in the same dir, then rename.
         fd, tmp = tempfile.mkstemp(dir=str(run_dir), suffix=".tmp")
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as fh:
@@ -262,9 +301,18 @@ def build_manifest(
     spec: dict | None = None,
     provenance: dict | None = None,
     submitted_at: float | None = None,
+    environment: dict | None = None,
     **extra: Any,
 ) -> dict:
-    """Construct a fresh run manifest with the standard fields."""
+    """Construct a fresh run manifest with the standard fields.
+
+    ``environment`` is the optional environment snapshot produced by
+    :func:`research_os.daemon.provenance.capture_environment`.  It is
+    captured once at submit time and threaded here so the manifest carries
+    a restorable record of the exact Python/pip/conda state.  Callers that
+    do not pass it get ``None`` (omitted from the manifest) so existing
+    callers and tests are unaffected.
+    """
     manifest: dict = {
         "id": run_id,
         "name": name,
@@ -277,8 +325,69 @@ def build_manifest(
         "transitions": [{"status": status, "at": time.time()}],
         "artifacts": [],
     }
+    # Only include the environment key when a snapshot was actually captured,
+    # so manifests produced by existing callers remain unchanged.
+    if environment is not None:
+        manifest["environment"] = environment
     manifest.update(extra)
     return manifest
+
+
+def archive_artifacts_to_cas(
+    root: str | Path | None,
+    run_id: str,
+    artifacts: list[dict],
+) -> list[dict]:
+    """Copy each recorded output artifact into the CAS and annotate its entry.
+
+    For each artifact whose file exists on disk, calls ``CASStore.store`` and
+    writes the returned blob id back onto the artifact dict as ``blob_id``
+    (plus ``blob_oversize=True`` when the file exceeded the size cap).
+    Existing artifact fields are preserved; no field is removed.
+
+    This is a *pure helper* extracted from the terminal-transition handler so
+    it is independently unit-testable.  It must NEVER raise: all errors are
+    swallowed and the original artifact list is returned intact (possibly with
+    fewer ``blob_id`` annotations than expected, but never corrupt).
+
+    Args:
+        root:      Project root that owns the CAS store.  When ``None`` the
+                   function returns ``artifacts`` unchanged (no root = no CAS).
+        run_id:    The run whose artifacts are being archived.
+        artifacts: The list of artifact dicts from the run manifest.  Each
+                   dict has at least ``path`` (relative to root) and ``change``
+                   (``"created"`` | ``"modified"``).  The list is mutated
+                   in-place *and* returned so callers can chain or discard the
+                   return value.
+
+    Returns:
+        The same ``artifacts`` list, annotated with ``blob_id`` where blobs
+        were stored successfully.
+    """
+    if not root or not artifacts:
+        return artifacts
+    try:
+        from .cas import CASStore
+        cas = CASStore(root)
+        root_path = Path(root)
+        for art in artifacts:
+            try:
+                rel = art.get("path")
+                if not rel:
+                    continue
+                abs_path = root_path / rel
+                if not abs_path.is_file():
+                    continue
+                cas_artifact = cas.store(abs_path, run_id)
+                if cas_artifact is not None:
+                    art["blob_id"] = cas_artifact.id
+                    if cas_artifact.oversize:
+                        art["blob_oversize"] = True
+            except Exception:  # noqa: BLE001 - per-file failure must not abort the pass
+                continue
+    except Exception:  # noqa: BLE001 - CAS failure must never break a run
+        pass
+    return artifacts
 
 
 class RunJournal:
@@ -298,8 +407,9 @@ class RunJournal:
 
     LOG_TAIL_MAX = 200
 
-    def __init__(self, store: RunStore) -> None:
+    def __init__(self, store: RunStore, bus: Any = None) -> None:
         self.store = store
+        self._bus = bus
         self._tails: dict[str, list[str]] = {}
         # Optional callback the daemon sets to react to a run reaching a
         # terminal state (e.g. autonomous continuation). Signature:
@@ -366,7 +476,8 @@ class RunJournal:
             prev = (existing.get("status") or "").lower()
             if prev in _TERMINAL and status in _TERMINAL:
                 return
-        if existing is None:
+        _is_new_manifest = existing is None
+        if _is_new_manifest:
             manifest = build_manifest(
                 run_id=job_id,
                 name=snap.get("name", "run"),
@@ -413,9 +524,93 @@ class RunJournal:
         tail = self._tails.get(job_id)
         if tail:
             manifest["log_tail"] = list(tail)
+        # ── CAS archiving (terminal runs only) ──────────────────────────────
+        # Copy each recorded output artifact into the content-addressed store
+        # and annotate the artifact entry with its blob id.  Runs only at
+        # terminal transitions so we archive the FINAL artifact list, not an
+        # intermediate one.  All best-effort: CAS failure must NEVER fail or
+        # corrupt the run — the write_manifest call below still runs.
+        _terminal_statuses = {"succeeded", "failed", "cancelled"}
+        if status in _terminal_statuses:
+            try:
+                run_root = manifest.get("root")
+                arts = manifest.get("artifacts")
+                if run_root and isinstance(arts, list) and arts:
+                    manifest["artifacts"] = archive_artifacts_to_cas(
+                        run_root, job_id, arts
+                    )
+            except Exception:  # noqa: BLE001 - CAS pass must not break the journal
+                pass
+        # ── run.completed / run.failed events (additive, best-effort) ───────
+        # Publish high-level run lifecycle events on the bus after CAS so the
+        # payload includes the final artifact list.  Separate from job.* events
+        # — these are the Phase-6 canonical run surface the SSE /v1/stream
+        # exposes.  Guard: bus may be None (headless / test mode).
+        if status in _terminal_statuses and self._bus is not None:
+            try:
+                from .events import RUN_COMPLETED, RUN_FAILED
+                result_obj = manifest.get("result") or {}
+                exit_code = result_obj.get("returncode") if isinstance(result_obj, dict) else None
+                arts_field = manifest.get("artifacts") or []
+                artifact_count = len(arts_field) if isinstance(arts_field, list) else 0
+                artifact_paths = [
+                    a.get("path") or a.get("blob_id", "")
+                    for a in arts_field
+                    if isinstance(a, dict)
+                ][:50]  # bounded: never dump file contents
+                if status == "succeeded":
+                    self._bus.publish(
+                        RUN_COMPLETED,
+                        {
+                            "run_id": job_id,
+                            "exit_code": exit_code,
+                            "duration": manifest.get("duration_s"),
+                            "artifacts": artifact_paths if artifact_paths else artifact_count,
+                        },
+                    )
+                else:
+                    self._bus.publish(
+                        RUN_FAILED,
+                        {
+                            "run_id": job_id,
+                            "error": str(manifest.get("error") or status),
+                            "exit_code": exit_code,
+                        },
+                    )
+            except Exception:  # noqa: BLE001 - bus failure must never break journaling
+                pass
         self.store.write_manifest(job_id, manifest)
+        # ── async environment snapshot (new manifests only) ──────────────────
+        # pip freeze + conda export are slow (seconds on large envs).  We fire
+        # them on a daemon thread so the pump thread is NEVER blocked.  When
+        # the snapshot is ready, it is merged back into the manifest with a
+        # second atomic write.  If the run is already terminal by the time the
+        # snapshot lands (common for short jobs), the manifest is still updated
+        # because it was already written above and we simply patch it.
+        # Best-effort: any failure is silently swallowed.
+        if _is_new_manifest:
+            def _patch_env(_jid=job_id, _store=self.store):
+                try:
+                    from . import provenance as _prov
+                    env_snap = _prov.capture_environment()
+                    # FIX 6: use patch_manifest (read+apply+write under the
+                    # store lock) so this background thread can never clobber
+                    # fields written concurrently by the journal pump thread
+                    # (result, duration_s, CAS-annotated artifacts, etc.).
+                    def _apply(m):
+                        if "environment" not in m:
+                            m["environment"] = env_snap
+                    _store.patch_manifest(_jid, _apply)
+                except Exception:  # noqa: BLE001 - env patch must never break anything
+                    pass
+
+            threading.Thread(
+                target=_patch_env,
+                name=f"ro-env-snap-{job_id}",
+                daemon=True,
+            ).start()
         # Free the in-memory tail once the run is terminal.
-        if status in {"succeeded", "failed", "cancelled"}:
+        if status in _terminal_statuses:
             self._tails.pop(job_id, None)
             # Staleness refresh stays inline (it's fast + cheap and the
             # reasoning-side gate reads it right after a run finishes).

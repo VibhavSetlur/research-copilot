@@ -1,16 +1,16 @@
 id: reproduction_attempt
 tier: 'plan'
 name: Reproduction Attempt (rerun a published analysis)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [experiment_pipeline]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/replication_study        # re-tests the FINDING in new data; this regenerates the AUTHORS' result
-  - reproducibility/reproducibility      # audits OUR OWN work; this audits someone else's
+- methodology/replication_study          # re-tests the FINDING in new data; this regenerates the AUTHORS' result
+- reproducibility/reproducibility        # audits OUR OWN work; this audits someone else's
 description: |
   Attempt to REPRODUCE a published analysis — rerun the authors'
   pipeline on the authors' (or claimed) data and check whether the
@@ -38,30 +38,16 @@ trigger: |
   reproducibility", "rerun the code from <paper>".
 
 prerequisites:
-  - A target paper / preprint identified (DOI / arXiv id / URL).
-  - "At least one of — the paper's code repository, the paper's data,
-    OR the paper itself if neither code nor data is available
-    (recipe mode)."
+- A target paper / preprint identified (DOI / arXiv id / URL).
+- "At least one of — the paper's code repository, the paper's data, OR the paper itself if neither code nor data is available (recipe mode)."
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Distinguish what we CHANGED from what they DID. A
-       'reproduction' that silently re-tuned a hyperparameter or
-       picked a different library version is not a reproduction —
-       it is a partial replication with hidden deviations."
-    - "Document every deviation, however small. Library version,
-       random seed, OS, hardware (when GPU non-determinism is in
-       play), preprocessing edge case, missing-data handling. The
-       smallest deviation often explains the largest discrepancy."
-    - "Failures are findings. A reproduction that does not regenerate
-       the headline number is informative — to the authors, the
-       field, and the reproduction-aware infrastructure. Write the
-       failure as carefully as the success."
-    - "Engage with the authors before publishing the failure. Most
-       computational reproduction failures are fixable mistakes
-       (wrong dataset version, missing util script, undocumented
-       seed). Ask first; publish second."
+  - "Distinguish what we CHANGED from what they DID. A 'reproduction' that silently re-tuned a hyperparameter or picked a different library version is not a reproduction — it is a partial replication with hidden deviations."
+  - "Document every deviation, however small. Library version, random seed, OS, hardware (when GPU non-determinism is in play), preprocessing edge case, missing-data handling. The smallest deviation often explains the largest discrepancy."
+  - "Failures are findings. A reproduction that does not regenerate the headline number is informative — to the authors, the field, and the reproduction-aware infrastructure. Write the failure as carefully as the success."
+  - "Engage with the authors before publishing the failure. Most computational reproduction failures are fixable mistakes (wrong dataset version, missing util script, undocumented seed). Ask first; publish second."
 
 audience_profile:
   rescience_publication:
@@ -88,206 +74,206 @@ audience_profile:
       experience; include exercises the student can do to extend.
 
 steps:
-  - id: scope_the_attempt
-    name: Scope the reproduction
-    description: |
-      Confirm in one line:
-        - target paper (DOI / URL) + headline result to reproduce
-          (one specific number / figure — "we want to reproduce
-          Table 3, column 4, the 0.84 ROC AUC")
-        - shape: full | partial | recipe
-        - audience: rescience_publication | internal_due_diligence |
-          blog_or_thread | course_or_teaching
-        - whether the authors will be contacted (yes / not yet /
-          no — explain why)
+- id: scope_the_attempt
+  name: Scope the reproduction
+  description: |
+    Confirm in one line:
+      - target paper (DOI / URL) + headline result to reproduce
+        (one specific number / figure — "we want to reproduce
+        Table 3, column 4, the 0.84 ROC AUC")
+      - shape: full | partial | recipe
+      - audience: rescience_publication | internal_due_diligence |
+        blog_or_thread | course_or_teaching
+      - whether the authors will be contacted (yes / not yet /
+        no — explain why)
 
-      A reproduction without a specific target number is a vibe; one
-      with a target number is testable. Push the researcher to pin
-      down the specific output before starting.
+    A reproduction without a specific target number is a vibe; one
+    with a target number is testable. Push the researcher to pin
+    down the specific output before starting.
 
-  - id: inventory_what_the_authors_provided
-    name: Inventory what the authors provided
-    description: |
-      Walk the paper's supplementary / repository:
-        - code repo (link, commit, archived snapshot)
-        - data (location, version, access conditions, license)
-        - container / environment file (Dockerfile, conda.yaml,
-          requirements.txt, renv.lock, Project.toml)
-        - documentation (README, RUNME, MAKEFILE, supplementary
-          methods)
-        - seeds / configs / hyperparameters (in code or as files)
+- id: inventory_what_the_authors_provided
+  name: Inventory what the authors provided
+  description: |
+    Walk the paper's supplementary / repository:
+      - code repo (link, commit, archived snapshot)
+      - data (location, version, access conditions, license)
+      - container / environment file (Dockerfile, conda.yaml,
+        requirements.txt, renv.lock, Project.toml)
+      - documentation (README, RUNME, MAKEFILE, supplementary
+        methods)
+      - seeds / configs / hyperparameters (in code or as files)
 
-      Record to workspace/<step>/outputs/reports/provided_inventory.md.
-      Note every item the paper claims to provide but does not (the
-      gap is the first signal of how the reproduction will go).
+    Record to workspace/<step>/outputs/reports/provided_inventory.md.
+    Note every item the paper claims to provide but does not (the
+    gap is the first signal of how the reproduction will go).
 
-  - id: pin_the_environment
-    name: Pin the environment to what the authors specified
-    description: |
-      Re-create the authors' environment AS DOCUMENTED:
-        - same Python / R / Julia major+minor version
-        - same library versions (use the authors' lock file if
-          provided; otherwise compute it from the requirements file
-          + the publication date)
-        - same OS family when the paper specifies it (container or
-          documented in README)
-        - same random seeds when the paper specifies them
+- id: pin_the_environment
+  name: Pin the environment to what the authors specified
+  description: |
+    Re-create the authors' environment AS DOCUMENTED:
+      - same Python / R / Julia major+minor version
+      - same library versions (use the authors' lock file if
+        provided; otherwise compute it from the requirements file
+        + the publication date)
+      - same OS family when the paper specifies it (container or
+        documented in README)
+      - same random seeds when the paper specifies them
 
-      Set up under workspace/<step>/environment/ with a
-      requirements.txt + Dockerfile that captures EXACTLY what was
-      used. Use sys_env(operation='docker_generate') after sys_env(operation='snapshot').
+    Set up under workspace/<step>/environment/ with a
+    requirements.txt + Dockerfile that captures EXACTLY what was
+    used. Use sys_env(operation='docker_generate') after sys_env(operation='snapshot').
 
-      Document every gap (a library used in the code but not pinned
-      in the lock file). Pinning the wrong version of one library
-      can flip the headline result; the inventory of unpinned
-      libraries is itself a finding.
+    Document every gap (a library used in the code but not pinned
+    in the lock file). Pinning the wrong version of one library
+    can flip the headline result; the inventory of unpinned
+    libraries is itself a finding.
 
-  - id: ingest_data_with_versioning
-    name: Ingest data + verify hashes
-    description: |
-      Get the data the authors used (or as close as possible):
-        - if the data is publicly available and versioned, pin the
-          version and compute hashes
-        - if the data lives behind access controls, document the
-          access path + ask for hash + version metadata
-        - if the data is no longer available, mark this an
-          unavailability blocker and pivot to RECIPE mode (the
-          paper's methods + reported numbers are the only signal)
+- id: ingest_data_with_versioning
+  name: Ingest data + verify hashes
+  description: |
+    Get the data the authors used (or as close as possible):
+      - if the data is publicly available and versioned, pin the
+        version and compute hashes
+      - if the data lives behind access controls, document the
+        access path + ask for hash + version metadata
+      - if the data is no longer available, mark this an
+        unavailability blocker and pivot to RECIPE mode (the
+        paper's methods + reported numbers are the only signal)
 
-      Compare hashes of every file to anything the authors provided
-      (most repos do not publish hashes; absence is itself worth
-      noting).
+    Compare hashes of every file to anything the authors provided
+    (most repos do not publish hashes; absence is itself worth
+    noting).
 
-  - id: rerun_pipeline_end_to_end
-    name: Re-run the pipeline end-to-end
-    description: |
-      For FULL reproductions:
-        - run the authors' entrypoint (README's `make all`, `bash
-          run.sh`, `python main.py`, `snakemake`, `nextflow run …`)
-          via tool_task(operation='run') (background for anything > 60s);
-          tool_task(operation='status') to monitor
-        - capture stderr/stdout to
-          workspace/<step>/outputs/logs/rerun_<timestamp>.log
-        - record wall-time, peak memory, GPU usage (when applicable)
+- id: rerun_pipeline_end_to_end
+  name: Re-run the pipeline end-to-end
+  description: |
+    For FULL reproductions:
+      - run the authors' entrypoint (README's `make all`, `bash
+        run.sh`, `python main.py`, `snakemake`, `nextflow run …`)
+        via tool_task(operation='run') (background for anything > 60s);
+        tool_task(operation='status') to monitor
+      - capture stderr/stdout to
+        workspace/<step>/outputs/logs/rerun_<timestamp>.log
+      - record wall-time, peak memory, GPU usage (when applicable)
 
-      For PARTIAL reproductions:
-        - reconstruct the missing piece (re-implement code from
-          the paper's methods, or substitute a publicly-available
-          dataset close to the authors' description)
-        - clearly flag every substitution; the substitution is a
-          deviation, not an equivalent
+    For PARTIAL reproductions:
+      - reconstruct the missing piece (re-implement code from
+        the paper's methods, or substitute a publicly-available
+        dataset close to the authors' description)
+      - clearly flag every substitution; the substitution is a
+        deviation, not an equivalent
 
-      For RECIPE reproductions:
-        - re-implement the methods from the paper alone
-        - the implementation choices (library, hyperparameters,
-          edge-case handling) are deviations from the (unknown)
-          authors' code
+    For RECIPE reproductions:
+      - re-implement the methods from the paper alone
+      - the implementation choices (library, hyperparameters,
+        edge-case handling) are deviations from the (unknown)
+        authors' code
 
-  - id: compare_numbers_against_the_paper
-    name: Compare numbers against the paper
-    description: |
-      For each headline output, build a NUMERICAL DIFF TABLE:
-        | Quantity | Paper | Our run | Absolute Δ | Relative Δ | Tolerance |
-      Tolerances are typed, and the band for each is set by what the
-      reproduction is FOR — state it explicitly per quantity:
-        - exact match: data preprocessing pipelines, model checksums
-        - small numerical Δ: expected for floating-point + GPU
-          non-determinism; size the band from a multi-seed run of the
-          paper's own number, not a guessed constant
-        - large numerical Δ (beyond a scientifically meaningful band
-          for this outcome): a finding
+- id: compare_numbers_against_the_paper
+  name: Compare numbers against the paper
+  description: |
+    For each headline output, build a NUMERICAL DIFF TABLE:
+      | Quantity | Paper | Our run | Absolute Δ | Relative Δ | Tolerance |
+    Tolerances are typed, and the band for each is set by what the
+    reproduction is FOR — state it explicitly per quantity:
+      - exact match: data preprocessing pipelines, model checksums
+      - small numerical Δ: expected for floating-point + GPU
+        non-determinism; size the band from a multi-seed run of the
+        paper's own number, not a guessed constant
+      - large numerical Δ (beyond a scientifically meaningful band
+        for this outcome): a finding
 
-      Save the table to
-      workspace/<step>/outputs/reports/numerical_diff.md.
+    Save the table to
+    workspace/<step>/outputs/reports/numerical_diff.md.
 
-      Build the head-to-head FIGURE comparing the paper's headline
-      number to our run (forest-plot style with both estimates +
-      CIs when available).
+    Build the head-to-head FIGURE comparing the paper's headline
+    number to our run (forest-plot style with both estimates +
+    CIs when available).
 
-  - id: investigate_discrepancies
-    name: Investigate discrepancies (small and large)
-    description: |
-      For each Δ above tolerance, work down the cause hierarchy:
-        1. environment / library version (re-run after pinning
-           differently)
-        2. random seed (re-run with multiple seeds; report the
-           seed-variance of the paper's number)
-        3. data version (re-run on the alternate data version when
-           available)
-        4. preprocessing edge case (NaN handling, encoding, ordering)
-        5. undocumented choice (a hyperparameter not in the paper or
-           the code's defaults; an alternative loss; a different
-           early-stopping rule)
+- id: investigate_discrepancies
+  name: Investigate discrepancies (small and large)
+  description: |
+    For each Δ above tolerance, work down the cause hierarchy:
+      1. environment / library version (re-run after pinning
+         differently)
+      2. random seed (re-run with multiple seeds; report the
+         seed-variance of the paper's number)
+      3. data version (re-run on the alternate data version when
+         available)
+      4. preprocessing edge case (NaN handling, encoding, ordering)
+      5. undocumented choice (a hyperparameter not in the paper or
+         the code's defaults; an alternative loss; a different
+         early-stopping rule)
 
-      The cause hierarchy walks from "mechanical" to "scientific" —
-      most reproduction failures resolve at levels 1-3 (mechanical);
-      a failure that survives to level 5 (undocumented choice) is
-      a finding worth publishing.
+    The cause hierarchy walks from "mechanical" to "scientific" —
+    most reproduction failures resolve at levels 1-3 (mechanical);
+    a failure that survives to level 5 (undocumented choice) is
+    a finding worth publishing.
 
-  - id: classify_the_outcome
-    name: Classify the reproduction outcome (honest)
-    description: |
-      Pick one verdict:
-        REGENERATED — every headline number within tolerance.
-        REGENERATED-WITH-DEVIATIONS — within tolerance after
-          documented deviations (e.g. pinned different library
-          version; ran multiple seeds and reported variance).
-        PARTIAL — some headline numbers regenerated, others did not.
-        FAILED-MECHANICALLY — pipeline did not run to completion
-          (missing util, broken dependency, dataset unavailability);
-          no scientific judgement possible.
-        FAILED-SUBSTANTIVELY — pipeline ran to completion but the
-          numbers do not match within tolerance, and the discrepancy
-          is not explained by environment / seed / version.
-        BLOCKED-BY-UNAVAILABILITY — code OR data unavailable AND
-          the recipe alone is insufficient.
+- id: classify_the_outcome
+  name: Classify the reproduction outcome (honest)
+  description: |
+    Pick one verdict:
+      REGENERATED — every headline number within tolerance.
+      REGENERATED-WITH-DEVIATIONS — within tolerance after
+        documented deviations (e.g. pinned different library
+        version; ran multiple seeds and reported variance).
+      PARTIAL — some headline numbers regenerated, others did not.
+      FAILED-MECHANICALLY — pipeline did not run to completion
+        (missing util, broken dependency, dataset unavailability);
+        no scientific judgement possible.
+      FAILED-SUBSTANTIVELY — pipeline ran to completion but the
+        numbers do not match within tolerance, and the discrepancy
+        is not explained by environment / seed / version.
+      BLOCKED-BY-UNAVAILABILITY — code OR data unavailable AND
+        the recipe alone is insufficient.
 
-      Each verdict has a different next step. A
-      FAILED-SUBSTANTIVELY verdict in particular warrants a deeper
-      investigation + an author conversation before any public
-      claim.
+    Each verdict has a different next step. A
+    FAILED-SUBSTANTIVELY verdict in particular warrants a deeper
+    investigation + an author conversation before any public
+    claim.
 
-  - id: contact_the_authors
-    name: Contact the authors (before publishing the failure)
-    description: |
-      For any non-REGENERATED verdict, draft a polite, specific
-      message to the authors:
-        - what you reproduced (the headline number; the
-          tolerance you used)
-        - what you ran (environment, data version, seeds)
-        - what didn't match (numerical diff + which checks you ran
-          to rule out mechanical causes)
-        - what would help resolve it (the unavailable file, the
-          missing seed, a clarification of one methods sentence)
+- id: contact_the_authors
+  name: Contact the authors (before publishing the failure)
+  description: |
+    For any non-REGENERATED verdict, draft a polite, specific
+    message to the authors:
+      - what you reproduced (the headline number; the
+        tolerance you used)
+      - what you ran (environment, data version, seeds)
+      - what didn't match (numerical diff + which checks you ran
+        to rule out mechanical causes)
+      - what would help resolve it (the unavailable file, the
+        missing seed, a clarification of one methods sentence)
 
-      Most computational reproduction failures resolve in the
-      back-and-forth. The reproduction report (next step) is more
-      useful AFTER this round; reviewers downstream weight an
-      authors-engaged reproduction higher than a unilateral one.
+    Most computational reproduction failures resolve in the
+    back-and-forth. The reproduction report (next step) is more
+    useful AFTER this round; reviewers downstream weight an
+    authors-engaged reproduction higher than a unilateral one.
 
-  - id: write_the_reproduction_report
-    name: Write the reproduction report (per audience)
-    description: |
-      sys_file_write filepath="synthesis/reproduction_<paper_slug>.md"
-      per the audience_profile's sections.
+- id: write_the_reproduction_report
+  name: Write the reproduction report (per audience)
+  description: |
+    sys_file_write filepath="synthesis/reproduction_<paper_slug>.md"
+    per the audience_profile's sections.
 
-      Universal elements:
-        - target paper metadata (DOI, authors, year, headline result)
-        - verdict (one of the six)
-        - numerical diff table
-        - environment + data inventory + deviations
-        - author engagement summary (what was asked + what was
-          received)
-        - recommendation
+    Universal elements:
+      - target paper metadata (DOI, authors, year, headline result)
+      - verdict (one of the six)
+      - numerical diff table
+      - environment + data inventory + deviations
+      - author engagement summary (what was asked + what was
+        received)
+      - recommendation
 
-      Cap at 2000 words for rescience_publication; 800 for
-      internal_due_diligence; 600 for blog_or_thread.
+    Cap at 2000 words for rescience_publication; 800 for
+    internal_due_diligence; 600 for blog_or_thread.
 
 expected_outputs:
-  - workspace/<step>/outputs/reports/provided_inventory.md
-  - workspace/<step>/outputs/reports/numerical_diff.md
-  - workspace/<step>/outputs/logs/rerun_*.log
-  - synthesis/reproduction_<paper_slug>.md
+- workspace/<step>/outputs/reports/provided_inventory.md
+- workspace/<step>/outputs/reports/numerical_diff.md
+- workspace/<step>/outputs/logs/rerun_*.log
+- synthesis/reproduction_<paper_slug>.md
 
 quality_bar:
   every_deviation_documented: true
@@ -296,6 +282,24 @@ quality_bar:
   author_contact_attempted_for_non_regenerated_verdicts: true
   failure_distinguishes_mechanical_from_substantive: true
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: reproduce
+triggers:
+- reproduce this paper
+- reproduce the paper
+- rerun their analysis
+- rerun the code from
+- can i get the same numbers
+- check if their result reproduces
+- reproduction attempt
+- computational reproduction
+- rescience
+- redo the analysis from the paper
+summary: Attempt to reproduce a published analysis (rerun the authors' pipeline).
+token_estimate: 1800
+decomposition:
+- protocol: methodology/reproduction_attempt
+  purpose: Inventory provided assets, pin env, rerun, compare numbers.

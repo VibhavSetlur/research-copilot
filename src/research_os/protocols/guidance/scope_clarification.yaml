@@ -1,17 +1,17 @@
 id: scope_clarification
 tier: 'intake'
 name: Scope Clarification (vague intent → workable scope)
-version: '3.8.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:
   domain: [any]
   audience: [naive_ai]
   workflow_shape: [any]
 see_also:
-  - guidance/session_boot                       # the router sends level-0 / wide-tie asks here
-  - methodology/methodological_consultation     # route here when intent is UNFORMED (teach-me)
-  - methodology/exploratory_data_analysis       # route here when the ask is hypothesis-generating
+- guidance/session_boot                         # the router sends level-0 / wide-tie asks here
+- methodology/methodological_consultation       # route here when intent is UNFORMED (teach-me)
+- methodology/exploratory_data_analysis         # route here when the ask is hypothesis-generating
 description: |
   Convert a vague, broad, or cross-disciplinary research ask into a
   workable scope BEFORE picking a protocol. Use this when:
@@ -40,147 +40,136 @@ prerequisites: []
 editorial_voice:
   mode: hybrid
   rules:
-    - "Narrow in small steps. Ask the SINGLE question whose answer most
-       reduces the option set, not three at once. The researcher is
-       allowed to say 'I don't know yet' — that's a finding that points
-       to consultation / casual exploration."
-    - "Distinguish UNCLEAR INTENT (researcher knows but the AI doesn't)
-       from UNFORMED INTENT (researcher hasn't decided yet). The first
-       needs a clarifying question; the second routes to
-       methodology/methodological_consultation or
-       methodology/exploratory_data_analysis."
-    - "Cross-disciplinary projects are FIRST-CLASS. Don't force-fit into
-       one subfield; route through methodology/deep_domain_research once
-       per subfield and let the AI hold both pipelines."
-    - "Never invent a research question on the researcher's behalf. The
-       AI can SURFACE candidate questions from intake signals; the
-       researcher commits."
+  - "Narrow in small steps. Ask the SINGLE question whose answer most reduces the option set, not three at once. The researcher is allowed to say 'I don't know yet' — that's a finding that points to consultation / casual exploration."
+  - "Distinguish UNCLEAR INTENT (researcher knows but the AI doesn't) from UNFORMED INTENT (researcher hasn't decided yet). The first needs a clarifying question; the second routes to methodology/methodological_consultation or methodology/exploratory_data_analysis."
+  - "Cross-disciplinary projects are FIRST-CLASS. Don't force-fit into one subfield; route through methodology/deep_domain_research once per subfield and let the AI hold both pipelines."
+  - "Never invent a research question on the researcher's behalf. The AI can SURFACE candidate questions from intake signals; the researcher commits."
 
 steps:
-  - id: classify_the_ambiguity
-    name: Classify the source of the ambiguity
-    description: |
-      Pick ONE bucket — the rest of the protocol depends on it:
+- id: classify_the_ambiguity
+  name: Classify the source of the ambiguity
+  description: |
+    Pick ONE bucket — the rest of the protocol depends on it:
 
-        A. UNCLEAR INTENT — the researcher knows what they want; the AI
-           hasn't extracted it. Likely fix: one clarifying question.
-           Signals: prompt has a clear verb but ambiguous object
-           ("run the analysis" — which one?).
+      A. UNCLEAR INTENT — the researcher knows what they want; the AI
+         hasn't extracted it. Likely fix: one clarifying question.
+         Signals: prompt has a clear verb but ambiguous object
+         ("run the analysis" — which one?).
 
-        B. UNFORMED INTENT — the researcher hasn't decided. Likely
-           route: methodology/methodological_consultation (teach-me
-           mode) or methodology/exploratory_data_analysis
-           (hypothesis-generating mode). Signals: prompt frames the
-           ask as exploration / learning ("I want to learn about X",
-           "what's possible here").
+      B. UNFORMED INTENT — the researcher hasn't decided. Likely
+         route: methodology/methodological_consultation (teach-me
+         mode) or methodology/exploratory_data_analysis
+         (hypothesis-generating mode). Signals: prompt frames the
+         ask as exploration / learning ("I want to learn about X",
+         "what's possible here").
 
-        C. CROSS-DISCIPLINARY SCOPE — the project genuinely spans two
-           subfields. Likely route: methodology/deep_domain_research
-           per subfield, then synthesise. Signals: data modality or
-           question crosses canonical pipelines (e.g. genomics +
-           imaging; surveys + behavioural log).
+      C. CROSS-DISCIPLINARY SCOPE — the project genuinely spans two
+         subfields. Likely route: methodology/deep_domain_research
+         per subfield, then synthesise. Signals: data modality or
+         question crosses canonical pipelines (e.g. genomics +
+         imaging; surveys + behavioural log).
 
-        D. WRONG PROTOCOL ENTRYPOINT — the researcher is asking
-           Research-OS for something it shouldn't drive (e.g. "rewrite
-           my CV"). Likely fix: surface what Research-OS does + does
-           not do, offer the closest in-scope protocol, defer the
-           rest.
+      D. WRONG PROTOCOL ENTRYPOINT — the researcher is asking
+         Research-OS for something it shouldn't drive (e.g. "rewrite
+         my CV"). Likely fix: surface what Research-OS does + does
+         not do, offer the closest in-scope protocol, defer the
+         rest.
 
-        E. TOO BROAD FOR ONE TURN — the prompt bundles a whole project's
-           worth of work. Likely route: build an active plan via
-           tool_route's complexity=high path; walk per turn via
-           tool_plan.
+      E. TOO BROAD FOR ONE TURN — the prompt bundles a whole project's
+         worth of work. Likely route: build an active plan via
+         tool_route's complexity=high path; walk per turn via
+         tool_plan.
 
-      Record the chosen bucket in `docs/scope_notes.md` (append, do
-      not overwrite). The downstream protocol uses this to skip
-      redundant clarification.
+    Record the chosen bucket in `docs/scope_notes.md` (append, do
+    not overwrite). The downstream protocol uses this to skip
+    redundant clarification.
 
-  - id: ask_the_narrowing_question
-    name: Ask the SINGLE highest-leverage clarifying question
-    description: |
-      Compose ONE question whose answer collapses the option set most.
-      Concrete templates by bucket:
+- id: ask_the_narrowing_question
+  name: Ask the SINGLE highest-leverage clarifying question
+  description: |
+    Compose ONE question whose answer collapses the option set most.
+    Concrete templates by bucket:
 
-        A. UNCLEAR INTENT
-           - "<You said X> — do you mean (option 1) or (option 2)?"
-           - "Are you after a one-off check or a publishable result?"
+      A. UNCLEAR INTENT
+         - "<You said X> — do you mean (option 1) or (option 2)?"
+         - "Are you after a one-off check or a publishable result?"
 
-        B. UNFORMED INTENT
-           - "Do you want me to TEACH the method first
-             (methodological_consultation), or EXPLORE the data to
-             surface a hypothesis (exploratory_data_analysis)?"
-           - "Is this for a future study you're scoping, or for data
-             you already have?"
+      B. UNFORMED INTENT
+         - "Do you want me to TEACH the method first
+           (methodological_consultation), or EXPLORE the data to
+           surface a hypothesis (exploratory_data_analysis)?"
+         - "Is this for a future study you're scoping, or for data
+           you already have?"
 
-        C. CROSS-DISCIPLINARY
-           - "Which subfield's pipeline drives the headline analysis,
-             and which is supporting evidence? — I'll run
-             deep_domain_research on the driver first."
+      C. CROSS-DISCIPLINARY
+         - "Which subfield's pipeline drives the headline analysis,
+           and which is supporting evidence? — I'll run
+           deep_domain_research on the driver first."
 
-        D. WRONG ENTRYPOINT
-           - "Research OS covers <list 3 closest protocols>. Of those,
-             which is closest to what you need? — anything else, I'd
-             route outside RO."
+      D. WRONG ENTRYPOINT
+         - "Research OS covers <list 3 closest protocols>. Of those,
+           which is closest to what you need? — anything else, I'd
+           route outside RO."
 
-        E. TOO BROAD
-           - "I can build an active plan and walk it step-by-step. Do
-             you want me to plan the WHOLE project, or just the next
-             milestone (e.g. 'methods → first results' / 'figures →
-             paper draft')?"
+      E. TOO BROAD
+         - "I can build an active plan and walk it step-by-step. Do
+           you want me to plan the WHOLE project, or just the next
+           milestone (e.g. 'methods → first results' / 'figures →
+           paper draft')?"
 
-      AUTONOMY GATE:
-        Risk: reversible — choosing how to read an ambiguous scope commits
-        nothing; the researcher can redirect.
-        proceed (adaptive default, autopilot) → pick the highest-likelihood option, state it,
-                              and proceed with "say stop to redirect".
-        confirm first (manual / supervised) → ask + wait.
+    AUTONOMY GATE:
+      Risk: reversible — choosing how to read an ambiguous scope commits
+      nothing; the researcher can redirect.
+      proceed (adaptive default, autopilot) → pick the highest-likelihood option, state it,
+                            and proceed with "say stop to redirect".
+      confirm first (manual / supervised) → ask + wait.
 
-      AMBIGUITY POSTURE GATE:
-        ask_when_uncertain → ask + wait (default).
-        take_best_default  → pick + announce default + proceed.
+    AMBIGUITY POSTURE GATE:
+      ask_when_uncertain → ask + wait (default).
+      take_best_default  → pick + announce default + proceed.
 
-  - id: route_with_narrowed_prompt
-    name: Re-route with the narrowed prompt
-    description: |
-      Compose the narrowed prompt as:
-        "<original verb> + <clarified object> + <bucket-implied scope>"
+- id: route_with_narrowed_prompt
+  name: Re-route with the narrowed prompt
+  description: |
+    Compose the narrowed prompt as:
+      "<original verb> + <clarified object> + <bucket-implied scope>"
 
-      Examples:
-        Original: "help me figure this out"
-        Narrowed: "explore the data to surface a hypothesis (no
-                  confirmatory yet); the data is the CSV in
-                  inputs/raw_data/"
-        → tool_route(prompt=<narrowed>) → methodology/exploratory_data_analysis
+    Examples:
+      Original: "help me figure this out"
+      Narrowed: "explore the data to surface a hypothesis (no
+                confirmatory yet); the data is the CSV in
+                inputs/raw_data/"
+      → tool_route(prompt=<narrowed>) → methodology/exploratory_data_analysis
 
-        Original: "build something with this"
-        Narrowed: "teach me what a causal-inference workflow looks
-                  like for cohort data; no commit yet"
-        → tool_route(prompt=<narrowed>) → methodology/methodological_consultation
+      Original: "build something with this"
+      Narrowed: "teach me what a causal-inference workflow looks
+                like for cohort data; no commit yet"
+      → tool_route(prompt=<narrowed>) → methodology/methodological_consultation
 
-        Original: "this is partly imaging and partly RNA-seq"
-        Narrowed: "deep_domain_research for snRNA-seq first; defer
-                  imaging until the RNA pipeline lands"
-        → tool_route(prompt=<narrowed>) → methodology/deep_domain_research
+      Original: "this is partly imaging and partly RNA-seq"
+      Narrowed: "deep_domain_research for snRNA-seq first; defer
+                imaging until the RNA pipeline lands"
+      → tool_route(prompt=<narrowed>) → methodology/deep_domain_research
 
-      Call tool_route on the narrowed prompt; honour its decision.
+    Call tool_route on the narrowed prompt; honour its decision.
 
-  - id: log_the_narrowing
-    name: Log the narrowing (so re-asks don't reset)
-    description: |
-      mem_log
-        context = "Scope clarification"
-        selected = "<narrowed intent>"
-        rationale = "<bucket + the researcher's clarifying answer>"
-        options_considered = "<the alternatives surfaced in the
-                              narrowing question>"
+- id: log_the_narrowing
+  name: Log the narrowing (so re-asks don't reset)
+  description: |
+    mem_log
+      context = "Scope clarification"
+      selected = "<narrowed intent>"
+      rationale = "<bucket + the researcher's clarifying answer>"
+      options_considered = "<the alternatives surfaced in the
+                            narrowing question>"
 
-      This protects against the failure mode where the next session re-
-      asks the same clarifying question and the researcher re-explains
-      from scratch. sys_session_handoff picks up the decision log.
+    This protects against the failure mode where the next session re-
+    asks the same clarifying question and the researcher re-explains
+    from scratch. tool_session_handoff picks up the decision log.
 
 expected_outputs:
-  - docs/scope_notes.md
-  - .os_state/protocol_execution_log.jsonl
+- docs/scope_notes.md
+- .os_state/protocol_execution_log.jsonl
 
 quality_bar:
   one_clarifying_question_max_per_turn: true
@@ -188,6 +177,29 @@ quality_bar:
   decision_logged: true
   no_invented_research_question: true
 
-next_protocol: null    # downstream protocol is whatever the re-route picks
+next_protocol:         # downstream protocol is whatever the re-route picks
 next_protocol_kind: terminal
 on_failure: guidance/iterative_planning
+intent_class: discover
+sub_intent: clarify
+triggers:
+- help me figure out where to start
+- help me figure this out
+- i'm not sure what this is
+- i have data and ideas
+- this might be x or y
+- is this even the right tool
+- i'm stuck before i even start
+- what is this problem
+- where should i start
+- where do i begin
+- cross-disciplinary
+- spans two fields
+- i don't know what to ask
+- narrow this down for me
+- scope this
+summary: Narrow a vague / open-ended / cross-disciplinary ask into a workable scope BEFORE picking a protocol.
+token_estimate: 1200
+decomposition:
+- protocol: guidance/scope_clarification
+  purpose: Classify ambiguity → ask one narrowing question → re-route.

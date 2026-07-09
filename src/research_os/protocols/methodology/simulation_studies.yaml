@@ -1,16 +1,16 @@
 id: simulation_studies
 tier: 'plan'
 name: Simulation Studies (ADEMP)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:
   domain: [any]
   audience: [researcher, auditor]
   workflow_shape: [experiment_pipeline]
 see_also:
-  - methodology/uncertainty_quantification   # Monte Carlo SE is the simulation's own UQ
-  - guidance/analysis_plan                    # the simulation runs as plan steps
+- methodology/uncertainty_quantification     # Monte Carlo SE is the simulation's own UQ
+- guidance/analysis_plan                      # the simulation runs as plan steps
 description: |
   Monte Carlo, agent-based, discrete-event, or in-silico studies. Follows
   the ADEMP framework (Aims, Data-generating mechanisms, Estimands,
@@ -25,88 +25,84 @@ trigger: |
 editorial_voice:
   mode: guidance
   rules:
-    - "ADEMP is written BEFORE any code runs. Backfilling ADEMP after
-       results land is rationalisation, not specification."
-    - "Monte Carlo SE accompanies every point estimate — bare
-       performance numbers without their MC SE are misleading."
-    - "A simulation's conclusions only generalise as far as its
-       data-generating mechanism. The limitations section names what
-       the DGM did NOT cover."
+  - "ADEMP is written BEFORE any code runs. Backfilling ADEMP after results land is rationalisation, not specification."
+  - "Monte Carlo SE accompanies every point estimate — bare performance numbers without their MC SE are misleading."
+  - "A simulation's conclusions only generalise as far as its data-generating mechanism. The limitations section names what the DGM did NOT cover."
 
 steps:
-  - id: create_step
-    name: Create Simulation Step
-    description: sys_path name="sim_<scenario>"
+- id: create_step
+  name: Create Simulation Step
+  description: tool_plan (operation=create_step) name="sim_<scenario>"
 
-  - id: ademp
-    name: Specify ADEMP Up Front
-    description: |
-      Write outputs/reports/ademp.md with:
-        - Aims: what claim about the method(s) we want to evaluate
-        - Data-generating mechanisms: distributions, sample sizes, scenario
-          grid (factorial design preferred)
-        - Estimands: the population-level quantities of interest
-        - Methods: candidates being compared (with library + version)
-        - Performance measures: bias, MSE, coverage, power, type-I rate,
-          calibration, computational cost — pick what matters for the aim
+- id: ademp
+  name: Specify ADEMP Up Front
+  description: |
+    Write outputs/reports/ademp.md with:
+      - Aims: what claim about the method(s) we want to evaluate
+      - Data-generating mechanisms: distributions, sample sizes, scenario
+        grid (factorial design preferred)
+      - Estimands: the population-level quantities of interest
+      - Methods: candidates being compared (with library + version)
+      - Performance measures: bias, MSE, coverage, power, type-I rate,
+        calibration, computational cost — pick what matters for the aim
 
-  - id: seed_plan
-    name: Random-state Plan
-    description: |
-      One master seed; per-scenario seeds derived deterministically from it
-      (any documented, collision-free derivation — e.g. a counter-based or
-      spawn-key scheme). Document the seed strategy and the master_seed in
-      outputs/reports/seed_plan.md. Every script must print its seed at
-      start-up so any run is reproducible from the log alone.
+- id: seed_plan
+  name: Random-state Plan
+  description: |
+    One master seed; per-scenario seeds derived deterministically from it
+    (any documented, collision-free derivation — e.g. a counter-based or
+    spawn-key scheme). Document the seed strategy and the master_seed in
+    outputs/reports/seed_plan.md. Every script must print its seed at
+    start-up so any run is reproducible from the log alone.
 
-  - id: scale_pilot_then_full
-    name: Pilot Then Full Run
-    description: |
-      Run a tiny pilot (a handful of reps per scenario) to confirm the
-      pipeline and audit outputs, then scale to the planned N_reps. Justify
-      N_reps from the Monte Carlo SE the aim can tolerate (the SE of a
-      performance measure shrinks with 1/sqrt(N_reps) — derive N_reps from
-      the target precision, do not pick a round number). Background the full
-      run with tool_task(operation='run') when its expected runtime would
-      block interactive work on shared infra.
+- id: scale_pilot_then_full
+  name: Pilot Then Full Run
+  description: |
+    Run a tiny pilot (a handful of reps per scenario) to confirm the
+    pipeline and audit outputs, then scale to the planned N_reps. Justify
+    N_reps from the Monte Carlo SE the aim can tolerate (the SE of a
+    performance measure shrinks with 1/sqrt(N_reps) — derive N_reps from
+    the target precision, do not pick a round number). Background the full
+    run with tool_task(operation='run') when its expected runtime would
+    block interactive work on shared infra.
 
-  - id: tidy_results
-    name: Tidy Results into Long Format
-    description: |
-      Aggregate outputs into outputs/data/results.parquet with columns
-      (scenario_id, scenario_params..., method, replicate, metric, value).
-      Tidy form is non-negotiable — downstream visualisation depends on it.
+- id: tidy_results
+  name: Tidy Results into Long Format
+  description: |
+    Aggregate outputs into outputs/data/results.parquet with columns
+    (scenario_id, scenario_params..., method, replicate, metric, value).
+    Tidy form is non-negotiable — downstream visualisation depends on it.
 
-  - id: performance_table
-    name: Performance Table + Visualisation
-    description: |
-      Build outputs/reports/performance_table.md with one row per
-      (method × scenario × metric), reporting point estimate + Monte Carlo
-      SE (sd / sqrt(N_reps)). Add a figure showing each method's headline
-      metric across the scenario grid.
+- id: performance_table
+  name: Performance Table + Visualisation
+  description: |
+    Build outputs/reports/performance_table.md with one row per
+    (method × scenario × metric), reporting point estimate + Monte Carlo
+    SE (sd / sqrt(N_reps)). Add a figure showing each method's headline
+    metric across the scenario grid.
 
-  - id: sensitivity
-    name: Sensitivity to Design Choices
-    description: |
-      Rerun a subset of scenarios with a perturbed master seed AND with a
-      materially larger N_reps. Both should yield qualitatively the same
-      conclusions; if the conclusion moves when N_reps grows, the original
-      run was under-powered for the claim — document and re-scale. If it
-      moves when only the seed changes, the Monte Carlo SE is too large to
-      support the claim at all.
+- id: sensitivity
+  name: Sensitivity to Design Choices
+  description: |
+    Rerun a subset of scenarios with a perturbed master seed AND with a
+    materially larger N_reps. Both should yield qualitatively the same
+    conclusions; if the conclusion moves when N_reps grows, the original
+    run was under-powered for the claim — document and re-scale. If it
+    moves when only the seed changes, the Monte Carlo SE is too large to
+    support the claim at all.
 
-  - id: report
-    name: Per-step Conclusions
-    description: |
-      conclusions.md states: did the simulation answer the aim, which method
-      wins under which regime, where the methods cross over, computational
-      cost trade-offs, and limitations of the data-generating model itself.
+- id: report
+  name: Per-step Conclusions
+  description: |
+    conclusions.md states: did the simulation answer the aim, which method
+    wins under which regime, where the methods cross over, computational
+    cost trade-offs, and limitations of the data-generating model itself.
 
 expected_outputs:
-  - workspace/*/outputs/reports/ademp.md
-  - workspace/*/outputs/reports/seed_plan.md
-  - workspace/*/outputs/reports/performance_table.md
-  - workspace/*/outputs/data/results.parquet
+- workspace/*/outputs/reports/ademp.md
+- workspace/*/outputs/reports/seed_plan.md
+- workspace/*/outputs/reports/performance_table.md
+- workspace/*/outputs/data/results.parquet
 
 quality_bar: |
   - ADEMP is written BEFORE any code runs.
@@ -118,3 +114,13 @@ quality_bar: |
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: simulation
+triggers:
+- simulation
+- monte carlo
+- agent based
+- in silico
+- synthetic data
+- ademp
+summary: ADEMP simulation study (Monte Carlo / agent-based).

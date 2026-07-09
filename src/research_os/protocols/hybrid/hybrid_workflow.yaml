@@ -1,19 +1,19 @@
 id: hybrid_workflow
 tier: 'execute'
 name: Hybrid Workflow (build a tool and use it to do research, in one project)
-version: '3.12.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai]
   workflow_shape: [hybrid, tool_and_analysis]
 last_reviewed: '2026-06-23'
 see_also:
-  - hybrid/tool_to_analysis_handoff              # the transition this loop pivots through
-  - build/spec_and_design                         # the tool-building discipline the inner repo follows
-  - build/tool_evaluation_loop                    # evaluate the tool half to decide its next increment from evidence
-  - build/method_scouting                         # when the tool half needs an external method/library, scout → spike → integrate
-  - guidance/analysis_plan                        # the analysis discipline the outer research follows
+- hybrid/tool_to_analysis_handoff                # the transition this loop pivots through
+- build/spec_and_design                           # the tool-building discipline the inner repo follows
+- build/tool_evaluation_loop                      # evaluate the tool half to decide its next increment from evidence
+- build/method_scouting                           # when the tool half needs an external method/library, scout → spike → integrate
+- guidance/analysis_plan                          # the analysis discipline the outer research follows
 description: |
   The home loop of a hybrid project: one where the deliverable is BOTH a tool
   and the research done with it ("we built X and used it to discover Y").
@@ -43,98 +43,98 @@ trigger: |
   analyse Y", "develop the method and apply it", "the tool and the paper
   together".
 prerequisites:
-  - workspace.mode is hybrid (sys_boot reports workspace_mode), OR the researcher is both building a tool and doing analysis with it in one project
-  - research_goal records that the deliverable spans both a tool and research outputs (sys_boot reports research_goal)
+- workspace.mode is hybrid (sys_boot reports workspace_mode), OR the researcher is both building a tool and doing analysis with it in one project
+- research_goal records that the deliverable spans both a tool and research outputs (sys_boot reports research_goal)
 
 steps:
-  - id: orient_both_halves
-    name: Orient on both halves and which is currently limiting
-    description: |
-      If you haven't called sys_boot this session, do so once — it reports
-      workspace_mode=hybrid, the inner tool repo it auto-detected, autonomy,
-      and research_goal.output_types (which should name BOTH a tool and
-      research deliverables). Take stock of both halves: what the tool can do
-      today (its current capability + version), and what the analysis needs
-      next. Name the CURRENT bottleneck honestly — is the analysis blocked on
-      a tool capability that doesn't exist yet, or is the tool ahead of any
-      analysis that exercises it?
+- id: orient_both_halves
+  name: Orient on both halves and which is currently limiting
+  description: |
+    If you haven't called sys_boot this session, do so once — it reports
+    workspace_mode=hybrid, the inner tool repo it auto-detected, autonomy,
+    and research_goal.output_types (which should name BOTH a tool and
+    research deliverables). Take stock of both halves: what the tool can do
+    today (its current capability + version), and what the analysis needs
+    next. Name the CURRENT bottleneck honestly — is the analysis blocked on
+    a tool capability that doesn't exist yet, or is the tool ahead of any
+    analysis that exercises it?
 
-      The whole loop turns on this read. Building tool capability nothing uses
-      is gold-plating; forcing analysis through a missing capability is
-      hacking around your own unfinished tool. Let the bottleneck choose the
-      next move.
+    The whole loop turns on this read. Building tool capability nothing uses
+    is gold-plating; forcing analysis through a missing capability is
+    hacking around your own unfinished tool. Let the bottleneck choose the
+    next move.
 
-  - id: choose_next_increment
-    name: Choose the next increment — tool capability or analysis step
-    description: |
-      Pick the smallest next move that unblocks the project:
-        TOOL increment → the analysis needs a capability the tool lacks. Scope
-          the SMALLEST tool increment that unblocks the next analysis (not the
-          whole feature backlog), and build it under the build discipline
-          (build/spec_and_design → build/implement_iteration →
-          build/test_strategy) inside the inner repo. Version the increment so
-          analysis can pin it. When the tool RUNS but you're not sure which
-          improvement is most worth it, evaluate it first via
-          build/tool_evaluation_loop — let evidence on where it falls short
-          rank the next increment, rather than guessing.
-        ANALYSIS step → the tool can already do what's needed. Run an ordinary
-          analysis step under guidance/analysis_plan, USING the tool — and
-          record which tool version the step used.
-      Resist doing both at once in one undifferentiated mush; the modes have
-      different gates (a tool increment owes tests; an analysis step owes
-      grounding + provenance). Do one, cleanly, then re-read the bottleneck.
+- id: choose_next_increment
+  name: Choose the next increment — tool capability or analysis step
+  description: |
+    Pick the smallest next move that unblocks the project:
+      TOOL increment → the analysis needs a capability the tool lacks. Scope
+        the SMALLEST tool increment that unblocks the next analysis (not the
+        whole feature backlog), and build it under the build discipline
+        (build/spec_and_design → build/implement_iteration →
+        build/test_strategy) inside the inner repo. Version the increment so
+        analysis can pin it. When the tool RUNS but you're not sure which
+        improvement is most worth it, evaluate it first via
+        build/tool_evaluation_loop — let evidence on where it falls short
+        rank the next increment, rather than guessing.
+      ANALYSIS step → the tool can already do what's needed. Run an ordinary
+        analysis step under guidance/analysis_plan, USING the tool — and
+        record which tool version the step used.
+    Resist doing both at once in one undifferentiated mush; the modes have
+    different gates (a tool increment owes tests; an analysis step owes
+    grounding + provenance). Do one, cleanly, then re-read the bottleneck.
 
-      AUTONOMY GATE:
-        Risk: reversible — choosing the next increment commits a unit of work,
-        not an irreversible decision; the underlying build/analysis loops carry
-        their own gates.
-        proceed (adaptive default, autopilot) → pick the increment that unblocks the project
-          and enter the matching discipline.
-        confirm first (manual / supervised) → state which half you'd advance and the
-          smallest increment; confirm before entering it.
+    AUTONOMY GATE:
+      Risk: reversible — choosing the next increment commits a unit of work,
+      not an irreversible decision; the underlying build/analysis loops carry
+      their own gates.
+      proceed (adaptive default, autopilot) → pick the increment that unblocks the project
+        and enter the matching discipline.
+      confirm first (manual / supervised) → state which half you'd advance and the
+        smallest increment; confirm before entering it.
 
-  - id: pivot_at_boundary
-    name: Pivot cleanly at each tool↔analysis boundary
-    description: |
-      Whenever a tool increment becomes ready to USE, or an analysis reveals
-      the tool needs to CHANGE, take the transition deliberately via
-      hybrid/tool_to_analysis_handoff rather than blurring across the boundary.
-      That protocol pins the tool version, records the dependency (this
-      analysis step used tool vX), and carries the narrative thread. The
-      boundary is exactly where hybrid projects lose provenance — make it an
-      explicit pivot, not a silent context switch.
+- id: pivot_at_boundary
+  name: Pivot cleanly at each tool↔analysis boundary
+  description: |
+    Whenever a tool increment becomes ready to USE, or an analysis reveals
+    the tool needs to CHANGE, take the transition deliberately via
+    hybrid/tool_to_analysis_handoff rather than blurring across the boundary.
+    That protocol pins the tool version, records the dependency (this
+    analysis step used tool vX), and carries the narrative thread. The
+    boundary is exactly where hybrid projects lose provenance — make it an
+    explicit pivot, not a silent context switch.
 
-  - id: keep_provenance_spanning
-    name: Keep provenance spanning both halves
-    description: |
-      The hybrid invariant: every analysis result must be reproducible against
-      a KNOWN tool version, and every tool change that could alter past results
-      must be visible. Maintain that thread as you loop:
-        - mem_log each analysis step with the tool version it used.
-        - When the tool changes in a way that could move a past result, note
-          which prior steps may need re-running against the new version (don't
-          silently let an old result stand on a changed tool).
-        - Keep the inner repo's versions meaningful (the build/release loop)
-          so "tool vX" is a real, checkoutable thing.
-      This is what lets the eventual write-up name the exact tool version
-      behind a result and have it be true and re-runnable.
+- id: keep_provenance_spanning
+  name: Keep provenance spanning both halves
+  description: |
+    The hybrid invariant: every analysis result must be reproducible against
+    a KNOWN tool version, and every tool change that could alter past results
+    must be visible. Maintain that thread as you loop:
+      - mem_log each analysis step with the tool version it used.
+      - When the tool changes in a way that could move a past result, note
+        which prior steps may need re-running against the new version (don't
+        silently let an old result stand on a changed tool).
+      - Keep the inner repo's versions meaningful (the build/release loop)
+        so "tool vX" is a real, checkoutable thing.
+    This is what lets the eventual write-up name the exact tool version
+    behind a result and have it be true and re-runnable.
 
-  - id: loop_or_converge
-    name: Loop, or converge to the dual deliverable
-    description: |
-      Re-read the bottleneck and continue until BOTH halves are done: the tool
-      is at a releasable state and the analysis answers its question using it.
-      Then converge — the tool half finishes through build/release_and_changelog
-      (and build/package_and_publish if it's to be distributed), the analysis
-      half through its synthesis deliverable — and the project tells the
-      combined "we built X and found Y with it" story. Do not declare done with
-      a polished tool and no analysis, or an analysis resting on an unreleased
-      tool; hybrid is done only when both halves are.
+- id: loop_or_converge
+  name: Loop, or converge to the dual deliverable
+  description: |
+    Re-read the bottleneck and continue until BOTH halves are done: the tool
+    is at a releasable state and the analysis answers its question using it.
+    Then converge — the tool half finishes through build/release_and_changelog
+    (and build/package_and_publish if it's to be distributed), the analysis
+    half through its synthesis deliverable — and the project tells the
+    combined "we built X and found Y with it" story. Do not declare done with
+    a polished tool and no analysis, or an analysis resting on an unreleased
+    tool; hybrid is done only when both halves are.
 
 expected_outputs:
-  - the inner tool at a releasable version (build loop)
-  - analysis steps that each record the tool version used
-  - the dual deliverable: the tool + the research done with it
+- the inner tool at a releasable version (build loop)
+- analysis steps that each record the tool version used
+- the dual deliverable: the tool + the research done with it
 
 quality_bar: |
   - Each loop advances the half that is actually limiting, not the easy one.
@@ -148,3 +148,21 @@ quality_bar: |
 next_protocol: hybrid/tool_to_analysis_handoff
 next_protocol_kind: forward_default
 on_failure: guidance/scope_clarification
+intent_class: execute
+sub_intent: hybrid_run
+triggers:
+- build a tool and use it
+- build it and analyze with it
+- build it and analyse with it
+- tool and analysis together
+- hybrid project
+- hybrid workflow
+- develop the method and apply it
+- i'm building the thing i'm studying
+summary: 'The hybrid-mode home loop: hold one project that both builds a tool and uses it for analysis, decide which half is the bottleneck each pass, and keep a provenance thread spanning both halves.'
+token_estimate: 1600
+decomposition:
+- protocol: hybrid/hybrid_workflow
+  purpose: Identify the bottleneck half, advance it, decide when to cross, keep the cross-boundary provenance thread.
+- tool: mem_log
+  purpose: Log which half advanced + any boundary crossing this pass.

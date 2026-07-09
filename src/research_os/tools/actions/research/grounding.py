@@ -4,7 +4,8 @@ The AI's most-common failure mode is acting without showing the
 evidence it acted on. This module gives the project four append-only
 records that make every decision auditable:
 
-* **Thought log** (ReAct) — ``workspace/.thoughts/thoughts.jsonl``
+* **Thought log** (ReAct) — ``.os_state/thoughts/thoughts.jsonl``
+  (new canonical path; legacy: ``workspace/.thoughts/thoughts.jsonl``)
   appends one `{thought, action, observation}` entry per non-trivial
   step. Mirrors Yao et al. 2022's trajectory format so the trace
   reads as the model intended it.
@@ -16,14 +17,26 @@ records that make every decision auditable:
   carries the verification questions the AI generated for each
   claim plus the verified answers and `supports: bool`. A claim is
   considered grounded only when all its verifications hold.
-* **Lessons log** (Reflexion) — ``workspace/.lessons/lessons.jsonl``
-  captures `{trial_id, outcome, reflection}` after every step so
-  later runs can prepend the relevant prior lessons to context.
+* **Lessons log** (Reflexion) — ``.os_state/lessons/lessons.jsonl``
+  (new canonical path; see ``research/lessons.py``) captures
+  `{trial_id, outcome, reflection}` after every step so later runs
+  can prepend the relevant prior lessons to context.
 
 All four are line-delimited JSON so they round-trip cleanly into
 the dashboard, into the audit reports, and into the model's prompt
 context. They are intentionally NOT inlined into ``state_ledger.json``
 — that file stays small; these grow as the project does.
+
+Backward-compatible path resolution for thoughts
+-------------------------------------------------
+* **New canonical path**: ``.os_state/thoughts/thoughts.jsonl``
+* **Legacy path**: ``workspace/.thoughts/thoughts.jsonl``
+
+On **write**: if the new path does not exist yet but the legacy path
+does, legacy contents are migrated first (idempotent). Writes then
+go to the new path.
+
+On **read**: use the new path if it exists; else fall back to legacy.
 
 Integration with the existing audit chain
 -----------------------------------------
@@ -58,10 +71,53 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+_NEW_THOUGHTS_SUBPATH = Path(".os_state") / "thoughts" / "thoughts.jsonl"
+_OLD_THOUGHTS_SUBPATH = Path("workspace") / ".thoughts" / "thoughts.jsonl"
+
+
+def _migrate_thoughts_if_needed(root: Path, new_path: Path) -> None:
+    """One-time migration: copy legacy thought records to the new path.
+
+    Idempotent — if the new path already exists (even empty) we skip,
+    so a second call never duplicates records.
+    """
+    old_path = root / _OLD_THOUGHTS_SUBPATH
+    if not old_path.exists() or new_path.exists():
+        return
+    try:
+        content = old_path.read_text(encoding="utf-8", errors="replace")
+        new_path.parent.mkdir(parents=True, exist_ok=True)
+        new_path.write_text(content, encoding="utf-8")
+        logger.debug(
+            "thoughts: migrated %s → %s", old_path.relative_to(root),
+            new_path.relative_to(root),
+        )
+    except Exception as exc:  # pragma: no cover — best-effort migration
+        logger.warning("thoughts: migration failed (%s); writes go to new path anyway", exc)
+        new_path.parent.mkdir(parents=True, exist_ok=True)
+        new_path.touch()
+
+
+def _thoughts_write_path(root: Path) -> Path:
+    """Return the path to write thoughts to, running migration first if needed."""
+    new_path = root / _NEW_THOUGHTS_SUBPATH
+    _migrate_thoughts_if_needed(root, new_path)
+    new_path.parent.mkdir(parents=True, exist_ok=True)
+    return new_path
+
+
+def _thoughts_read_path(root: Path) -> Path:
+    """Return the path to read thoughts from (new if exists, else legacy)."""
+    new_path = root / _NEW_THOUGHTS_SUBPATH
+    if new_path.exists():
+        return new_path
+    old_path = root / _OLD_THOUGHTS_SUBPATH
+    return old_path
+
+
 def _thoughts_log(root: Path) -> Path:
-    p = root / "workspace" / ".thoughts" / "thoughts.jsonl"
-    p.parent.mkdir(parents=True, exist_ok=True)
-    return p
+    """Return the canonical write path for thoughts (runs migration if needed)."""
+    return _thoughts_write_path(root)
 
 
 def _grounding_log(root: Path) -> Path:
@@ -146,9 +202,10 @@ def thought_log(
         "decision_id": decision_id,
         "metadata": metadata or {},
     }
-    _append_jsonl(_thoughts_log(root), rec)
+    write_path = _thoughts_log(root)
+    _append_jsonl(write_path, rec)
     return {"status": "success", **rec,
-            "log_path": str(_thoughts_log(root).relative_to(root))}
+            "log_path": str(write_path.relative_to(root))}
 
 
 def thought_trace(
@@ -159,7 +216,7 @@ def thought_trace(
     tail: int = 50,
 ) -> dict[str, Any]:
     """Read the recent thought trace, optionally filtered."""
-    entries = _read_jsonl(_thoughts_log(root))
+    entries = _read_jsonl(_thoughts_read_path(root))
     if step_id:
         entries = [e for e in entries if e.get("step_id") == step_id]
     if decision_id:

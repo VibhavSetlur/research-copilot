@@ -57,32 +57,8 @@ IDE_CHOICES_FOR_COMPLETION = (*VALID_IDES, "auto", "all", "none")
 # Helpers
 # ---------------------------------------------------------------------------
 
-
-def _supports_utf8() -> bool:
-    """True when stdout encoding looks like UTF-* (else ASCII fallback)."""
-    enc = (getattr(sys.stdout, "encoding", "") or "").lower()
-    return "utf" in enc
-
-
-def _glyph(unicode_char: str, ascii_fallback: str) -> str:
-    """Return the unicode glyph when stdout is UTF-*, else the ASCII fallback.
-
-    Used so messages render correctly on terminals whose encoding doesn't
-    cover ✓/✗/⚠ (e.g. C locale, Windows cp1252, some piped contexts).
-    """
-    return unicode_char if _supports_utf8() else ascii_fallback
-
-
-def _check() -> str:
-    return _glyph("✓", "[+]")
-
-
-def _cross() -> str:
-    return _glyph("✗", "[x]")
-
-
-def _warn_glyph() -> str:
-    return _glyph("⚠", "[!]")
+from research_os._cli.term import _check, _cross, _warn_glyph  # noqa: E402 - imported after CLI helper section
+from research_os._cli.term import _supports_utf8 as _supports_utf8  # noqa: E402 - imported after CLI helper section
 
 
 def _detect_ide() -> list[str]:
@@ -272,6 +248,26 @@ def cmd_init(args: argparse.Namespace) -> None:
     if getattr(args, "no_color", False):
         wizard.disable_color()
 
+    # ── --migrate: upgrade an existing project to the v5 config layout ──
+    if getattr(args, "migrate", False):
+        # Resolve target root with the same logic as the non-interactive path.
+        if getattr(args, "directory", None):
+            migrate_root = Path(os.path.expanduser(args.directory)).resolve()
+        else:
+            migrate_root = Path.cwd().resolve()
+
+        from research_os.config.migrate_config import migrate_project_to_v5
+        summary = migrate_project_to_v5(migrate_root)
+
+        print(f"  research-os migrate → v5 config written for: {migrate_root}")
+        print(f"    project config : {summary['project_config']}")
+        print(f"    user profile   : {summary['user_profile']}")
+        if summary["migrated_keys"]:
+            print(f"    migrated keys  : {', '.join(summary['migrated_keys'])}")
+        else:
+            print("    migrated keys  : (none — old config absent; v5 defaults written)")
+        return
+
     interactive = wizard.should_run_wizard(args)
 
     if interactive:
@@ -403,6 +399,15 @@ def _execute(r, run_preflight_repo: bool = False, quiet_banner: bool = False) ->
         "model_profile": getattr(r, "model_profile", "medium"),
         "researcher": researcher_block,
     }
+    # Wire Step-2 output_types + target_venue into research_goal block.
+    _output_types = list(getattr(r, "output_types", None) or [])
+    _target_venue = getattr(r, "target_venue", "") or ""
+    if _output_types or _target_venue:
+        rg: dict = config_overrides.setdefault("research_goal", {})
+        if _output_types:
+            rg["output_types"] = _output_types
+        if _target_venue:
+            rg["target_venue"] = _target_venue
     # Workspace mode (analysis | tool_build | exploration). Threaded into
     # config_overrides so init_config stamps it AND the scaffold selects
     # the matching profile. Default analysis keeps the classic surface.
@@ -682,7 +687,7 @@ def _daemon_setup(daemon, args: argparse.Namespace) -> int:
 
 
 def cmd_daemon(args: argparse.Namespace) -> int:
-    """Run / inspect the v4 multi-protocol gateway daemon.
+    """Run / inspect the Research-OS daemon (enforcement + execution kernel).
 
     ``status`` reports daemon + active-project state (read-only). ``start``
     runs the persistent daemon: a background task queue plus read-only HTTP
@@ -693,7 +698,7 @@ def cmd_daemon(args: argparse.Namespace) -> int:
 
     sub = getattr(args, "daemon_command", None)
     if sub is None:
-        print("  Research OS daemon (v4 multi-protocol gateway)")
+        print("  Research OS daemon (enforcement + execution kernel)")
         print()
         print("  research-os daemon status   show daemon + project state")
         print("  research-os daemon setup    free port + conda check + bg launch (HPC-friendly)")
@@ -710,7 +715,6 @@ def cmd_daemon(args: argparse.Namespace) -> int:
         print("  research-os daemon stale  flag results built from changed inputs")
         print("  research-os daemon rebuild  re-run only the stale runs (in order)")
         print("  research-os daemon domain  detect the project's research field + defaults")
-        print("  research-os daemon gateway  OpenAI-compatible chat gateway: status + token")
         print()
         print("  Architecture + roadmap: docs/ROADMAP.md")
         return 0
@@ -852,8 +856,8 @@ def cmd_daemon(args: argparse.Namespace) -> int:
     if sub == "domain":
         return _daemon_domain(daemon, args)
 
-    if sub == "gateway":
-        return _daemon_gateway(daemon, args)
+    if sub == "token":
+        return _daemon_token(daemon, args)
 
     print(f"  {_warn_glyph()}  Unknown daemon command: {sub!r}")
     return 2
@@ -1617,12 +1621,13 @@ def _daemon_domain(daemon, args) -> int:
     return 0
 
 
-def _daemon_gateway(daemon, args) -> int:
-    """Show the OpenAI-compatible gateway's config + readiness, or mint a token.
+def _daemon_token(daemon, args) -> int:
+    """Show / mint the daemon's bearer token for the mutating endpoints.
 
-    Tokens and API keys live in environment variables by design (never in
-    config files). This command tells you exactly which env vars to set and
-    whether the gateway is ready to serve, and can generate a strong token.
+    RO calls no LLM and has no gateway. This token only guards the daemon's
+    own mutating endpoints (/v1/runs, /v1/gates/respond, /v1/consent/*, …).
+    It lives in an environment variable by design (never in config files);
+    when unset, those endpoints stay open behind the 127.0.0.1 bind.
     """
     import os
     import secrets
@@ -1631,62 +1636,33 @@ def _daemon_gateway(daemon, args) -> int:
 
     if getattr(args, "mint_token", False):
         token = secrets.token_urlsafe(32)
-        print(f"  export {cfg.gateway_token_env}={token}")
+        print(f"  export {cfg.auth_token_env}={token}")
         print()
-        print("  Set this on the daemon process, then clients send it in the")
-        print("  Authorization header as a Bearer token on POST "
-              "/v1/chat/completions.")
+        print("  Set this on the daemon process; clients send it in the")
+        print("  Authorization header as a Bearer token on mutating POSTs.")
         return 0
 
-    token_set = bool(os.environ.get(cfg.gateway_token_env, ""))
-    key_set = bool(os.environ.get(cfg.gateway_api_key_env, ""))
+    token_set = bool(os.environ.get(cfg.auth_token_env, ""))
 
     if getattr(args, "as_json", False):
         print(json.dumps({
-            "enabled": cfg.enable_gateway,
-            "endpoint": f"{cfg.base_url}/v1/chat/completions",
-            "upstream_base_url": cfg.gateway_upstream_base_url,
-            "upstream_model": cfg.gateway_upstream_model,
-            "max_tool_rounds": cfg.gateway_max_tool_rounds,
-            "timeout": cfg.gateway_timeout,
-            "token_env": cfg.gateway_token_env,
+            "token_env": cfg.auth_token_env,
             "token_set": token_set,
-            "api_key_env": cfg.gateway_api_key_env,
-            "api_key_set": key_set,
-            "ready": cfg.enable_gateway and token_set and key_set,
+            "enforced": token_set,
+            "note": "RO has no LLM gateway; this guards mutating endpoints only",
         }, indent=2))
         return 0
 
     ok = _check()
     warn = _warn_glyph()
-    print("  Research OS gateway (OpenAI-compatible chat completions)")
+    print("  Research OS daemon auth token (mutating endpoints)")
     print()
-    print(f"  endpoint:        {cfg.base_url}/v1/chat/completions  [POST]")
-    print(f"  enabled:         {'yes' if cfg.enable_gateway else 'no'}")
-    print(f"  upstream:        {cfg.gateway_upstream_base_url}")
-    print(f"  upstream model:  {cfg.gateway_upstream_model}")
-    print(f"  max tool rounds: {cfg.gateway_max_tool_rounds}")
-    print(f"  timeout:         {cfg.gateway_timeout:.0f}s")
+    print(f"    {ok if token_set else warn}  bearer token  "
+          f"(${cfg.auth_token_env}{' set — enforced' if token_set else ' unset — open on localhost'})")
     print()
-    print("  readiness:")
-    print(f"    {ok if cfg.enable_gateway else warn}  gateway enabled "
-          f"({'set daemon.enable_gateway=true' if not cfg.enable_gateway else 'ok'})")
-    print(f"    {ok if token_set else warn}  session token  "
-          f"(${cfg.gateway_token_env}{' set' if token_set else ' MISSING'})")
-    print(f"    {ok if key_set else warn}  upstream key   "
-          f"(${cfg.gateway_api_key_env}{' set' if key_set else ' MISSING'})")
-    print()
-    if not (cfg.enable_gateway and token_set and key_set):
-        print("  Not ready. To enable:")
-        if not cfg.enable_gateway:
-            print("    1. set daemon.enable_gateway=true (config or "
-                  "RESEARCH_OS_DAEMON_GATEWAY=1)")
-        if not token_set:
-            print("    2. mint a token:  research-os daemon gateway --mint-token")
-        if not key_set:
-            print(f"    3. export {cfg.gateway_api_key_env}=<your upstream API key>")
-    else:
-        print(f"  {ok}  Gateway is ready to serve.")
+    if not token_set:
+        print("  To require a bearer token on mutating endpoints:")
+        print("    research-os daemon token --mint-token")
     return 0
 
 
@@ -1696,7 +1672,9 @@ def _print_daemon_status(status) -> None:
     print(f"  Research OS daemon v{status.version}")
     print(f"  serving:     {serving}")
     print(f"  bind:        {status.config.get('base_url')}")
-    print(f"  gateway:     {'on' if status.config.get('enable_gateway') else 'off'}")
+    _tok_env = status.config.get("auth_token_env")
+    _tok_set = bool(_tok_env and os.environ.get(_tok_env))
+    print(f"  auth:        {'token-enforced' if _tok_set else 'open (localhost)'}")
     print(f"  dashboard:   {'on' if status.config.get('enable_dashboard') else 'off'}")
     print(f"  sandbox:     {status.config.get('sandbox_mode')}")
     print(f"  workers:     {status.config.get('task_workers')}")
@@ -2171,7 +2149,7 @@ def cmd_route(args: argparse.Namespace) -> int:
 
 def cmd_api_key(args: argparse.Namespace) -> int:
     """Add / list / rotate / remove / test an API key in researcher_config.yaml."""
-    from research_os import collab, wizard
+    from research_os import wizard
     from research_os.tools.actions.state.config import (
         add_api_key, check_api_key, list_api_keys, remove_api_key,
     )
@@ -2200,7 +2178,7 @@ def cmd_api_key(args: argparse.Namespace) -> int:
         for provider, masked_val in sorted(api_keys.items()):
             mark = (f"{wizard._C.GREEN}·{wizard._C.RESET}" if masked_val
                     else f"{wizard._C.GREY}·{wizard._C.RESET}")
-            display = masked_val or f"{wizard._C.GREY}(blank){wizard._C.RESET}"
+            display = "(configured)" if masked_val else f"{wizard._C.GREY}(blank){wizard._C.RESET}"
             print(f"  {mark} {provider:<22}{display}")
         print()
         return 0
@@ -2221,8 +2199,6 @@ def cmd_api_key(args: argparse.Namespace) -> int:
             return 1
         verb = "Rotated" if res.get("rotated") or action == "rotate" else "Added"
         wizard.ok(f"{verb} key for {provider}", "chmod 600 applied")
-        author = collab.whoami(root)
-        collab.log_action(root, author, f"{verb} API key: {provider}")
         return 0
 
     if action == "remove":
@@ -2233,8 +2209,6 @@ def cmd_api_key(args: argparse.Namespace) -> int:
         res = remove_api_key(root, provider)
         if res.get("status") == "success":
             wizard.ok(f"Removed key for {provider}")
-            author = collab.whoami(root)
-            collab.log_action(root, author, f"Removed API key: {provider}")
             return 0
         if res.get("status") == "noop":
             wizard.warn(res.get("message", "no-op"))
@@ -2821,6 +2795,14 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Disable ANSI styling. Auto-disabled when NO_COLOR is set.")
     p_init.add_argument("--preflight", action="store_true",
                         help="After scaffolding, run the repo's preflight (dev only).")
+    p_init.add_argument("--migrate", action="store_true",
+                        help=(
+                            "Migrate an existing project to the v5 config layout. "
+                            "Reads inputs/researcher_config.yaml (if present) and writes "
+                            ".os_state/config.yaml + ~/.research-os/profile.yaml. "
+                            "Idempotent and safe — the old config is never modified. "
+                            "Does NOT run the scaffold wizard."
+                        ))
 
     # ── ide ─────────────────────────────────────────────────────────────
     p_ide = sub.add_parser(
@@ -3018,19 +3000,19 @@ def build_parser() -> argparse.ArgumentParser:
                         help="MCP transport (default: stdio).")
 
     # ── daemon ──────────────────────────────────────────────────────────
-    # The multi-protocol gateway daemon: persistent localhost service that runs
-    # jobs, journals/recovers runs, enforces gates, and notifies.
+    # The daemon: persistent localhost service that runs jobs,
+    # journals/recovers runs, enforces gates, and notifies.
     p_daemon = sub.add_parser(
         "daemon",
-        help="Run / inspect the multi-protocol gateway daemon.",
+        help="Run / inspect the Research-OS daemon (execution + enforcement kernel).",
         description=(
             "The Research OS daemon is a persistent, headless, localhost\n"
             "service that owns the master execution state machine: it runs\n"
             "long jobs, journals every run and recovers them across restarts,\n"
-            "enforces hard gates, and notifies the researcher. It also serves\n"
-            "an OpenAI-compatible gateway and a sandbox tier (both opt-in for\n"
-            "security). A read-only web dashboard is the one piece still to\n"
-            "come.\n\n"
+            "enforces hard gates, and notifies the researcher. It offers a\n"
+            "sandbox tier (opt-in for security). RO calls no LLM and has no\n"
+            "chat gateway. A read-only web dashboard is the one piece still\n"
+            "to come.\n\n"
             "OPTIONAL: with no daemon running, Research OS works exactly as\n"
             "the stdio MCP server — the daemon only adds durable execution,\n"
             "recovery, enforcement, and notifications.\n\n"
@@ -3360,34 +3342,30 @@ def build_parser() -> argparse.ArgumentParser:
     pd_domain.add_argument("--json", dest="as_json", action="store_true",
                            help="Emit the detection result as JSON.")
 
-    # gateway: OpenAI-compatible chat-completions gateway status + token.
-    pd_gateway = daemon_sub.add_parser(
-        "gateway",
-        help="Show the OpenAI-compatible chat gateway's status, or mint a token.",
+    # token: bearer token that guards the daemon's mutating endpoints.
+    pd_token = daemon_sub.add_parser(
+        "token",
+        help="Show / mint the daemon's bearer token for mutating endpoints.",
         description=(
-            "Inspect and provision the gateway — the daemon's\n"
-            "OpenAI-compatible POST /v1/chat/completions endpoint. It routes\n"
-            "a prompt through the protocol router, injects the project's\n"
-            "research field + result freshness + protocol context, forwards\n"
-            "to your configured upstream LLM, and runs any Research-OS tool\n"
-            "calls back through the engine — so any OpenAI client becomes a\n"
-            "field-aware, provenance-aware research agent.\n\n"
-            "Prints a readiness checklist (enabled / session token / upstream\n"
-            "key). Tokens and API keys live in environment variables by\n"
-            "design, never in config files.\n\n"
+            "Inspect or mint the bearer token that guards the daemon's own\n"
+            "mutating endpoints (/v1/runs, /v1/gates/respond, /v1/consent/*,\n"
+            "…). Research-OS calls no LLM and has no chat gateway — this token\n"
+            "is purely local write-authorization. When unset, mutating\n"
+            "endpoints stay open behind the 127.0.0.1 bind. The token lives in\n"
+            "an environment variable by design, never in config files.\n\n"
             "Examples:\n"
-            "  research-os daemon gateway              # status + readiness\n"
-            "  research-os daemon gateway --mint-token # generate a session token\n"
-            "  research-os daemon gateway --json       # machine-readable"
+            "  research-os daemon token              # status\n"
+            "  research-os daemon token --mint-token # generate a session token\n"
+            "  research-os daemon token --json       # machine-readable"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    pd_gateway.add_argument("--workspace", default=None,
-                            help="Explicit workspace path (else auto-resolved).")
-    pd_gateway.add_argument("--mint-token", dest="mint_token", action="store_true",
-                            help="Generate a strong session token and exit.")
-    pd_gateway.add_argument("--json", dest="as_json", action="store_true",
-                            help="Emit gateway config + readiness as JSON.")
+    pd_token.add_argument("--workspace", default=None,
+                          help="Explicit workspace path (else auto-resolved).")
+    pd_token.add_argument("--mint-token", dest="mint_token", action="store_true",
+                          help="Generate a strong session token and exit.")
+    pd_token.add_argument("--json", dest="as_json", action="store_true",
+                          help="Emit token config as JSON.")
 
     # ── doctor ──────────────────────────────────────────────────────────
     p_doctor = sub.add_parser(

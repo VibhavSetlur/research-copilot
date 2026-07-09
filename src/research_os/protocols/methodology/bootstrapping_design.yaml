@@ -1,16 +1,16 @@
 id: bootstrapping_design
 tier: 'plan'
 name: Bootstrap / Resampling Design
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/uncertainty_quantification  # the bootstrap is one UQ route among several
-  - methodology/evaluation_design        # CIs on model metrics come from here
+- methodology/uncertainty_quantification    # the bootstrap is one UQ route among several
+- methodology/evaluation_design          # CIs on model metrics come from here
 description: |
   Bootstrap and resampling methods are the workhorse for non-parametric
   inference when analytic standard errors are wrong, unknown, or rest on
@@ -40,182 +40,163 @@ trigger: |
       a model performance metric.
 
 prerequisites:
-  - The target statistic + its parameters are documented.
-  - The data dependence structure (iid / time-series / clustered /
-    spatial) is identifiable.
+- The target statistic + its parameters are documented.
+- The data dependence structure (iid / time-series / clustered / spatial) is identifiable.
 
 editorial_voice:
   rules:
-    - "Match the resampling scheme to the dependence structure. iid
-       data → ordinary bootstrap. Time series → block / sieve /
-       stationary bootstrap. Clustered → cluster bootstrap. Wild
-       bootstrap for heteroskedastic regression residuals. Resampling
-       iid from non-iid data understates uncertainty."
-    - "Match the interval to the statistic. Percentile works when the
-       sampling distribution is symmetric + median-unbiased.
-       BCa (bias-corrected accelerated) handles skew + bias. t-bootstrap
-       requires a variance estimate but has better coverage for
-       small N. Document the choice."
-    - "Resample count B is a Monte Carlo precision decision, not a
-       vibes call and not a fixed convention. Set B so the Monte Carlo
-       error on the reported quantity (interval endpoint or tail-area
-       p-value) is small relative to what the decision needs — a
-       tail-area p-value near a decision boundary demands a much larger
-       B than a wide central interval. Verify with a B-sensitivity
-       check rather than copying a default."
-    - "Permutation tests are not bootstraps. Permutation tests
-       exchange labels under the null; bootstraps sample with
-       replacement from the empirical distribution. They answer
-       different questions. Pick the one that matches the inferential
-       target."
+  - "Match the resampling scheme to the dependence structure. iid data → ordinary bootstrap. Time series → block / sieve / stationary bootstrap. Clustered → cluster bootstrap. Wild bootstrap for heteroskedastic regression residuals. Resampling iid from non-iid data understates uncertainty."
+  - "Match the interval to the statistic. Percentile works when the sampling distribution is symmetric + median-unbiased. BCa (bias-corrected accelerated) handles skew + bias. t-bootstrap requires a variance estimate but has better coverage for small N. Document the choice."
+  - "Resample count B is a Monte Carlo precision decision, not a vibes call and not a fixed convention. Set B so the Monte Carlo error on the reported quantity (interval endpoint or tail-area p-value) is small relative to what the decision needs — a tail-area p-value near a decision boundary demands a much larger B than a wide central interval. Verify with a B-sensitivity check rather than copying a default."
+  - "Permutation tests are not bootstraps. Permutation tests exchange labels under the null; bootstraps sample with replacement from the empirical distribution. They answer different questions. Pick the one that matches the inferential target."
 
 steps:
-  - id: characterize_data_and_statistic
-    name: Characterise the data dependence + target statistic
-    description: |
-      Document:
-        - SAMPLE STRUCTURE — iid? time series (autocorrelation length)?
-          clustered (cluster sizes)? spatial (neighbourhood graph)?
-          longitudinal (subject-level + time-level)?
-        - TARGET STATISTIC — mean / median / ratio / regression
-          coefficient / AUC / Brier / RMSE / quantile / custom?
-        - SAMPLE SIZE — small N shifts the interval-method recommendation
-          (studentised / BCa tend to out-cover percentile when N is
-          small); name the regime the field treats as "small" for this
-          statistic rather than a fixed cutoff.
-        - ASYMPTOTIC ALTERNATIVE — is an analytic SE / CI available?
-          Why is bootstrap preferred (small N, skew, unknown
-          distribution, complex statistic)?
+- id: characterize_data_and_statistic
+  name: Characterise the data dependence + target statistic
+  description: |
+    Document:
+      - SAMPLE STRUCTURE — iid? time series (autocorrelation length)?
+        clustered (cluster sizes)? spatial (neighbourhood graph)?
+        longitudinal (subject-level + time-level)?
+      - TARGET STATISTIC — mean / median / ratio / regression
+        coefficient / AUC / Brier / RMSE / quantile / custom?
+      - SAMPLE SIZE — small N shifts the interval-method recommendation
+        (studentised / BCa tend to out-cover percentile when N is
+        small); name the regime the field treats as "small" for this
+        statistic rather than a fixed cutoff.
+      - ASYMPTOTIC ALTERNATIVE — is an analytic SE / CI available?
+        Why is bootstrap preferred (small N, skew, unknown
+        distribution, complex statistic)?
 
-      Write workspace/.bootstrap/design.md.
+    Write workspace/.bootstrap/design.md.
 
-  - id: pick_resampling_scheme
-    name: Pick the resampling scheme
-    description: |
-      Reason through the options:
+- id: pick_resampling_scheme
+  name: Pick the resampling scheme
+  description: |
+    Reason through the options:
 
-        ORDINARY BOOTSTRAP — sample with replacement from rows.
-          Assumes iid.
+      ORDINARY BOOTSTRAP — sample with replacement from rows.
+        Assumes iid.
 
-        BLOCK BOOTSTRAP (moving block, non-overlapping block,
-          stationary, circular block) — for time-series. Block
-          length chosen via a rule (Politis & White 2004); document.
+      BLOCK BOOTSTRAP (moving block, non-overlapping block,
+        stationary, circular block) — for time-series. Block
+        length chosen via a rule (Politis & White 2004); document.
 
-        CLUSTER BOOTSTRAP — sample whole clusters, not individual
-          observations. Use when residuals correlate within cluster
-          (multi-site trials, longitudinal data).
+      CLUSTER BOOTSTRAP — sample whole clusters, not individual
+        observations. Use when residuals correlate within cluster
+        (multi-site trials, longitudinal data).
 
-        WILD BOOTSTRAP — for regression with heteroskedastic
-          residuals; multiply residuals by a mean-zero auxiliary
-          (Rademacher or Mammen). Davidson & MacKinnon (1999).
+      WILD BOOTSTRAP — for regression with heteroskedastic
+        residuals; multiply residuals by a mean-zero auxiliary
+        (Rademacher or Mammen). Davidson & MacKinnon (1999).
 
-        STRATIFIED BOOTSTRAP — sample within strata to preserve
-          group proportions. Use when class imbalance + sampling
-          variability would distort metrics.
+      STRATIFIED BOOTSTRAP — sample within strata to preserve
+        group proportions. Use when class imbalance + sampling
+        variability would distort metrics.
 
-        BAYESIAN BOOTSTRAP — Dirichlet-weighted; useful when a
-          Bayesian framework is preferred.
+      BAYESIAN BOOTSTRAP — Dirichlet-weighted; useful when a
+        Bayesian framework is preferred.
 
-        JACKKNIFE — leave-one-out resampling; useful for influence
-          + bias estimation; insufficient for non-smooth statistics
-          (medians, quantiles).
+      JACKKNIFE — leave-one-out resampling; useful for influence
+        + bias estimation; insufficient for non-smooth statistics
+        (medians, quantiles).
 
-        PARAMETRIC BOOTSTRAP — sample from a fitted parametric model.
-          Use when you trust the model form; the result is conditional
-          on that.
+      PARAMETRIC BOOTSTRAP — sample from a fitted parametric model.
+        Use when you trust the model form; the result is conditional
+        on that.
 
-      Document choice + rationale + citation.
+    Document choice + rationale + citation.
 
-  - id: pick_interval_method
-    name: Pick the interval method
-    description: |
-      Reason through:
+- id: pick_interval_method
+  name: Pick the interval method
+  description: |
+    Reason through:
 
-        PERCENTILE — Bs replicates, take the α/2 and 1-α/2 quantiles.
-          Easy; assumes the bootstrap distribution is symmetric +
-          unbiased. Often the WORST choice for skewed statistics.
+      PERCENTILE — Bs replicates, take the α/2 and 1-α/2 quantiles.
+        Easy; assumes the bootstrap distribution is symmetric +
+        unbiased. Often the WORST choice for skewed statistics.
 
-        BASIC (REVERSE PERCENTILE) — uses 2θ̂ - q* quantiles;
-          improves on percentile when θ̂ is biased.
+      BASIC (REVERSE PERCENTILE) — uses 2θ̂ - q* quantiles;
+        improves on percentile when θ̂ is biased.
 
-        STUDENTISED (t-BOOTSTRAP) — requires a variance estimate
-          for the statistic; best coverage in small N when achievable.
-          Inner bootstrap may be needed to estimate the variance.
+      STUDENTISED (t-BOOTSTRAP) — requires a variance estimate
+        for the statistic; best coverage in small N when achievable.
+        Inner bootstrap may be needed to estimate the variance.
 
-        BCa (BIAS-CORRECTED ACCELERATED) — corrects for bias +
-          skew. Often the default for asymmetric distributions.
-          Requires jackknife or analytic acceleration.
+      BCa (BIAS-CORRECTED ACCELERATED) — corrects for bias +
+        skew. Often the default for asymmetric distributions.
+        Requires jackknife or analytic acceleration.
 
-        ABC (APPROXIMATE BOOTSTRAP CONFIDENCE) — analytic
-          approximation of BCa; faster.
+      ABC (APPROXIMATE BOOTSTRAP CONFIDENCE) — analytic
+        approximation of BCa; faster.
 
-      Use percentile as the floor only when the bootstrap
-      distribution is visually symmetric + the statistic is
-      median-unbiased. Otherwise document a stronger choice.
+    Use percentile as the floor only when the bootstrap
+    distribution is visually symmetric + the statistic is
+    median-unbiased. Otherwise document a stronger choice.
 
-  - id: pick_b
-    name: Decide the number of resamples B
-    description: |
-      B is set by the Monte Carlo error you can tolerate, not by a
-      convention. Run a B-sensitivity check across an increasing
-      sequence of B and stop when the reported quantity stabilises
-      within the precision the decision needs.
+- id: pick_b
+  name: Decide the number of resamples B
+  description: |
+    B is set by the Monte Carlo error you can tolerate, not by a
+    convention. Run a B-sensitivity check across an increasing
+    sequence of B and stop when the reported quantity stabilises
+    within the precision the decision needs.
 
-      For interval endpoints: increase B until the endpoints stop
-      moving relative to the interval width.
+    For interval endpoints: increase B until the endpoints stop
+    moving relative to the interval width.
 
-      For p-values: the closer the p-value is to the decision
-      boundary, the smaller its Monte Carlo standard error must be —
-      so a p-value near a stringent threshold needs a much larger B
-      than a wide central interval. Cite the source for the
-      Monte-Carlo-error rule you adopt.
+    For p-values: the closer the p-value is to the decision
+    boundary, the smaller its Monte Carlo standard error must be —
+    so a p-value near a stringent threshold needs a much larger B
+    than a wide central interval. Cite the source for the
+    Monte-Carlo-error rule you adopt.
 
-      For BCa with jackknife acceleration: the extra leave-one-out
-      pass adds cost; budget accordingly.
+    For BCa with jackknife acceleration: the extra leave-one-out
+    pass adds cost; budget accordingly.
 
-      Document the chosen B + the Monte Carlo error + how it was set.
+    Document the chosen B + the Monte Carlo error + how it was set.
 
-  - id: implementation_and_reproducibility
-    name: Implement + ensure reproducibility
-    description: |
-      tool_python_exec (or tool_r_exec) — packages:
-        Python: scipy.stats.bootstrap, arch.bootstrap (for time
-                series), sklearn.utils.resample, custom for cluster.
-        R     : boot::boot + boot::boot.ci, boot.pval, simpleboot,
-                tsboot for time series, lme4-bootstrap for mixed.
+- id: implementation_and_reproducibility
+  name: Implement + ensure reproducibility
+  description: |
+    tool_python_exec (or tool_bash_exec) — packages:
+      Python: scipy.stats.bootstrap, arch.bootstrap (for time
+              series), sklearn.utils.resample, custom for cluster.
+      R     : boot::boot + boot::boot.ci, boot.pval, simpleboot,
+              tsboot for time series, lme4-bootstrap for mixed.
 
-      The script must:
-        - set + record the RNG seed (reproducibility)
-        - run B resamples; persist replicate statistics to disk
-          (allows post-hoc interval-method changes without rerun)
-        - compute the chosen interval(s)
-        - plot the bootstrap distribution (histogram + density +
-          observed statistic + interval markers) — write via
-          an AI-authored script (write .caption.md + .summary.md sidecars per visualization/figure_guidelines)
-        - report observed θ̂ + interval + B + interval method
+    The script must:
+      - set + record the RNG seed (reproducibility)
+      - run B resamples; persist replicate statistics to disk
+        (allows post-hoc interval-method changes without rerun)
+      - compute the chosen interval(s)
+      - plot the bootstrap distribution (histogram + density +
+        observed statistic + interval markers) — write via
+        an AI-authored script (write .caption.md + .summary.md sidecars per visualization/figure_guidelines)
+      - report observed θ̂ + interval + B + interval method
 
-      Save script + outputs to workspace/<step>/scripts/ +
-      outputs/reports/bootstrap_<statistic>.md.
+    Save script + outputs to workspace/<step>/scripts/ +
+    outputs/reports/bootstrap_<statistic>.md.
 
-  - id: report_in_methods_and_results
-    name: Report in Methods + Results
-    description: |
-      Methods: data dependence structure, resampling scheme +
-      rationale + citation, interval method + citation, B, RNG seed.
+- id: report_in_methods_and_results
+  name: Report in Methods + Results
+  description: |
+    Methods: data dependence structure, resampling scheme +
+    rationale + citation, interval method + citation, B, RNG seed.
 
-      Results: observed θ̂, 100(1-α)% CI from method X with B
-      resamples. When CIs come from bootstrap, the table footnote
-      must say so.
+    Results: observed θ̂, 100(1-α)% CI from method X with B
+    resamples. When CIs come from bootstrap, the table footnote
+    must say so.
 
-      mem_log the entry with content-hash of the
-      replicate file so the audit trail can re-derive intervals.
+    mem_log the entry with content-hash of the
+    replicate file so the audit trail can re-derive intervals.
 
 expected_outputs:
-  - workspace/.bootstrap/design.md
-  - workspace/<step>/scripts/<NN>_bootstrap_<statistic>_v<n>.py
-  - workspace/<step>/outputs/reports/bootstrap_<statistic>.md
-  - workspace/<step>/outputs/figures/bootstrap_<statistic>_distribution.png
-  - (entry appended to methods.md via mem_log)
+- workspace/.bootstrap/design.md
+- workspace/<step>/scripts/<NN>_bootstrap_<statistic>_v<n>.py
+- workspace/<step>/outputs/reports/bootstrap_<statistic>.md
+- workspace/<step>/outputs/figures/bootstrap_<statistic>_distribution.png
+- (entry appended to methods.md via mem_log)
 
 quality_bar:
   data_dependence_structure_documented: true
@@ -229,3 +210,16 @@ quality_bar:
 next_protocol: methodology/uncertainty_quantification
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: bootstrap
+triggers:
+- bootstrap
+- resample
+- permutation test
+- jackknife
+- block bootstrap
+- wild bootstrap
+- bca
+- stationary bootstrap
+- cluster bootstrap
+summary: Pick resampling scheme + interval method + B for non-parametric inference.

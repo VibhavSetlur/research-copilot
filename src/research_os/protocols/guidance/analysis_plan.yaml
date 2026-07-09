@@ -1,25 +1,25 @@
 id: analysis_plan
 tier: 'execute'
 name: Analysis Plan (Core Loop)
-version: '4.4.1'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [naive_ai, auditor]
   workflow_shape: [experiment_pipeline, proof]
 last_reviewed: '2026-06-25'
 see_also:
-  - methodology/methodology_selection      # the upstream step that sets each step's method
-  - methodology/deep_planning              # the whole-project roadmap each step is one milestone of
-  - guidance/roadmap_execution             # the outer loop that drives this per-step loop toward the roadmap goal
-  - guidance/analysis_paths                # when a step should fork into rival branches
-  - literature/literature_per_step         # the findings-vs-literature loop this protocol gates on
-  - guidance/dead_end_routing              # where an abandoned step routes
+- methodology/methodology_selection        # the upstream step that sets each step's method
+- methodology/deep_planning                # the whole-project roadmap each step is one milestone of
+- guidance/roadmap_execution               # the outer loop that drives this per-step loop toward the roadmap goal
+- guidance/analysis_paths                  # when a step should fork into rival branches
+- literature/literature_per_step           # the findings-vs-literature loop this protocol gates on
+- guidance/dead_end_routing                # where an abandoned step routes
 description: Per-step loop. Scope → plan-breakdown → literature-ground → execute (atomic versioned scripts) → document → snapshot. Iterates once per experiment step.
 trigger: After methodology_selection — or whenever the researcher asks for "the next experiment" / "now run X".
 prerequisites:
-  - workspace/methods.md exists with at least one substantive entry
-  - workspace/citations.md exists (literature_search has run, even if minimally)
+- workspace/methods.md exists with at least one substantive entry
+- workspace/citations.md exists (literature_search has run, even if minimally)
 
 # Machine-checkable subset of the prose prerequisites above. The verifier
 # (server/preconditions.py) confirms these against the workspace; the prose
@@ -28,905 +28,903 @@ prerequisites:
 # and gateable by a daemon. Existence is checkable; substance is the AI's call.
 requires:
   checks:
-    - kind: file_exists
-      path: workspace/methods.md
-      non_empty: true
-      because: the analysis plan builds each step on recorded methods
-    - kind: file_exists
-      path: workspace/citations.md
-      because: each step grounds its choices in the gathered literature
+  - kind: file_exists
+    path: workspace/methods.md
+    non_empty: true
+    because: the analysis plan builds each step on recorded methods
+  - kind: file_exists
+    path: workspace/citations.md
+    because: each step grounds its choices in the gathered literature
 
 steps:
-  - id: orient_lean
-    name: Orient Cheaply Before the Loop
-    description: |
-      Token-budget note: this protocol is ~2K tokens at format='full'. If
-      you only need a refresher mid-session, load it with
-      sys_protocol_get format='summary' (~300 tokens) to see step
-      headings, then format='step' + step_id='<id>' for the one step
-      you're about to execute.
-
-      Also: if you haven't called sys_boot this session, do so once now
-      to pick up state + autonomy. Never re-call sys_state_get +
-      sys_config(operation='get') separately while sys_boot's payload is still fresh.
-
-      BEFORE starting a non-trivial step, optionally:
-        tool_lessons tags=[<step_kind>, <method>, <data_type>]
-          → retrieves lessons from prior similar steps (recency +
-            tag-overlap scored) as a prompt block to prepend
-        tool_plan_step_grounded step_id=<NN_slug>
-          → returns a Thought / Required-Grounding / Action /
-            Verification scaffold per sub-task (ReAct + CoVe). Use
-            when scope_step flagged the step as method-heavy or
-            multi-script.
-
-      These are CHEAP and don't gate. Use them when uncertain, skip
-      when the step is rote.
-
-  - id: scope_step
-    name: Scope the Step (≤2 sentences)
-    description: |
-      State the goal in 1-2 sentences. Examples:
-        - "Baseline EDA: distributions, missingness, basic correlations."
-        - "Fit logistic regression with X1..Xk covariates; report AUROC + calibration."
-      Identify:
-        - Input data (from previous step's data/next_step_output/, reachable via this step's data/past_step_input/ symlink), or from inputs/raw_data/ via data/project_inputs/.
-        - The hypothesis (or hypotheses) this step targets — by ID, e.g. H2.
-
-      AUTONOMY GATE:
-        Risk: reversible + cheap — scoping the step writes no analysis yet.
-        proceed (adaptive default, autopilot) → state the scope and proceed; do NOT ask.
-        confirm first (manual / supervised) → present the scope; ask for confirmation.
-
-      SIZE GATE: if scope mentions >3 distinct methods OR multiple subgroups
-      OR custom pipelines, you MUST call tool_plan_step before coding. The
-      plan markdown becomes part of the experiment record.
-
-      STEPS CAN GROW. A single step is allowed to get long (many
-      sub-tasks, dozens of figures, a 500-line conclusions.md) when the
-      researcher wants that depth on ONE coherent goal. There is no
-      artificial cap. What changes the answer is the GOAL, not the line
-      count — see the "When to suggest a new step" block in
-      create_step_folder below.
-
-      LANGUAGE/TOOL-STACK SUB-STEP: if the step's method choice
-      is non-trivial (e.g. DESeq2 vs pydeseq2, Seurat vs scanpy, R survival
-      vs lifelines, WGCNA vs PyWGCNA) — i.e. ANY case where a reasonable
-      reviewer might ask "why this language/library?" — invoke
-        sys_protocol_get format='full' name='methodology/pick_tool_stack'
-      and persist the choice to workspace/<NN_slug>/scratch/stack_plan.md
-      BEFORE writing code. Skip ONLY for pure-glue / data-shuffling work
-      where the language is field-irrelevant. Audit BLOCKS when a step
-      has scripts but no stack_plan.md.
-
-  - id: ground_methods
-    name: Ground Methodology in Literature (HARD GATE) — STEP-SCOPED
-    description: |
-      You MUST search literature BEFORE choosing any method. Selecting from
-      training memory alone is FORBIDDEN — `tool_path_finalize` warns if
-      `conclusions.md` cites references but no `tool_search_*` calls
-      were logged for the project (workspace/logs/searches.log). The
-      pre-submission audit BLOCKS synthesis on this warning.
-
-      The rule isn't "feel free to skip when you remember a relevant
-      paper". The rule is: every method decision is grounded in a
-      RECENT, VERIFIABLE online lookup that the audit gate can replay.
-      The reviewer will ask "where did this prior come from?" and the
-      answer must be a DOI in `inputs/literature/` or
-      `workspace/<step>/literature/`, not the AI's training cutoff.
-
-      MANDATORY per step (do ALL of these — they are cheap):
-
-        (1) **Surface candidate methods online.** For the analytical
-            question this step targets, run:
-              tool_research_method query="<question> + <data shape>"
-                — writes a structured report into outputs/reports/
-                  comparing 2-3 candidate methods.
-            OR (if you already know the candidates):
-              parallel:
-                tool_search query="<method> <domain>"
-                tool_search query="<method> <domain> recent"
-                tool_search query="best <method>" year_min="<recent window>"
-
-        (2) **Ground each decision in a SPECIFIC paper.** For each
-            non-trivial methods choice (which normalization, which
-            FDR cutoff, which model family, which sensitivity test),
-            cite the actual paper that justifies the choice. The
-            citation MUST be saved into the step's literature folder:
-              tool_literature_search_and_save
-                query="<canonical paper for the method>"
-                source="semantic_scholar"
-                step_id="<this step's NN_slug>"
-                limit=5  download_top=2
-            Each PDF gets a .meta.yaml sidecar (title/authors/year/doi).
-            `tool_path_finalize` auto-folds the per-step
-            `conclusions.md` `## References to ground` section into
-            project-wide `workspace/citations.md` AND
-            per-step `literature/key_papers.md`.
-
-        (3) **Compare findings to current literature.** If your DEG
-            count / pathway enrichment / effect size differs from
-            recent published work, NOTE the divergence + the
-            specific paper you're comparing against. Reviewers will
-            ask whether your numbers replicate; you should have
-            already checked.
-
-        (4) **Record the decision-with-citation chain.**
-              mem_log (method, dataset, dataset_hash,
-                implementation, parameters, justification WITH
-                citation_key, assumptions list).
-              mem_log (context / selected / rationale /
-                options considered / linked citation_keys).
-              mem_log for each hypothesis touched,
-                status='testing'.
-
-      Anti-pattern (caught at audit):
-        "We use DESeq2 because it's standard." → not grounded.
-        Correct:
-        "We use DESeq2 (Love, Huber, Anders 2014, Genome Biology
-        15:550, doi:10.1186/s13059-014-0550-8 — saved at
-        `literature/love2014_deseq2.pdf`) because the n=8 design
-        benefits from its empirical-Bayes dispersion shrinkage
-        (Section 2.3 of that paper)."
-
-  - id: pick_tools
-    name: Pick Tools / Libraries (validated, not guessed)
-    description: |
-      Consult your SKILL LAYER first. sys_boot's recommended_skills already
-      names the domain skills that fit this project (e.g. experimental-design,
-      statistical-power, bulk-rnaseq, rdkit); skills_list() + skill_view() load
-      the validated how-to. A matching skill — from your own Nous catalog, the
-      K-Dense science pack, or any external Agent Skills library — usually names
-      the right library with correct parameters, faster + safer than guessing.
-      If no skill covers it:
-        tool_research_tool task="<concrete task>" language="<python|r|julia|any>"
-      For external/paid/GUI tools that you cannot run:
-        tool_external_tool_instructions tool_name=<X> purpose=<Y> url=<Z>
-      Then commit the tool decision via mem_log, recording whether it came from
-      a skill (and which) or from discovery.
-
-      Reproducibility check: every tool used must be installable
-      (tool_package_install if Python) and snapshotted later.
-
-  - id: classify_step_intent
-    name: Classify the Step's Intent (drives gate-waivers)
-    description: |
-      Before creating the step folder, classify the step by what it
-      PRODUCES, not by domain. The intent class drives which
-      audit-gates apply and which are auto-waived. Pick exactly one:
-
-        plan       — design / scoping / spec work. Outputs are plans,
-                     decision logs, hypothesis registers. No code, no
-                     numeric findings, no figures expected.
-        ground     — literature retrieval / methodology grounding.
-                     Outputs are PDFs in literature/ + summary
-                     markdown. No focal figure expected.
-        analyse    — statistical / computational analysis with numeric
-                     findings. Default to figures + tables + reports.
-                     Hits every gate at full strictness.
-        visualise  — pure visualization of a PRIOR step's data /
-                     findings. Inherits the prior step's claims;
-                     literature loop is satisfied by the prior step's
-                     findings_vs_literature.md.
-        synth      — synthesis / cross-step write-up. Outputs are
-                     prose. No new findings, no new figures.
-        proof      — mathematical proof / formal derivation. Outputs
-                     are <slug>.md proof body + <slug>_review.md (per
-                     theory_math/proof/proof_verification_workflow).
-                     No figures, no tables expected.
-        apparatus  — humanities annotation / interpretive apparatus
-                     (per humanities/textual/close_reading). Outputs
-                     are <slug>_apparatus.md + annotation file. No
-                     figures expected.
-
-      Persist the classification:
-        - to workspace/<step>/step_summary.yaml under
-          `step_intent: <one of: plan | ground | analyse | visualise |
-                          synth | proof | apparatus>`
-        - reference template at templates/step_summary.yaml.template
-
-      Gate consequences (read in tandem with the per-gate notes below):
-        plan / ground / proof / apparatus → figure_required auto-False
-          (no focal figure expected). tool_audit(scope='step', dimension='completeness')
-          downgrades empty outputs/figures/ from BLOCK to PASS for
-          these intents.
-        visualise → literature_required inherited from prior step.
-          tool_audit(scope='step', dimension='literature') accepts a verdict block whose
-          `inherits_from: <NN_slug>` references the prior step's
-          findings_vs_literature.md instead of re-running the loop.
-        synth → both figure_required and literature_required default
-          to False; the synthesis-level audit covers them.
-        analyse → no waivers; full gate suite applies.
-
-      Why this matters: hardcoded per-protocol carve-outs decay as new
-      protocols land. A declared intent is a contract the audit tools
-      can honour uniformly. If the classification is wrong, the
-      researcher (not the AI) catches it because the wrong gates fire.
-
-      AUTONOMY GATE:
-        Risk: reversible — a step-intent classification is logged and can
-        be re-labelled; nothing downstream is locked by it.
-        proceed (adaptive default, autopilot) → pick the closest fit and proceed; log the
-          rationale in workspace/logs/step_intent_choices.md so a later
-          audit can review it.
-        confirm first (manual / supervised) → suggest the classification; ask for
-                              confirmation when ambiguous (e.g. a
-                              step that fits BOTH analyse + visualise).
-
-  - id: create_step_folder
-    name: Create the Numbered Experiment Folder
-    description: |
-      sys_path name="<slug>" hypothesis="<H<id>: <text>>"
-
-      NAMING — the AI picks the slug based on what THIS step actually does.
-      There are NO canonical names. Derive the slug from the step's goal,
-      the chosen method, and the domain context. Rules:
-
-        - lowercase, words joined by underscores (no spaces / dashes / dots)
-        - ≤ 40 chars, descriptive but compact
-        - mention the METHOD when one was selected
-          (e.g. `cox_ph_treatment_effect`, not `survival_analysis`)
-        - mention the SUB-POPULATION if the step is restricted
-          (e.g. `logistic_under_65` vs `logistic_all`)
-        - re-use the same slug + version-bump scripts (_v1, _v2) when
-          iterating on the SAME goal; create a NEW step (different slug)
-          only when the goal changes
-
-      Examples ACROSS domains (illustrative — do not copy verbatim):
-        EDA              :  baseline_eda  /  distribution_scan  /  missingness_map
-        Cleaning         :  imputation_mice  /  outlier_winsorise  /  schema_harmonise
-        Feature work     :  pca_demographics  /  one_hot_encode_diagnoses
-        Stats modelling  :  logistic_baseline  /  cox_ph  /  mixed_effects_school
-        Causal           :  ipw_treatment  /  did_policy_change  /  rdd_age_threshold
-        ML               :  rf_baseline  /  xgb_tuned  /  cnn_transfer
-        NLP              :  bert_finetune_sentiment  /  ner_clinical_notes
-        Genomics         :  deseq2_de  /  gsea_pathway  /  variant_call_strelka
-        Audit            :  power_recheck  /  calibration_curve  /  sensitivity_unmeasured
-
-      Creates workspace/NN_<slug>/ with README.md (plain-English overview),
-      conclusions.md (the deep report), plan.md (the pre-step plan — see the
-      next step), and the subfolders {scripts, literature, context,
-      data/{project_inputs, past_step_input, next_step_output, share},
-      outputs/{figures, tables, reports}, environment}. Sets it as
-      current_path. NN is auto-assigned (next free number, continuous across
-      paths). No step_summary.yaml or pipeline.yaml is created at this point
-      — step_summary.yaml is retired, and pipeline.yaml only appears if you
-      call tool_step_pipeline(operation='define').
-
-      WHEN TO SUGGEST A NEW STEP (proactive — surface to researcher,
-      don't just decide on your own unless autopilot):
-        - conclusions.md > Findings now covers ≥2 distinct hypothesis
-          IDs that aren't tightly coupled (mem_hypothesis_list shows
-          H1 + H3 in this step's evidence)
-        - the scope has drifted past its original ≤2 sentence charter
-          ("we also tried…", "while we were at it…")
-        - methodology changed: switching estimator family (linear →
-          tree-based) or unit of analysis (subject → cluster) — that
-          usually deserves its own slug
-        - sub-population restriction was added mid-stream (was "all
-          patients", now mostly "patients < 65"): create a sibling step
-          for the restricted analysis so the original stays clean
-        - the conclusion would be hard to caption with ONE focal figure
-
-      How to suggest: in supervised/manual mode, say once: "this step
-      is starting to cover two questions — want me to spin off a new
-      step for <X> so both stay easy to read?" In autopilot, call
-      `tool_branch_recommendation reason="<why>"` and act on its
-      output. NEVER force a new step on the researcher — long, focused
-      steps are fine and often preferable to step-fragmentation.
-
-      For script filenames inside the step, the convention is
-      `<NN>_<slug>_v<n>.<ext>` for the main script, and
-      `<NN>_<slug>_<subtask>_v<n>.<ext>` for atomic sub-tasks. Sub-task
-      names follow the SAME naming rules (descriptive, lowercase,
-      underscore-joined).
-
-  - id: draft_step_plan
-    name: Draft the Step Plan BEFORE Writing Any Code
-    description: |
-      The scaffold created `workspace/<NN_slug>/plan.md`. Fill it in NOW,
-      before any scripts / figures — this is co-scientist iterative
-      planning: the plan is where the step's design is reasoned and agreed
-      BEFORE the work, not reconstructed after it.
-
-      Carry the thread forward. Open the plan with what you already know:
-        - the previous step's outcome + the project's findings-to-date
-          (read the prior `conclusions.md` + `inputs/research_plan.md`)
-        - what THIS step will do: the question, the data, the method(s),
-          the artefact(s) it will produce
-        - why this step, why now (how it advances the hypotheses)
-        - the open decisions you want the researcher to weigh in on
-
-      Then keep `inputs/research_plan.md` (the whole-project arc) in sync —
-      append a line to its iteration log if this step changes the plan.
-
-      AUTONOMY GATE (read interaction.autonomy_level):
-        Risk: reversible — writing plan.md commits no analysis; the value
-        at stake is design quality, which the researcher may want to shape.
-        - adaptive (default) → WRITE plan.md as your reasoning record, note
-          the decisions you made under "Open questions", and proceed; but
-          when an open decision is consequential and genuinely contested
-          (it changes what the step concludes, not just how it's coded),
-          surface it to the researcher and WAIT. Judge from how much the
-          decision shapes the finding, not from a fixed rule.
-        - manual / supervised → PRESENT plan.md's "What this step will do"
-          + "Open questions" to the researcher and WAIT. Iterate
-          (propose → critique → refine) until the design is agreed, THEN
-          proceed to write scripts. This back-and-forth is the point.
-        - autopilot → still WRITE plan.md (it is the record of your
-          reasoning + the lineage from the last step), note the decisions
-          you made under "Open questions", and proceed without pausing.
-
-      A plan.md that just restates the slug is not a plan. If the step is
-      genuinely trivial (rote data plumbing), one honest sentence per
-      section is fine — but write it.
-
-  - id: write_atomic_scripts
-    name: Write Atomic Versioned Scripts AS A SUB-TASK DAG
-    description: |
-      DO NOT one-shot a 400-line mega-script. The canonical structure
-      for a serious analysis step is a SUB-TASK PIPELINE:
-
-         ingest → validate → clean → featurize → split → fit
-                                                  ↘ diagnose → visualize → report
-
-      Declare it once via tool_step_pipeline(operation='define') which seeds
-      workspace/<step>/pipeline.yaml with the 7-node template; edit
-      the script + inputs + outputs per node; run with
-      tool_step_pipeline(operation='run'). The runner topologically orders nodes,
-      content-hash-caches inputs+params+script (so editing the
-      clean script only re-runs clean → fit → diagnose → report),
-      writes a .pipeline_run/run_<ts>.json audit trail, and drops a
-      .prov.json sidecar for every output a node produces.
-
-      One script per sub-task. Two equivalent naming styles —
-      pick the one that fits the step's shape:
-
-      A) **Letter-suffix chronological order** (preferred when the
-         sub-tasks ARE meant to run end-to-end in a fixed sequence
-         and a fresh reader should run `ls scripts/` and immediately
-         see the order):
-
-           workspace/<step>/scripts/
-              <NN>a_<short_name>_v<k>.<ext>   # runs first
-              <NN>b_<short_name>_v<k>.<ext>   # runs second
-              <NN>c_<short_name>_v<k>.<ext>   # ...
-              <NN>d_<short_name>_v<k>.<ext>
-
-         e.g.
-           01a_load_counts_v1.py
-           01b_library_size_qc_v1.py
-           01c_sample_correlation_v1.py
-           01d_pca_v1.py
-
-         The letter encodes execution order; `ls` shows it naturally.
-         The pipeline.yaml DAG can omit explicit dependencies because
-         the alphabetical order IS the dependency order.
-
-      B) **Descriptive-only** (when sub-tasks form a true DAG with
-         non-linear dependencies — `pipeline.yaml` declares the edges,
-         not the filename):
-
-           workspace/<step>/scripts/
-              <NN>_fit_baseline_v<k>.<ext>
-              <NN>_calibration_v<k>.<ext>
-              <NN>_feature_eng_v<k>.<ext>
-
-      Use style A by default — chronological order is the common case
-      and the encoded order survives someone re-running the step
-      manually. Use style B only when sub-tasks branch.
-
-      In BOTH styles: `_v<k>` is the iteration suffix; bump it via
-      `tool_step(operation='iterate')` when materially changing a sub-task.
-
-      The naming convention is WATCHED, not just documented:
-      `tool_audit(scope='step', dimension='script_naming')` validates every
-      script against `<NN>[a-z]_<snake_name>_v<k>.<ext>` (with `<NN>` = this
-      step's number); `tool_step_complete` surfaces violations as completeness
-      warnings; and a running daemon flags them in the daemon_notes that
-      sys_boot surfaces. So a
-      mis-named scripts/ folder gets caught early — don't rely on remembering
-      the format, let the gate tell you the exact rename.
-
-      Server-enforced gates (no fast path through them):
-        - tool_audit(scope='step', dimension='completeness') BLOCKS multi-script steps (>2)
-          without a pipeline.yaml, missing focal figures, missing
-          caption / summary sidecars, missing provenance coverage <50%.
-        - tool_audit(scope='step', dimension='code_quality') BLOCKS scripts with bare `except`,
-          `import *`, `eval`/`exec`, hardcoded absolute paths, or
-          functions >150 lines / complexity >20.
-        - tool_audit_quality_full runs every gate together before
-          synthesis. tool_plan refuses to walk past a
-          deliverable tool until the gate is green.
-
-      Allowed script types (pick the right tool for the language):
-        Python (.py)        → tool_python_exec
-        R (.R)              → tool_r_exec
-        Julia (.jl)         → tool_julia_exec
-        Bash (.sh)          → tool_bash_exec
-        Jupyter (.ipynb)    → tool_notebook_exec
-        R-markdown (.Rmd)   → tool_rmarkdown_render
-        Quarto (.qmd)       → tool_rmarkdown_render
-
-      LONG-RUNNING (estimated > runtime.long_running_threshold_seconds, or
-      on shared_server=true): use tool_task(operation='run') instead of
-      blocking exec, then poll tool_task(operation='status'). Tell the
-      researcher "task <id> backgrounded;
-      checking every <interval>".
-
-      Every script MUST produce all three OUTPUT CATEGORIES — reports,
-      tables, figures — unless the step is genuinely non-numeric
-      (qualitative coding, pure data plumbing, etc.). Default to all
-      three; explain the omission in conclusions.md if you skip one.
-
-        - Read from workspace/<step>/data/past_step_input/ (auto-symlink → prior step's next_step_output) or data/project_inputs/ (→ inputs/raw_data/).
-        - Write derived data to workspace/<step>/data/next_step_output/.
-
-        - REPORTS (outputs/reports/, .md): at least one markdown
-          summary with numbers + interpretation. This is the readable
-          narrative of what the script did and what it found.
-
-        - TABLES (outputs/tables/, .csv preferred, .tsv / .parquet
-          allowed): at least one CSV when the step has numeric
-          findings. One table per analytic question; bare numbers go
-          in tables so the report can stay narrative. Filename
-          convention: <step_number>_<descriptor>.csv. For a fitted
-          model: include a coefficients table (param, estimate,
-          ci_lo, ci_hi, p_value) at minimum. For a comparison: a
-          methods × metrics row/column matrix. Skip ONLY when the
-          step has no numeric outputs at all (rare).
-
-        - FIGURES (outputs/figures/, PNG ≥ 300 DPI): at least one
-          FOCAL figure named <step_number>_<short_descriptor>.png
-          (e.g. 03_attitude_by_demographic.png). PREFER
-          an AI-authored script (visualization/figure_guidelines covers
-          Okabe-Ito / DPI / dual PNG+SVG export / both caption
-          sidecars in one call. The focal figure is the one
-          promoted into the dashboard + paper.
-
-          BEYOND THE FOCAL FIGURE: for any step producing a
-          statistical or ML model, also emit the diagnostic +
-          comparison family (high-quality is the default; basic only
-          when the researcher explicitly asks for "just the headline
-          figure"):
-            * diagnostic suite (residuals, QQ, calibration, etc.)
-            * summary (effect estimate + interval at the field's
-              conventional confidence level)
-            * comparison (vs baseline or alternative spec)
-          For method-specific steps, generate the diagnostic figures
-          the method's reporting standard expects — i.e. the plots a
-          reviewer in that field would look for (e.g. proportional-
-          hazards diagnostics for a Cox model; posterior predictive
-          checks for a Bayesian fit; discrimination + calibration for
-          a classifier; heterogeneity + small-study plots for a meta-
-          analysis). Name the reporting standard you're following. Use
-          the visualization protocol that matches the work
-          (visualization/uncertainty_visualization,
-          visualization/distribution_comparison,
-          visualization/network_visualization, etc.) when the focal
-          chart is non-trivial.
-
-          Pair every figure with a sibling <name>.caption.md
-          (technical; one-sentence finding) AND <name>.summary.md
-          (plain-English; 2-3 short paragraphs for non-expert
-          audiences). An AI-authored script writes both when you pass
-          `caption` + `plain_english`. Otherwise
-          authoring the <stem>.summary.md sidecar directly auto-drafts the summary from
-          the caption + the step's Findings.
-
-        - Set RNG seeds explicitly; print library versions to stderr.
-
-      Empty outputs/figures/ is a HARD FAIL FOR `analyse` STEPS —
-      tool_audit(scope='step', dimension='completeness') BLOCKS the final synthesis until
-      cleared. A step with numeric findings but empty outputs/tables/
-      surfaces as a WARNING from the same audit (a missing table is a
-      research-record gap, not a block-the-paper gap).
-
-      AUTO-WAIVER (per step_intent — see `classify_step_intent`):
-        step_intent ∈ {plan, ground, proof, apparatus, synth}
-          → tool_audit(scope='step', dimension='completeness') downgrades empty
-            outputs/figures/ from BLOCK to PASS automatically. No
-            override needed; the step's intent IS the override
-            rationale.
-        step_intent == visualise
-          → still requires a focal figure (visualisation IS the
-            output); the literature loop is what's inherited.
-        step_intent == analyse (default)
-          → full strictness; empty figures is a HARD BLOCK unless the
-            researcher explicitly sets
-            `figure_required: false` in step_summary.yaml AND records
-            why in the override block.
-
-      If you genuinely need to opt OUT of the figure gate without a
-      matching step_intent, the explicit escape is:
-        figure_required: false      # in step_summary.yaml, with a
-                                    # recorded rationale in the override block
-      The completeness audit that fires the figure gate can also be
-      overridden directly on the audit itself:
-        tool_audit(scope='step', dimension='completeness',
-                   override_completeness_gate=true,
-                   override_rationale="<why this analyse step has no figure>")
-      (tool_path_finalize itself only accepts override_literature_gate +
-      override_rationale — it gates step literature, not figures. Use it
-      only to opt out of the per-step literature loop:
-        tool_path_finalize override_literature_gate=true
-                            override_rationale="<why this step needs no new lit>")
-
-      Outputs spanning multiple categories (figures + tables + reports)
-      WITHOUT a pipeline.yaml is ALSO a HARD FAIL — the mega-script
-      anti-pattern. Separate scripts per sub-task (one for the fit,
-      one per figure, one per table, one for the report) and declare
-      them via tool_step_pipeline(operation='define').
-
-      Versioning has TWO distinct modes:
-
-        - BUG FIX → bump `_v<n>` on the affected script, re-run; the
-          content-hash cache invalidates downstream nodes automatically.
-        - DELIBERATE ITERATION (recolour Fig 2, tighten a cutoff, swap
-          a model spec) → call tool_step(operation='iterate') with a rationale FIRST.
-          It snapshots the current scripts + outputs + captions +
-          conclusion into .versions/v<n>/ as a coordinated unit so the
-          prior version is preserved before you edit anything. Then
-          rename the live scripts using the suggested _v<n+1> suffix
-          and re-run. Use tool_audit(scope='project', dimension='version_coherence') to confirm
-          every output traces to the highest-version script on disk.
-
-      Bump _v<n> on every meaningful re-run; do NOT silently overwrite.
-
-  - id: document_conclusions
-    name: Document Conclusions + Reconcile the Plan
-    description: |
-      Three files close out the step, with deliberately different roles:
-
-      **conclusions.md** — the THOROUGH record (statistical + reproducible):
-        ## Findings
-          - 2-5 quantitative bullets (numbers + units; effect sizes
-            preferred over p-values; 95% CI where applicable).
-        ## Hypothesis evidence
-          - For each hypothesis touched: mem_log H<id>
-            status=<supported|refuted|inconclusive> evidence=<one-line>.
-        ## Methods (full detail)
-          - Dataset shape, transforms, model spec, params, RNG seed, versions.
-        ## Methodological notes
-          - Assumption checks, sensitivity, robustness. Supportive tone.
-        ## Limitations
-          - What this step CANNOT conclude, and why. Honest framing
-            ("no detectable difference" beats "no effect" when underpowered).
-        ## Decision
-          - proceed | branch (new experiment, why) | dead-end (call dead_end_routing).
-            Record the lineage: how the previous step led here, and — if this
-            step was iterated — what changed across versions.
-        ## Next steps
-          - 2-3 concrete candidate experiments with brief rationale.
-      (NB 3.2: conclusions.md no longer carries a Plain-language summary —
-      that lives in README's `## In plain English`, below.)
-
-      **plan.md** — UPDATE IT NOW (do not leave it as the pre-step draft):
-        Fill `## Progress & deviations from plan` — reconcile what you
-        PLANNED against what you ACTUALLY did: a method swap, a dropped
-        sub-analysis, an added robustness check, or "went exactly to plan".
-        plan.md should end as a true record of the step, so a reader can
-        trace intent → reality. This is the step the AI most often skips —
-        don't. Keep `inputs/research_plan.md`'s iteration log in sync if
-        this step changed the overall arc.
-
-      **README.md** — the 60-SECOND overview (non-experts):
-        `## In plain English` IS the canonical plain-language summary
-        (2-3 sentences a non-statistician could follow; the dashboard's
-        executive + teaching views surface it). Author it here directly,
-        OR write it in context/notes.md under "## Plain-language summary"
-        and finalize will promote it. The finalize step (below) backfills
-        the remaining stub sections from conclusions.md + decisions +
-        outputs — don't hand-rewrite those.
-
-      Also: mem_log entry="<step_id> done: <one-line summary>".
-
-  - id: ground_findings_in_literature
-    name: Ground Findings in Literature (pipeline-mandatory)
-    description: |
-      AFTER conclusions.md is written but BEFORE finalize_step, run the
-      per-step literature loop. The methods choice was grounded above
-      (`ground_methods`); now the FINDINGS themselves must be compared
-      to what the literature says.
-
-      This step is **pipeline-mandatory**. `finalize_step` (below) runs
-      `tool_audit(scope='step', dimension='literature')` as its first gate and BLOCKS the
-      finalize if `findings_vs_literature.md` is missing for any step
-      whose `step_summary.yaml` lacks `literature_required: false`.
-
-      Load and follow:
-        sys_protocol_get format='full' name='literature/literature_per_step'
-
-      The protocol:
-        1. Extracts top-5 claims from conclusions.md `## Findings`
-        2. Searches Semantic Scholar / PubMed / Crossref per claim
-        3. Downloads top-3 PDFs per claim into
-           workspace/<step>/literature/ (auto-skipped if paywalled)
-        4. Writes workspace/<step>/literature/findings_vs_literature.md
-           with one block per claim:
-             ## Claim: <one-line>
-             **Our finding:** ...
-             **Literature says:** ...
-             **Verdict:** AGREES | DISAGREES | EXTENDS | DEFERRED
-             **Evidence:** [@key] (year) — sentence
-             **Discussion implication:** ...
-        5. Calls tool_ground per non-deferred claim
-        6. Calls tool_verify on the top-3 highest-stakes claims
-        7. Updates step_summary.yaml with a `literature:` block
-
-      Then GATE:
-        tool_audit(scope='step', dimension='literature') step_id="<NN_slug>"
-
-      Blocks if findings_vs_literature.md missing, claims lack verdicts,
-      DISAGREES verdicts have no discussion, or all-deferred without
-      documented reason.
-
-      Skip when EITHER:
-        - the step is pure data engineering (QC, normalisation,
-          format conversion) — in that case set
-          `literature_required: false` in step_summary.yaml; or
-        - `step_intent: visualise` and the step is a pure
-          visualisation of a PRIOR step's findings — in that case
-          set in step_summary.yaml:
-              step_intent: visualise
-              literature:
-                inherits_from: <NN_slug_of_prior_step>
-          `tool_audit(scope='step', dimension='literature')` will PASS by confirming the
-          referenced step's findings_vs_literature.md exists,
-          rather than re-running the loop on the same claims.
-
-      The synthesis-level audit (`tool_audit(scope='synthesis', dimension='all')`) blocks final
-      assembly when any step has literature_deferred non-empty or
-      literature.claims_grounded == 0 without `literature_required: false`.
-
-  - id: snapshot_step_environment
-    name: Snapshot the Environment + Run Recipe (every step that ran code)
-    description: |
-      Every step that ran code must end up with its OWN pinned environment AND
-      a clean rerun recipe so the step can be shared / re-run / containerized in
-      isolation — a global env may not cover every step, and even when it does
-      you want a per-step record of exactly what THIS step used.
-
-      `tool_path_finalize` (the finalize_step below) now does this automatically:
-      for any step that ran scripts it calls the per-step env lock, writing
-      `workspace/<NN_slug>/environment/` with requirements.txt + python_version
-      + session.yaml + conda.yaml + Dockerfile + entrypoint.sh (the single
-      command that reproduces every output). So usually you do nothing here —
-      finalize handles it.
-
-      Do it explicitly when you want the recipe BEFORE finalize, or to add
-      Apptainer/Podman for an HPC target:
-        tool_step(operation='env_lock', step_id='<NN_slug>')                 # full recipe
-        sys_env(operation='snapshot', step_id='<NN_slug>')                   # requirements only
-        sys_env(operation='docker_generate', step_id='<NN_slug>')            # (re)build the step Dockerfile
-
-      Pure-data step (no scripts ran) → nothing to lock; finalize skips it.
-
-      Reproducibility is the deal you make with future-you. If the daemon warns
-      `step_no_env_snapshot`, finalizing the step usually clears it.
-
-  - id: finalize_step
-    name: Finalize the Step (mandatory before decide_next)
-    description: |
-      tool_path_finalize — runs the finalize sequence:
-
-      Per-step file refresh (rewrites the step's stub README + every
-      subfolder README from what actually got produced):
-        - environment/README.md ← "used global env" OR bespoke listing.
-        - literature/README.md ← "used global corpus + decisions"
-          OR step-specific sources + the decisions they informed.
-        - context/README.md ← "no prose needed" OR narrative inventory
-          + plain-language summary from notes.md.
-        - data/next_step_output/README.md ← every persisted artefact + which
-          downstream step consumes it (from the workflow DAG).
-        - outputs/README.md ← inventory of figures / tables / reports.
-        - README.md ← stub Methods / Outputs / Decision sections
-          populated from conclusions.md + per-step decision log.
-
-      Project-scope log refresh:
-        - workspace/analysis.md ← step-finalized heading + headline
-          + output counts + decision count (idempotent on the marker).
-        - workspace/methods.md ← if conclusions.md has a `## Methods
-          (full detail)` or `## Methods` section, mirror it under a
-          step-tagged subsection (idempotent on the marker).
-        - workspace/citations.md ← regenerated from project +
-          per-step literature/.meta.yaml sidecars.
-
-      Plain-English summaries: for every figure without
-      `<name>.summary.md`, the caption synthesiser drafts one from the
-      caption + Findings.
-
-      Warnings returned (act on these before decide_next):
-        - conclusions.md > Findings / Decision still a stub
-        - Plain-language summary still a stub
-        - No environment snapshot for a step that produced outputs
-
-      Captions: each figure MUST have a sibling `<name>.caption.md`
-      describing what the reader is looking at (one technical
-      sentence). Add one whenever you save a figure;
-      `an AI-authored script (write both sidecars inline)` writes both
-      sidecars in one call.
-
-      Idempotent — safe to re-run after edits.
-
-  - id: commit_step
-    name: Commit the Step for Provenance (do NOT leave work uncommitted)
-    description: |
-      A finalized step is a unit of provenance — it MUST land in git, not sit
-      as untracked changes. After finalize_step, commit the step's work to the
-      project's git history:
-
-        tool_git(operation='status', scope='project')        # see what changed
-        tool_git(operation='commit', scope='project',
-                 message='<NN_slug>: <one-line what this step did>',
-                 step_id='<NN_slug>')                          # stamps a
-                 # 'Research-OS-Step:' trailer linking the commit to the step
-
-      scope='project' targets the research workspace root (in tool_build mode
-      the inner-repo commits use scope='tool' instead; omit scope to auto-pick).
-      If the project isn't a git repo yet, `tool_git(operation='init',
-      scope='project')` once, then commit. This is how a reader / collaborator /
-      future-you reconstructs WHAT was done WHEN — uncommitted work has no
-      provenance trail. The daemon flags completed steps that were never
-      committed (`steps_uncommitted`).
-
-      AUTONOMY GATE:
-        Risk: low — a commit is additive + reversible (history is never
-        rewritten here).
-        - adaptive (default) / autopilot → commit automatically after finalize.
-        - manual / supervised → commit too, unless the researcher has said they
-          manage git themselves (then skip + note it).
-
-  - id: lightweight_step_audit
-    name: Lightweight In-Step Audit
-    description: |
-      Whichever apply:
-        - tool_audit(scope='step', dimension='figure') on the primary figure (DPI / size).
-        - tool_audit(scope='step', dimension='power') if a statistical test with known n was run.
-        - tool_audit(scope='step', dimension='assumptions') if residuals were saved.
-        - tool_audit(scope='step', dimension='literature') step_id=<NN_slug> — gate for
-          the per-step literature loop (blocks finalize if
-          findings_vs_literature.md missing or verdicts incomplete).
-        - tool_verify step_id=<NN_slug> — confirms every
-          decision logged in workspace/analysis.md has a grounding
-          record in .grounding/grounding.jsonl or an inline citation.
-          Writes workspace/logs/grounding_audit.md.
-      Append warnings to conclusions.md > Limitations.
-
-      AFTER the audit passes, log a Reflexion record so future steps
-      can learn:
-        tool_lessons step_id=<NN_slug>
-            outcome=<one-line>
-            reflection=<what you'd do differently>
-            what_worked=[...]
-            what_didnt=[...]
-            recommendation=<for similar future steps>
-            tags=[<step_kind>, <method>, <data_type>]
-            scope=<step|project|methodology>
-
-  - id: present_to_researcher
-    name: Present to Researcher (anti-one-shot MANDATORY pause)
-    description: |
-      MANDATORY GATE — must run after `finalize_step`. The AI
-      MUST stop here and present the step's status to the researcher,
-      then WAIT for their choice before any further tool call.
-
-      Why: AI agents tend to "complete" long plans as fast as possible.
-      Context fills, the AI stops introspecting, and the researcher
-      loses oversight. The output is poor because no one paused to
-      ask "is this actually good?" between steps. Forcing a mandatory
-      pause at this checkpoint — with concrete revision options the
-      AI generates from the step's actual artefacts — gives the
-      researcher a moment to redirect.
-
-      Mechanics:
-
-        1. Call `tool_step(operation='revision_options') step_id="<NN_slug>"`.
-           This returns:
-             - would_benefit_from_revision (bool)
-             - risk_signals (e.g. citations claimed but no
-               tool_search_* calls logged)
-             - suggested_revisions (specific fixes; e.g. "Findings
-               section is only 120 chars — should be ≥300 with
-               specific numbers")
-             - alternative_paths (stratified / sensitivity / method-
-               comparison branches the researcher could fork)
-             - handoff_recommended (true when ≥5 steps finalized
-               this conversation — context is getting long)
-
-        2. Present those VERBATIM to the researcher. Format:
-
-             **Step `<NN_slug>` complete.**
-             - Headline: <conclusions.md headline>
-             - Outputs: <N figures, M tables, K reports>
-             - Audit warnings: <count> (see workspace/logs/audit_report.md)
-
-             *Suggested revisions (would_benefit_from_revision={bool}):*
-             - <each suggested_revision>
-
-             *Alternative paths to consider:*
-             - <each alternative_path>
-
-             *What would you like to do?*
-               (a) Proceed to the next analysis step
-               (b) Revise this step — I'll walk you through the
-                   suggested fixes
-               (c) Branch into an alternative (stratified /
-                   sensitivity / method-comparison)
-               (d) Pause + handoff for a fresh chat (recommended
-                   when handoff_recommended=true)
-
-        3. WAIT for the researcher's choice. DO NOT auto-scaffold
-           the next step in the same turn — even when autopilot is
-           on, the pause-and-present is mandatory; only the
-           auto-proceed afterwards is autopilot-dependent.
-
-      AUTONOMY GATE:
-        Risk: reversible — presenting results and choosing the next step
-        commits nothing irreversible; the concern is researcher steering.
-        proceed (adaptive default, autopilot) → present the summary + options; if
-                              would_benefit_from_revision is False AND
-                              audit warnings == 0, proceed to decide_next
-                              in the SAME turn. Otherwise surface the
-                              decision and wait for the researcher.
-        confirm first (manual / supervised) → wait for the researcher's reply (a/b/c/d).
-
-      ONE-SHOT GUARD: if the AI calls `sys_path` immediately
-      after `tool_path_finalize` without calling
-      `tool_step(operation='revision_options')` first, the next routing log will
-      flag this as a protocol violation. Don't do it.
-
-  - id: decide_next
-    name: Decide Next Step (don't loop forever)
-    description: |
-      ONLY reachable AFTER `present_to_researcher` has surfaced the
-      pause-and-revise options + the researcher has chosen.
-
-      One of (per researcher choice):
-        - Proceed → return to scope_step for the next experiment.
-        - Revise → load `guidance/scope_clarification` for a focused
-                   revision pass on the same step (re-iterate the
-                   sub-task that needs fixing; bump the script's
-                   `_v<n>` via `tool_step(operation='iterate')`).
-        - Branch → create a parallel experiment via `sys_path`
-                   with `branch_of=<this step>` and a different
-                   methodology (kept active alongside this one).
-        - Handoff → load `guidance/chat_handoff` + run
-                    `sys_session_handoff` so the next chat resumes
-                    cleanly with all the step's state intact.
-        - Abandon → `sys_path` + load
-                    `guidance/dead_end_routing`.
-        - Advance to reproducibility — only when ALL planned
-          experiments have non-empty `conclusions.md` (decisions are
-          'proceed' or 'branch', NONE 'dead-end') AND at least one
-          terminal experiment has a publishable finding.
-
-      AUTONOMY GATE:
-        Risk: reversible — the choice was already surfaced in
-        present_to_researcher; this just acts on it.
-        proceed (adaptive default, autopilot) → proceed to the chosen action (already decided
-          in present_to_researcher).
-        confirm first (manual / supervised) → wait for the explicit answer from
-                              `present_to_researcher`.
-
-      Log the decision as a ReAct trace entry so future audit can
-      reconstruct WHY each step branched / proceeded / died:
-
-        tool_thought(operation='log',
-            step_id=<NN_slug>,
-            kind='decision',
-            content=<one-line decision + rationale>,
-            decision_id=<NN_slug>_<proceed|revise|branch|handoff|abandon>)
-
-      Cheap (single-line write to .thoughts/thoughts.jsonl); makes
-      `tool_thought(operation='trace')` actually useful during synthesis.
+- id: orient_lean
+  name: Orient Cheaply Before the Loop
+  description: |
+    Token-budget note: this protocol is ~2K tokens at format='full'. If
+    you only need a refresher mid-session, load it with
+    sys_protocol_get format='summary' (~300 tokens) to see step
+    headings, then format='step' + step_id='<id>' for the one step
+    you're about to execute.
+
+    Also: if you haven't called sys_boot this session, do so once now
+    to pick up state + autonomy. Never re-call sys_state_get +
+    sys_boot(operation='config_get') separately while sys_boot's payload is still fresh.
+
+    BEFORE starting a non-trivial step, optionally:
+      tool_lessons tags=[<step_kind>, <method>, <data_type>]
+        → retrieves lessons from prior similar steps (recency +
+          tag-overlap scored) as a prompt block to prepend
+      tool_plan (operation='grounded_step', step_id=<NN_slug>)
+        → returns a Thought / Required-Grounding / Action /
+          Verification scaffold per sub-task (ReAct + CoVe). Use
+          when scope_step flagged the step as method-heavy or
+          multi-script.
+
+    These are CHEAP and don't gate. Use them when uncertain, skip
+    when the step is rote.
+
+- id: scope_step
+  name: Scope the Step (≤2 sentences)
+  description: |
+    State the goal in 1-2 sentences. Examples:
+      - "Baseline EDA: distributions, missingness, basic correlations."
+      - "Fit logistic regression with X1..Xk covariates; report AUROC + calibration."
+    Identify:
+      - Input data (from previous step's data/next_step_output/, reachable via this step's data/past_step_input/ symlink), or from inputs/raw_data/ via data/project_inputs/.
+      - The hypothesis (or hypotheses) this step targets — by ID, e.g. H2.
+
+    AUTONOMY GATE:
+      Risk: reversible + cheap — scoping the step writes no analysis yet.
+      proceed (adaptive default, autopilot) → state the scope and proceed; do NOT ask.
+      confirm first (manual / supervised) → present the scope; ask for confirmation.
+
+    SIZE GATE: if scope mentions >3 distinct methods OR multiple subgroups
+    OR custom pipelines, you MUST call tool_plan before coding. The
+    plan markdown becomes part of the experiment record.
+
+    STEPS CAN GROW. A single step is allowed to get long (many
+    sub-tasks, dozens of figures, a 500-line conclusions.md) when the
+    researcher wants that depth on ONE coherent goal. There is no
+    artificial cap. What changes the answer is the GOAL, not the line
+    count — see the "When to suggest a new step" block in
+    create_step_folder below.
+
+    LANGUAGE/TOOL-STACK SUB-STEP: if the step's method choice
+    is non-trivial (e.g. DESeq2 vs pydeseq2, Seurat vs scanpy, R survival
+    vs lifelines, WGCNA vs PyWGCNA) — i.e. ANY case where a reasonable
+    reviewer might ask "why this language/library?" — invoke
+      sys_protocol_get format='full' name='methodology/pick_tool_stack'
+    and persist the choice to workspace/<NN_slug>/scratch/stack_plan.md
+    BEFORE writing code. Skip ONLY for pure-glue / data-shuffling work
+    where the language is field-irrelevant. Audit BLOCKS when a step
+    has scripts but no stack_plan.md.
+
+- id: ground_methods
+  name: Ground Methodology in Literature (HARD GATE) — STEP-SCOPED
+  description: |
+    You MUST search literature BEFORE choosing any method. Selecting from
+    training memory alone is FORBIDDEN — `tool_plan (operation=finalize_step)` warns if
+    `conclusions.md` cites references but no `tool_search_*` calls
+    were logged for the project (workspace/logs/searches.log). The
+    pre-submission audit BLOCKS synthesis on this warning.
+
+    The rule isn't "feel free to skip when you remember a relevant
+    paper". The rule is: every method decision is grounded in a
+    RECENT, VERIFIABLE online lookup that the audit gate can replay.
+    The reviewer will ask "where did this prior come from?" and the
+    answer must be a DOI in `inputs/literature/` or
+    `workspace/<step>/literature/`, not the AI's training cutoff.
+
+    MANDATORY per step (do ALL of these — they are cheap):
+
+      (1) **Surface candidate methods online.** For the analytical
+          question this step targets, run:
+            tool_search query="<question> + <data shape>" mode=literature
+              — writes a structured report into outputs/reports/
+                comparing 2-3 candidate methods.
+          OR (if you already know the candidates):
+            parallel:
+              tool_search query="<method> <domain>"
+              tool_search query="<method> <domain> recent"
+              tool_search query="best <method>" year_min="<recent window>"
+
+      (2) **Ground each decision in a SPECIFIC paper.** For each
+          non-trivial methods choice (which normalization, which
+          FDR cutoff, which model family, which sensitivity test),
+          cite the actual paper that justifies the choice. The
+          citation MUST be saved into the step's literature folder:
+            tool_search (mode=literature)
+              query="<canonical paper for the method>"
+              source="semantic_scholar"
+              step_id="<this step's NN_slug>"
+              limit=5  download_top=2
+          Each PDF gets a .meta.yaml sidecar (title/authors/year/doi).
+          `tool_plan (operation=finalize_step)` auto-folds the per-step
+          `conclusions.md` `## References to ground` section into
+          project-wide `workspace/citations.md` AND
+          per-step `literature/key_papers.md`.
+
+      (3) **Compare findings to current literature.** If your DEG
+          count / pathway enrichment / effect size differs from
+          recent published work, NOTE the divergence + the
+          specific paper you're comparing against. Reviewers will
+          ask whether your numbers replicate; you should have
+          already checked.
+
+      (4) **Record the decision-with-citation chain.**
+            mem_log (method, dataset, dataset_hash,
+              implementation, parameters, justification WITH
+              citation_key, assumptions list).
+            mem_log (context / selected / rationale /
+              options considered / linked citation_keys).
+            mem_log for each hypothesis touched,
+              status='testing'.
+
+    Anti-pattern (caught at audit):
+      "We use DESeq2 because it's standard." → not grounded.
+      Correct:
+      "We use DESeq2 (Love, Huber, Anders 2014, Genome Biology
+      15:550, doi:10.1186/s13059-014-0550-8 — saved at
+      `literature/love2014_deseq2.pdf`) because the n=8 design
+      benefits from its empirical-Bayes dispersion shrinkage
+      (Section 2.3 of that paper)."
+
+- id: pick_tools
+  name: Pick Tools / Libraries (validated, not guessed)
+  description: |
+    Consult your SKILL LAYER first. sys_boot's recommended_skills already
+    names the domain skills that fit this project (e.g. experimental-design,
+    statistical-power, bulk-rnaseq, rdkit); skills_list() + skill_view() load
+    the validated how-to. A matching skill — from your own Nous catalog, the
+    K-Dense science pack, or any external Agent Skills library — usually names
+    the right library with correct parameters, faster + safer than guessing.
+    If no skill covers it:
+      tool_search query="<concrete task>" mode=literature language="<python|r|julia|any>"
+    For external/paid/GUI tools that you cannot run, describe the setup inline and link to the tool's documentation.
+    Then commit the tool decision via mem_log, recording whether it came from
+    a skill (and which) or from discovery.
+
+    Reproducibility check: every tool used must be installable
+    (tool_package_install if Python) and snapshotted later.
+
+- id: classify_step_intent
+  name: Classify the Step's Intent (drives gate-waivers)
+  description: |
+    Before creating the step folder, classify the step by what it
+    PRODUCES, not by domain. The intent class drives which
+    audit-gates apply and which are auto-waived. Pick exactly one:
+
+      plan       — design / scoping / spec work. Outputs are plans,
+                   decision logs, hypothesis registers. No code, no
+                   numeric findings, no figures expected.
+      ground     — literature retrieval / methodology grounding.
+                   Outputs are PDFs in literature/ + summary
+                   markdown. No focal figure expected.
+      analyse    — statistical / computational analysis with numeric
+                   findings. Default to figures + tables + reports.
+                   Hits every gate at full strictness.
+      visualise  — pure visualization of a PRIOR step's data /
+                   findings. Inherits the prior step's claims;
+                   literature loop is satisfied by the prior step's
+                   findings_vs_literature.md.
+      synth      — synthesis / cross-step write-up. Outputs are
+                   prose. No new findings, no new figures.
+      proof      — mathematical proof / formal derivation. Outputs
+                   are <slug>.md proof body + <slug>_review.md (per
+                   theory_math/proof/proof_verification_workflow).
+                   No figures, no tables expected.
+      apparatus  — humanities annotation / interpretive apparatus
+                   (per humanities/textual/close_reading). Outputs
+                   are <slug>_apparatus.md + annotation file. No
+                   figures expected.
+
+    Persist the classification:
+      - to workspace/<step>/step_summary.yaml under
+        `step_intent: <one of: plan | ground | analyse | visualise |
+                        synth | proof | apparatus>`
+      - reference template at templates/step_summary.yaml.template
+
+    Gate consequences (read in tandem with the per-gate notes below):
+      plan / ground / proof / apparatus → figure_required auto-False
+        (no focal figure expected). tool_audit(scope='step', dimension='completeness')
+        downgrades empty outputs/figures/ from BLOCK to PASS for
+        these intents.
+      visualise → literature_required inherited from prior step.
+        tool_audit(scope='step', dimension='literature') accepts a verdict block whose
+        `inherits_from: <NN_slug>` references the prior step's
+        findings_vs_literature.md instead of re-running the loop.
+      synth → both figure_required and literature_required default
+        to False; the synthesis-level audit covers them.
+      analyse → no waivers; full gate suite applies.
+
+    Why this matters: hardcoded per-protocol carve-outs decay as new
+    protocols land. A declared intent is a contract the audit tools
+    can honour uniformly. If the classification is wrong, the
+    researcher (not the AI) catches it because the wrong gates fire.
+
+    AUTONOMY GATE:
+      Risk: reversible — a step-intent classification is logged and can
+      be re-labelled; nothing downstream is locked by it.
+      proceed (adaptive default, autopilot) → pick the closest fit and proceed; log the
+        rationale in workspace/logs/step_intent_choices.md so a later
+        audit can review it.
+      confirm first (manual / supervised) → suggest the classification; ask for
+                            confirmation when ambiguous (e.g. a
+                            step that fits BOTH analyse + visualise).
+
+- id: create_step_folder
+  name: Create the Numbered Experiment Folder
+  description: |
+    tool_plan (operation='create_step', name="<slug>", hypothesis="<H<id>: <text>>")
+
+    NAMING — the AI picks the slug based on what THIS step actually does.
+    There are NO canonical names. Derive the slug from the step's goal,
+    the chosen method, and the domain context. Rules:
+
+      - lowercase, words joined by underscores (no spaces / dashes / dots)
+      - ≤ 40 chars, descriptive but compact
+      - mention the METHOD when one was selected
+        (e.g. `cox_ph_treatment_effect`, not `survival_analysis`)
+      - mention the SUB-POPULATION if the step is restricted
+        (e.g. `logistic_under_65` vs `logistic_all`)
+      - re-use the same slug + version-bump scripts (_v1, _v2) when
+        iterating on the SAME goal; create a NEW step (different slug)
+        only when the goal changes
+
+    Examples ACROSS domains (illustrative — do not copy verbatim):
+      EDA              :  baseline_eda  /  distribution_scan  /  missingness_map
+      Cleaning         :  imputation_mice  /  outlier_winsorise  /  schema_harmonise
+      Feature work     :  pca_demographics  /  one_hot_encode_diagnoses
+      Stats modelling  :  logistic_baseline  /  cox_ph  /  mixed_effects_school
+      Causal           :  ipw_treatment  /  did_policy_change  /  rdd_age_threshold
+      ML               :  rf_baseline  /  xgb_tuned  /  cnn_transfer
+      NLP              :  bert_finetune_sentiment  /  ner_clinical_notes
+      Genomics         :  deseq2_de  /  gsea_pathway  /  variant_call_strelka
+      Audit            :  power_recheck  /  calibration_curve  /  sensitivity_unmeasured
+
+    Creates workspace/NN_<slug>/ with README.md (plain-English overview),
+    conclusions.md (the deep report), plan.md (the pre-step plan — see the
+    next step), and the subfolders {scripts, literature, context,
+    data/{project_inputs, past_step_input, next_step_output, share},
+    outputs/{figures, tables, reports}, environment}. Sets it as
+    current_path. NN is auto-assigned (next free number, continuous across
+    paths).     No step_summary.yaml or pipeline.yaml is created at this point
+    — step_summary.yaml is retired, and pipeline.yaml only appears if you
+    call tool_workflow_dag(operation='define').
+
+    WHEN TO SUGGEST A NEW STEP (proactive — surface to researcher,
+    don't just decide on your own unless autopilot):
+      - conclusions.md > Findings now covers ≥2 distinct hypothesis
+        IDs that aren't tightly coupled (mem_hypothesis (operation=list) shows
+        H1 + H3 in this step's evidence)
+      - the scope has drifted past its original ≤2 sentence charter
+        ("we also tried…", "while we were at it…")
+      - methodology changed: switching estimator family (linear →
+        tree-based) or unit of analysis (subject → cluster) — that
+        usually deserves its own slug
+      - sub-population restriction was added mid-stream (was "all
+        patients", now mostly "patients < 65"): create a sibling step
+        for the restricted analysis so the original stays clean
+      - the conclusion would be hard to caption with ONE focal figure
+
+    How to suggest: in supervised/manual mode, say once: "this step
+    is starting to cover two questions — want me to spin off a new
+    step for <X> so both stay easy to read?"     In autopilot, call
+    `tool_plan (operation='branch_recommendation', reason="<why>")` and act on its
+    output. NEVER force a new step on the researcher — long, focused
+    steps are fine and often preferable to step-fragmentation.
+
+    For script filenames inside the step, the convention is
+    `<NN>_<slug>_v<n>.<ext>` for the main script, and
+    `<NN>_<slug>_<subtask>_v<n>.<ext>` for atomic sub-tasks. Sub-task
+    names follow the SAME naming rules (descriptive, lowercase,
+    underscore-joined).
+
+- id: draft_step_plan
+  name: Draft the Step Plan BEFORE Writing Any Code
+  description: |
+    The scaffold created `workspace/<NN_slug>/plan.md`. Fill it in NOW,
+    before any scripts / figures — this is co-scientist iterative
+    planning: the plan is where the step's design is reasoned and agreed
+    BEFORE the work, not reconstructed after it.
+
+    Carry the thread forward. Open the plan with what you already know:
+      - the previous step's outcome + the project's findings-to-date
+        (read the prior `conclusions.md` + `inputs/research_plan.md`)
+      - what THIS step will do: the question, the data, the method(s),
+        the artefact(s) it will produce
+      - why this step, why now (how it advances the hypotheses)
+      - the open decisions you want the researcher to weigh in on
+
+    Then keep `inputs/research_plan.md` (the whole-project arc) in sync —
+    append a line to its iteration log if this step changes the plan.
+
+    AUTONOMY GATE (read interaction.autonomy_level):
+      Risk: reversible — writing plan.md commits no analysis; the value
+      at stake is design quality, which the researcher may want to shape.
+      - adaptive (default) → WRITE plan.md as your reasoning record, note
+        the decisions you made under "Open questions", and proceed; but
+        when an open decision is consequential and genuinely contested
+        (it changes what the step concludes, not just how it's coded),
+        surface it to the researcher and WAIT. Judge from how much the
+        decision shapes the finding, not from a fixed rule.
+      - manual / supervised → PRESENT plan.md's "What this step will do"
+        + "Open questions" to the researcher and WAIT. Iterate
+        (propose → critique → refine) until the design is agreed, THEN
+        proceed to write scripts. This back-and-forth is the point.
+      - autopilot → still WRITE plan.md (it is the record of your
+        reasoning + the lineage from the last step), note the decisions
+        you made under "Open questions", and proceed without pausing.
+
+    A plan.md that just restates the slug is not a plan. If the step is
+    genuinely trivial (rote data plumbing), one honest sentence per
+    section is fine — but write it.
+
+- id: write_atomic_scripts
+  name: Write Atomic Versioned Scripts AS A SUB-TASK DAG
+  description: |
+    DO NOT one-shot a 400-line mega-script. The canonical structure
+    for a serious analysis step is a SUB-TASK PIPELINE:
+
+       ingest → validate → clean → featurize → split → fit
+                                                ↘ diagnose → visualize → report
+
+    Declare it once via tool_workflow_dag(operation='define') which seeds
+    workspace/<step>/pipeline.yaml with the 7-node template; edit
+    the script + inputs + outputs per node; run with
+    tool_workflow_dag(operation='run'). The runner topologically orders nodes,
+    content-hash-caches inputs+params+script (so editing the
+    clean script only re-runs clean → fit → diagnose → report),
+    writes a .pipeline_run/run_<ts>.json audit trail, and drops a
+    .prov.json sidecar for every output a node produces.
+
+    One script per sub-task. Two equivalent naming styles —
+    pick the one that fits the step's shape:
+
+    A) **Letter-suffix chronological order** (preferred when the
+       sub-tasks ARE meant to run end-to-end in a fixed sequence
+       and a fresh reader should run `ls scripts/` and immediately
+       see the order):
+
+         workspace/<step>/scripts/
+            <NN>a_<short_name>_v<k>.<ext>   # runs first
+            <NN>b_<short_name>_v<k>.<ext>   # runs second
+            <NN>c_<short_name>_v<k>.<ext>   # ...
+            <NN>d_<short_name>_v<k>.<ext>
+
+       e.g.
+         01a_load_counts_v1.py
+         01b_library_size_qc_v1.py
+         01c_sample_correlation_v1.py
+         01d_pca_v1.py
+
+       The letter encodes execution order; `ls` shows it naturally.
+       The pipeline.yaml DAG can omit explicit dependencies because
+       the alphabetical order IS the dependency order.
+
+    B) **Descriptive-only** (when sub-tasks form a true DAG with
+       non-linear dependencies — `pipeline.yaml` declares the edges,
+       not the filename):
+
+         workspace/<step>/scripts/
+            <NN>_fit_baseline_v<k>.<ext>
+            <NN>_calibration_v<k>.<ext>
+            <NN>_feature_eng_v<k>.<ext>
+
+    Use style A by default — chronological order is the common case
+    and the encoded order survives someone re-running the step
+    manually. Use style B only when sub-tasks branch.
+
+    In BOTH styles: `_v<k>` is the iteration suffix; bump it via
+    `tool_plan(operation='iterate')` when materially changing a sub-task.
+
+    The naming convention is WATCHED, not just documented:
+    `tool_audit(scope='step', dimension='script_naming')` validates every
+    script against `<NN>[a-z]_<snake_name>_v<k>.<ext>` (with `<NN>` = this
+    step's number); `tool_audit(scope='step', dimension='completeness')` surfaces violations as completeness
+    warnings; and a running daemon flags them in the daemon_notes that
+    sys_boot surfaces. So a
+    mis-named scripts/ folder gets caught early — don't rely on remembering
+    the format, let the gate tell you the exact rename.
+
+    Server-enforced gates (no fast path through them):
+      - tool_audit(scope='step', dimension='completeness') BLOCKS multi-script steps (>2)
+        without a pipeline.yaml, missing focal figures, missing
+        caption / summary sidecars, missing provenance coverage <50%.
+      - tool_audit(scope='step', dimension='code_quality') BLOCKS scripts with bare `except`,
+        `import *`, `eval`/`exec`, hardcoded absolute paths, or
+        functions >150 lines / complexity >20.
+      - tool_audit (scope='project', dimension='all') runs every gate together before
+        synthesis. tool_plan refuses to walk past a
+        deliverable tool until the gate is green.
+
+    Allowed script types (pick the right tool for the language):
+      Python (.py)        → tool_python_exec
+      R (.R)              → tool_bash_exec (pass Rscript to bash)
+      Julia (.jl)         → tool_bash_exec (pass julia to bash)
+      Bash (.sh)          → tool_bash_exec
+      Jupyter (.ipynb)    → tool_notebook_exec
+      R-markdown (.Rmd)   → tool_bash_exec (render via Rscript -e rmarkdown::render)
+      Quarto (.qmd)       → tool_bash_exec (render via quarto render)
+
+    LONG-RUNNING (estimated > runtime.long_running_threshold_seconds, or
+    on shared_server=true): use tool_task(operation='run') instead of
+    blocking exec, then poll tool_task(operation='status'). Tell the
+    researcher "task <id> backgrounded;
+    checking every <interval>".
+
+    Every script MUST produce all three OUTPUT CATEGORIES — reports,
+    tables, figures — unless the step is genuinely non-numeric
+    (qualitative coding, pure data plumbing, etc.). Default to all
+    three; explain the omission in conclusions.md if you skip one.
+
+      - Read from workspace/<step>/data/past_step_input/ (auto-symlink → prior step's next_step_output) or data/project_inputs/ (→ inputs/raw_data/).
+      - Write derived data to workspace/<step>/data/next_step_output/.
+
+      - REPORTS (outputs/reports/, .md): at least one markdown
+        summary with numbers + interpretation. This is the readable
+        narrative of what the script did and what it found.
+
+      - TABLES (outputs/tables/, .csv preferred, .tsv / .parquet
+        allowed): at least one CSV when the step has numeric
+        findings. One table per analytic question; bare numbers go
+        in tables so the report can stay narrative. Filename
+        convention: <step_number>_<descriptor>.csv. For a fitted
+        model: include a coefficients table (param, estimate,
+        ci_lo, ci_hi, p_value) at minimum. For a comparison: a
+        methods × metrics row/column matrix. Skip ONLY when the
+        step has no numeric outputs at all (rare).
+
+      - FIGURES (outputs/figures/, PNG ≥ 300 DPI): at least one
+        FOCAL figure named <step_number>_<short_descriptor>.png
+        (e.g. 03_attitude_by_demographic.png). PREFER
+        an AI-authored script (visualization/figure_guidelines covers
+        Okabe-Ito / DPI / dual PNG+SVG export / both caption
+        sidecars in one call. The focal figure is the one
+        promoted into the dashboard + paper.
+
+        BEYOND THE FOCAL FIGURE: for any step producing a
+        statistical or ML model, also emit the diagnostic +
+        comparison family (high-quality is the default; basic only
+        when the researcher explicitly asks for "just the headline
+        figure"):
+          * diagnostic suite (residuals, QQ, calibration, etc.)
+          * summary (effect estimate + interval at the field's
+            conventional confidence level)
+          * comparison (vs baseline or alternative spec)
+        For method-specific steps, generate the diagnostic figures
+        the method's reporting standard expects — i.e. the plots a
+        reviewer in that field would look for (e.g. proportional-
+        hazards diagnostics for a Cox model; posterior predictive
+        checks for a Bayesian fit; discrimination + calibration for
+        a classifier; heterogeneity + small-study plots for a meta-
+        analysis). Name the reporting standard you're following. Use
+        the visualization protocol that matches the work
+        (visualization/uncertainty_visualization,
+        visualization/distribution_comparison,
+        visualization/network_visualization, etc.) when the focal
+        chart is non-trivial.
+
+        Pair every figure with a sibling <name>.caption.md
+        (technical; one-sentence finding) AND <name>.summary.md
+        (plain-English; 2-3 short paragraphs for non-expert
+        audiences). An AI-authored script writes both when you pass
+        `caption` + `plain_english`. Otherwise
+        authoring the <stem>.summary.md sidecar directly auto-drafts the summary from
+        the caption + the step's Findings.
+
+      - Set RNG seeds explicitly; print library versions to stderr.
+
+    Empty outputs/figures/ is a HARD FAIL FOR `analyse` STEPS —
+    tool_audit(scope='step', dimension='completeness') BLOCKS the final synthesis until
+    cleared. A step with numeric findings but empty outputs/tables/
+    surfaces as a WARNING from the same audit (a missing table is a
+    research-record gap, not a block-the-paper gap).
+
+    AUTO-WAIVER (per step_intent — see `classify_step_intent`):
+      step_intent ∈ {plan, ground, proof, apparatus, synth}
+        → tool_audit(scope='step', dimension='completeness') downgrades empty
+          outputs/figures/ from BLOCK to PASS automatically. No
+          override needed; the step's intent IS the override
+          rationale.
+      step_intent == visualise
+        → still requires a focal figure (visualisation IS the
+          output); the literature loop is what's inherited.
+      step_intent == analyse (default)
+        → full strictness; empty figures is a HARD BLOCK unless the
+          researcher explicitly sets
+          `figure_required: false` in step_summary.yaml AND records
+          why in the override block.
+
+    If you genuinely need to opt OUT of the figure gate without a
+    matching step_intent, the explicit escape is:
+      figure_required: false      # in step_summary.yaml, with a
+                                  # recorded rationale in the override block
+    The completeness audit that fires the figure gate can also be
+    overridden directly on the audit itself:
+      tool_audit(scope='step', dimension='completeness',
+                 override_completeness_gate=true,
+                 override_rationale="<why this analyse step has no figure>")
+    (tool_plan (operation='finalize_step') itself only accepts override_literature_gate +
+    override_rationale — it gates step literature, not figures. Use it
+    only to opt out of the per-step literature loop:
+      tool_plan (operation='finalize_step', override_literature_gate=true,
+                 override_rationale="<why this step needs no new lit>"))
+
+    Outputs spanning multiple categories (figures + tables + reports)
+    WITHOUT a pipeline.yaml is ALSO a HARD FAIL — the mega-script
+    anti-pattern. Separate scripts per sub-task (one for the fit,
+    one per figure, one per table, one for the report) and declare
+    them via tool_workflow_dag(operation='define').
+
+    Versioning has TWO distinct modes:
+
+      - BUG FIX → bump `_v<n>` on the affected script, re-run; the
+        content-hash cache invalidates downstream nodes automatically.
+      - DELIBERATE ITERATION (recolour Fig 2, tighten a cutoff, swap
+        a model spec) → call tool_plan(operation='iterate') with a rationale FIRST.
+        It snapshots the current scripts + outputs + captions +
+        conclusion into .versions/v<n>/ as a coordinated unit so the
+        prior version is preserved before you edit anything. Then
+        rename the live scripts using the suggested _v<n+1> suffix
+        and re-run. Use tool_audit(scope='project', dimension='version_coherence') to confirm
+        every output traces to the highest-version script on disk.
+
+    Bump _v<n> on every meaningful re-run; do NOT silently overwrite.
+
+- id: document_conclusions
+  name: Document Conclusions + Reconcile the Plan
+  description: |
+    Three files close out the step, with deliberately different roles:
+
+    **conclusions.md** — the THOROUGH record (statistical + reproducible):
+      ## Findings
+        - 2-5 quantitative bullets (numbers + units; effect sizes
+          preferred over p-values; 95% CI where applicable).
+      ## Hypothesis evidence
+        - For each hypothesis touched: mem_log H<id>
+          status=<supported|refuted|inconclusive> evidence=<one-line>.
+      ## Methods (full detail)
+        - Dataset shape, transforms, model spec, params, RNG seed, versions.
+      ## Methodological notes
+        - Assumption checks, sensitivity, robustness. Supportive tone.
+      ## Limitations
+        - What this step CANNOT conclude, and why. Honest framing
+          ("no detectable difference" beats "no effect" when underpowered).
+      ## Decision
+        - proceed | branch (new experiment, why) | dead-end (call dead_end_routing).
+          Record the lineage: how the previous step led here, and — if this
+          step was iterated — what changed across versions.
+      ## Next steps
+        - 2-3 concrete candidate experiments with brief rationale.
+    (NB 3.2: conclusions.md no longer carries a Plain-language summary —
+    that lives in README's `## In plain English`, below.)
+
+    **plan.md** — UPDATE IT NOW (do not leave it as the pre-step draft):
+      Fill `## Progress & deviations from plan` — reconcile what you
+      PLANNED against what you ACTUALLY did: a method swap, a dropped
+      sub-analysis, an added robustness check, or "went exactly to plan".
+      plan.md should end as a true record of the step, so a reader can
+      trace intent → reality. This is the step the AI most often skips —
+      don't. Keep `inputs/research_plan.md`'s iteration log in sync if
+      this step changed the overall arc.
+
+    **README.md** — the 60-SECOND overview (non-experts):
+      `## In plain English` IS the canonical plain-language summary
+      (2-3 sentences a non-statistician could follow; the dashboard's
+      executive + teaching views surface it). Author it here directly,
+      OR write it in context/notes.md under "## Plain-language summary"
+      and finalize will promote it. The finalize step (below) backfills
+      the remaining stub sections from conclusions.md + decisions +
+      outputs — don't hand-rewrite those.
+
+    Also: mem_log entry="<step_id> done: <one-line summary>".
+
+- id: ground_findings_in_literature
+  name: Ground Findings in Literature (pipeline-mandatory)
+  description: |
+    AFTER conclusions.md is written but BEFORE finalize_step, run the
+    per-step literature loop. The methods choice was grounded above
+    (`ground_methods`); now the FINDINGS themselves must be compared
+    to what the literature says.
+
+    This step is **pipeline-mandatory**. `finalize_step` (below) runs
+    `tool_audit(scope='step', dimension='literature')` as its first gate and BLOCKS the
+    finalize if `findings_vs_literature.md` is missing for any step
+    whose `step_summary.yaml` lacks `literature_required: false`.
+
+    Load and follow:
+      sys_protocol_get format='full' name='literature/literature_per_step'
+
+    The protocol:
+      1. Extracts top-5 claims from conclusions.md `## Findings`
+      2. Searches Semantic Scholar / PubMed / Crossref per claim
+      3. Downloads top-3 PDFs per claim into
+         workspace/<step>/literature/ (auto-skipped if paywalled)
+      4. Writes workspace/<step>/literature/findings_vs_literature.md
+         with one block per claim:
+           ## Claim: <one-line>
+           **Our finding:** ...
+           **Literature says:** ...
+           **Verdict:** AGREES | DISAGREES | EXTENDS | DEFERRED
+           **Evidence:** [@key] (year) — sentence
+           **Discussion implication:** ...
+      5. Calls tool_ground per non-deferred claim
+      6. Calls tool_verify on the top-3 highest-stakes claims
+      7. Updates step_summary.yaml with a `literature:` block
+
+    Then GATE:
+      tool_audit(scope='step', dimension='literature') step_id="<NN_slug>"
+
+    Blocks if findings_vs_literature.md missing, claims lack verdicts,
+    DISAGREES verdicts have no discussion, or all-deferred without
+    documented reason.
+
+    Skip when EITHER:
+      - the step is pure data engineering (QC, normalisation,
+        format conversion) — in that case set
+        `literature_required: false` in step_summary.yaml; or
+      - `step_intent: visualise` and the step is a pure
+        visualisation of a PRIOR step's findings — in that case
+        set in step_summary.yaml:
+            step_intent: visualise
+            literature:
+              inherits_from: <NN_slug_of_prior_step>
+        `tool_audit(scope='step', dimension='literature')` will PASS by confirming the
+        referenced step's findings_vs_literature.md exists,
+        rather than re-running the loop on the same claims.
+
+    The synthesis-level audit (`tool_audit(scope='synthesis', dimension='all')`) blocks final
+    assembly when any step has literature_deferred non-empty or
+    literature.claims_grounded == 0 without `literature_required: false`.
+
+- id: snapshot_step_environment
+  name: Snapshot the Environment + Run Recipe (every step that ran code)
+  description: |
+    Every step that ran code must end up with its OWN pinned environment AND
+    a clean rerun recipe so the step can be shared / re-run / containerized in
+    isolation — a global env may not cover every step, and even when it does
+    you want a per-step record of exactly what THIS step used.
+
+    `tool_plan (operation='finalize_step')` (the finalize_step below) now does this automatically:
+    for any step that ran scripts it calls the per-step env lock, writing
+    `workspace/<NN_slug>/environment/` with requirements.txt + python_version
+    + session.yaml + conda.yaml + Dockerfile + entrypoint.sh (the single
+    command that reproduces every output). So usually you do nothing here —
+    finalize handles it.
+
+    Do it explicitly when you want the recipe BEFORE finalize, or to add
+    Apptainer/Podman for an HPC target:
+      tool_plan(operation='env_lock', step_id='<NN_slug>')                 # full recipe
+      sys_env(operation='snapshot', step_id='<NN_slug>')                   # requirements only
+      sys_env(operation='docker_generate', step_id='<NN_slug>')            # (re)build the step Dockerfile
+
+    Pure-data step (no scripts ran) → nothing to lock; finalize skips it.
+
+    Reproducibility is the deal you make with future-you. If the daemon warns
+    `step_no_env_snapshot`, finalizing the step usually clears it.
+
+- id: finalize_step
+  name: Finalize the Step (mandatory before decide_next)
+  description: |
+    tool_plan (operation='finalize_step') — runs the finalize sequence:
+
+    Per-step file refresh (rewrites the step's stub README + every
+    subfolder README from what actually got produced):
+      - environment/README.md ← "used global env" OR bespoke listing.
+      - literature/README.md ← "used global corpus + decisions"
+        OR step-specific sources + the decisions they informed.
+      - context/README.md ← "no prose needed" OR narrative inventory
+        + plain-language summary from notes.md.
+      - data/next_step_output/README.md ← every persisted artefact + which
+        downstream step consumes it (from the workflow DAG).
+      - outputs/README.md ← inventory of figures / tables / reports.
+      - README.md ← stub Methods / Outputs / Decision sections
+        populated from conclusions.md + per-step decision log.
+
+    Project-scope log refresh:
+      - workspace/analysis.md ← step-finalized heading + headline
+        + output counts + decision count (idempotent on the marker).
+      - workspace/methods.md ← if conclusions.md has a `## Methods
+        (full detail)` or `## Methods` section, mirror it under a
+        step-tagged subsection (idempotent on the marker).
+      - workspace/citations.md ← regenerated from project +
+        per-step literature/.meta.yaml sidecars.
+
+    Plain-English summaries: for every figure without
+    `<name>.summary.md`, the caption synthesiser drafts one from the
+    caption + Findings.
+
+    Warnings returned (act on these before decide_next):
+      - conclusions.md > Findings / Decision still a stub
+      - Plain-language summary still a stub
+      - No environment snapshot for a step that produced outputs
+
+    Captions: each figure MUST have a sibling `<name>.caption.md`
+    describing what the reader is looking at (one technical
+    sentence). Add one whenever you save a figure;
+    `an AI-authored script (write both sidecars inline)` writes both
+    sidecars in one call.
+
+    Idempotent — safe to re-run after edits.
+
+- id: commit_step
+  name: Commit the Step for Provenance (do NOT leave work uncommitted)
+  description: |
+    A finalized step is a unit of provenance — it MUST land in git, not sit
+    as untracked changes. After finalize_step, commit the step's work to the
+    project's git history:
+
+      tool_git(operation='status', scope='project')        # see what changed
+      tool_git(operation='commit', scope='project',
+               message='<NN_slug>: <one-line what this step did>',
+               step_id='<NN_slug>')                          # stamps a
+               # 'Research-OS-Step:' trailer linking the commit to the step
+
+    scope='project' targets the research workspace root (in tool_build mode
+    the inner-repo commits use scope='tool' instead; omit scope to auto-pick).
+    If the project isn't a git repo yet, `tool_git(operation='init',
+    scope='project')` once, then commit. This is how a reader / collaborator /
+    future-you reconstructs WHAT was done WHEN — uncommitted work has no
+    provenance trail. The daemon flags completed steps that were never
+    committed (`steps_uncommitted`).
+
+    AUTONOMY GATE:
+      Risk: low — a commit is additive + reversible (history is never
+      rewritten here).
+      - adaptive (default) / autopilot → commit automatically after finalize.
+      - manual / supervised → commit too, unless the researcher has said they
+        manage git themselves (then skip + note it).
+
+- id: lightweight_step_audit
+  name: Lightweight In-Step Audit
+  description: |
+    Whichever apply:
+      - tool_audit(scope='step', dimension='figure') on the primary figure (DPI / size).
+      - tool_audit(scope='step', dimension='power') if a statistical test with known n was run.
+      - tool_audit(scope='step', dimension='assumptions') if residuals were saved.
+      - tool_audit(scope='step', dimension='literature') step_id=<NN_slug> — gate for
+        the per-step literature loop (blocks finalize if
+        findings_vs_literature.md missing or verdicts incomplete).
+      - tool_verify step_id=<NN_slug> — confirms every
+        decision logged in workspace/analysis.md has a grounding
+        record in .grounding/grounding.jsonl or an inline citation.
+        Writes workspace/logs/grounding_audit.md.
+    Append warnings to conclusions.md > Limitations.
+
+    AFTER the audit passes, log a Reflexion record so future steps
+    can learn:
+      tool_lessons step_id=<NN_slug>
+          outcome=<one-line>
+          reflection=<what you'd do differently>
+          what_worked=[...]
+          what_didnt=[...]
+          recommendation=<for similar future steps>
+          tags=[<step_kind>, <method>, <data_type>]
+          scope=<step|project|methodology>
+
+- id: present_to_researcher
+  name: Present to Researcher (anti-one-shot MANDATORY pause)
+  description: |
+    MANDATORY GATE — must run after `finalize_step`. The AI
+    MUST stop here and present the step's status to the researcher,
+    then WAIT for their choice before any further tool call.
+
+    Why: AI agents tend to "complete" long plans as fast as possible.
+    Context fills, the AI stops introspecting, and the researcher
+    loses oversight. The output is poor because no one paused to
+    ask "is this actually good?" between steps. Forcing a mandatory
+    pause at this checkpoint — with concrete revision options the
+    AI generates from the step's actual artefacts — gives the
+    researcher a moment to redirect.
+
+    Mechanics:
+
+      1. Call `tool_plan(operation='revision_options') step_id="<NN_slug>"`.
+         This returns:
+           - would_benefit_from_revision (bool)
+           - risk_signals (e.g. citations claimed but no
+             tool_search_* calls logged)
+           - suggested_revisions (specific fixes; e.g. "Findings
+             section is only 120 chars — should be ≥300 with
+             specific numbers")
+           - alternative_paths (stratified / sensitivity / method-
+             comparison branches the researcher could fork)
+           - handoff_recommended (true when ≥5 steps finalized
+             this conversation — context is getting long)
+
+      2. Present those VERBATIM to the researcher. Format:
+
+           **Step `<NN_slug>` complete.**
+           - Headline: <conclusions.md headline>
+           - Outputs: <N figures, M tables, K reports>
+           - Audit warnings: <count> (see workspace/logs/audit_report.md)
+
+           *Suggested revisions (would_benefit_from_revision={bool}):*
+           - <each suggested_revision>
+
+           *Alternative paths to consider:*
+           - <each alternative_path>
+
+           *What would you like to do?*
+             (a) Proceed to the next analysis step
+             (b) Revise this step — I'll walk you through the
+                 suggested fixes
+             (c) Branch into an alternative (stratified /
+                 sensitivity / method-comparison)
+             (d) Pause + handoff for a fresh chat (recommended
+                 when handoff_recommended=true)
+
+      3. WAIT for the researcher's choice. DO NOT auto-scaffold
+         the next step in the same turn — even when autopilot is
+         on, the pause-and-present is mandatory; only the
+         auto-proceed afterwards is autopilot-dependent.
+
+    AUTONOMY GATE:
+      Risk: reversible — presenting results and choosing the next step
+      commits nothing irreversible; the concern is researcher steering.
+      proceed (adaptive default, autopilot) → present the summary + options; if
+                            would_benefit_from_revision is False AND
+                            audit warnings == 0, proceed to decide_next
+                            in the SAME turn. Otherwise surface the
+                            decision and wait for the researcher.
+      confirm first (manual / supervised) → wait for the researcher's reply (a/b/c/d).
+
+    ONE-SHOT GUARD: if the AI creates a new step immediately
+    after `tool_plan (operation='finalize_step')` without calling
+    `tool_plan(operation='revision_options')` first, the next routing log will
+    flag this as a protocol violation. Don't do it.
+
+- id: decide_next
+  name: Decide Next Step (don't loop forever)
+  description: |
+    ONLY reachable AFTER `present_to_researcher` has surfaced the
+    pause-and-revise options + the researcher has chosen.
+
+    One of (per researcher choice):
+      - Proceed → return to scope_step for the next experiment.
+      - Revise → load `guidance/scope_clarification` for a focused
+                 revision pass on the same step (re-iterate the
+                 sub-task that needs fixing; bump the script's
+                 `_v<n>` via `tool_plan(operation='iterate')`).
+      - Branch → create a parallel experiment via `tool_plan (operation='create_step')`
+                 with `branch_of=<this step>` and a different
+                 methodology (kept active alongside this one).
+      - Handoff → load `guidance/chat_handoff` + run
+                  `tool_session_handoff` so the next chat resumes
+                  cleanly with all the step's state intact.
+      - Abandon → load `guidance/dead_end_routing`.
+      - Advance to reproducibility — only when ALL planned
+        experiments have non-empty `conclusions.md` (decisions are
+        'proceed' or 'branch', NONE 'dead-end') AND at least one
+        terminal experiment has a publishable finding.
+
+    AUTONOMY GATE:
+      Risk: reversible — the choice was already surfaced in
+      present_to_researcher; this just acts on it.
+      proceed (adaptive default, autopilot) → proceed to the chosen action (already decided
+        in present_to_researcher).
+      confirm first (manual / supervised) → wait for the explicit answer from
+                            `present_to_researcher`.
+
+    Log the decision as a ReAct trace entry so future audit can
+    reconstruct WHY each step branched / proceeded / died:
+
+      tool_thought(operation='log',
+          step_id=<NN_slug>,
+          kind='decision',
+          content=<one-line decision + rationale>,
+          decision_id=<NN_slug>_<proceed|revise|branch|handoff|abandon>)
+
+    Cheap (single-line write to .thoughts/thoughts.jsonl); makes
+    `tool_thought(operation='trace')` actually useful during synthesis.
 
 expected_outputs:
-  - workspace/*/README.md
-  - workspace/*/conclusions.md
-  - workspace/*/scripts
-  - workspace/*/environment
-  - workspace/logs
+- workspace/*/README.md
+- workspace/*/conclusions.md
+- workspace/*/scripts
+- workspace/*/environment
+- workspace/logs
 
 # AUTONOMY GATE on next_protocol:
 #   This is a per-step LOOP. The default next action after a step is to
@@ -944,3 +942,53 @@ expected_outputs:
 next_protocol: analysis_plan            # loops back per experiment step
 next_protocol_kind: iterate_back
 on_failure: guidance/dead_end_routing
+intent_class: execute
+sub_intent: new_experiment
+triggers:
+- run a baseline
+- run an analysis
+- fit a model
+- do an eda
+- do a baseline
+- baseline eda
+- baseline analysis
+- eda on my
+- eda pass
+- first analysis
+- first experiment
+- exploratory data analysis
+- start the analysis
+- next experiment
+- new step
+- let's analyse
+- let's analyze
+- now run
+- DESeq2
+- deseq2
+- differential expression
+- DEG analysis
+- DEG list
+- DEGs
+- differentially expressed genes
+- DE analysis
+- single-cell DE
+- scRNA-seq QC
+- single-cell clustering
+- library size normalization
+summary: Iterative experiment loop — create step, script, audit, conclude.
+token_estimate: 2100
+decomposition:
+- tool: tool_plan
+  purpose: Create the next numbered experiment folder (operation='create_step').
+- tool: tool_search
+  purpose: Ground methodology before coding (mode=literature).
+- tool: tool_plan
+  purpose: Decompose the step into atomic sub-tasks.
+- tool: sys_file_write
+  purpose: Write scripts/<NN>_<slug>_v1.<ext>.
+- tool: tool_python_exec
+  purpose: Run the script (or tool_bash_exec for R/Julia/Bash).
+- tool: mem_log
+  purpose: Log method + parameters + justification.
+- tool: sys_file_write
+  purpose: Write conclusions.md for the step.

@@ -1,17 +1,17 @@
 id: synthesis_cover_letter
 tier: 'synthesize'
 name: Synthesis — Journal Cover Letter
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - synthesis/synthesis_paper
-  - synthesis/journal_selection       # the venue the letter argues fit for
-  - synthesis/reviewer_response       # distinct from the post-review rebuttal
+- synthesis/synthesis_paper
+- synthesis/journal_selection         # the venue the letter argues fit for
+- synthesis/reviewer_response         # distinct from the post-review rebuttal
 description: |
   Draft the cover letter that accompanies a journal submission. The
   cover letter is the editor's first read — it determines whether the
@@ -28,10 +28,8 @@ trigger: |
   letter", "draft the cover letter for <venue>".
 
 prerequisites:
-  - synthesis/paper.md exists (or at minimum, a substantive
-    synthesis/abstract.md and synthesis/results.md exist).
-  - The target journal is named (researcher_config.research_goal.target_venue
-    or in the prompt).
+- synthesis/paper.md exists (or at minimum, a substantive synthesis/abstract.md and synthesis/results.md exist).
+- The target journal is named (researcher_config.research_goal.target_venue or in the prompt).
 
 quality_bar:
   fits_one_page: true                   # the editor's first read; keep it short
@@ -48,198 +46,205 @@ quality_bar:
 editorial_voice:
   mode: prescription
   rules:
-    - "Editors read cover letters for FIT — does this paper belong in
-       this journal. The letter must answer that explicitly, not
-       leave the editor to infer."
-    - "Significance is stated in ONE sentence. The temptation to
-       repeat the abstract is strong; resist."
-    - "Suggested reviewers are real people with verifiable email,
-       active publication record, and no conflict with the author
-       list. Made-up suggestions get caught and damage credibility."
-    - "The letter is signed by the corresponding author, addressed
-       to a named editor when possible (or the editor-in-chief
-       otherwise), and is exactly ONE page."
+  - "Editors read cover letters for FIT — does this paper belong in this journal. The letter must answer that explicitly, not leave the editor to infer."
+  - "Significance is stated in ONE sentence. The temptation to repeat the abstract is strong; resist."
+  - "Suggested reviewers are real people with verifiable email, active publication record, and no conflict with the author list. Made-up suggestions get caught and damage credibility."
+  - "The letter is signed by the corresponding author, addressed to a named editor when possible (or the editor-in-chief otherwise), and is exactly ONE page."
 
 steps:
-  - id: scope_the_submission
-    name: Scope the submission
-    description: |
-      Confirm in one line:
-        - target journal (full name + the editorial section /
-          division when applicable, e.g. "Nature Methods — Brief
-          Communications")
-        - target editor (name + role) when known; otherwise
-          editor-in-chief
-        - manuscript type (research article / brief communication /
-          letter / review / perspective)
-        - co-submission status (companion paper, related preprint
-          already posted)
+- id: scope_the_submission
+  name: Scope the submission
+  description: |
+    Confirm in one line:
+      - target journal (full name + the editorial section /
+        division when applicable, e.g. "Nature Methods — Brief
+        Communications")
+      - target editor (name + role) when known; otherwise
+        editor-in-chief
+      - manuscript type (research article / brief communication /
+        letter / review / perspective)
+      - co-submission status (companion paper, related preprint
+        already posted)
 
-      When the editor is unknown, run a one-shot web search for
-      the journal's current editor list; pick the editor whose
-      portfolio best matches the paper's subject area.
+    When the editor is unknown, run a one-shot web search for
+    the journal's current editor list; pick the editor whose
+    portfolio best matches the paper's subject area.
 
-  - id: extract_significance_in_one_sentence
-    name: Extract the significance — one sentence
-    description: |
-      Pull from synthesis/discussion.md > Principal findings and
-      synthesis/abstract.md. Distil into ONE sentence the editor
-      reads as: "this paper is significant because <X>".
+- id: extract_significance_in_one_sentence
+  name: Extract the significance — one sentence
+  description: |
+    Pull from synthesis/discussion.md > Principal findings and
+    synthesis/abstract.md. Distil into ONE sentence the editor
+    reads as: "this paper is significant because <X>".
 
-      Significance has FOUR canonical anchors — pick the one that
-      best fits:
-        a) FIRST DEMONSTRATION — "this is the first time X has
-           been shown for Y"
-        b) MAGNITUDE — "this finding is N× larger / smaller than
-           any prior estimate"
-        c) RESOLUTION — "this finding resolves a long-standing
-           disagreement between X and Y"
-        d) METHODOLOGY — "this paper introduces a method that
-           enables previously impossible analyses"
+    Significance has FOUR canonical anchors — pick the one that
+    best fits:
+      a) FIRST DEMONSTRATION — "this is the first time X has
+         been shown for Y"
+      b) MAGNITUDE — "this finding is N× larger / smaller than
+         any prior estimate"
+      c) RESOLUTION — "this finding resolves a long-standing
+         disagreement between X and Y"
+      d) METHODOLOGY — "this paper introduces a method that
+         enables previously impossible analyses"
 
-      The letter MUST make ONE of these claims. Vague significance
-      ("this paper contributes to the literature on X") reads as
-      "this is a routine paper" — and routine papers get
-      desk-rejected from selective journals.
+    The letter MUST make ONE of these claims. Vague significance
+    ("this paper contributes to the literature on X") reads as
+    "this is a routine paper" — and routine papers get
+    desk-rejected from selective journals.
 
-  - id: justify_journal_fit
-    name: Justify journal fit
-    description: |
-      Editors triage on FIT before they triage on quality. Justify
-      fit by:
-        - naming the journal's scope (one phrase from the journal's
-          own about page)
-        - naming 1-2 specific recent papers from the journal that
-          this paper engages with / extends / contrasts with (cite
-          them properly)
-        - explaining why this paper belongs HERE rather than at a
-          general-interest journal or a more specialised journal
-          — the journal-specific argument
+- id: justify_journal_fit
+  name: Justify journal fit
+  description: |
+    Editors triage on FIT before they triage on quality. Justify
+    fit by:
+      - naming the journal's scope (one phrase from the journal's
+        own about page)
+      - naming 1-2 specific recent papers from the journal that
+        this paper engages with / extends / contrasts with (cite
+        them properly)
+      - explaining why this paper belongs HERE rather than at a
+        general-interest journal or a more specialised journal
+        — the journal-specific argument
 
-      A cover letter that omits this paragraph reads as "submitted
-      to whichever journal would take it". A cover letter that
-      includes it reads as "submitted here deliberately".
+    A cover letter that omits this paragraph reads as "submitted
+    to whichever journal would take it". A cover letter that
+    includes it reads as "submitted here deliberately".
 
-  - id: draft_the_letter
-    name: Draft the letter
-    description: |
-      Standard structure (one page max):
+- id: draft_the_letter
+  name: Draft the letter
+  description: |
+    Standard structure (one page max):
 
-        [Letterhead — institution, address, date]
+      [Letterhead — institution, address, date]
 
-        <Editor name>, <Editor role>
-        <Journal name>
+      <Editor name>, <Editor role>
+      <Journal name>
 
-        Dear <Dr. [Editor]> / Dear Editor,
+      Dear <Dr. [Editor]> / Dear Editor,
 
-        [Paragraph 1 — what we are submitting]
-        We submit for your consideration <manuscript title>, a
-        <manuscript type> for publication in <Journal>. <One
-        sentence of methods + outcome that says what was done in
-        the paper.>
+      [Paragraph 1 — what we are submitting]
+      We submit for your consideration <manuscript title>, a
+      <manuscript type> for publication in <Journal>. <One
+      sentence of methods + outcome that says what was done in
+      the paper.>
 
-        [Paragraph 2 — significance]
-        <One-sentence significance claim from the previous step.>
-        Specifically, <one-to-two sentences naming the headline
-        finding with its quantitative anchor, in non-technical
-        language>.
+      [Paragraph 2 — significance]
+      <One-sentence significance claim from the previous step.>
+      Specifically, <one-to-two sentences naming the headline
+      finding with its quantitative anchor, in non-technical
+      language>.
 
-        [Paragraph 3 — journal fit]
-        <The fit paragraph from the previous step — 2-3 sentences
-        citing 1-2 recent journal papers.>
+      [Paragraph 3 — journal fit]
+      <The fit paragraph from the previous step — 2-3 sentences
+      citing 1-2 recent journal papers.>
 
-        [Paragraph 4 — disclosures]
-        This manuscript has not been published elsewhere and is
-        not under consideration at any other journal.
-        <When a preprint exists: "A preprint version is posted at
-        <DOI>.">
-        <When ethical clearances apply: "Human-subjects research
-        was approved by <IRB> (protocol <id>); informed consent
-        was obtained from all participants.">
-        <When data sharing applies: "All data and code supporting
-        the findings are deposited at <DOI / URL>.">
+      [Paragraph 4 — disclosures]
+      This manuscript has not been published elsewhere and is
+      not under consideration at any other journal.
+      <When a preprint exists: "A preprint version is posted at
+      <DOI>.">
+      <When ethical clearances apply: "Human-subjects research
+      was approved by <IRB> (protocol <id>); informed consent
+      was obtained from all participants.">
+      <When data sharing applies: "All data and code supporting
+      the findings are deposited at <DOI / URL>.">
 
-        [Paragraph 5 — reviewers]
-        We suggest the following potential reviewers, all of
-        whom are active in this area and have no conflict of
-        interest with the author list:
-          - <Name, affiliation, email>
-          - <Name, affiliation, email>
-          - <Name, affiliation, email>
-        We respectfully request that <Excluded Name, Affiliation>
-        not be invited to review, owing to <prior contentious
-        review / direct competition / personal conflict>.
+      [Paragraph 5 — reviewers]
+      We suggest the following potential reviewers, all of
+      whom are active in this area and have no conflict of
+      interest with the author list:
+        - <Name, affiliation, email>
+        - <Name, affiliation, email>
+        - <Name, affiliation, email>
+      We respectfully request that <Excluded Name, Affiliation>
+      not be invited to review, owing to <prior contentious
+      review / direct competition / personal conflict>.
 
-        Thank you for your consideration.
+      Thank you for your consideration.
 
-        Sincerely,
-        <Corresponding author name>
-        <Title, affiliation>
-        <Email, ORCID>
+      Sincerely,
+      <Corresponding author name>
+      <Title, affiliation>
+      <Email, ORCID>
 
-      Save to synthesis/cover_letter.md.
+    Save to synthesis/cover_letter.md.
 
-  - id: source_suggested_reviewers
-    name: Source suggested reviewers (real, verifiable)
-    description: |
-      Suggested reviewers are REAL PEOPLE. To pick credibly:
-        - tool_search for recent papers on the
-          paper's specific topic
-        - prefer authors who have published in the target journal
-          OR an adjacent journal
-        - exclude:
-            * any author the project has worked with in the last
-              3 years (collaborator conflict)
-            * any author at the same institution as any of the
-              paper's authors (institutional conflict)
-            * any author whose work was substantially critiqued
-              in the paper's Discussion (intellectual conflict)
-        - verify each reviewer's current affiliation + email via
-          their lab page or a recent publication
+- id: source_suggested_reviewers
+  name: Source suggested reviewers (real, verifiable)
+  description: |
+    Suggested reviewers are REAL PEOPLE. To pick credibly:
+      - tool_search for recent papers on the
+        paper's specific topic
+      - prefer authors who have published in the target journal
+        OR an adjacent journal
+      - exclude:
+          * any author the project has worked with in the last
+            3 years (collaborator conflict)
+          * any author at the same institution as any of the
+            paper's authors (institutional conflict)
+          * any author whose work was substantially critiqued
+            in the paper's Discussion (intellectual conflict)
+      - verify each reviewer's current affiliation + email via
+        their lab page or a recent publication
 
-      Supply as many suggested reviewers as the journal asks for, plus
-      an excluded reviewer or two with a brief reason where the journal
-      allows exclusions.
+    Supply as many suggested reviewers as the journal asks for, plus
+    an excluded reviewer or two with a brief reason where the journal
+    allows exclusions.
 
-      If the journal does not request reviewer suggestions, omit
-      the paragraph rather than imposing one.
+    If the journal does not request reviewer suggestions, omit
+    the paragraph rather than imposing one.
 
-  - id: tailor_per_journal_convention
-    name: Tailor per journal convention
-    description: |
-      Some journals have specific cover-letter formats:
-        - Cell journals — explicit "significance to the field"
-          paragraph + a "novelty" claim
-        - PLOS — emphasise reproducibility (link to data + code
-          deposits)
-        - Nature journals — explicit "two or three sentence
-          summary" formatted as if for the editor's triage email
-        - JAMA / NEJM / The Lancet — explicit clinical-relevance
-          paragraph
+- id: tailor_per_journal_convention
+  name: Tailor per journal convention
+  description: |
+    Some journals have specific cover-letter formats:
+      - Cell journals — explicit "significance to the field"
+        paragraph + a "novelty" claim
+      - PLOS — emphasise reproducibility (link to data + code
+        deposits)
+      - Nature journals — explicit "two or three sentence
+        summary" formatted as if for the editor's triage email
+      - JAMA / NEJM / The Lancet — explicit clinical-relevance
+        paragraph
 
-      Run a one-shot web search for "<journal name> cover letter
-      submission guidelines" and apply the format the journal
-      asks for. Save the adjusted letter to synthesis/cover_letter.md.
+    Run a one-shot web search for "<journal name> cover letter
+    submission guidelines" and apply the format the journal
+    asks for. Save the adjusted letter to synthesis/cover_letter.md.
 
-  - id: final_audit
-    name: Final audit
-    description: |
-      Walk the letter:
-        - editor's name + journal name spelled correctly
-        - significance claim ≤ one sentence
-        - journal fit paragraph cites at least one recent journal paper
-        - all suggested reviewers verifiable
-        - disclosures (preprint / IRB / data sharing) complete
-        - fits on one page
-        - signature block has corresponding author + ORCID
-        - tone is formal but not stiff
+- id: final_audit
+  name: Final audit
+  description: |
+    Walk the letter:
+      - editor's name + journal name spelled correctly
+      - significance claim ≤ one sentence
+      - journal fit paragraph cites at least one recent journal paper
+      - all suggested reviewers verifiable
+      - disclosures (preprint / IRB / data sharing) complete
+      - fits on one page
+      - signature block has corresponding author + ORCID
+      - tone is formal but not stiff
 
-      sys_file_validate_md filepath="synthesis/cover_letter.md"
-        protocol_name="writing_core"
+    tool_audit (scope=file, dimension=markdown) filepath="synthesis/cover_letter.md"
+      protocol_name="writing_core"
 
 expected_outputs:
-  - synthesis/cover_letter.md
+- synthesis/cover_letter.md
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: cover_letter
+triggers:
+- draft a cover letter
+- draft the cover letter
+- cover letter for the journal
+- cover letter for
+- letter to the editor for submission
+- submission letter
+summary: Draft journal cover letter (fit + significance + reviewers + disclosures).
+token_estimate: 1100
+decomposition:
+- protocol: synthesis/synthesis_cover_letter
+  purpose: Scope, extract significance, justify fit, draft, source reviewers.

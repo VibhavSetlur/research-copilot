@@ -248,72 +248,28 @@ def test_endpoints_unavailable_without_runstore(tmp_path):
         assert body["available"] is False
 
 
-# ── gateway (POST /v1/chat/completions) ───────────────────────────────
-
-
-def _gw_daemon(tmp_path, **over):
-    (tmp_path / ".os_state").mkdir(exist_ok=True)
-    return Daemon.for_root(tmp_path, **over)
-
-
-def test_gateway_disabled_returns_503(tmp_path):
-    daemon = _gw_daemon(tmp_path, enable_gateway=False)
-    c = TestClient(build_app(daemon))
-    r = c.post("/v1/chat/completions",
-               json={"model": "x", "messages": [{"role": "user", "content": "hi"}]})
-    assert r.status_code == 503
-    assert r.json()["error"]["type"] == "gateway_disabled"
-
-
-def test_gateway_unconfigured_token_returns_503(tmp_path, monkeypatch):
-    monkeypatch.delenv("RESEARCH_OS_GATEWAY_TOKEN", raising=False)
-    daemon = _gw_daemon(tmp_path, enable_gateway=True)
-    c = TestClient(build_app(daemon))
-    r = c.post("/v1/chat/completions",
-               json={"model": "x", "messages": [{"role": "user", "content": "hi"}]})
-    assert r.status_code == 503
-    assert r.json()["error"]["type"] == "gateway_unconfigured"
-
-
-def test_gateway_rejects_bad_token(tmp_path, monkeypatch):
-    monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "secret-123")
-    daemon = _gw_daemon(tmp_path, enable_gateway=True)
-    c = TestClient(build_app(daemon))
-    r = c.post(
-        "/v1/chat/completions",
-        headers={"Authorization": "Bearer wrong"},
-        json={"model": "x", "messages": [{"role": "user", "content": "hi"}]},
-    )
-    assert r.status_code == 401
-    assert r.json()["error"]["type"] == "unauthorized"
-
-
-def test_gateway_rejects_missing_messages(tmp_path, monkeypatch):
-    monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "secret-123")
-    daemon = _gw_daemon(tmp_path, enable_gateway=True)
-    c = TestClient(build_app(daemon))
-    r = c.post(
-        "/v1/chat/completions",
-        headers={"Authorization": "Bearer secret-123"},
-        json={"model": "x"},
-    )
-    assert r.status_code == 400
-    assert r.json()["error"]["type"] == "bad_request"
-
-
 # ── POST /v1/jobs — agent-initiated journaled run (one execution path) ──────
 
-def test_post_jobs_disabled_returns_503(tmp_path):
-    daemon = _gw_daemon(tmp_path, enable_gateway=False)
+
+def _gw_daemon(tmp_path):
+    (tmp_path / ".os_state").mkdir(exist_ok=True)
+    return Daemon.for_root(tmp_path)
+
+
+def test_post_jobs_no_token_open(tmp_path, monkeypatch):
+    """No token configured → endpoint is open (no auth required behind localhost)."""
+    monkeypatch.delenv("RESEARCH_OS_DAEMON_TOKEN", raising=False)
+    daemon = _gw_daemon(tmp_path)
     c = TestClient(build_app(daemon))
     r = c.post("/v1/jobs", json={"cmd": "echo hi"})
-    assert r.status_code == 503
-    assert r.json()["code"] == "gateway_disabled"
+    # No token → open; should not get 401/503 for auth reasons (may 400 for bad body)
+    assert r.status_code != 401
+    assert r.status_code != 503
 
 
 def test_post_jobs_rejects_bad_token(tmp_path, monkeypatch):
-    monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "secret-123")
-    daemon = _gw_daemon(tmp_path, enable_gateway=True)
+    monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "secret-123")
+    daemon = _gw_daemon(tmp_path)
     c = TestClient(build_app(daemon))
     r = c.post("/v1/jobs", headers={"Authorization": "Bearer wrong"},
                json={"cmd": "echo hi"})
@@ -321,8 +277,8 @@ def test_post_jobs_rejects_bad_token(tmp_path, monkeypatch):
 
 
 def test_post_jobs_requires_cmd(tmp_path, monkeypatch):
-    monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "secret-123")
-    daemon = _gw_daemon(tmp_path, enable_gateway=True)
+    monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "secret-123")
+    daemon = _gw_daemon(tmp_path)
     c = TestClient(build_app(daemon))
     r = c.post("/v1/jobs", headers={"Authorization": "Bearer secret-123"},
                json={"name": "no command"})
@@ -335,8 +291,8 @@ def test_post_jobs_submits_and_journals(tmp_path, monkeypatch):
     # same core.run_command lifecycle the CLI uses, so it lands in the live
     # job queue (and, on completion, the durable journal) — not an untracked
     # inline subprocess.
-    monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "secret-123")
-    daemon = _gw_daemon(tmp_path, enable_gateway=True)
+    monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "secret-123")
+    daemon = _gw_daemon(tmp_path)
     c = TestClient(build_app(daemon))
     r = c.post(
         "/v1/jobs",
@@ -361,114 +317,16 @@ def test_post_jobs_submits_and_journals(tmp_path, monkeypatch):
     assert job_id in ids
 
 
-def test_gateway_happy_path_with_fake_upstream(tmp_path, monkeypatch):
-    """End-to-end through the endpoint with the network forwarder faked."""
-    monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "secret-123")
-    daemon = _gw_daemon(tmp_path, enable_gateway=True)
+# ── chat route is gone (v5.0.0 removed the LLM gateway) ──────────────────────
 
-    # Replace the real urllib forwarder with a fake that echoes a final answer.
-    import research_os.daemon.server as srv
-
-    def fake_factory(cfg):
-        def fake_forward(body, headers):
-            return {
-                "id": "chatcmpl-fake",
-                "object": "chat.completion",
-                "choices": [
-                    {"index": 0,
-                     "message": {"role": "assistant", "content": "hello from fake"},
-                     "finish_reason": "stop"}
-                ],
-            }
-        return fake_forward
-
-    monkeypatch.setattr(srv, "_make_upstream_forwarder", fake_factory)
-
-    c = TestClient(build_app(daemon))
-    r = c.post(
-        "/v1/chat/completions",
-        headers={"Authorization": "Bearer secret-123"},
-        json={"model": "client-model",
-              "messages": [{"role": "user", "content": "explain pca"}]},
-    )
-    assert r.status_code == 200
-    body = r.json()
-    assert body["choices"][0]["message"]["content"] == "hello from fake"
-    # Routing metadata stamped by the gateway.
-    assert "x_research_os" in body
-    assert body["x_research_os"]["tool_rounds"] == 0
-
-
-def test_gateway_upstream_error_returns_502(tmp_path, monkeypatch):
-    monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "secret-123")
-    daemon = _gw_daemon(tmp_path, enable_gateway=True)
-    import research_os.daemon.server as srv
-
-    def boom_factory(cfg):
-        def boom(body, headers):
-            raise RuntimeError("upstream 500: kaboom")
-        return boom
-
-    monkeypatch.setattr(srv, "_make_upstream_forwarder", boom_factory)
-    c = TestClient(build_app(daemon))
-    r = c.post(
-        "/v1/chat/completions",
-        headers={"Authorization": "Bearer secret-123"},
-        json={"model": "x", "messages": [{"role": "user", "content": "hi"}]},
-    )
-    assert r.status_code == 502
-    assert r.json()["error"]["type"] == "upstream_error"
-
-
-def test_gateway_streaming_returns_sse(tmp_path, monkeypatch):
-    """stream:true -> text/event-stream of chat.completion.chunk frames."""
-    monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "secret-123")
-    daemon = _gw_daemon(tmp_path, enable_gateway=True)
-    import research_os.daemon.server as srv
-
-    def fake_factory(cfg):
-        def fake_forward(body, headers):
-            return {
-                "id": "chatcmpl-fake",
-                "object": "chat.completion",
-                "choices": [
-                    {"index": 0,
-                     "message": {"role": "assistant", "content": "streamed answer"},
-                     "finish_reason": "stop"}
-                ],
-            }
-        return fake_forward
-
-    monkeypatch.setattr(srv, "_make_upstream_forwarder", fake_factory)
-    c = TestClient(build_app(daemon))
-    r = c.post(
-        "/v1/chat/completions",
-        headers={"Authorization": "Bearer secret-123"},
-        json={"model": "x", "stream": True,
-              "messages": [{"role": "user", "content": "hi"}]},
-    )
-    assert r.status_code == 200
-    assert r.headers["content-type"].startswith("text/event-stream")
-    text = r.text
-    assert "chat.completion.chunk" in text
-    assert "streamed answer" in text
-    assert text.rstrip().endswith("data: [DONE]")
-
-
-def test_gateway_streaming_still_enforces_auth(tmp_path, monkeypatch):
-    """Auth is checked before any stream is opened."""
-    monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "secret-123")
-    daemon = _gw_daemon(tmp_path, enable_gateway=True)
-    c = TestClient(build_app(daemon))
-    r = c.post(
-        "/v1/chat/completions",
-        headers={"Authorization": "Bearer wrong"},
-        json={"model": "x", "stream": True,
-              "messages": [{"role": "user", "content": "hi"}]},
-    )
-    assert r.status_code == 401
-    # Error path is JSON, not a stream.
-    assert "event-stream" not in r.headers.get("content-type", "")
+def test_no_chat_completions_route(tmp_path):
+    """v5.0.0: POST /v1/chat/completions was removed; the route must not exist."""
+    (tmp_path / ".os_state").mkdir(exist_ok=True)
+    daemon = Daemon.for_root(tmp_path)
+    app = build_app(daemon)
+    paths = [str(getattr(r, "path", "")) for r in app.routes]
+    chat_routes = [p for p in paths if "/v1/chat" in p]
+    assert chat_routes == [], f"Expected no /v1/chat/* routes, got: {chat_routes}"
 
 
 # ── autonomous continuation endpoints ─────────────────────────────────
@@ -484,16 +342,18 @@ def test_continuation_get_open_default_inactive(tmp_path):
     assert body.get("active") in (False, None)
 
 
-def test_continuation_start_requires_auth(tmp_path):
-    daemon = _gw_daemon(tmp_path, enable_gateway=False)
+def test_continuation_start_requires_auth(tmp_path, monkeypatch):
+    """Token set but not presented → 401."""
+    monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "secret-123")
+    daemon = _gw_daemon(tmp_path)
     c = TestClient(build_app(daemon))
     r = c.post("/v1/continuation/start", json={"goal": "build the model"})
-    assert r.status_code == 503  # gateway disabled
+    assert r.status_code == 401
 
 
 def test_continuation_start_stop_roundtrip(tmp_path, monkeypatch):
-    monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "secret-123")
-    daemon = _gw_daemon(tmp_path, enable_gateway=True)
+    monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "secret-123")
+    daemon = _gw_daemon(tmp_path)
     c = TestClient(build_app(daemon))
     hdr = {"Authorization": "Bearer secret-123"}
 
@@ -519,8 +379,8 @@ def test_continuation_start_stop_roundtrip(tmp_path, monkeypatch):
 
 
 def test_continuation_start_rejects_empty_goal(tmp_path, monkeypatch):
-    monkeypatch.setenv("RESEARCH_OS_GATEWAY_TOKEN", "secret-123")
-    daemon = _gw_daemon(tmp_path, enable_gateway=True)
+    monkeypatch.setenv("RESEARCH_OS_DAEMON_TOKEN", "secret-123")
+    daemon = _gw_daemon(tmp_path)
     c = TestClient(build_app(daemon))
     r = c.post(
         "/v1/continuation/start", json={"goal": "  "},

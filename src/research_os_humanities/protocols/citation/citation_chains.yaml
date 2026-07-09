@@ -1,7 +1,7 @@
 id: citation_chains
 name: Citation Chains — genealogy of an idea across centuries
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [humanities]
   audience: [auditor]
@@ -41,165 +41,162 @@ trigger: |
   Kant / whoever".
 
 prerequisites:
-  - A target idea is named with enough specificity to anchor a
-    search (the phrase, the concept, or a paradigmatic passage —
-    not just "freedom" or "being").
-  - "At least one terminal point in the chain is in hand — either
-    the modern usage you want to trace BACK from, or the ancient
-    source you want to trace FORWARD from. Both ends is better."
+- A target idea is named with enough specificity to anchor a search (the phrase, the concept, or a paradigmatic passage — not just "freedom" or "being").
+- "At least one terminal point in the chain is in hand — either the modern usage you want to trace BACK from, or the ancient source you want to trace FORWARD from. Both ends is better."
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Every link in the chain cites the edition the author
-       actually read, not the standard critical edition we'd
-       cite today. Aquinas read William of Moerbeke's Latin
-       Aristotle; saying he read Bekker is anachronism."
-    - "Translation IS transformation. When a link crosses
-       languages (Greek → Arabic → Latin → German → English),
-       name the translator and flag the term-shift; do not
-       pretend the word means the same thing across the gap."
-    - "A chain with an 'as quoted in X' link is incomplete until
-       either (a) the original is recovered, or (b) the dangling
-       link is explicitly marked as unrecoverable with a note on
-       what was tried. Silent transmission of unverified quotes
-       is the cardinal sin."
-    - "Name the interpretive tradition the chain belongs to.
-       'Aristotle on virtue' read through MacIntyre is a different
-       chain from the same passage read through Nussbaum; the
-       chain document names which reception it sits inside."
-    - "Resist the pseudo-continuity. If Heidegger's reading of
-       Aristotle would have been unrecognizable to Aristotle,
-       say so — that IS the finding, not a problem to smooth over."
+  - "Every link in the chain cites the edition the author actually read, not the standard critical edition we'd cite today. Aquinas read William of Moerbeke's Latin Aristotle; saying he read Bekker is anachronism."
+  - "Translation IS transformation. When a link crosses languages (Greek → Arabic → Latin → German → English), name the translator and flag the term-shift; do not pretend the word means the same thing across the gap."
+  - "A chain with an 'as quoted in X' link is incomplete until either (a) the original is recovered, or (b) the dangling link is explicitly marked as unrecoverable with a note on what was tried. Silent transmission of unverified quotes is the cardinal sin."
+  - "Name the interpretive tradition the chain belongs to. 'Aristotle on virtue' read through MacIntyre is a different chain from the same passage read through Nussbaum; the chain document names which reception it sits inside."
+  - "Resist the pseudo-continuity. If Heidegger's reading of Aristotle would have been unrecognizable to Aristotle, say so — that IS the finding, not a problem to smooth over."
 
 steps:
-  - id: anchor_endpoints
-    name: Anchor the endpoints of the chain
-    description: |
-      Pin both ends down before you reason about the middle.
-      For the modern end: the exact passage where the idea
-      appears in its current form (author, work, page, edition).
-      For the ancient end: the canonical citation in the form
-      contemporary scholarship uses (Aristotle Nicomachean
-      Ethics 1098a, Aquinas Summa Theologiae I-II.55.1, etc.).
-      If you only have one end, mark the other as `<unknown>`
-      and let the chain-walking steps fill it.
-      Call sys_path to land workspace/citations/chain_<slug>.md
-      with an endpoints block at the top: {modern_end:, ancient_end:,
-      target_idea:, interpretive_tradition:}.
-      The slug is the idea, not the author — `energeia_to_actuality`
-      is better than `aristotle_aquinas`.
+- id: anchor_endpoints
+  name: Anchor the endpoints of the chain
+  description: |
+    Pin both ends down before you reason about the middle.
+    For the modern end: the exact passage where the idea
+    appears in its current form (author, work, page, edition).
+    For the ancient end: the canonical citation in the form
+    contemporary scholarship uses (Aristotle Nicomachean
+    Ethics 1098a, Aquinas Summa Theologiae I-II.55.1, etc.).
+    If you only have one end, mark the other as `<unknown>`
+    and let the chain-walking steps fill it.
+    Call sys_path to land workspace/citations/chain_<slug>.md
+    with an endpoints block at the top: {modern_end:, ancient_end:,
+    target_idea:, interpretive_tradition:}.
+    The slug is the idea, not the author — `energeia_to_actuality`
+    is better than `aristotle_aquinas`.
 
-  - id: walk_chain
-    name: Walk the chain link by link
-    description: |
-      Move from one end toward the other, one link at a time.
-      For each link, the question is the same: who did THIS author
-      read, in what edition / translation, and where does the
-      target idea appear in their work?
-      Call tool_search with queries
-      keyed to the author + the work + the target term, not to
-      the modern formulation. Searching for "Aquinas actuality"
-      finds tertiary literature; searching for "Aquinas actus
-      Sentencia libri Metaphysicae IX" finds the link.
-      Record each link in the chain document as a block:
-        {link_n, author, work, edition_read, language,
-         translator (if any), passage, gloss}.
-      The gloss is one or two sentences in your own words: what
-      did THIS author take the idea to mean? That gloss is what
-      gets compared link-to-link in the next step.
+- id: walk_chain
+  name: Walk the chain link by link
+  description: |
+    Move from one end toward the other, one link at a time.
+    For each link, the question is the same: who did THIS author
+    read, in what edition / translation, and where does the
+    target idea appear in their work?
+    Call tool_search with queries
+    keyed to the author + the work + the target term, not to
+    the modern formulation. Searching for "Aquinas actuality"
+    finds tertiary literature; searching for "Aquinas actus
+    Sentencia libri Metaphysicae IX" finds the link.
+    Record each link in the chain document as a block:
+      {link_n, author, work, edition_read, language,
+       translator (if any), passage, gloss}.
+    The gloss is one or two sentences in your own words: what
+    did THIS author take the idea to mean? That gloss is what
+    gets compared link-to-link in the next step.
 
-  - id: name_transformations
-    name: Name the transformations at each link
-    description: |
-      Reception is transformation. Between link_n and link_n+1,
-      something shifted — vocabulary, ontology, the polemical
-      context, the institutional setting. Make the shift explicit.
-      For each adjacent pair, write a transformation note:
-        - terminological (energeia → actus → Wirklichkeit:
-          what did each translator lose / gain?)
-        - conceptual (Aristotle's energeia is a feature of
-          substances; Aquinas's actus carries the act/potency
-          machinery; Heidegger's Wirklichkeit gets read against
-          his critique of Vorhandenheit)
-        - polemical (whom is the author arguing against? the
-          target shapes the inflection)
-      Call mem_log to record any transformation that is
-      load-bearing for the eventual argument; these are what
-      reviewers will press on.
-      A chain with zero transformations is suspicious. Either
-      the idea is genuinely stable (rare), or you have not yet
-      looked hard at the links.
+- id: name_transformations
+  name: Name the transformations at each link
+  description: |
+    Reception is transformation. Between link_n and link_n+1,
+    something shifted — vocabulary, ontology, the polemical
+    context, the institutional setting. Make the shift explicit.
+    For each adjacent pair, write a transformation note:
+      - terminological (energeia → actus → Wirklichkeit:
+        what did each translator lose / gain?)
+      - conceptual (Aristotle's energeia is a feature of
+        substances; Aquinas's actus carries the act/potency
+        machinery; Heidegger's Wirklichkeit gets read against
+        his critique of Vorhandenheit)
+      - polemical (whom is the author arguing against? the
+        target shapes the inflection)
+    Call mem_log to record any transformation that is
+    load-bearing for the eventual argument; these are what
+    reviewers will press on.
+    A chain with zero transformations is suspicious. Either
+    the idea is genuinely stable (rare), or you have not yet
+    looked hard at the links.
 
-  - id: verify_recoverability
-    name: Verify each link is recoverable
-    description: |
-      Every link must be reachable by someone reading your paper.
-      "Reachable" means: given the citation, a reader at a decent
-      research library or with HathiTrust / Internet Archive / a
-      good interlibrary loan can lay hands on the passage.
-      For each link, audit:
-        - Is the edition still in print or scanned? (HathiTrust,
-          archive.org, Gallica, MGH for medieval Latin, etc.)
-        - If the link is to a manuscript, is there a shelfmark
-          + folio + a digital facsimile or microfilm?
-        - Is the page number from a stable edition (Bekker for
-          Aristotle, Migne for patristics, Leonine for Aquinas,
-          GA for Heidegger) or from a paperback reprint that
-          will be out of print in five years?
-      Flag every "as quoted in" link — those are the dangling
-      ones. Either close them by finding the original, or mark
-      them with a note: "I could not access X; tried Y and Z;
-      the chain depends on this link being honest."
+- id: verify_recoverability
+  name: Verify each link is recoverable
+  description: |
+    Every link must be reachable by someone reading your paper.
+    "Reachable" means: given the citation, a reader at a decent
+    research library or with HathiTrust / Internet Archive / a
+    good interlibrary loan can lay hands on the passage.
+    For each link, audit:
+      - Is the edition still in print or scanned? (HathiTrust,
+        archive.org, Gallica, MGH for medieval Latin, etc.)
+      - If the link is to a manuscript, is there a shelfmark
+        + folio + a digital facsimile or microfilm?
+      - Is the page number from a stable edition (Bekker for
+        Aristotle, Migne for patristics, Leonine for Aquinas,
+        GA for Heidegger) or from a paperback reprint that
+        will be out of print in five years?
+    Flag every "as quoted in" link — those are the dangling
+    ones. Either close them by finding the original, or mark
+    them with a note: "I could not access X; tried Y and Z;
+    the chain depends on this link being honest."
 
-  - id: situate_in_tradition
-    name: Situate the chain inside a reception tradition
-    description: |
-      The same chain reads differently depending on which
-      interpretive tradition you sit inside. Aristotle's
-      Nicomachean Ethics read through Aquinas is the Thomist
-      reception; through Heidegger is the existential reception;
-      through MacIntyre is the virtue-ethics revival; through
-      Nussbaum is the neo-Aristotelian liberal reception.
-      Name yours. The chain document gets an interpretive_lineage
-      block: {tradition, key_modern_interpreters, what_they_emphasize,
-      what_they_downplay}.
-      This is not a confession of bias — it is honest scholarship.
-      Pretending to read Aristotle from nowhere is the move that
-      Gadamer (Truth and Method) and Skinner ("Meaning and
-      Understanding in the History of Ideas") both spent careers
-      diagnosing.
-      Call tool_search to surface the major modern commentators
-      in your tradition; their disagreements ARE the chain's
-      living history.
+- id: situate_in_tradition
+  name: Situate the chain inside a reception tradition
+  description: |
+    The same chain reads differently depending on which
+    interpretive tradition you sit inside. Aristotle's
+    Nicomachean Ethics read through Aquinas is the Thomist
+    reception; through Heidegger is the existential reception;
+    through MacIntyre is the virtue-ethics revival; through
+    Nussbaum is the neo-Aristotelian liberal reception.
+    Name yours. The chain document gets an interpretive_lineage
+    block: {tradition, key_modern_interpreters, what_they_emphasize,
+    what_they_downplay}.
+    This is not a confession of bias — it is honest scholarship.
+    Pretending to read Aristotle from nowhere is the move that
+    Gadamer (Truth and Method) and Skinner ("Meaning and
+    Understanding in the History of Ideas") both spent careers
+    diagnosing.
+    Call tool_search to surface the major modern commentators
+    in your tradition; their disagreements ARE the chain's
+    living history.
 
-  - id: emit_chain_document
-    name: Emit the chain document
-    description: |
-      The output is a single markdown file per idea, structured
-      so a reader can audit any link in isolation.
-      Required sections (in order):
-        - target_idea (one paragraph: what we are tracing)
-        - endpoints (modern + ancient anchors)
-        - interpretive_tradition (which reception this sits in)
-        - chain (numbered links, each with the block schema
-          from walk_chain)
-        - transformations (notes between adjacent links)
-        - dangling_links (explicit list of "as quoted in" or
-          unrecoverable links, with what was tried)
-        - bibliography (every edition cited, in the form a
-          reader would use to recover it)
-      Land at workspace/citations/chain_<slug>.md. If the chain
-      will support a published argument, also emit a compact
-      footnote-ready version under outputs/notes/chain_<slug>_footnote.md
-      so the chain can be cited in the apparatus without dumping
-      the whole genealogy into a paper.
+- id: emit_chain_document
+  name: Emit the chain document
+  description: |
+    The output is a single markdown file per idea, structured
+    so a reader can audit any link in isolation.
+    Required sections (in order):
+      - target_idea (one paragraph: what we are tracing)
+      - endpoints (modern + ancient anchors)
+      - interpretive_tradition (which reception this sits in)
+      - chain (numbered links, each with the block schema
+        from walk_chain)
+      - transformations (notes between adjacent links)
+      - dangling_links (explicit list of "as quoted in" or
+        unrecoverable links, with what was tried)
+      - bibliography (every edition cited, in the form a
+        reader would use to recover it)
+    Land at workspace/citations/chain_<slug>.md. If the chain
+    will support a published argument, also emit a compact
+    footnote-ready version under outputs/notes/chain_<slug>_footnote.md
+    so the chain can be cited in the apparatus without dumping
+    the whole genealogy into a paper.
 
 expected_outputs:
-  - workspace/citations/chain_<slug>.md          # one per traced idea
-  - workspace/citations/transformations_<slug>.md # optional, if transformations are extensive
-  - outputs/notes/chain_<slug>_footnote.md       # compact citable version
+- workspace/citations/chain_<slug>.md            # one per traced idea
+- workspace/citations/transformations_<slug>.md   # optional, if transformations are extensive
+- outputs/notes/chain_<slug>_footnote.md         # compact citable version
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: literature
+sub_intent: per_step
+triggers:
+- intellectual history
+- genealogy of an idea
+- trace an argument
+- reception history
+- how did this idea evolve
+summary: Genealogy of an idea across centuries (Aristotle → Aquinas → Heidegger).
+shortcut_tool: tool_humanities_citation_chain
+token_estimate: 1600
+decomposition:
+- tool: tool_humanities_citation_chain
+  purpose: Scaffold the chain markdown.
+- protocol: humanities/citation/citation_chains
+  purpose: Walk the chain forward (Aristotle → us) AND backward.

@@ -1,16 +1,16 @@
 id: provenance_completeness
 tier: 'review'
 name: Provenance Completeness Audit (every output has a .prov.json sidecar)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - audit/audit_and_validation       # the master audit that rolls up this verdict
-  - reproducibility/reproducibility  # uses each sidecar's output.sha256 as the re-run baseline
+- audit/audit_and_validation         # the master audit that rolls up this verdict
+- reproducibility/reproducibility    # uses each sidecar's output.sha256 as the re-run baseline
 description: |
   Every figure, table, model artefact, and report output in the workspace
   must ship with a sibling `<stem>.prov.json` sidecar. The sidecar records:
@@ -38,7 +38,7 @@ description: |
     - `tool_notebook_exec`   — writes per-notebook provenance,
     - `tool_sensitivity(operation='run')` — writes the spec-curve sidecar.
 
-  Scripts run via `tool_python_exec` / `tool_r_exec` MUST call
+  Scripts run via `tool_python_exec` / `tool_bash_exec` (for R scripts, pass them via tool_bash_exec) MUST call
   `write_output_provenance` themselves at the end of every artefact
   write, OR funnel their figures through an AI-authored plotting script (see visualization/figure_guidelines) (which
   takes the data path + chart kind and handles the sidecar).
@@ -58,184 +58,173 @@ trigger: |
       "reproducibility manifest", "show me how this figure was made".
 
 prerequisites:
-  - At least one numbered step under `workspace/` has produced
-    outputs (figures, tables, reports, model files).
+- At least one numbered step under `workspace/` has produced outputs (figures, tables, reports, model files).
 
 editorial_voice:
   mode: prescription
   rules:
-    - "An output without a sidecar is an undocumented artefact.
-       Treat it the same as an uncited claim — block synthesis
-       until it is fixed."
-    - "The sidecar is a TECHNICAL artefact, not paperwork. Its
-       value is realised when a re-run diverges and the audit can
-       pinpoint why."
-    - "If a script produces a figure, the script writes the
-       sidecar. If the AI uses an AI-authored plotting script (see `visualization/figure_guidelines`), the tool
-       writes the sidecar. If the AI uses `tool_python_exec` to
-       run a custom plotting script, the script MUST call
-       `write_output_provenance` before the script exits."
-    - "Provenance is not just for figures. Tables (CSV / TSV /
-       Parquet), model objects (.pkl / .joblib / .pt), and
-       generated reports all carry sidecars too."
+  - "An output without a sidecar is an undocumented artefact. Treat it the same as an uncited claim — block synthesis until it is fixed."
+  - "The sidecar is a TECHNICAL artefact, not paperwork. Its value is realised when a re-run diverges and the audit can pinpoint why."
+  - "If a script produces a figure, the script writes the sidecar. If the AI uses an AI-authored plotting script (see `visualization/figure_guidelines`), the tool writes the sidecar. If the AI uses `tool_python_exec` to run a custom plotting script, the script MUST call `write_output_provenance` before the script exits."
+  - "Provenance is not just for figures. Tables (CSV / TSV / Parquet), model objects (.pkl / .joblib / .pt), and generated reports all carry sidecars too."
 
 steps:
-  - id: enumerate_outputs
-    name: Enumerate every output across every step
-    description: |
-      Walk every numbered step folder:
-        workspace/<step>/outputs/figures/
-        workspace/<step>/outputs/tables/
-        workspace/<step>/outputs/reports/    (when reports are
-                                             generated programmatically;
-                                             hand-written .md is exempt)
-        workspace/<step>/data/next_step_output/   (CSV / Parquet / .pkl/
-                                             model objects)
+- id: enumerate_outputs
+  name: Enumerate every output across every step
+  description: |
+    Walk every numbered step folder:
+      workspace/<step>/outputs/figures/
+      workspace/<step>/outputs/tables/
+      workspace/<step>/outputs/reports/    (when reports are
+                                           generated programmatically;
+                                           hand-written .md is exempt)
+      workspace/<step>/data/next_step_output/   (CSV / Parquet / .pkl/
+                                           model objects)
 
-      Use `sys_file_list` (recursive) per step to enumerate. Exclude:
-        - any path under `workspace/scratch/`   (sandbox; not audited),
-        - any path under a folder ending in `__DEAD_END`,
-        - sidecars themselves (the `.prov.json` files),
-        - sidecar companions  (`.caption.md`, `.summary.md`,
-          `.svg` companions of `.png` figures — those have their
-          own audit in `audit_and_validation`).
+    Use `sys_file_list` (recursive) per step to enumerate. Exclude:
+      - any path under `workspace/scratch/`   (sandbox; not audited),
+      - any path under a folder ending in `__DEAD_END`,
+      - sidecars themselves (the `.prov.json` files),
+      - sidecar companions  (`.caption.md`, `.summary.md`,
+        `.svg` companions of `.png` figures — those have their
+        own audit in `audit_and_validation`).
 
-      Persist the enumeration to
-      `workspace/logs/output_inventory.json` so the audit is
-      diffable across runs.
+    Persist the enumeration to
+    `workspace/logs/output_inventory.json` so the audit is
+    diffable across runs.
 
-  - id: check_sidecar_existence
-    name: Check every enumerated output has a `<stem>.prov.json` sibling
-    description: |
-      For each output `foo.png` / `foo.csv` / `foo.pkl`:
-        sibling = `foo.prov.json`  (sibling-by-stem; the convention
-                                    documented in `research_os/tools/
-                                    actions/state/provenance.py`).
-      sys_file_read sidecar (sys_file_list parent + check):
-        - MISSING  → BLOCKER. Record file + step.
-        - PRESENT  → load JSON, validate fields (next step).
+- id: check_sidecar_existence
+  name: Check every enumerated output has a `<stem>.prov.json` sibling
+  description: |
+    For each output `foo.png` / `foo.csv` / `foo.pkl`:
+      sibling = `foo.prov.json`  (sibling-by-stem; the convention
+                                  documented in `research_os/tools/
+                                  actions/state/provenance.py`).
+    sys_file_read sidecar (sys_file_list parent + check):
+      - MISSING  → BLOCKER. Record file + step.
+      - PRESENT  → load JSON, validate fields (next step).
 
-      Tally:
-        n_outputs, n_with_sidecar, n_missing.
-      Compute coverage_pct = n_with_sidecar / n_outputs.
+    Tally:
+      n_outputs, n_with_sidecar, n_missing.
+    Compute coverage_pct = n_with_sidecar / n_outputs.
 
-  - id: validate_sidecar_fields
-    name: Validate each sidecar has the mandatory fields populated
-    description: |
-      For every present sidecar, validate:
-        - `produced_by.script`        not "<unknown>"
-        - `produced_by.git_sha`       present
-        - `step_id`                   matches the actual step folder
-        - `rng_seed`                  present
-            (null is OK only if the artefact is deterministic-by-
-             construction; the audit asks the AI to justify a null
-             seed via mem_log)
-        - `software.packages`         non-empty
-        - `params`                    non-empty (a parameter-free run
-                                       still records `{}`; a fully
-                                       missing key is the failure)
-        - `inputs`                    non-empty (every artefact has
-                                       AT LEAST the script as input;
-                                       data-free artefacts are rare —
-                                       flag for justification)
-        - `output.sha256`             present
+- id: validate_sidecar_fields
+  name: Validate each sidecar has the mandatory fields populated
+  description: |
+    For every present sidecar, validate:
+      - `produced_by.script`        not "<unknown>"
+      - `produced_by.git_sha`       present
+      - `step_id`                   matches the actual step folder
+      - `rng_seed`                  present
+          (null is OK only if the artefact is deterministic-by-
+           construction; the audit asks the AI to justify a null
+           seed via mem_log)
+      - `software.packages`         non-empty
+      - `params`                    non-empty (a parameter-free run
+                                     still records `{}`; a fully
+                                     missing key is the failure)
+      - `inputs`                    non-empty (every artefact has
+                                     AT LEAST the script as input;
+                                     data-free artefacts are rare —
+                                     flag for justification)
+      - `output.sha256`             present
 
-      A sidecar present-but-incomplete is graded WARNING (not
-      BLOCKER) for descriptive artefacts and BLOCKER for any
-      artefact cited in a synthesis output.
+    A sidecar present-but-incomplete is graded WARNING (not
+    BLOCKER) for descriptive artefacts and BLOCKER for any
+    artefact cited in a synthesis output.
 
-  - id: emit_audit_report
-    name: Emit the provenance audit report
-    description: |
-      Write `workspace/logs/provenance_audit.md`:
+- id: emit_audit_report
+  name: Emit the provenance audit report
+  description: |
+    Write `workspace/logs/provenance_audit.md`:
 
-        # Provenance Audit — <date>
+      # Provenance Audit — <date>
 
-        Coverage: <n_with_sidecar>/<n_outputs> = <pct>%.
+      Coverage: <n_with_sidecar>/<n_outputs> = <pct>%.
 
-        ## BLOCKERS (missing sidecars)
-        | step | output | reason |
-        |------|--------|--------|
-        | 03_baseline | outputs/figures/01_baseline.png | sidecar missing |
+      ## BLOCKERS (missing sidecars)
+      | step | output | reason |
+      |------|--------|--------|
+      | 03_baseline | outputs/figures/01_baseline.png | sidecar missing |
 
-        ## WARNINGS (incomplete sidecars)
-        | step | output | missing fields |
+      ## WARNINGS (incomplete sidecars)
+      | step | output | missing fields |
 
-        ## Pass
-        <count> outputs fully covered.
+      ## Pass
+      <count> outputs fully covered.
 
-      `audit/audit_and_validation` reads this file and rolls the
-      BLOCKER count into the master audit; any BLOCKER surfaces as a
-      blocker on `tool_synthesis_check` when the AI validates the
-      authored synthesis file.
+    `audit/audit_and_validation` reads this file and rolls the
+    BLOCKER count into the master audit; any BLOCKER surfaces as a
+    blocker on `tool_synthesis_scaffold (operation='check')` when the AI validates the
+    authored synthesis file.
 
-  - id: fix_missing_sidecars
-    name: Fix missing sidecars — re-run the producing script under provenance
-    description: |
-      For each BLOCKER row, the AI:
-        - Identifies the producing script (grep for the output
-          filename in `workspace/<step>/scripts/`; common pattern:
-          one script per figure).
-        - Edits the script so that the FINAL line of the artefact-
-          producing block calls:
+- id: fix_missing_sidecars
+  name: Fix missing sidecars — re-run the producing script under provenance
+  description: |
+    For each BLOCKER row, the AI:
+      - Identifies the producing script (grep for the output
+        filename in `workspace/<step>/scripts/`; common pattern:
+        one script per figure).
+      - Edits the script so that the FINAL line of the artefact-
+        producing block calls:
 
-            from research_os.tools.actions.state.provenance import (
-                write_output_provenance,
-            )
-            write_output_provenance(
-                output_path=<the artefact>,
-                root=<repo root>,
-                produced_by={"script": __file__},
-                inputs={"data": "<input path>"},
-                params={...},
-                rng_seed=<seed>,
-            )
+          from research_os.tools.actions.state.provenance import (
+              write_output_provenance,
+          )
+          write_output_provenance(
+              output_path=<the artefact>,
+              root=<repo root>,
+              produced_by={"script": __file__},
+              inputs={"data": "<input path>"},
+              params={...},
+              rng_seed=<seed>,
+          )
 
-          OR — preferred for FIGURES — re-route the figure call
-          through an AI-authored plotting script (see visualization/figure_guidelines), which writes the sidecar
-          for you.
+        OR — preferred for FIGURES — re-route the figure call
+        through an AI-authored plotting script (see visualization/figure_guidelines), which writes the sidecar
+        for you.
 
-        - Re-runs the script via `tool_python_exec` (or
-          `tool_r_exec` — R scripts call into the provenance
-          module via `reticulate` or write the sidecar by hand
-          per the JSON schema in `provenance.py`).
+      - Re-runs the script via `tool_python_exec` (or
+        `tool_bash_exec` — R scripts call into the provenance
+        module via `reticulate` or write the sidecar by hand
+        per the JSON schema in `provenance.py`).
 
-        - Re-runs this audit (step 2 onward) to confirm the
-          BLOCKER cleared.
+      - Re-runs this audit (step 2 onward) to confirm the
+        BLOCKER cleared.
 
-      Do NOT manually hand-write a `.prov.json` to "satisfy" the
-      audit without re-running — that severs the integrity link
-      between sidecar and artefact.
+    Do NOT manually hand-write a `.prov.json` to "satisfy" the
+    audit without re-running — that severs the integrity link
+    between sidecar and artefact.
 
-  - id: append_to_methods_and_conclusions
-    name: Append to methods.md + conclusions.md
-    description: |
-      mem_log:
-        method="Provenance completeness audit"
-        parameters="full coverage required for every synthesis-cited
-                    artefact (hard contract); remaining workspace
-                    coverage gap surfaced as a warning to close"
-        justification="Research-OS provenance contract; PROV-O /
-                       RO-Crate compatible."
-        assumptions=["every output cited in synthesis has a
-                      complete sidecar"]
+- id: append_to_methods_and_conclusions
+  name: Append to methods.md + conclusions.md
+  description: |
+    mem_log:
+      method="Provenance completeness audit"
+      parameters="full coverage required for every synthesis-cited
+                  artefact (hard contract); remaining workspace
+                  coverage gap surfaced as a warning to close"
+      justification="Research-OS provenance contract; PROV-O /
+                     RO-Crate compatible."
+      assumptions=["every output cited in synthesis has a
+                    complete sidecar"]
 
-      Append coverage % + remaining BLOCKERs to conclusions.md
-      ## Limitations of the affected steps.
+    Append coverage % + remaining BLOCKERs to conclusions.md
+    ## Limitations of the affected steps.
 
-  - id: cross_check_with_audit
-    name: Cross-check with audit_and_validation + reproducibility
-    description: |
-      Surface the verdict to both:
-        - `audit/audit_and_validation` — master audit consumes
-          `workspace/logs/provenance_audit.md`; any BLOCKER bars
-          synthesis.
-        - `reproducibility/reproducibility` — re-run verification
-          uses the sidecar's `output.sha256` as the baseline.
+- id: cross_check_with_audit
+  name: Cross-check with audit_and_validation + reproducibility
+  description: |
+    Surface the verdict to both:
+      - `audit/audit_and_validation` — master audit consumes
+        `workspace/logs/provenance_audit.md`; any BLOCKER bars
+        synthesis.
+      - `reproducibility/reproducibility` — re-run verification
+        uses the sidecar's `output.sha256` as the baseline.
 
 expected_outputs:
-  - workspace/logs/output_inventory.json
-  - workspace/logs/provenance_audit.md
+- workspace/logs/output_inventory.json
+- workspace/logs/provenance_audit.md
 
 quality_bar:
   every_synthesis_cited_artefact_has_complete_sidecar: true
@@ -251,3 +240,24 @@ quality_bar:
 next_protocol: audit/audit_and_validation
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: audit_wrap
+sub_intent: audit
+triggers:
+- provenance
+- prov json
+- prov.json
+- sidecars
+- provenance audit
+- provenance completeness
+- reproducibility manifest
+- missing sidecars
+- show me how this figure was made
+- audit the provenance
+- is every output provenanced
+summary: Per-output provenance sidecar coverage — every figure/table/model artefact must ship with a `<stem>.prov.json` (script + git SHA + RNG seed + lib versions + params + wall-time).
+token_estimate: 1300
+decomposition:
+- protocol: audit/provenance_completeness
+  purpose: Enumerate outputs, check sibling .prov.json existence, validate fields, fix missing by re-running the figure script (which should drop the provenance sidecar) under tool_python_exec so the provenance hook records the run.
+- tool: tool_python_exec
+  purpose: Re-run any artefact-producing script under provenance to backfill missing sidecars.

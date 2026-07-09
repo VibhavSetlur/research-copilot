@@ -1,17 +1,17 @@
 id: method_scouting
 tier: 'plan'
 name: Method Scouting (find external methods / papers / code worth integrating)
-version: '3.12.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]
   audience: [naive_ai, auditor]
   workflow_shape: [tool_build, hybrid]
 last_reviewed: '2026-06-23'
 see_also:
-  - build/integration_spike       # the throwaway test that proves a scouted candidate before you commit
-  - methodology/tool_discovery    # picks an off-the-shelf LIBRARY; this scouts METHODS/ideas/algorithms to adapt
-  - methodology/method_comparison # compares ANALYSIS methods; this scouts engineering ingredients to build with
+- build/integration_spike         # the throwaway test that proves a scouted candidate before you commit
+- methodology/tool_discovery      # picks an off-the-shelf LIBRARY; this scouts METHODS/ideas/algorithms to adapt
+- methodology/method_comparison   # compares ANALYSIS methods; this scouts engineering ingredients to build with
 description: |
   The opening move when a tool_build or hybrid project needs a capability it
   does not yet have and the right move might be to ADOPT an existing
@@ -46,96 +46,123 @@ description: |
       sources external pieces the design might stand on.
 trigger: In tool_build or hybrid mode, when the AI or researcher says "is there a method/paper/library for this", "how do others solve this", "find prior art", "can we reuse X", "research how to do this", or a spec surfaces a capability that prior work plausibly already solves.
 prerequisites:
-  - workspace.mode is tool_build or hybrid (sys_boot reports workspace_mode), OR the researcher has explicitly asked to source an external method/approach for a build
-  - A concrete capability gap is named — what the tool needs that it cannot yet do
+- workspace.mode is tool_build or hybrid (sys_boot reports workspace_mode), OR the researcher has explicitly asked to source an external method/approach for a build
+- A concrete capability gap is named — what the tool needs that it cannot yet do
 
 steps:
-  - id: frame_the_gap
-    name: Frame the capability gap as a researchable question
-    description: |
-      Before searching, state the gap as something the search can actually
-      answer: the specific capability the tool needs, the inputs/outputs it
-      must respect, and the constraints that rule candidates in or out
-      (language/runtime, licence posture, performance envelope, the
-      environment it must run in). A vague gap ("we need clustering")
-      returns noise; a framed gap ("streaming density-based clustering over
-      >10M points on a single node, BSD-compatible licence") returns
-      candidates you can judge.
+- id: frame_the_gap
+  name: Frame the capability gap as a researchable question
+  description: |
+    Before searching, state the gap as something the search can actually
+    answer: the specific capability the tool needs, the inputs/outputs it
+    must respect, and the constraints that rule candidates in or out
+    (language/runtime, licence posture, performance envelope, the
+    environment it must run in). A vague gap ("we need clustering")
+    returns noise; a framed gap ("streaming density-based clustering over
+    >10M points on a single node, BSD-compatible licence") returns
+    candidates you can judge.
 
-      Record the framed gap in spec/design.md (or a decisions/ note) so the
-      scout is reproducible and the rejection reasons later make sense
-      against it.
+    Record the framed gap in spec/design.md (or a decisions/ note) so the
+    scout is reproducible and the rejection reasons later make sense
+    against it.
 
-  - id: scout_candidates
-    name: Scout the external landscape
-    description: |
-      Use the existing research tools — do not invent new ones:
-        - tool_research_method task="<the capability>" for the algorithm,
-          technique, or published method behind the gap.
-        - tool_research_tool task="<capability>" language="<lang|any>" for
-          libraries/frameworks/reference implementations that embody it.
-        - tool_search / tool_web_scrape for papers, repos, blog posts, and
-          benchmarks; tool_literature_search_and_save when correctness will
-          depend on matching a published method exactly.
+- id: scout_candidates
+  name: Scout the external landscape
+  description: |
+    Use the existing research tools — do not invent new ones:
+      - tool_search task="<the capability>" for the algorithm,
+        technique, or published method behind the gap.
+      - tool_search task="<capability>" language="<lang|any>" for
+        libraries/frameworks/reference implementations that embody it.
+      - tool_search (mode=scrape or literature) for papers, repos, blog posts, and
+        benchmarks; tool_search (mode=literature) when correctness will
+        depend on matching a published method exactly.
 
-      For each promising candidate capture, in a candidates table (in
-      spec/design.md or decisions/):
-        - WHAT it is (method/paper/repo) and its canonical source (DOI, repo
-          URL, docs).
-        - The CLAIM — what it says it does, in terms of your gap.
-        - Provenance + maturity signals: who maintains it, release/commit
-          cadence read against its own niche, issue responsiveness, whether
-          the field cites it as canonical. (A quiet, finished library is not
-          the same as an abandoned one — judge against the subfield.)
-        - LICENCE and its compatibility with how THIS tool will ship. An
-          incompatible licence is a hard reject regardless of quality.
-        - The integration cost: drop-in dependency, port/adapt, or
-          reimplement-from-paper — each is a different amount of risk.
+    For each promising candidate capture, in a candidates table (in
+    spec/design.md or decisions/):
+      - WHAT it is (method/paper/repo) and its canonical source (DOI, repo
+        URL, docs).
+      - The CLAIM — what it says it does, in terms of your gap.
+      - Provenance + maturity signals: who maintains it, release/commit
+        cadence read against its own niche, issue responsiveness, whether
+        the field cites it as canonical. (A quiet, finished library is not
+        the same as an abandoned one — judge against the subfield.)
+      - LICENCE and its compatibility with how THIS tool will ship. An
+        incompatible licence is a hard reject regardless of quality.
+      - The integration cost: drop-in dependency, port/adapt, or
+        reimplement-from-paper — each is a different amount of risk.
 
-  - id: shortlist_and_rank
-    name: Short-list and rank by expected value vs risk
-    description: |
-      Narrow to the few worth actually testing. Rank candidates by what they
-      buy you against what they cost and risk: how well the claim matches
-      the gap, maturity, licence fit, integration cost, and the blast radius
-      if it turns out wrong after you have built on it.
+- id: shortlist_and_rank
+  name: Short-list and rank by expected value vs risk
+  description: |
+    Narrow to the few worth actually testing. Rank candidates by what they
+    buy you against what they cost and risk: how well the claim matches
+    the gap, maturity, licence fit, integration cost, and the blast radius
+    if it turns out wrong after you have built on it.
 
-      Record WHY each rejected candidate lost — the rejection reasons are as
-      load-bearing as the pick, because they stop a future session from
-      re-litigating the same dead ends. Name the ONE (occasionally two)
-      candidate(s) that go forward to a spike.
+    Record WHY each rejected candidate lost — the rejection reasons are as
+    load-bearing as the pick, because they stop a future session from
+    re-litigating the same dead ends. Name the ONE (occasionally two)
+    candidate(s) that go forward to a spike.
 
-  - id: decide_scout_outcome
-    name: Decide what to do with the short-list
-    description: |
-      A scout ends in one of a few honest outcomes — do not force a "winner":
-        - A strong candidate worth testing → hand it to
-          build/integration_spike to prove before committing.
-        - Nothing external fits → record that, and route back to
-          build/spec_and_design / build/implement_iteration to build it
-          in-house (the scout was not wasted; it justified building).
-        - The gap itself is mis-framed → loop back to frame_the_gap.
+- id: decide_scout_outcome
+  name: Decide what to do with the short-list
+  description: |
+    A scout ends in one of a few honest outcomes — do not force a "winner":
+      - A strong candidate worth testing → hand it to
+        build/integration_spike to prove before committing.
+      - Nothing external fits → record that, and route back to
+        build/spec_and_design / build/implement_iteration to build it
+        in-house (the scout was not wasted; it justified building).
+      - The gap itself is mis-framed → loop back to frame_the_gap.
 
-      mem_log the outcome: the gap, the candidates weighed, the
-      pick (or the decision to build in-house), and the rejection reasons.
-      This is the durable record the build leans on.
+    mem_log the outcome: the gap, the candidates weighed, the
+    pick (or the decision to build in-house), and the rejection reasons.
+    This is the durable record the build leans on.
 
-      AUTONOMY GATE:
-        Risk: reversible + cheap — scouting and deciding what to TEST
-        commits no code; the weight sits in the spike and the integration
-        that follow, which have their own gates.
-        proceed (adaptive default, autopilot) → record the ranked short-list
-          + recommended candidate and proceed to build/integration_spike on
-          the top pick; if the honest outcome is "build in-house", route
-          back to the build loop and say so.
-        confirm first (manual / supervised) → present the short-list, the
-          recommendation, and the rejection reasons; wait for the researcher
-          to pick what gets spiked.
+    AUTONOMY GATE:
+      Risk: reversible + cheap — scouting and deciding what to TEST
+      commits no code; the weight sits in the spike and the integration
+      that follow, which have their own gates.
+      proceed (adaptive default, autopilot) → record the ranked short-list
+        + recommended candidate and proceed to build/integration_spike on
+        the top pick; if the honest outcome is "build in-house", route
+        back to the build loop and say so.
+      confirm first (manual / supervised) → present the short-list, the
+        recommendation, and the rejection reasons; wait for the researcher
+        to pick what gets spiked.
 
 expected_outputs:
-  - A candidates table with claims, provenance, licence, and integration cost (in spec/design.md or decisions/)
-  - mem_log entry recording the scout outcome and rejection reasons
+- A candidates table with claims, provenance, licence, and integration cost (in spec/design.md or decisions/)
+- mem_log entry recording the scout outcome and rejection reasons
 
 next_protocol: build/integration_spike
 next_protocol_kind: forward_default
 on_failure: guidance/scope_clarification
+intent_class: plan
+sub_intent: build_scout
+triggers:
+- is there a method for this
+- is there a library for this
+- is there a paper for this
+- how do others solve this
+- find prior art
+- prior art for this
+- can we reuse
+- research how to do this
+- find a method to
+- find an approach for
+- what's the state of the art
+- borrow or build
+- build it or borrow it
+summary: 'Scout external methods / papers / code worth adopting for a build: frame the capability gap, collect candidates with provenance + licence + integration cost, rank by value vs risk, and decide what to spike (or to build in-house).'
+token_estimate: 1500
+decomposition:
+- protocol: build/method_scouting
+  purpose: Frame the gap, scout candidates, rank by value vs risk, decide what gets spiked vs built in-house.
+- tool: tool_search
+  purpose: Surface the algorithm / technique / published method behind the gap.
+- tool: tool_search
+  purpose: Surface candidate libraries / frameworks / reference implementations.
+- tool: mem_log
+  purpose: Record the scout outcome, the pick, and the rejection reasons.

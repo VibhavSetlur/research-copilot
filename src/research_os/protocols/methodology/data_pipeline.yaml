@@ -1,0 +1,18 @@
+id: data_pipeline
+tier: 'plan'
+name: Data Pipeline
+version: '5.0.0'
+schema_version: '3.0'
+redirect_to: methodology/data_management_plan
+summary: "Compatibility shim for data pipeline requests."
+intent_class: methodology
+sub_intent: workflow
+tags:
+- compatibility
+- legacy
+- redirect
+scope_tags:
+  domain: [any]
+  audience: [researcher, naive_ai]
+  workflow_shape: [experiment_pipeline]
+last_reviewed: '2026-07-08'

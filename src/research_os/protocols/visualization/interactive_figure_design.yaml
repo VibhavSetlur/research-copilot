@@ -1,16 +1,16 @@
 id: interactive_figure_design
 tier: 'synthesize'
 name: Interactive Figure Design (per-figure, NOT dashboard-scale)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - visualization/interactive_dashboard_design   # when the interactivity spans many figures
-  - visualization/figure_guidelines              # the static companion this figure must also ship
+- visualization/interactive_dashboard_design     # when the interactivity spans many figures
+- visualization/figure_guidelines                # the static companion this figure must also ship
 description: |
   When a SINGLE figure is best served by interactivity — hover-to-
   identify a gene in a 5,000-point volcano, brush-to-select cells on
@@ -58,152 +58,170 @@ trigger: |
       deliverable.
 
 prerequisites:
-  - The underlying static figure has been drafted (matplotlib /
-    ggplot2 / Altair). The interactive version translates the same
-    encoding to an interactive library; it does not re-invent the
-    chart from scratch.
-  - The figure's `<name>.caption.md` exists — interactivity adds an
-    affordance, not a meaning.
+- The underlying static figure has been drafted (matplotlib / ggplot2 / Altair). The interactive version translates the same encoding to an interactive library; it does not re-invent the chart from scratch.
+- The figure's `<name>.caption.md` exists — interactivity adds an affordance, not a meaning.
 
 steps:
-  - id: pick_library
-    name: Pick the interactive library that matches the data + audience
-    description: |
-      Choose the library from THREE dimensions, not a default:
-        - the static stack the figure already lives in (translate
-          the same encoding rather than re-invent the chart);
-        - the interactions the figure needs (cross-filter + brush
-          favour grammar-of-graphics stacks; physics-drag favours
-          network stacks);
-        - whether the field has a canonical interactive tool for
-          this data type — surface it via tool_research_tool rather
-          than reaching for the most familiar one.
+- id: pick_library
+  name: Pick the interactive library that matches the data + audience
+  description: |
+    Choose the library from THREE dimensions, not a default:
+      - the static stack the figure already lives in (translate
+        the same encoding rather than re-invent the chart);
+      - the interactions the figure needs (cross-filter + brush
+        favour grammar-of-graphics stacks; physics-drag favours
+        network stacks);
+      - whether the field has a canonical interactive tool for
+        this data type — surface it via tool_search rather
+        than reaching for the most familiar one.
 
-      Illustrative examples (a vocabulary, not auto-picks):
-        - matplotlib already written → mpld3 (drop-in) or plotly
-          (`write_html`) when tooltips need formatted fields.
-        - grammar-of-graphics statistical figures → Altair /
-          Vega-Lite (brush + cross-filter + selection first-class).
-        - genomics / single-cell → the field's interactive stack
-          (scanpy / cellxgene for UMAPs, igv.js for genomic tracks,
-          a glimma-style companion for an otherwise-static volcano).
-        - networks → pyvis for quick HTML; vis.js / cytoscape.js
-          for more control.
-        - geo → folium / leafmap (Leaflet) or kepler.gl at scale.
-        - web-native publishable artefact → D3 / Observable Plot
-          (steepest curve, most flexible).
+    Illustrative examples (a vocabulary, not auto-picks):
+      - matplotlib already written → mpld3 (drop-in) or plotly
+        (`write_html`) when tooltips need formatted fields.
+      - grammar-of-graphics statistical figures → Altair /
+        Vega-Lite (brush + cross-filter + selection first-class).
+      - genomics / single-cell → the field's interactive stack
+        (scanpy / cellxgene for UMAPs, igv.js for genomic tracks,
+        a glimma-style companion for an otherwise-static volcano).
+      - networks → pyvis for quick HTML; vis.js / cytoscape.js
+        for more control.
+      - geo → folium / leafmap (Leaflet) or kepler.gl at scale.
+      - web-native publishable artefact → D3 / Observable Plot
+        (steepest curve, most flexible).
 
-      Pin the chosen library in `environment/requirements.txt` so the
-      deliverable replays after a re-clone.
+    Pin the chosen library in `environment/requirements.txt` so the
+    deliverable replays after a re-clone.
 
-  - id: design_the_interactions
-    name: Decide WHICH interactions, not "make it interactive"
-    description: |
-      Map interactions to questions the reader will ask:
+- id: design_the_interactions
+  name: Decide WHICH interactions, not "make it interactive"
+  description: |
+    Map interactions to questions the reader will ask:
 
-      | Reader question | Affordance |
-      |---|---|
-      | "What's this point?" | Hover tooltip with gene symbol + log2FC + padj |
-      | "Show me only the significant ones" | Brush over volcano + cross-filter table |
-      | "What does this cluster look like in 3D?" | 3D scatter with rotate (only when 3D adds info) |
-      | "Zoom into the dense region" | Pan + zoom; auto-rebin density |
-      | "Filter to one condition" | Legend click to hide/show series |
-      | "Drill into a row of this heatmap" | Click → modal with that row's full vector |
-      | "Lasso a subset and download the IDs" | Selection → CSV export |
+    | Reader question | Affordance |
+    |---|---|
+    | "What's this point?" | Hover tooltip with gene symbol + log2FC + padj |
+    | "Show me only the significant ones" | Brush over volcano + cross-filter table |
+    | "What does this cluster look like in 3D?" | 3D scatter with rotate (only when 3D adds info) |
+    | "Zoom into the dense region" | Pan + zoom; auto-rebin density |
+    | "Filter to one condition" | Legend click to hide/show series |
+    | "Drill into a row of this heatmap" | Click → modal with that row's full vector |
+    | "Lasso a subset and download the IDs" | Selection → CSV export |
 
-      Each interaction MUST answer a specific reader question. If
-      you can't name the question, don't add the interaction.
+    Each interaction MUST answer a specific reader question. If
+    you can't name the question, don't add the interaction.
 
-  - id: tooltips_are_the_baseline
-    name: Tooltips are the floor, not an upgrade
-    description: |
-      Every interactive figure MUST have informative hover tooltips.
-      What goes in a tooltip:
-        - Identifier (gene symbol / sample ID / feature name)
-        - The value being encoded (log2FC, padj, expression)
-        - One disambiguator (cell line, treatment, cohort)
-      What does NOT belong in a tooltip:
-        - Raw row indices.
-        - Pre-transformed strings the reader needs to mentally parse.
-        - Long sentences (move those to a side panel).
+- id: tooltips_are_the_baseline
+  name: Tooltips are the floor, not an upgrade
+  description: |
+    Every interactive figure MUST have informative hover tooltips.
+    What goes in a tooltip:
+      - Identifier (gene symbol / sample ID / feature name)
+      - The value being encoded (log2FC, padj, expression)
+      - One disambiguator (cell line, treatment, cohort)
+    What does NOT belong in a tooltip:
+      - Raw row indices.
+      - Pre-transformed strings the reader needs to mentally parse.
+      - Long sentences (move those to a side panel).
 
-      Plotly format strings + Altair `tooltip=[...]` make this cheap.
+    Plotly format strings + Altair `tooltip=[...]` make this cheap.
 
-  - id: write_the_static_companion_first
-    name: Static fallback is REQUIRED, not optional
-    description: |
-      Save `<NN>_<descriptor>.png` and `<NN>_<descriptor>.svg`
-      alongside `<NN>_<descriptor>.html`. The paper PDF embeds the
-      static; the dashboard / supplementary material links the HTML.
-      If you only ship the HTML, you've broken the paper pipeline.
+- id: write_the_static_companion_first
+  name: Static fallback is REQUIRED, not optional
+  description: |
+    Save `<NN>_<descriptor>.png` and `<NN>_<descriptor>.svg`
+    alongside `<NN>_<descriptor>.html`. The paper PDF embeds the
+    static; the dashboard / supplementary material links the HTML.
+    If you only ship the HTML, you've broken the paper pipeline.
 
-      The protocol convention: same stem, three suffixes.
+    The protocol convention: same stem, three suffixes.
 
-  - id: write_caption_and_summary
-    name: Caption + summary describe BOTH the static + interactive forms
-    description: |
-      `<NN>_<descriptor>.caption.md` — technical caption mentions the
-      static figure's encoding AND notes "interactive companion at
-      `<NN>_<descriptor>.html` supports hover-tooltip + brush
-      selection".
-      `<NN>_<descriptor>.summary.md` — plain-English includes "click
-      and drag to explore" if the audience will see the HTML.
+- id: write_caption_and_summary
+  name: Caption + summary describe BOTH the static + interactive forms
+  description: |
+    `<NN>_<descriptor>.caption.md` — technical caption mentions the
+    static figure's encoding AND notes "interactive companion at
+    `<NN>_<descriptor>.html` supports hover-tooltip + brush
+    selection".
+    `<NN>_<descriptor>.summary.md` — plain-English includes "click
+    and drag to explore" if the audience will see the HTML.
 
-  - id: reproducibility_block
-    name: Reproducibility block in the script
-    description: |
-      The script that emits the .html should also print its env to
-      stderr (library versions, Python/R version, RNG seed if any
-      stochastic layout). HTML deliverables don't carry their
-      dependencies inline; the script does.
+- id: reproducibility_block
+  name: Reproducibility block in the script
+  description: |
+    The script that emits the .html should also print its env to
+    stderr (library versions, Python/R version, RNG seed if any
+    stochastic layout). HTML deliverables don't carry their
+    dependencies inline; the script does.
 
-  - id: ship_offline_capable_html
-    name: Ship offline-capable HTML (no CDN dependency)
-    description: |
-      Reviewers behind firewalls + archival readers years from now must
-      be able to open the file with NO network. Use the inline-JS
-      option, not the CDN one.
+- id: ship_offline_capable_html
+  name: Ship offline-capable HTML (no CDN dependency)
+  description: |
+    Reviewers behind firewalls + archival readers years from now must
+    be able to open the file with NO network. Use the inline-JS
+    option, not the CDN one.
 
-      Plotly (Python): `fig.write_html(path, include_plotlyjs='inline')`
-        (NOT 'cdn'; NOT True without an explicit value).
-      Bokeh:  `bokeh.io.output_file(path, mode='inline')`.
-      Altair: `chart.save(path, embed_options={'actions': False})`
-              + ensure `usermeta={'embedOptions': {'mode': 'vega-lite',
-              'externalUrlPathPrefix': ''}}` is unset.
+    Plotly (Python): `fig.write_html(path, include_plotlyjs='inline')`
+      (NOT 'cdn'; NOT True without an explicit value).
+    Bokeh:  `bokeh.io.output_file(path, mode='inline')`.
+    Altair: `chart.save(path, embed_options={'actions': False})`
+            + ensure `usermeta={'embedOptions': {'mode': 'vega-lite',
+            'externalUrlPathPrefix': ''}}` is unset.
 
-      The file will be ~2-4 MB larger but it WORKS offline. Worth it.
+    The file will be ~2-4 MB larger but it WORKS offline. Worth it.
 
-  - id: audit
-    name: Audit the static (gate) + flag missing interactive companions
-    description: |
-      `tool_audit(scope='step', dimension='figure_full') filepath="<NN>_<descriptor>.png"` —
-      the static is what the figure-quality gate checks. The HTML is
-      a companion artefact; it doesn't pass through that gate.
+- id: audit
+  name: Audit the static (gate) + flag missing interactive companions
+  description: |
+    `tool_audit(scope='step', dimension='figure_full') filepath="<NN>_<descriptor>.png"` —
+    the static is what the figure-quality gate checks. The HTML is
+    a companion artefact; it doesn't pass through that gate.
 
-      `tool_audit(scope='step', dimension='figure_interactivity')` — separately enforces that
-      figures which NEED an interactive companion actually have one.
-      The AI authors the HTML companion directly when writing the
-      plotting script — the script saves both the PNG and a Vega-Lite
-      / vis-network HTML next to it. Per-figure opt-out:
-        <!-- ro:interactive-not-applicable, reason: ... -->
-      in the figure's .caption.md sidecar.
+    `tool_audit(scope='step', dimension='figure_interactivity')` — separately enforces that
+    figures which NEED an interactive companion actually have one.
+    The AI authors the HTML companion directly when writing the
+    plotting script — the script saves both the PNG and a Vega-Lite
+    / vis-network HTML next to it. Per-figure opt-out:
+      <!-- ro:interactive-not-applicable, reason: ... -->
+    in the figure's .caption.md sidecar.
 
-      For dashboards that embed interactive figures, the offline
-      bundles in src/research_os/assets/js/ are available for the AI
-      to copy inline.
+    For dashboards that embed interactive figures, the offline
+    bundles in src/research_os/assets/js/ are available for the AI
+    to copy inline.
 
 expected_outputs:
-  - workspace/*/outputs/figures/<NN>_<descriptor>.png
-  - workspace/*/outputs/figures/<NN>_<descriptor>.svg
-  - workspace/*/outputs/figures/<NN>_<descriptor>.html
-  - workspace/*/outputs/figures/<NN>_<descriptor>.caption.md
-  - workspace/*/outputs/figures/<NN>_<descriptor>.summary.md
+- workspace/*/outputs/figures/<NN>_<descriptor>.png
+- workspace/*/outputs/figures/<NN>_<descriptor>.svg
+- workspace/*/outputs/figures/<NN>_<descriptor>.html
+- workspace/*/outputs/figures/<NN>_<descriptor>.caption.md
+- workspace/*/outputs/figures/<NN>_<descriptor>.summary.md
 
 quality_bar:
   every_interactive_has_static_fallback: true
   every_hover_tooltip_answers_a_reader_question: true
   pinned_library_in_requirements_txt: true
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: visualization/figure_guidelines
+intent_class: synthesize
+sub_intent: interactive
+triggers:
+- interactive figure
+- interactive plot
+- make this plot interactive
+- add hover tooltips
+- interactive volcano
+- interactive umap
+- interactive scatter
+- interactive heatmap
+- interactive network
+- plotly version
+- altair version
+- vega-lite figure
+- let me hover
+- let me brush
+- let me zoom
+- explore the points
+- click to filter
+- html companion to figure
+summary: Design ONE interactive figure (hover, brush, zoom, lasso) as a companion to a static PNG/SVG. Plotly / Altair / mpld3 / pyvis / igv.js / cellxgene / glimma — pick by data type. Static fallback REQUIRED.

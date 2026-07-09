@@ -1,7 +1,7 @@
 id: build_test_fix_loop
 name: Build-Test-Fix Loop (with cycle-time tracking)
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering]
   audience: [researcher]
@@ -40,166 +40,155 @@ trigger: |
   development".
 
 prerequisites:
-  - A buildable target exists (Makefile, lakefile, package.json,
-    pyproject.toml, or equivalent) with a single command that
-    produces a deterministic artifact.
-  - A test suite exists that can be invoked with a single command
-    and returns a machine-readable pass/fail summary.
-  - workspace/engineering/cycles/ directory exists OR will be
-    created by the first cycle's mem_log call.
+- A buildable target exists (Makefile, lakefile, package.json, pyproject.toml, or equivalent) with a single command that produces a deterministic artifact.
+- A test suite exists that can be invoked with a single command and returns a machine-readable pass/fail summary.
+- workspace/engineering/cycles/ directory exists OR will be created by the first cycle's mem_log call.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "A cycle without a recorded duration is not a cycle; it is
-       a vibe. Every cycle row must have all five phase timings
-       OR a documented reason a phase was skipped."
-    - "The diagnose phase is the most lied-about phase. Engineers
-       round 45 minutes of staring at a stack trace down to 'a few
-       minutes' in retrospect. Use sys_path timestamps, not memory."
-    - "Three consecutive cycles failing the same test is not bad
-       luck; it is a signal that the test or the design is wrong.
-       Stop iterating + escalate to test_failure_causation."
-    - "Cycle time is a leading indicator. If median cycle time
-       doubles week-over-week without a corresponding scope change,
-       something is broken in the loop, not in the code."
-    - "The loop terminates on green tests, not on 'I am tired'.
-       Fatigue-driven termination produces the worst follow-on
-       cycles the next morning."
+  - "A cycle without a recorded duration is not a cycle; it is a vibe. Every cycle row must have all five phase timings OR a documented reason a phase was skipped."
+  - "The diagnose phase is the most lied-about phase. Engineers round 45 minutes of staring at a stack trace down to 'a few minutes' in retrospect. Use sys_path timestamps, not memory."
+  - "Three consecutive cycles failing the same test is not bad luck; it is a signal that the test or the design is wrong. Stop iterating + escalate to test_failure_causation."
+  - "Cycle time is a leading indicator. If median cycle time doubles week-over-week without a corresponding scope change, something is broken in the loop, not in the code."
+  - "The loop terminates on green tests, not on 'I am tired'. Fatigue-driven termination produces the worst follow-on cycles the next morning."
 
 quality_bar:
   cycle_log_path: "workspace/engineering/cycles/log.csv"
   required_phase_timings:
-    - build_s
-    - test_s
-    - diagnose_s
-    - fix_s
-    - rebuild_s
+  - build_s
+  - test_s
+  - diagnose_s
+  - fix_s
+  - rebuild_s
   diagnose_dominance_threshold_pct: 40
-  diagnose_dominance_rationale: "Above 40% the loop is no longer
-    build-test-fix; it is debug-driven development. Trigger
-    test_failure_causation to localize the root cause before
-    spending more cycles."
+  diagnose_dominance_rationale: "Above 40% the loop is no longer build-test-fix; it is debug-driven development. Trigger test_failure_causation to localize the root cause before spending more cycles."
   fix_dominance_threshold_pct: 50
-  fix_dominance_rationale: "Above 50% the design is fighting the
-    fix. Patching further compounds technical debt; trigger
-    design_iteration to revisit the design first."
+  fix_dominance_rationale: "Above 50% the design is fighting the fix. Patching further compounds technical debt; trigger design_iteration to revisit the design first."
   consecutive_same_failure_limit: 3
-  consecutive_same_failure_rationale: "Three cycles failing the
-    same test means the engineer's mental model of the failure
-    is wrong. Continuing to patch is wasted time."
+  consecutive_same_failure_rationale: "Three cycles failing the same test means the engineer's mental model of the failure is wrong. Continuing to patch is wasted time."
   cycle_time_drift_window_cycles: 10
   cycle_time_drift_alert_factor: 2.0
-  cycle_time_drift_rationale: "Median cycle time 2x the trailing
-    10-cycle median is a regression in the development loop
-    itself — investigate before continuing."
+  cycle_time_drift_rationale: "Median cycle time 2x the trailing 10-cycle median is a regression in the development loop itself — investigate before continuing."
 
 steps:
-  - id: declare_target_and_baseline
-    name: Declare the target + record baseline cycle time
-    description: |
-      State the target: which test(s) must turn green, which
-      artifact must build, which behaviour must be observable.
-      Vague targets ("make it work") produce cycles that never
-      terminate.
-      Record the baseline: run one full cycle end-to-end before
-      any changes, log all five phase timings to
-      workspace/engineering/cycles/log.csv. The baseline is the
-      reference point for every subsequent cycle's drift check.
-      tool_search the codebase for prior cycle logs on this target
-      — if they exist, load the median + variance to compare against.
+- id: declare_target_and_baseline
+  name: Declare the target + record baseline cycle time
+  description: |
+    State the target: which test(s) must turn green, which
+    artifact must build, which behaviour must be observable.
+    Vague targets ("make it work") produce cycles that never
+    terminate.
+    Record the baseline: run one full cycle end-to-end before
+    any changes, log all five phase timings to
+    workspace/engineering/cycles/log.csv. The baseline is the
+    reference point for every subsequent cycle's drift check.
+    tool_search the codebase for prior cycle logs on this target
+    — if they exist, load the median + variance to compare against.
 
-  - id: build_phase
-    name: Build phase — produce the artifact
-    description: |
-      Invoke the build command; capture wall-clock duration as
-      build_s and exit code. A non-zero exit code terminates the
-      cycle early — log it as a build-fail cycle (test_s,
-      diagnose_s, fix_s, rebuild_s recorded as 0 OR the time spent
-      diagnosing the build failure itself).
-      If build_s has grown >2x relative to the trailing 10-cycle
-      median, pause the cycle and investigate (dependency bloat,
-      cache invalidation, accidental full rebuild). Slow builds
-      compound into slow loops; do not normalize them.
+- id: build_phase
+  name: Build phase — produce the artifact
+  description: |
+    Invoke the build command; capture wall-clock duration as
+    build_s and exit code. A non-zero exit code terminates the
+    cycle early — log it as a build-fail cycle (test_s,
+    diagnose_s, fix_s, rebuild_s recorded as 0 OR the time spent
+    diagnosing the build failure itself).
+    If build_s has grown >2x relative to the trailing 10-cycle
+    median, pause the cycle and investigate (dependency bloat,
+    cache invalidation, accidental full rebuild). Slow builds
+    compound into slow loops; do not normalize them.
 
-  - id: test_phase
-    name: Test phase — run the suite + capture failures
-    description: |
-      Invoke the test command; capture wall-clock duration as
-      test_s and the machine-readable pass/fail summary. Log
-      which specific tests failed (test_id list) to the cycle
-      row — not the full output. Full output goes to
-      workspace/engineering/cycles/<cycle_id>/test_output.txt
-      via mem_log for later inspection.
-      Check the consecutive_same_failure counter: if the failing
-      test_id is identical to the prior 2 cycles' failures,
-      escalate to test_failure_causation BEFORE the diagnose
-      phase begins. Three-in-a-row is the bright line.
+- id: test_phase
+  name: Test phase — run the suite + capture failures
+  description: |
+    Invoke the test command; capture wall-clock duration as
+    test_s and the machine-readable pass/fail summary. Log
+    which specific tests failed (test_id list) to the cycle
+    row — not the full output. Full output goes to
+    workspace/engineering/cycles/<cycle_id>/test_output.txt
+    via mem_log for later inspection.
+    Check the consecutive_same_failure counter: if the failing
+    test_id is identical to the prior 2 cycles' failures,
+    escalate to test_failure_causation BEFORE the diagnose
+    phase begins. Three-in-a-row is the bright line.
 
-  - id: diagnose_phase
-    name: Diagnose phase — localize the failure
-    description: |
-      Time-box this explicitly. Start a timer when reading the
-      test output; stop it when you can articulate the failing
-      assertion + the suspected code location in one sentence.
-      That elapsed wall-clock IS diagnose_s.
-      Common diagnose-phase anti-patterns to flag in the cycle
-      row: speculative debugging without reading the error
-      message; modifying multiple files before re-running tests;
-      adding logging without forming a hypothesis first.
-      If diagnose_s exceeds 40% of the prior cycle's total
-      duration, stop + trigger test_failure_causation. Do not
-      muscle through.
+- id: diagnose_phase
+  name: Diagnose phase — localize the failure
+  description: |
+    Time-box this explicitly. Start a timer when reading the
+    test output; stop it when you can articulate the failing
+    assertion + the suspected code location in one sentence.
+    That elapsed wall-clock IS diagnose_s.
+    Common diagnose-phase anti-patterns to flag in the cycle
+    row: speculative debugging without reading the error
+    message; modifying multiple files before re-running tests;
+    adding logging without forming a hypothesis first.
+    If diagnose_s exceeds 40% of the prior cycle's total
+    duration, stop + trigger test_failure_causation. Do not
+    muscle through.
 
-  - id: fix_phase
-    name: Fix phase — make the minimum change
-    description: |
-      Make the smallest change that addresses the diagnosed root
-      cause. Log fix_s as wall-clock from first edit to last edit
-      before rebuild. Count fix attempts (edits per failure) —
-      if attempts >2 for the same test failure, the diagnosis was
-      wrong; return to the diagnose phase rather than continuing
-      to patch.
-      If the minimum change requires modifying >3 files OR adding
-      >50 lines of code, the fix is probably a design change in
-      disguise. Trigger design_iteration to evaluate whether the
-      design itself needs revision before proceeding.
+- id: fix_phase
+  name: Fix phase — make the minimum change
+  description: |
+    Make the smallest change that addresses the diagnosed root
+    cause. Log fix_s as wall-clock from first edit to last edit
+    before rebuild. Count fix attempts (edits per failure) —
+    if attempts >2 for the same test failure, the diagnosis was
+    wrong; return to the diagnose phase rather than continuing
+    to patch.
+    If the minimum change requires modifying >3 files OR adding
+    >50 lines of code, the fix is probably a design change in
+    disguise. Trigger design_iteration to evaluate whether the
+    design itself needs revision before proceeding.
 
-  - id: rebuild_and_close_cycle
-    name: Rebuild + log the closed cycle
-    description: |
-      Re-run build + test to confirm the fix. Log rebuild_s as
-      the rebuild's wall-clock duration. The cycle is "closed
-      green" if rebuild's tests pass, "closed red" if they fail.
-      A closed-red cycle is NOT a failure — it is a data point
-      that the diagnosis or fix was wrong. Start the next cycle
-      immediately with the new failure information.
-      Write the complete cycle row to
-      workspace/engineering/cycles/log.csv via mem_log.
-      Recompute the trailing 10-cycle median for build_s,
-      test_s, diagnose_s, fix_s, total_s — these become the
-      drift reference for the next cycle.
+- id: rebuild_and_close_cycle
+  name: Rebuild + log the closed cycle
+  description: |
+    Re-run build + test to confirm the fix. Log rebuild_s as
+    the rebuild's wall-clock duration. The cycle is "closed
+    green" if rebuild's tests pass, "closed red" if they fail.
+    A closed-red cycle is NOT a failure — it is a data point
+    that the diagnosis or fix was wrong. Start the next cycle
+    immediately with the new failure information.
+    Write the complete cycle row to
+    workspace/engineering/cycles/log.csv via mem_log.
+    Recompute the trailing 10-cycle median for build_s,
+    test_s, diagnose_s, fix_s, total_s — these become the
+    drift reference for the next cycle.
 
-  - id: review_history_periodically
-    name: Review the cycle history every 10 cycles
-    description: |
-      Every 10 closed cycles, render the cycle history (table OR
-      timeseries plot) via the pack's viz tools. Look for:
-      cycle-time trend (flat = healthy, climbing = process
-      regression); phase distribution shift (diagnose share
-      growing = test localization is degrading); repeat failure
-      clusters (same test failing across non-adjacent cycles =
-      flaky test OR insufficient root-cause fix).
-      Write the review to workspace/engineering/cycles/review_<n>.md.
-      The review is the artifact that surfaces bottlenecks the
-      engineer cannot see from inside a single cycle.
+- id: review_history_periodically
+  name: Review the cycle history every 10 cycles
+  description: |
+    Every 10 closed cycles, render the cycle history (table OR
+    timeseries plot) via the pack's viz tools. Look for:
+    cycle-time trend (flat = healthy, climbing = process
+    regression); phase distribution shift (diagnose share
+    growing = test localization is degrading); repeat failure
+    clusters (same test failing across non-adjacent cycles =
+    flaky test OR insufficient root-cause fix).
+    Write the review to workspace/engineering/cycles/review_<n>.md.
+    The review is the artifact that surfaces bottlenecks the
+    engineer cannot see from inside a single cycle.
 
 expected_outputs:
-  - workspace/engineering/cycles/log.csv
-  - workspace/engineering/cycles/<cycle_id>/test_output.txt
-  - workspace/engineering/cycles/review_<n>.md
-  - workspace/engineering/cycles/baseline.md
+- workspace/engineering/cycles/log.csv
+- workspace/engineering/cycles/<cycle_id>/test_output.txt
+- workspace/engineering/cycles/review_<n>.md
+- workspace/engineering/cycles/baseline.md
 
 next_protocol: engineering/test/test_failure_causation
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: execute
+sub_intent: new_experiment
+triggers:
+- build test fix
+- build-test-fix
+- iterative test cycle
+- cycle time tracking
+summary: Iterative cycle protocol with cycle-time tracking (build → test → diagnose → fix → re-build).
+token_estimate: 1400
+decomposition:
+- protocol: engineering/test/build_test_fix_loop
+  purpose: Run + log a single iteration of the loop.

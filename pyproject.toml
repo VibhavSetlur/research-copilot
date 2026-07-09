@@ -4,21 +4,20 @@ build-backend = "hatchling.build"
 
 [project]
 name = "research-os"
-version = "4.4.6"
+version = "5.0.0"
 description = "MCP server for reproducible, grounded, citation-verified research — sub-task pipelines, provenance sidecars, publication-grade visualisation, grounded reasoning, and self-tested dashboards."
 readme = "README.md"
 authors = [
     {name = "Vibhav", email = "vibhav.setlur@gmail.com"}
 ]
 license = {text = "MIT"}
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 keywords = ["research", "mcp", "model-context-protocol", "reproducible-research", "academic"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering",
@@ -39,181 +38,39 @@ dependencies = [
     "httpx>=0.25",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
-    "pandas>=1.5",
-    "numpy>=1.23",
-    # Full research experience ships in the base install — `pip install
-    # research-os` is all most users ever need. These were the old [all]
-    # extra (web / literature / viz / audit / ml / notebook / semantic /
-    # data); folding them into base means analysis, figures, literature
-    # search, semantic routing, and Parquet/Excel IO all work out of the
-    # box. System-runtime features (R, Julia, Docker) stay opt-in extras
-    # below because they need their own non-Python runtimes.
-    "firecrawl-py",
-    "beautifulsoup4",
-    "tenacity",
-    "trafilatura",
-    "metapub",
-    "semanticscholar",
-    "matplotlib",
-    "seaborn",
-    "plotly",
-    "Pillow",
-    "scikit-learn",
-    "xgboost",
-    "shap",
-    "jupyter",
-    "nbconvert",
-    "pyarrow",
-    "openpyxl",
-    "xlrd",
-    "fastembed>=0.4",
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "filelock>=3.12",
+    "click>=8.1",
+    "rich>=13.0",
+    "orjson>=3.9",
+    "httpcore>=1.0",
+    "msgpack>=1.0",
+    "typing-extensions>=4.8",
 ]
-
-[project.urls]
-Homepage = "https://github.com/VibhavSetlur/Research-OS"
-Repository = "https://github.com/VibhavSetlur/Research-OS"
-Issues = "https://github.com/VibhavSetlur/Research-OS/issues"
-Changelog = "https://github.com/VibhavSetlur/Research-OS/blob/main/CHANGELOG.md"
-Documentation = "https://github.com/VibhavSetlur/Research-OS/tree/main/docs"
 
 [project.optional-dependencies]
-# The full research experience now ships in the BASE install — `pip install
-# research-os` is all you need. The per-feature extras below are kept as
-# no-op back-compat aliases so existing `research-os[web]` / `research-os[all]`
-# install lines keep working; they install nothing extra. System-runtime
-# features (R / Julia / Docker) remain real opt-in extras because they need
-# their own non-Python runtimes.
-web = []
-literature = []
-viz = []
-audit = []
-ml = []
-notebook = []
-data = []
-semantic = []
-execution = ["docker"]
-# v4 multi-protocol gateway daemon (preview). The serving stack is
-# imported LAZILY by research_os.daemon — core stays importable without
-# these. Phase 0 (skeleton + 'daemon status') needs none of them; they
-# land as the gateway (Phase 2) + dashboard (Phase 5) are built.
-daemon = ["starlette", "uvicorn", "httpx", "sse-starlette"]
-r = ["rpy2"]
-julia = ["julia"]
-# Semantic routing now ships in the base install (fastembed). This extra is
-# a no-op back-compat alias; the pre-built protocol embeddings ship in the
-# wheel and the local ONNX embedder is a base dependency.
-# (semantic = [] is declared above with the other no-op aliases.)
-
-# Domain packs — these extras are no-op placeholders today (the packs
-# are bundled with the core wheel and always loaded; nothing extra is
-# installed by `pip install research-os[<pack>]`). The names are
-# reserved for a future PyPI split into separate research-os-<pack>
-# packages.
-humanities = []
-qualitative = []
-theory_math = []
-wet_lab = []
-engineering = []
-# Convenience meta-extra — installs every domain pack at once.
-all_packs = ["research-os[humanities,qualitative,theory_math,wet_lab,engineering]"]
-
-# Infrastructure adapters — these extras are no-op placeholders today
-# (the adapters are bundled with the core wheel and always loaded;
-# `pip install research-os[<adapter>]` installs nothing extra). The
-# names are reserved for a future PyPI split. The adapters themselves
-# degrade gracefully when their optional system deps (snakemake,
-# nextflow, synapseclient, etc.) are absent.
-slurm = []
-snakemake = []
-nextflow = []
-cytoscape = []
-redcap = []
-synapse = []
-mlflow = []
-zenodo = []
-all_adapters = ["research-os[slurm,snakemake,nextflow,cytoscape,redcap,synapse,mlflow,zenodo]"]
-
-# Typst PDF compilation — no Python deps; the user installs the `typst`
-# CLI on their system. The extra exists so `pip install research-os[typst_compile]`
-# can serve as an opt-in marker and as a hook for later auxiliary tooling.
-typst_compile = []
-# Headless-browser print-stylesheet audit (opt-in; pulls a Chromium download).
-print_audit = ["pyppeteer>=2.0"]
-# WCAG contrast-ratio helper for the dashboard accessibility audit.
-contrast_audit = ["wcag-contrast-ratio>=0.9"]
-# Optional pyvis network rendering used as a fallback by
-# tool_figure_interactive_autogen when a .graphml is present. The
-# vendored vis-network bundle is the offline path; pyvis is offered
-# when the researcher wants Python-side helper APIs.
-interactive_figures = ["pyvis>=0.3"]
-# Story-mode math rendering. No Python deps today — the extra is a
-# marker so researcher_config.dashboard.story_math_enabled has
-# something to gate on, and so later math helpers (MathJax bundle
-# updates, KaTeX pre-rendering) can land here without breaking users
-# who only need the default story rendering.
-story_math = []
-
-# Shell tab-completion via argcomplete. Optional — `research-os completion`
-# falls back to a minimal hand-rolled script when this isn't installed.
-completion = ["argcomplete>=3.0"]
-
-# Developer extras
+ci = [
+    "ruff>=0.6",
+    "pytest>=8.0",
+    "build>=1.0",
+]
 dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "ruff>=0.4",
-    "mypy>=1.0",
-    "argcomplete>=3.0",
+    "ruff>=0.6",
+    "pytest>=8.0",
+    "build>=1.0",
 ]
 
-# "all" is now a no-op back-compat alias — the full Python experience ships
-# in the base install, so `pip install research-os` == `research-os[all]`.
-# Kept so existing install lines and CI invocations keep working.
-all = []
-
-# "ci" is the lean install used by GitHub Actions: enough to lint + preflight
-# + run every test (which mocks the heavy bits) WITHOUT pulling shap /
-# xgboost / jupyter (slow / large compiled deps that aren't needed for
-# the test suite itself). The build job still validates the full wheel.
-ci = ["research-os[viz,audit]"]
-
-[project.scripts]
-research-os = "research_os.cli:main"
-
-[tool.ruff]
-line-length = 100
-target-version = "py310"
-extend-exclude = ["scratch", "templates"]
-
-[tool.ruff.lint]
-# Default rules (E, F) plus a small extension. Line-length (E501) is not
-# enforced because long descriptions in TOOL_DEFINITIONS are intentional.
-select = ["E4", "E7", "E9", "F", "W6"]
-ignore = [
-    "E402",  # module-level import not at top — server.py + state_ledger.py need it
-]
-
-[tool.ruff.lint.per-file-ignores]
-"src/research_os/server.py" = ["E402"]
-"src/research_os/state/state_ledger.py" = ["E402"]
-# Phase-10 modular split: handler modules use `from .._handlers_runtime
-# import *` so each carved-out file inherits the runtime surface (envelopes,
-# logger, lazy-imported tool actions, helper funcs) without re-declaring it.
-# F403/F405 are the intended pattern here.
-"src/research_os/server/handlers/*.py" = ["F403", "F405"]
-"src/research_os/server/__init__.py" = ["F403", "F405"]
-# __init__.py re-exports legitimately import-and-export without using
-# the symbol inline. Limit F401 ignore to __init__.py so the rest of
-# the source tree can flag genuinely unused imports.
-"**/__init__.py" = ["F401"]
-"tests/**/*.py" = ["F401"]  # tests may import for side-effects (mocking)
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-norecursedirs = [".git", "templates", "__pycache__", ".venv", "venv"]
-addopts = "-q --strict-markers"
-markers = [
-    "integration: end-to-end tests that may run the CLI in a subprocess (slow)",
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/scripts",
+    "/docs",
+    "/templates",
+    "/README.md",
+    "/CHANGELOG.md",
+    "/CITATION.cff",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -233,27 +90,3 @@ packages = [
     "src/research_os_adapter_mlflow",
     "src/research_os_adapter_zenodo",
 ]
-# Force-include vendored binary assets that hatchling's default ignore
-# rules would otherwise skip. Bundled fonts (New Computer Modern, OFL
-# / GUST-licensed) eliminate Typst font-cascade warnings on systems
-# without Linux Libertine / Times installed.
-artifacts = [
-    "src/research_os/assets/fonts/*.otf",
-    "src/research_os/assets/fonts/LICENSE.txt",
-    "src/research_os/assets/fonts/README.txt",
-]
-
-[tool.hatch.build.targets.sdist]
-include = [
-    "src/",
-    "tests/",
-    "scripts/",
-    "docs/",
-    "templates/",
-    "README.md",
-    "CHANGELOG.md",
-    "LICENSE",
-    "CITATION.cff",
-    "pyproject.toml",
-]
-

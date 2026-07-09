@@ -1,16 +1,16 @@
 id: coding_scheme_development
 tier: 'plan'
 name: Coding Scheme Development (qualitative codebook)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [qualitative]
   audience: [researcher]
   workflow_shape: [interview_study]
 last_reviewed: '2026-06-16'
 see_also:
-  - methodology/inter_rater_reliability  # consumes the frozen codebook to compute agreement
-  - methodology/interview_guide_design   # the upstream collection protocol
+- methodology/inter_rater_reliability    # consumes the frozen codebook to compute agreement
+- methodology/interview_guide_design     # the upstream collection protocol
 description: |
   Before multiple coders apply a coding scheme to qualitative data
   (transcripts, field notes, open survey responses), the scheme
@@ -38,154 +38,138 @@ trigger: |
       it can compute kappa.
 
 prerequisites:
-  - Qualitative data has been collected (or at least 5-10 pilot
-    transcripts / documents exist).
-  - methodology/interview_guide_design (or equivalent collection
-    protocol) was run.
+- Qualitative data has been collected (or at least 5-10 pilot transcripts / documents exist).
+- methodology/interview_guide_design (or equivalent collection protocol) was run.
 
 editorial_voice:
   rules:
-    - "A code is a label. A code DEFINITION is what makes it
-       inter-subjective. Without a definition + an inclusion / exclusion
-       boundary + a canonical example, two coders WILL apply the
-       same label to different things."
-    - "Iteration is the point. The first-pass codebook is wrong; the
-       calibration cycle (code → disagree → discuss → revise) is
-       where the codebook becomes useful. Iterate until agreement
-       stabilises at the planned reliability bar — the number of
-       cycles is an outcome of convergence, not a number to set in
-       advance."
-    - "Deductive, inductive, hybrid — name the approach explicitly.
-       A deductive codebook starts from prior theory; an inductive
-       one emerges from open coding; a hybrid combines both. Each
-       has different defensibility in the methods section."
-    - "Mark when the codebook is FROZEN. After freeze, new codes
-       require an amendment + re-coding of prior segments under the
-       new code (or a documented decision not to). Silent codebook
-       drift breaks reliability."
+  - "A code is a label. A code DEFINITION is what makes it inter-subjective. Without a definition + an inclusion / exclusion boundary + a canonical example, two coders WILL apply the same label to different things."
+  - "Iteration is the point. The first-pass codebook is wrong; the calibration cycle (code → disagree → discuss → revise) is where the codebook becomes useful. Iterate until agreement stabilises at the planned reliability bar — the number of cycles is an outcome of convergence, not a number to set in advance."
+  - "Deductive, inductive, hybrid — name the approach explicitly. A deductive codebook starts from prior theory; an inductive one emerges from open coding; a hybrid combines both. Each has different defensibility in the methods section."
+  - "Mark when the codebook is FROZEN. After freeze, new codes require an amendment + re-coding of prior segments under the new code (or a documented decision not to). Silent codebook drift breaks reliability."
 
 steps:
-  - id: pick_approach
-    name: Pick the coding approach (inductive / deductive / hybrid)
-    description: |
-      Document the choice + rationale + citation:
+- id: pick_approach
+  name: Pick the coding approach (inductive / deductive / hybrid)
+  description: |
+    Document the choice + rationale + citation:
 
-        INDUCTIVE — codes emerge from the data via open coding;
-          no prior codebook. Fits grounded theory, thematic analysis
-          (Braun & Clarke reflexive), exploratory studies.
+      INDUCTIVE — codes emerge from the data via open coding;
+        no prior codebook. Fits grounded theory, thematic analysis
+        (Braun & Clarke reflexive), exploratory studies.
 
-        DEDUCTIVE — codes pre-specified from theory / prior
-          literature / a published codebook. Fits framework analysis,
-          theory-testing, replication studies, deductive thematic
-          analysis.
+      DEDUCTIVE — codes pre-specified from theory / prior
+        literature / a published codebook. Fits framework analysis,
+        theory-testing, replication studies, deductive thematic
+        analysis.
 
-        HYBRID — start with deductive seeds; add inductive codes as
-          they emerge. Most common in applied research.
+      HYBRID — start with deductive seeds; add inductive codes as
+        they emerge. Most common in applied research.
 
-      Write workspace/.qualitative/coding_approach.md.
+    Write workspace/.qualitative/coding_approach.md.
 
-  - id: first_pass_codebook
-    name: Build the first-pass codebook
-    description: |
-      For DEDUCTIVE / HYBRID: write the seed codes from theory /
-      prior work. For INDUCTIVE: have 1-2 coders open-code 3-5
-      transcripts and propose initial codes.
+- id: first_pass_codebook
+  name: Build the first-pass codebook
+  description: |
+    For DEDUCTIVE / HYBRID: write the seed codes from theory /
+    prior work. For INDUCTIVE: have 1-2 coders open-code 3-5
+    transcripts and propose initial codes.
 
-      Each code entry includes:
-        - SHORT NAME (one or two words, snake_case suggested)
-        - DEFINITION (1-2 sentences — what does this code capture?)
-        - INCLUSION criteria (when DOES the code apply?)
-        - EXCLUSION criteria (when does it look like the code applies
-          but doesn't — and what code applies instead?)
-        - CANONICAL EXAMPLE (verbatim segment from a pilot transcript
-          that exemplifies the code)
-        - PARENT / CHILD relationships if hierarchical
+    Each code entry includes:
+      - SHORT NAME (one or two words, snake_case suggested)
+      - DEFINITION (1-2 sentences — what does this code capture?)
+      - INCLUSION criteria (when DOES the code apply?)
+      - EXCLUSION criteria (when does it look like the code applies
+        but doesn't — and what code applies instead?)
+      - CANONICAL EXAMPLE (verbatim segment from a pilot transcript
+        that exemplifies the code)
+      - PARENT / CHILD relationships if hierarchical
 
-      Write workspace/.qualitative/codebook_v1.md as a table
-      (code | definition | inclusion | exclusion | example | parent).
-      Number each code (C001, C002…) so iterations can be tracked.
+    Write workspace/.qualitative/codebook_v1.md as a table
+    (code | definition | inclusion | exclusion | example | parent).
+    Number each code (C001, C002…) so iterations can be tracked.
 
-  - id: calibration_round_1
-    name: First calibration round (≥2 coders, ≥3 segments each)
-    description: |
-      Two or more coders independently apply the v1 codebook to a
-      shared set of 3-5 transcripts. They do NOT discuss while coding.
+- id: calibration_round_1
+  name: First calibration round (≥2 coders, ≥3 segments each)
+  description: |
+    Two or more coders independently apply the v1 codebook to a
+    shared set of 3-5 transcripts. They do NOT discuss while coding.
 
-      Compute agreement on a sample of segments (a full IRR run waits
-      for the final codebook — this is calibration, not evaluation).
-      Hand off to methodology/inter_rater_reliability for the actual
-      computation when the codebook stabilises.
+    Compute agreement on a sample of segments (a full IRR run waits
+    for the final codebook — this is calibration, not evaluation).
+    Hand off to methodology/inter_rater_reliability for the actual
+    computation when the codebook stabilises.
 
-      Compare code-by-code: where do coders agree, disagree, or apply
-      different codes to the same segment? Where do they create
-      NEW codes that aren't in the book?
+    Compare code-by-code: where do coders agree, disagree, or apply
+    different codes to the same segment? Where do they create
+    NEW codes that aren't in the book?
 
-      Write workspace/.qualitative/calibration_v1.md with the
-      disagreements + the proposed resolutions.
+    Write workspace/.qualitative/calibration_v1.md with the
+    disagreements + the proposed resolutions.
 
-  - id: revise_codebook
-    name: Revise the codebook based on calibration
-    description: |
-      For each disagreement, decide:
-        - SPLIT — the code was too broad; create two codes
-        - MERGE — two codes overlapped; consolidate
-        - CLARIFY — the definition or boundaries need rewording
-        - NEW — the data needs a code the v1 book missed
-        - RETIRE — the code never applied; remove
+- id: revise_codebook
+  name: Revise the codebook based on calibration
+  description: |
+    For each disagreement, decide:
+      - SPLIT — the code was too broad; create two codes
+      - MERGE — two codes overlapped; consolidate
+      - CLARIFY — the definition or boundaries need rewording
+      - NEW — the data needs a code the v1 book missed
+      - RETIRE — the code never applied; remove
 
-      Write codebook_v2 (and v3, v4…) with explicit version notes:
-      "v2: split C007 (engagement) into C007a (cognitive engagement)
-      and C007b (emotional engagement) because coders disagreed
-      systematically on affect."
+    Write codebook_v2 (and v3, v4…) with explicit version notes:
+    "v2: split C007 (engagement) into C007a (cognitive engagement)
+    and C007b (emotional engagement) because coders disagreed
+    systematically on affect."
 
-      Repeat calibration until agreement is consistently above the
-      planned IRR threshold (see methodology/inter_rater_reliability
-      for the threshold reasoning). Stop when agreement stabilises,
-      not after a fixed number of rounds.
+    Repeat calibration until agreement is consistently above the
+    planned IRR threshold (see methodology/inter_rater_reliability
+    for the threshold reasoning). Stop when agreement stabilises,
+    not after a fixed number of rounds.
 
-  - id: lock_codebook
-    name: Lock the codebook + freeze
-    description: |
-      When agreement is acceptable, FREEZE the codebook:
-        - copy current v<n> to workspace/.qualitative/codebook_FROZEN_<iso>.md
-        - content-hash the file
-        - log the freeze via mem_log method="qualitative
-          coding" parameters="codebook v<n> hash=<sha>"
+- id: lock_codebook
+  name: Lock the codebook + freeze
+  description: |
+    When agreement is acceptable, FREEZE the codebook:
+      - copy current v<n> to workspace/.qualitative/codebook_FROZEN_<iso>.md
+      - content-hash the file
+      - log the freeze via mem_log method="qualitative
+        coding" parameters="codebook v<n> hash=<sha>"
 
-      Document the amendment process: who can propose a new code
-      post-freeze, how it is reviewed, and whether re-coding of
-      prior segments is required.
+    Document the amendment process: who can propose a new code
+    post-freeze, how it is reviewed, and whether re-coding of
+    prior segments is required.
 
-  - id: route_to_full_coding_and_irr
-    name: Route to full corpus coding + final IRR
-    description: |
-      Once frozen, route to:
-        - methodology/inter_rater_reliability for the formal
-          reliability computation on a sample of the full corpus,
-        - qualitative_research for the actual full coding pass +
-          theme development.
+- id: route_to_full_coding_and_irr
+  name: Route to full corpus coding + final IRR
+  description: |
+    Once frozen, route to:
+      - methodology/inter_rater_reliability for the formal
+        reliability computation on a sample of the full corpus,
+      - qualitative_research for the actual full coding pass +
+        theme development.
 
-  - id: report_in_methods
-    name: Report the codebook process in Methods
-    description: |
-      The methods section must state:
-        - approach (inductive / deductive / hybrid + citation)
-        - first-pass codebook source (theory / data / both)
-        - number of coders + their training / discipline
-        - number of calibration rounds + the convergence trajectory
-        - final codebook size (# codes, # categories)
-        - codebook availability (linked in Data Availability — see
-          writing/writing_data_availability)
+- id: report_in_methods
+  name: Report the codebook process in Methods
+  description: |
+    The methods section must state:
+      - approach (inductive / deductive / hybrid + citation)
+      - first-pass codebook source (theory / data / both)
+      - number of coders + their training / discipline
+      - number of calibration rounds + the convergence trajectory
+      - final codebook size (# codes, # categories)
+      - codebook availability (linked in Data Availability — see
+        writing/writing_data_availability)
 
-      mem_log the summary so the methods.md trail is
-      intact.
+    mem_log the summary so the methods.md trail is
+    intact.
 
 expected_outputs:
-  - workspace/.qualitative/coding_approach.md
-  - workspace/.qualitative/codebook_v<n>.md          # iterated
-  - workspace/.qualitative/calibration_v<n>.md       # per round
-  - workspace/.qualitative/codebook_FROZEN_<iso>.md  # final
-  - (codebook is also published in Data Availability)
+- workspace/.qualitative/coding_approach.md
+- workspace/.qualitative/codebook_v<n>.md            # iterated
+- workspace/.qualitative/calibration_v<n>.md         # per round
+- workspace/.qualitative/codebook_FROZEN_<iso>.md    # final
+- (codebook is also published in Data Availability)
 
 quality_bar:
   approach_named_with_citation: true
@@ -199,3 +183,13 @@ quality_bar:
 next_protocol: methodology/inter_rater_reliability
 next_protocol_kind: forward_default
 on_failure: methodology/interview_guide_design
+intent_class: methodology
+sub_intent: qual_coding
+triggers:
+- codebook
+- coding scheme
+- code definitions
+- coding manual
+- develop codes
+- design codebook
+summary: Build + iterate the qualitative codebook before full coding.

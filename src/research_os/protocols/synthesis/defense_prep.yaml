@@ -1,16 +1,16 @@
 id: defense_prep
 tier: 'synthesize'
 name: Defense / Talk Q&A Prep (thesis / job talk / conference)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - synthesis/synthesis_slides        # the deck this Q&A prep wraps around
-  - synthesis/reviewer_response       # the same weak-claim hunt, for a paper
+- synthesis/synthesis_slides          # the deck this Q&A prep wraps around
+- synthesis/reviewer_response         # the same weak-claim hunt, for a paper
 description: |
   A dissertation defense, a job talk, or a high-stakes conference
   presentation is not a slides exercise — it is a Q&A exercise. The
@@ -37,194 +37,179 @@ trigger: |
     - synthesis_slides has finished + a defense follows.
 
 prerequisites:
-  - The work the talk covers is complete enough to defend (or the
-    researcher acknowledges the gap explicitly).
-  - The committee / interview panel / audience composition is at
-    least roughly known.
+- The work the talk covers is complete enough to defend (or the researcher acknowledges the gap explicitly).
+- The committee / interview panel / audience composition is at least roughly known.
 
 editorial_voice:
   rules:
-    - "The committee reads the dissertation; the audience does NOT.
-       Talks for the COMMITTEE assume background; talks for the
-       audience teach background. Don't mix the two and produce a
-       talk for nobody."
-    - "The hardest questions are about FRAMING, not method.
-       'What is the contribution?', 'How does this differ from
-       X?', 'Why is this the right question?' — these decide the
-       evaluation. Methodological questions can be answered with
-       facts; framing questions require a position."
-    - "Rehearse the 'I don't know' answer. The single most
-       reassuring move in a defense is to acknowledge a real
-       limitation calmly + state what would resolve it. The single
-       most damaging move is to bluster through a question you
-       can't answer."
-    - "Identify the THREE weakest claims in your work. The committee
-       has identified them too. The question is whether YOU have
-       a credible response, not whether they exist."
+  - "The committee reads the dissertation; the audience does NOT. Talks for the COMMITTEE assume background; talks for the audience teach background. Don't mix the two and produce a talk for nobody."
+  - "The hardest questions are about FRAMING, not method. 'What is the contribution?', 'How does this differ from X?', 'Why is this the right question?' — these decide the evaluation. Methodological questions can be answered with facts; framing questions require a position."
+  - "Rehearse the 'I don't know' answer. The single most reassuring move in a defense is to acknowledge a real limitation calmly + state what would resolve it. The single most damaging move is to bluster through a question you can't answer."
+  - "Identify the THREE weakest claims in your work. The committee has identified them too. The question is whether YOU have a credible response, not whether they exist."
 
 steps:
-  - id: characterize_audience
-    name: Characterise the audience + format
-    description: |
-      Document:
-        - FORMAT — dissertation defense (committee chair + 3-5
-          committee + open audience?), job talk (search committee +
-          department), conference (Q&A from peers), industry talk
-          (mixed-discipline)
-        - SIZE + COMPOSITION — who is in the room? what disciplines?
-          what seniority?
-        - DURATION — talk length + Q&A length + closed-session
-          length (defenses often have a private Q&A after the
-          public talk)
-        - DECISION RULE — pass / fail / revisions; offer / no offer;
-          informal feedback only
-        - KNOWN OBJECTIONS — has any committee member / interviewer
-          previously raised concerns about this work?
+- id: characterize_audience
+  name: Characterise the audience + format
+  description: |
+    Document:
+      - FORMAT — dissertation defense (committee chair + 3-5
+        committee + open audience?), job talk (search committee +
+        department), conference (Q&A from peers), industry talk
+        (mixed-discipline)
+      - SIZE + COMPOSITION — who is in the room? what disciplines?
+        what seniority?
+      - DURATION — talk length + Q&A length + closed-session
+        length (defenses often have a private Q&A after the
+        public talk)
+      - DECISION RULE — pass / fail / revisions; offer / no offer;
+        informal feedback only
+      - KNOWN OBJECTIONS — has any committee member / interviewer
+        previously raised concerns about this work?
 
-      Write workspace/.defense/audience.md.
+    Write workspace/.defense/audience.md.
 
-  - id: identify_weak_claims
-    name: Identify the weakest claims (be honest)
-    description: |
-      Audit the work for the claims most likely to be challenged —
-      enough of them that the genuinely contestable ones are all on the
-      list, not just the easy two. Look for:
-        - extrapolations beyond the sample
-        - causal language on observational data
-        - generalisations from a single dataset / domain / time period
-        - claims based on a single experiment without replication
-        - method choices a reviewer might prefer differently
-        - missing analyses someone could ask "did you check X?"
-        - novelty claims that overlap prior work
-        - any number with a wide CI being treated as a point estimate
+- id: identify_weak_claims
+  name: Identify the weakest claims (be honest)
+  description: |
+    Audit the work for the claims most likely to be challenged —
+    enough of them that the genuinely contestable ones are all on the
+    list, not just the easy two. Look for:
+      - extrapolations beyond the sample
+      - causal language on observational data
+      - generalisations from a single dataset / domain / time period
+      - claims based on a single experiment without replication
+      - method choices a reviewer might prefer differently
+      - missing analyses someone could ask "did you check X?"
+      - novelty claims that overlap prior work
+      - any number with a wide CI being treated as a point estimate
 
-      For each weak claim, write:
-        - the claim itself
-        - why it's weak
-        - the strongest credible defense
-        - the honest concession if the defense fails
-        - any follow-up work that would address it
+    For each weak claim, write:
+      - the claim itself
+      - why it's weak
+      - the strongest credible defense
+      - the honest concession if the defense fails
+      - any follow-up work that would address it
 
-      Write workspace/.defense/weak_claims.md. The committee
-      WILL find these; better that the researcher meets them with
-      a prepared answer.
+    Write workspace/.defense/weak_claims.md. The committee
+    WILL find these; better that the researcher meets them with
+    a prepared answer.
 
-  - id: enumerate_questions
-    name: Enumerate likely questions (across categories)
-    description: |
-      Draft the question bank — broad enough that every category below
-      is genuinely covered, not just the comfortable ones. Categorised:
+- id: enumerate_questions
+  name: Enumerate likely questions (across categories)
+  description: |
+    Draft the question bank — broad enough that every category below
+    is genuinely covered, not just the comfortable ones. Categorised:
 
-        FRAMING — "What is the contribution?", "Why this question
-          now?", "Who is this for?", "How does it differ from X?"
-        METHOD — "Why this method?", "Did you consider Y?",
-          "What about confounder Z?", "How robust is this to…?"
-        EVIDENCE — "Why is N=… enough?", "Why these controls?",
-          "Where else would this finding hold?"
-        LIMITATIONS — "What can't this do?", "What's the next
-          obvious extension?"
-        REPRODUCIBILITY — "Is the code / data shareable?", "Could
-          another lab replicate this?"
-        ETHICS — IRB, consent, data sources, dual-use (when
-          applicable)
-        BIG PICTURE — "Why should anyone care?", "What's the
-          headline?"
-        CAREER (for job talks) — "What's next?", "How does this
-          fit our department?", "Who would you collaborate with?"
+      FRAMING — "What is the contribution?", "Why this question
+        now?", "Who is this for?", "How does it differ from X?"
+      METHOD — "Why this method?", "Did you consider Y?",
+        "What about confounder Z?", "How robust is this to…?"
+      EVIDENCE — "Why is N=… enough?", "Why these controls?",
+        "Where else would this finding hold?"
+      LIMITATIONS — "What can't this do?", "What's the next
+        obvious extension?"
+      REPRODUCIBILITY — "Is the code / data shareable?", "Could
+        another lab replicate this?"
+      ETHICS — IRB, consent, data sources, dual-use (when
+        applicable)
+      BIG PICTURE — "Why should anyone care?", "What's the
+        headline?"
+      CAREER (for job talks) — "What's next?", "How does this
+        fit our department?", "Who would you collaborate with?"
 
-      Pull from:
-        - prior reviewer comments on the underlying papers
-        - committee members' / interviewers' own published work
-          (people ask through the lens of their expertise)
-        - tool_research_method query="<topic> common critiques" to
-          surface field-typical objections
+    Pull from:
+      - prior reviewer comments on the underlying papers
+      - committee members' / interviewers' own published work
+        (people ask through the lens of their expertise)
+      - tool_search query="<topic> common critiques" to
+        surface field-typical objections
 
-      Write workspace/.defense/questions_v<n>.md.
+    Write workspace/.defense/questions_v<n>.md.
 
-  - id: draft_answers
-    name: Draft answers (one paragraph each) + spot the gaps
-    description: |
-      For each question, draft a 2-4 sentence answer. The answer
-      structure that works for high-stakes settings:
-        1) ACKNOWLEDGE the question / its premise
-        2) STATE the answer directly (one sentence)
-        3) GIVE the supporting evidence (one or two)
-        4) NOTE the limit honestly (when relevant)
+- id: draft_answers
+  name: Draft answers (one paragraph each) + spot the gaps
+  description: |
+    For each question, draft a 2-4 sentence answer. The answer
+    structure that works for high-stakes settings:
+      1) ACKNOWLEDGE the question / its premise
+      2) STATE the answer directly (one sentence)
+      3) GIVE the supporting evidence (one or two)
+      4) NOTE the limit honestly (when relevant)
 
-      Where the answer is "I don't know", say so — and state:
-        - what would let you know,
-        - whether it has been ruled out,
-        - whether it matters for the headline claim or only at the
-          margin.
+    Where the answer is "I don't know", say so — and state:
+      - what would let you know,
+      - whether it has been ruled out,
+      - whether it matters for the headline claim or only at the
+        margin.
 
-      Mark any question where the answer is shaky — these need
-      rehearsal or work.
+    Mark any question where the answer is shaky — these need
+    rehearsal or work.
 
-  - id: rehearse_aloud
-    name: Rehearse aloud (with a peer, mock committee, or recorder)
-    description: |
-      The protocol cannot rehearse for the researcher; it can
-      prescribe the rehearsal:
+- id: rehearse_aloud
+  name: Rehearse aloud (with a peer, mock committee, or recorder)
+  description: |
+    The protocol cannot rehearse for the researcher; it can
+    prescribe the rehearsal:
 
-        - REHEARSE the full talk + Q&A at least once with a peer
-          who hasn't seen the work (catches what's confusing).
-        - REHEARSE the toughest 5-10 Q&A answers separately (the
-          aloud delivery surfaces gaps the written answer didn't).
-        - RECORD a take if no peer is available; listen back for
-          pace, fillers, and dodges.
-        - SOLICIT feedback specifically on FRAMING answers — these
-          are where peers will identify weakness.
+      - REHEARSE the full talk + Q&A at least once with a peer
+        who hasn't seen the work (catches what's confusing).
+      - REHEARSE the toughest 5-10 Q&A answers separately (the
+        aloud delivery surfaces gaps the written answer didn't).
+      - RECORD a take if no peer is available; listen back for
+        pace, fillers, and dodges.
+      - SOLICIT feedback specifically on FRAMING answers — these
+        are where peers will identify weakness.
 
-      Update workspace/.defense/questions_v<n+1>.md after each
-      rehearsal with answers that improved or new questions that
-      came up.
+    Update workspace/.defense/questions_v<n+1>.md after each
+    rehearsal with answers that improved or new questions that
+    came up.
 
-  - id: prepare_logistics
-    name: Prepare logistics (slides backup, room check, timing)
-    description: |
-      Anything that can go wrong technically should be checked:
-        - slides backed up in 2+ formats (PDF + native) in 2+
-          locations (cloud + USB + laptop)
-        - laptop adapter + clicker tested in the room
-        - timing — full run-through to confirm the talk fits with
-          margin for slow-downs
-        - water + tissues + watch
-        - dress per the local norm
+- id: prepare_logistics
+  name: Prepare logistics (slides backup, room check, timing)
+  description: |
+    Anything that can go wrong technically should be checked:
+      - slides backed up in 2+ formats (PDF + native) in 2+
+        locations (cloud + USB + laptop)
+      - laptop adapter + clicker tested in the room
+      - timing — full run-through to confirm the talk fits with
+        margin for slow-downs
+      - water + tissues + watch
+      - dress per the local norm
 
-      For dissertation defenses: confirm the committee logistics
-      with the chair (private deliberation timing, what happens
-      after pass/revisions decision).
+    For dissertation defenses: confirm the committee logistics
+    with the chair (private deliberation timing, what happens
+    after pass/revisions decision).
 
-  - id: assemble_brief
-    name: Assemble the defense brief
-    description: |
-      Final artefact for the researcher to review the night before:
-        workspace/.defense/brief.md containing:
-          - the headline claim (one sentence)
-          - the three weakest claims + best defense + honest concession
-          - the top 10 anticipated questions + 2-sentence answers
-          - the talk outline timing
-          - one "if I could only land one message" line
+- id: assemble_brief
+  name: Assemble the defense brief
+  description: |
+    Final artefact for the researcher to review the night before:
+      workspace/.defense/brief.md containing:
+        - the headline claim (one sentence)
+        - the three weakest claims + best defense + honest concession
+        - the top 10 anticipated questions + 2-sentence answers
+        - the talk outline timing
+        - one "if I could only land one message" line
 
-      Short. The brief is for nerve-calming + last-pass alignment,
-      not exhaustive reference.
+    Short. The brief is for nerve-calming + last-pass alignment,
+    not exhaustive reference.
 
-  - id: post_defense_log
-    name: Post-defense — log what actually came up
-    description: |
-      After the defense / talk:
-        mem_log "defense Q&A actual questions" with the
-        questions that were asked. Future projects in similar
-        venues benefit from the reality vs anticipation diff.
+- id: post_defense_log
+  name: Post-defense — log what actually came up
+  description: |
+    After the defense / talk:
+      mem_log "defense Q&A actual questions" with the
+      questions that were asked. Future projects in similar
+      venues benefit from the reality vs anticipation diff.
 
-      This step is optional during prep; surface it as a follow-up
-      task in the brief.
+    This step is optional during prep; surface it as a follow-up
+    task in the brief.
 
 expected_outputs:
-  - workspace/.defense/audience.md
-  - workspace/.defense/weak_claims.md
-  - workspace/.defense/questions_v<n>.md
-  - workspace/.defense/brief.md
+- workspace/.defense/audience.md
+- workspace/.defense/weak_claims.md
+- workspace/.defense/questions_v<n>.md
+- workspace/.defense/brief.md
 
 quality_bar:
   audience_and_format_documented: true
@@ -240,3 +225,16 @@ quality_bar:
 next_protocol: synthesis/synthesis_slides
 next_protocol_kind: forward_default
 on_failure: guidance/scope_clarification
+intent_class: synthesize
+sub_intent: defense
+triggers:
+- defense
+- defence
+- thesis defense
+- job talk
+- q&a prep
+- anticipate questions
+- tough questions
+- what will the committee ask
+- rehearse questions
+summary: Anticipate + rehearse Q&A for dissertation defense / job talk / high-stakes talk.

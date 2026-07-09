@@ -1,17 +1,17 @@
 id: bayesian_analysis
 tier: 'plan'
 name: Bayesian Analysis Workflow
-version: '3.0.0'
+version: '5.0.0'
 last_reviewed: '2026-06-16'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 see_also:
-  - methodology/causal_inference_deep    # both are first-class analysis frames
-  - methodology/uncertainty_quantification  # posteriors are an uncertainty story
-  - methodology/preregistration          # priors are frozen pre-data when prereg'd
+- methodology/causal_inference_deep      # both are first-class analysis frames
+- methodology/uncertainty_quantification    # posteriors are an uncertainty story
+- methodology/preregistration            # priors are frozen pre-data when prereg'd
 description: |
   A first-class Bayesian workflow following Gelman et al.'s Bayesian
   Workflow paper (2020): prior elicitation → simulation-based
@@ -28,201 +28,214 @@ trigger: |
   research_design selects a Bayesian frame.
 
 prerequisites:
-  - Methodology selection has narrowed the problem to where a
-    Bayesian frame is warranted (genuine prior information OR small
-    samples + decision-theoretic reporting OR hierarchical
-    structure with rare events).
-  - PyMC / Stan / brms available in the project environment.
+- Methodology selection has narrowed the problem to where a Bayesian frame is warranted (genuine prior information OR small samples + decision-theoretic reporting OR hierarchical structure with rare events).
+- PyMC / Stan / brms available in the project environment.
 
 editorial_voice:
   mode: guidance
   rules:
-    - "The point of Bayesian workflow is that fitting is the EASY
-       part. Most of the protocol is BEFORE fitting (prior elicitation,
-       prior predictive checks) and AFTER fitting (posterior
-       diagnostics, posterior predictive checks, sensitivity)."
-    - "Report posteriors honestly — a point summary (mean or median)
-       + an interval (highest-density or equal-tailed credible interval)
-       + the ROPE (Region of Practical Equivalence) when applicable.
-       State the interval mass + type and cite the convention the field
-       reports at; do not default to one width. Bayes factors are
-       interpretable but not always the right summary."
-    - "Sensitivity to the prior is mandatory. Run at least one
-       alternative prior; show the posteriors overlay."
+  - "The point of Bayesian workflow is that fitting is the EASY part. Most of the protocol is BEFORE fitting (prior elicitation, prior predictive checks) and AFTER fitting (posterior diagnostics, posterior predictive checks, sensitivity)."
+  - "Report posteriors honestly — a point summary (mean or median) + an interval (highest-density or equal-tailed credible interval) + the ROPE (Region of Practical Equivalence) when applicable. State the interval mass + type and cite the convention the field reports at; do not default to one width. Bayes factors are interpretable but not always the right summary."
+  - "Sensitivity to the prior is mandatory. Run at least one alternative prior; show the posteriors overlay."
 
 steps:
-  - id: elicit_priors
-    name: Elicit + justify priors
-    description: |
-      Before any data touches a model:
-        - For each parameter, write down the prior + a one-sentence
-          rationale. A weakly-informative prior (one that constrains the
-          parameter to a scientifically plausible range without
-          encoding a specific belief) is the conservative default; its
-          scale should be justified from the units + plausible
-          magnitude of the parameter, not copied as a fixed value.
-          Informative priors require explicit justification (a prior
-          meta-analysis, a domain conventional value, a regulatory
-          threshold).
-        - Document priors in the methods record alongside the model
-          spec. The pre-registration should freeze them BEFORE data
-          inspection if the project is preregistered.
+- id: elicit_priors
+  name: Elicit + justify priors
+  description: |
+    Before any data touches a model:
+      - For each parameter, write down the prior + a one-sentence
+        rationale. A weakly-informative prior (one that constrains the
+        parameter to a scientifically plausible range without
+        encoding a specific belief) is the conservative default; its
+        scale should be justified from the units + plausible
+        magnitude of the parameter, not copied as a fixed value.
+        Informative priors require explicit justification (a prior
+        meta-analysis, a domain conventional value, a regulatory
+        threshold).
+      - Document priors in the methods record alongside the model
+        spec. The pre-registration should freeze them BEFORE data
+        inspection if the project is preregistered.
 
-  - id: prior_predictive_check
-    name: Prior predictive check (BEFORE fitting)
-    description: |
-      Simulate from the prior alone. Does the resulting predictive
-      distribution span scientifically reasonable outcomes? If the
-      prior implies infants 3 metres tall or risk ratios of 10,000,
-      the prior is wrong even before any data — fix it.
+- id: prior_predictive_check
+  name: Prior predictive check (BEFORE fitting)
+  description: |
+    Simulate from the prior alone. Does the resulting predictive
+    distribution span scientifically reasonable outcomes? If the
+    prior implies infants 3 metres tall or risk ratios of 10,000,
+    the prior is wrong even before any data — fix it.
 
-      Produces `outputs/reports/prior_predictive.md` with one
-      figure showing simulated outcomes from the prior + a
-      one-paragraph interpretation. This step is MANDATORY when
-      the prior is anything other than the most diffuse default.
+    Produces `outputs/reports/prior_predictive.md` with one
+    figure showing simulated outcomes from the prior + a
+    one-paragraph interpretation. This step is MANDATORY when
+    the prior is anything other than the most diffuse default.
 
-  - id: sbc
-    name: Simulation-based calibration (recommended)
-    description: |
-      When the model is non-trivial, run simulation-based
-      calibration: draw a parameter from the prior, simulate data
-      under it, fit the model, check whether the parameter falls
-      where the posterior expects. Repeat enough times that the rank
-      histogram's deviation from uniform is distinguishable from
-      Monte Carlo noise — the replicate count is a precision decision,
-      cite the SBC reference (Talts et al. 2018) for the diagnostic.
-      Catches bugs in the model code BEFORE you can mistake them for
-      real findings.
+- id: sbc
+  name: Simulation-based calibration (recommended)
+  description: |
+    When the model is non-trivial, run simulation-based
+    calibration: draw a parameter from the prior, simulate data
+    under it, fit the model, check whether the parameter falls
+    where the posterior expects. Repeat enough times that the rank
+    histogram's deviation from uniform is distinguishable from
+    Monte Carlo noise — the replicate count is a precision decision,
+    cite the SBC reference (Talts et al. 2018) for the diagnostic.
+    Catches bugs in the model code BEFORE you can mistake them for
+    real findings.
 
-  - id: fit
-    name: Fit the posterior
-    description: |
-      Pick an inference algorithm by reasoning about the model:
+- id: fit
+  name: Fit the posterior
+  description: |
+    Pick an inference algorithm by reasoning about the model:
 
-        - LIKELIHOOD AVAILABILITY — closed-form likelihood vs
-          likelihood-free (simulator-based).
-        - PARAMETER SPACE — continuous, discrete, mixed; bounded
-          or unbounded; high-dimensional.
-        - POSTERIOR SHAPE — unimodal vs multimodal; well-conditioned
-          vs funnel; heavy tails.
-        - COMPUTATIONAL BUDGET — minutes vs days; single fit vs
-          repeated fits (cross-validation, sensitivity).
-        - REQUIRED OUTPUT — point summaries (variational often
-          sufficient) vs full posterior (HMC / NUTS / SMC) vs
-          model comparison (bridge sampling, SMC).
+      - LIKELIHOOD AVAILABILITY — closed-form likelihood vs
+        likelihood-free (simulator-based).
+      - PARAMETER SPACE — continuous, discrete, mixed; bounded
+        or unbounded; high-dimensional.
+      - POSTERIOR SHAPE — unimodal vs multimodal; well-conditioned
+        vs funnel; heavy tails.
+      - COMPUTATIONAL BUDGET — minutes vs days; single fit vs
+        repeated fits (cross-validation, sensitivity).
+      - REQUIRED OUTPUT — point summaries (variational often
+        sufficient) vs full posterior (HMC / NUTS / SMC) vs
+        model comparison (bridge sampling, SMC).
 
-      Common choices given the reasoning above (cite the reference
-      for the algorithm in methods.md):
-        - HMC / NUTS (Stan, PyMC, NumPyro, Turing) — strong default
-          for continuous, well-conditioned posteriors.
-        - Variational inference (ADVI, normalizing flows) — when
-          posterior summaries are sufficient and HMC is too costly.
-        - SMC (sequential Monte Carlo) — for multimodal posteriors
-          or model evidence estimation.
-        - ABC / likelihood-free — when the simulator is the model.
-        - Gibbs / Metropolis-Hastings — for discrete parameter
-          spaces or conjugate sub-structures.
+    Common choices given the reasoning above (cite the reference
+    for the algorithm in methods.md):
+      - HMC / NUTS (Stan, PyMC, NumPyro, Turing) — strong default
+        for continuous, well-conditioned posteriors.
+      - Variational inference (ADVI, normalizing flows) — when
+        posterior summaries are sufficient and HMC is too costly.
+      - SMC (sequential Monte Carlo) — for multimodal posteriors
+        or model evidence estimation.
+      - ABC / likelihood-free — when the simulator is the model.
+      - Gibbs / Metropolis-Hastings — for discrete parameter
+        spaces or conjugate sub-structures.
 
-      Chain count, warmup, and post-warmup iteration counts are
-      field + model conventions. Common starting points are 4
-      chains with warmup + post-warmup of order a few thousand
-      iterations each; verify against the diagnostics below and
-      scale up when they fail. Do not lock to a single chain /
-      iteration template.
+    Chain count, warmup, and post-warmup iteration counts are
+    field + model conventions. Common starting points are 4
+    chains with warmup + post-warmup of order a few thousand
+    iterations each; verify against the diagnostics below and
+    scale up when they fail. Do not lock to a single chain /
+    iteration template.
 
-  - id: diagnostics
-    name: MCMC diagnostics (BEFORE looking at the posterior)
-    description: |
-      The diagnostic gate is strict because looking at the
-      posterior before diagnostics biases the analysis. Run + report:
+- id: diagnostics
+  name: MCMC diagnostics (BEFORE looking at the posterior)
+  description: |
+    The diagnostic gate is strict because looking at the
+    posterior before diagnostics biases the analysis. Run + report:
 
-        - R-hat (Gelman-Rubin or split-R-hat per Vehtari et al. 2021):
-          values close to 1 indicate convergence; values that
-          remain above the field-accepted threshold (commonly 1.01
-          in modern reporting; some older work uses 1.1) indicate
-          non-convergence. Cite which threshold + reference is used.
-        - Effective sample size (ESS bulk + ESS tail): high enough
-          that posterior quantile estimates are stable. Field
-          conventions suggest several hundred per parameter for
-          point summaries, more for tail quantiles; cite the
-          source.
-        - Divergences (HMC / NUTS): non-zero divergences indicate
-          the sampler missed parts of the posterior; investigate
-          via pair plots, reparameterisation, tighter priors,
-          increased adapt_delta.
-        - Energy-fraction (E-BFMI): low values indicate poor
-          energy-level mixing; see Betancourt (2017).
-        - Trace plots + rank plots (Vehtari et al. 2021): visual
-          check for stuck, wandering, or mixing chains.
+      - R-hat (Gelman-Rubin or split-R-hat per Vehtari et al. 2021):
+        values close to 1 indicate convergence; values that
+        remain above the field-accepted threshold (commonly 1.01
+        in modern reporting; some older work uses 1.1) indicate
+        non-convergence. Cite which threshold + reference is used.
+      - Effective sample size (ESS bulk + ESS tail): high enough
+        that posterior quantile estimates are stable. Field
+        conventions suggest several hundred per parameter for
+        point summaries, more for tail quantiles; cite the
+        source.
+      - Divergences (HMC / NUTS): non-zero divergences indicate
+        the sampler missed parts of the posterior; investigate
+        via pair plots, reparameterisation, tighter priors,
+        increased adapt_delta.
+      - Energy-fraction (E-BFMI): low values indicate poor
+        energy-level mixing; see Betancourt (2017).
+      - Trace plots + rank plots (Vehtari et al. 2021): visual
+        check for stuck, wandering, or mixing chains.
 
-      Persist diagnostics + the chosen thresholds + citations into
-      `outputs/reports/posterior_diagnostics.md`. The audit gate
-      blocks downstream consumption of the posterior until diagnostics
-      pass the pre-specified thresholds.
+    Persist diagnostics + the chosen thresholds + citations into
+    `outputs/reports/posterior_diagnostics.md`. The audit gate
+    blocks downstream consumption of the posterior until diagnostics
+    pass the pre-specified thresholds.
 
-  - id: posterior_predictive_check
-    name: Posterior predictive check
-    description: |
-      Simulate from the posterior + observed predictors; compare
-      to the observed outcome distribution. Pick check statistics
-      that would matter for your downstream claim (mean, variance,
-      max, quantiles, group-wise summaries). A model that fits the
-      mean but mis-fits the variance is still wrong for many
-      purposes.
+- id: posterior_predictive_check
+  name: Posterior predictive check
+  description: |
+    Simulate from the posterior + observed predictors; compare
+    to the observed outcome distribution. Pick check statistics
+    that would matter for your downstream claim (mean, variance,
+    max, quantiles, group-wise summaries). A model that fits the
+    mean but mis-fits the variance is still wrong for many
+    purposes.
 
-      Produces `outputs/figures/<step>_ppc_<stat>.png` for each
-      relevant statistic.
+    Produces `outputs/figures/<step>_ppc_<stat>.png` for each
+    relevant statistic.
 
-  - id: sensitivity_to_prior
-    name: Sensitivity to prior (mandatory when prior is informative)
-    description: |
-      For each informative prior, refit with at least one
-      reasonable alternative (a more diffuse version + a different
-      centre). Overlay the resulting posteriors. The reporting
-      claim should be one of:
+- id: sensitivity_to_prior
+  name: Sensitivity to prior (mandatory when prior is informative)
+  description: |
+    For each informative prior, refit with at least one
+    reasonable alternative (a more diffuse version + a different
+    centre). Overlay the resulting posteriors. The reporting
+    claim should be one of:
 
-        - "The posterior is robust across reasonable priors"
-          — overlap is high, conclusions don't change.
-        - "The posterior depends meaningfully on the prior"
-          — explicitly acknowledge which prior assumption is
-          driving the conclusion.
+      - "The posterior is robust across reasonable priors"
+        — overlap is high, conclusions don't change.
+      - "The posterior depends meaningfully on the prior"
+        — explicitly acknowledge which prior assumption is
+        driving the conclusion.
 
-  - id: report_posteriors
-    name: Report the posterior the right way
-    description: |
-      For each inferential quantity:
-        - Point estimate (posterior mean OR median — pick one and
-          stick with it).
-        - An interval: a highest-density interval (HDI) or an
-          equal-tailed credible interval. Pick one + state its mass +
-          type, and cite the convention the field reports at (Kruschke
-          popularised the HDI; equal-tailed credible intervals are
-          common too). Do not default to a fixed width.
-        - When a Region of Practical Equivalence (ROPE) is
-          defined, report the % of posterior inside ROPE.
-        - Bayes factor only when the model comparison is genuinely
-          model-vs-model; the inference / decision rule should
-          drive whether BF is the right summary.
+- id: report_posteriors
+  name: Report the posterior the right way
+  description: |
+    For each inferential quantity:
+      - Point estimate (posterior mean OR median — pick one and
+        stick with it).
+      - An interval: a highest-density interval (HDI) or an
+        equal-tailed credible interval. Pick one + state its mass +
+        type, and cite the convention the field reports at (Kruschke
+        popularised the HDI; equal-tailed credible intervals are
+        common too). Do not default to a fixed width.
+      - When a Region of Practical Equivalence (ROPE) is
+        defined, report the % of posterior inside ROPE.
+      - Bayes factor only when the model comparison is genuinely
+        model-vs-model; the inference / decision rule should
+        drive whether BF is the right summary.
 
-      Render the posterior with the interval band + optional ROPE band
-      via an AI-authored plotting script per the guidance in
-      visualization/figure_guidelines.
+    Render the posterior with the interval band + optional ROPE band
+    via an AI-authored plotting script per the guidance in
+    visualization/figure_guidelines.
 
-  - id: decision_or_conclusion
-    name: Decision / inferential summary
-    description: |
-      Map the posterior onto the original research question.
-      Decision-theoretic framings ("posterior probability that the
-      effect exceeds the clinical threshold = 0.87") are usually
-      more useful than NHST-style verdicts in Bayesian work.
+- id: decision_or_conclusion
+  name: Decision / inferential summary
+  description: |
+    Map the posterior onto the original research question.
+    Decision-theoretic framings ("posterior probability that the
+    effect exceeds the clinical threshold = 0.87") are usually
+    more useful than NHST-style verdicts in Bayesian work.
 
 expected_outputs:
-  - workspace/<step>/outputs/reports/prior_predictive.md
-  - workspace/<step>/outputs/reports/posterior_diagnostics.md
-  - workspace/<step>/outputs/figures/<step>_ppc_*.png
-  - workspace/<step>/outputs/figures/<step>_posterior_*.png
-  - workspace/methods.md (entry with prior + model spec)
+- workspace/<step>/outputs/reports/prior_predictive.md
+- workspace/<step>/outputs/reports/posterior_diagnostics.md
+- workspace/<step>/outputs/figures/<step>_ppc_*.png
+- workspace/<step>/outputs/figures/<step>_posterior_*.png
+- workspace/methods.md (entry with prior + model spec)
 
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: bayesian
+triggers:
+- bayesian
+- stan
+- pymc
+- brms
+- posterior
+- credible interval
+- rope
+- bayes factor
+- hierarchical bayesian
+- prior predictive
+- r-hat
+- rhat
+- ess
+- effective sample size
+- divergences
+- nuts sampler
+- hmc
+- mcmc diagnostics
+- posterior predictive check
+- variational inference
+- advi
+summary: 'Bayesian workflow: priors → posterior → diagnostics → checks → sensitivity.'

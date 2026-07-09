@@ -1,7 +1,7 @@
 id: sop_versioning
 name: SOP Versioning — every Standard Operating Procedure is versioned
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [wet_lab, biology, humanities]
   audience: [auditor, maintainer]
@@ -39,178 +39,170 @@ trigger: |
   "register a protocol amendment".
 
 prerequisites:
-  - The lab has a protocols/ directory under version control (git).
-  - Each SOP has a stable id (e.g., "wb_standard_v2", "rna_extraction_trizol").
+- The lab has a protocols/ directory under version control (git).
+- Each SOP has a stable id (e.g., "wb_standard_v2", "rna_extraction_trizol").
 
 editorial_voice:
   mode: prescription
   rules:
-    - "Every SOP has a version triplet in its filename AND in its
-       header. A printout without a version is a printout you cannot
-       trust — recycle it."
-    - "A changelog entry without a rationale is worse than no entry.
-       'Updated incubation to 30 min' tells the next person nothing.
-       'Updated incubation to 30 min — Lot 8842 of the antibody
-       requires longer binding per supplier email 2026-04-12' tells
-       them everything."
-    - "The author of the change owns the change. Initials + date are
-       mandatory. 'The lab' did not change the protocol. A person did."
-    - "Never edit a published SOP in place after it has been cited in
-       a manuscript or thesis. Bump the version and amend the new
-       version. The old file stays frozen so the citing document
-       remains reproducible."
-    - "When the SOP diverges from a published paper, the changelog
-       entry MUST cite the paper (DOI) and explain the divergence.
-       'Differs from Smith 2019 Fig 2 because we now use Lonza buffer
-        XYZ — original Gibco buffer discontinued 2023-08' is the
-       minimum bar."
+  - "Every SOP has a version triplet in its filename AND in its header. A printout without a version is a printout you cannot trust — recycle it."
+  - "A changelog entry without a rationale is worse than no entry. 'Updated incubation to 30 min' tells the next person nothing. 'Updated incubation to 30 min — Lot 8842 of the antibody requires longer binding per supplier email 2026-04-12' tells them everything."
+  - "The author of the change owns the change. Initials + date are mandatory. 'The lab' did not change the protocol. A person did."
+  - "Never edit a published SOP in place after it has been cited in a manuscript or thesis. Bump the version and amend the new version. The old file stays frozen so the citing document remains reproducible."
+  - "When the SOP diverges from a published paper, the changelog entry MUST cite the paper (DOI) and explain the divergence. 'Differs from Smith 2019 Fig 2 because we now use Lonza buffer XYZ — original Gibco buffer discontinued 2023-08' is the minimum bar."
 
 quality_bar:
   required_header_fields:
-    - sop_id
-    - version
-    - effective_date
-    - author
-    - supersedes_version
-    - linked_paper_doi
+  - sop_id
+  - version
+  - effective_date
+  - author
+  - supersedes_version
+  - linked_paper_doi
   required_changelog_entry_fields:
-    - date
-    - author_initials
-    - version_before
-    - version_after
-    - change_summary
-    - rationale
-    - validated_by
+  - date
+  - author_initials
+  - version_before
+  - version_after
+  - change_summary
+  - rationale
+  - validated_by
   version_bump_rules:
-    major: "Change produces a different scientific result (different
-            reagent class, different cell line, different readout
-            modality). Requires side-by-side validation run before
-            the new version is marked effective."
-    minor: "New optional step, clarification, or expanded
-            troubleshooting. Does not change the output. No validation
-            run required, but a single trial run by a second person
-            is recommended."
-    patch: "Typo, formatting, vendor-link refresh, RRID added. Zero
-            scientific meaning. Can be merged without review."
+    major: "Change produces a different scientific result (different reagent class, different cell line, different readout modality). Requires side-by-side validation run before the new version is marked effective."
+    minor: "New optional step, clarification, or expanded troubleshooting. Does not change the output. No validation run required, but a single trial run by a second person is recommended."
+    patch: "Typo, formatting, vendor-link refresh, RRID added. Zero scientific meaning. Can be merged without review."
 
 steps:
-  - id: locate_or_create_sop
-    name: Locate the SOP (or create the file if it does not exist yet)
-    description: |
-      Use sys_path to find the SOP under protocols/. SOP filenames
-      follow protocols/<sop_id>_v<MAJOR>.<MINOR>.<PATCH>.md so that
-      multiple versions co-exist on disk.
-      If the SOP does not exist, create it as v1.0.0 with the
-      required header fields populated. The header is YAML
-      frontmatter at the top of the markdown file — the loader
-      parses it.
-      If the SOP exists but lacks a version header, that is a v0.0.0
-      situation: stop, ask the researcher to confirm the current state
-      represents v1.0.0, then bump.
+- id: locate_or_create_sop
+  name: Locate the SOP (or create the file if it does not exist yet)
+  description: |
+    Use sys_path to find the SOP under protocols/. SOP filenames
+    follow protocols/<sop_id>_v<MAJOR>.<MINOR>.<PATCH>.md so that
+    multiple versions co-exist on disk.
+    If the SOP does not exist, create it as v1.0.0 with the
+    required header fields populated. The header is YAML
+    frontmatter at the top of the markdown file — the loader
+    parses it.
+    If the SOP exists but lacks a version header, that is a v0.0.0
+    situation: stop, ask the researcher to confirm the current state
+    represents v1.0.0, then bump.
 
-  - id: classify_the_change
-    name: Classify the change as MAJOR / MINOR / PATCH
-    description: |
-      Walk the version_bump_rules in this protocol's quality_bar.
-      The honest question is: "if a colleague ran the old version
-      and the new version side by side, would the data look
-      different?" If yes — MAJOR. If no but the SOP text is
-      substantively different — MINOR. If no and the SOP text is
-      cosmetically different — PATCH.
-      Reagent concentration change of >10%, incubation time change
-      of >20%, swap of a key enzyme supplier, change of cell line
-      passage source: all MAJOR. Adding a sentence of troubleshooting:
-      MINOR. Fixing the catalog number of a reagent that the lab
-      has been ordering correctly for years: PATCH.
-      Record the classification in mem_log so the rationale survives
-      the session.
+- id: classify_the_change
+  name: Classify the change as MAJOR / MINOR / PATCH
+  description: |
+    Walk the version_bump_rules in this protocol's quality_bar.
+    The honest question is: "if a colleague ran the old version
+    and the new version side by side, would the data look
+    different?" If yes — MAJOR. If no but the SOP text is
+    substantively different — MINOR. If no and the SOP text is
+    cosmetically different — PATCH.
+    Reagent concentration change of >10%, incubation time change
+    of >20%, swap of a key enzyme supplier, change of cell line
+    passage source: all MAJOR. Adding a sentence of troubleshooting:
+    MINOR. Fixing the catalog number of a reagent that the lab
+    has been ordering correctly for years: PATCH.
+    Record the classification in mem_log so the rationale survives
+    the session.
 
-  - id: draft_the_new_version
-    name: Draft the new SOP version file
-    description: |
-      Copy protocols/<sop_id>_v<old>.md to
-      protocols/<sop_id>_v<new>.md. Edit ONLY the new file. The old
-      file stays frozen — never edit a file whose version has already
-      been cited in a manuscript, thesis, or audit response.
-      In the new file, update the version header, the effective_date,
-      and the supersedes_version field. The body changes go wherever
-      they go.
-      For MAJOR bumps: add a "Diverges from previous version" block
-      near the top of the body listing what changed and why a reader
-      of the old version needs to know.
+- id: draft_the_new_version
+  name: Draft the new SOP version file
+  description: |
+    Copy protocols/<sop_id>_v<old>.md to
+    protocols/<sop_id>_v<new>.md. Edit ONLY the new file. The old
+    file stays frozen — never edit a file whose version has already
+    been cited in a manuscript, thesis, or audit response.
+    In the new file, update the version header, the effective_date,
+    and the supersedes_version field. The body changes go wherever
+    they go.
+    For MAJOR bumps: add a "Diverges from previous version" block
+    near the top of the body listing what changed and why a reader
+    of the old version needs to know.
 
-  - id: write_the_changelog_entry
-    name: Write the changelog entry
-    description: |
-      Append a new entry to protocols/<sop_id>_CHANGELOG.md (one
-      changelog per SOP, never a shared lab-wide changelog — they
-      become unsearchable). Required fields are in this protocol's
-      quality_bar.required_changelog_entry_fields.
-      The rationale is the most important field. "Vendor discontinued
-      Gibco DMEM cat 11965 in 2026-03; switched to Lonza BE12-604F
-      per email from Lonza FAE Maria Lopez 2026-04-02. Side-by-side
-      growth curves over 5 passages show no difference (data in
-      workspace/2026-04_dmem_switch/)." is the bar. A rationale that
-      a future lab member can act on.
-      If the change was triggered by a reagent_lot_tracking event
-      (a new lot of an antibody changed the staining pattern, say),
-      cross-link the changelog entry to the reagent entry.
+- id: write_the_changelog_entry
+  name: Write the changelog entry
+  description: |
+    Append a new entry to protocols/<sop_id>_CHANGELOG.md (one
+    changelog per SOP, never a shared lab-wide changelog — they
+    become unsearchable). Required fields are in this protocol's
+    quality_bar.required_changelog_entry_fields.
+    The rationale is the most important field. "Vendor discontinued
+    Gibco DMEM cat 11965 in 2026-03; switched to Lonza BE12-604F
+    per email from Lonza FAE Maria Lopez 2026-04-02. Side-by-side
+    growth curves over 5 passages show no difference (data in
+    workspace/2026-04_dmem_switch/)." is the bar. A rationale that
+    a future lab member can act on.
+    If the change was triggered by a reagent_lot_tracking event
+    (a new lot of an antibody changed the staining pattern, say),
+    cross-link the changelog entry to the reagent entry.
 
-  - id: validate_if_major
-    name: Validate the new version (MAJOR bumps only)
-    description: |
-      A MAJOR bump is not effective until a side-by-side validation
-      run produces data showing the new version is at least as good
-      as the old version on the standard control sample.
-      Stand up a workspace/<NN>_<sop_id>_v<new>_validation/ folder.
-      Run the old SOP and the new SOP on the same control sample in
-      the same week. Capture the readout (Western blot image, qPCR
-      Cq values, flow cytometry MFI, whatever the SOP produces) in
-      both runs.
-      The validated_by field in the changelog entry is filled in
-      ONLY when the validation data is in the workspace folder and
-      a second lab member has signed off. Until then, the new SOP
-      version sits in "DRAFT" status — the header field
-      effective_date is null, and the bench printout watermark says
-      DRAFT.
+- id: validate_if_major
+  name: Validate the new version (MAJOR bumps only)
+  description: |
+    A MAJOR bump is not effective until a side-by-side validation
+    run produces data showing the new version is at least as good
+    as the old version on the standard control sample.
+    Stand up a workspace/<NN>_<sop_id>_v<new>_validation/ folder.
+    Run the old SOP and the new SOP on the same control sample in
+    the same week. Capture the readout (Western blot image, qPCR
+    Cq values, flow cytometry MFI, whatever the SOP produces) in
+    both runs.
+    The validated_by field in the changelog entry is filled in
+    ONLY when the validation data is in the workspace folder and
+    a second lab member has signed off. Until then, the new SOP
+    version sits in "DRAFT" status — the header field
+    effective_date is null, and the bench printout watermark says
+    DRAFT.
 
-  - id: deprecate_old_printouts
-    name: Deprecate old bench printouts
-    description: |
-      When the new version becomes effective, the bench printouts
-      of the old version go in the recycling. The lab manager (or
-      whoever runs the printer) prints fresh copies of the new
-      version with the version watermark in the footer.
-      The old version FILE stays on disk in protocols/ — never
-      delete a versioned SOP file, because citing manuscripts point
-      to it. Only the paper printouts get recycled.
-      For wall-mounted protocols (cell culture hood, BSL-2 cabinet),
-      photograph the new printout next to the watermark and store
-      the image in protocols/<sop_id>_installed/<date>.jpg as
-      evidence of the swap.
+- id: deprecate_old_printouts
+  name: Deprecate old bench printouts
+  description: |
+    When the new version becomes effective, the bench printouts
+    of the old version go in the recycling. The lab manager (or
+    whoever runs the printer) prints fresh copies of the new
+    version with the version watermark in the footer.
+    The old version FILE stays on disk in protocols/ — never
+    delete a versioned SOP file, because citing manuscripts point
+    to it. Only the paper printouts get recycled.
+    For wall-mounted protocols (cell culture hood, BSL-2 cabinet),
+    photograph the new printout next to the watermark and store
+    the image in protocols/<sop_id>_installed/<date>.jpg as
+    evidence of the swap.
 
-  - id: cross_reference_audit
-    name: Cross-reference the SOP version in active assays
-    description: |
-      Run tool_search across the workspace/ tree for the SOP id.
-      Every workspace/<step>/methods.md or workspace/<step>/sop.yaml
-      that references the SOP should be checked: was the old version
-      or the new version used? Annotate explicitly.
-      For ongoing multi-month experiments that span the version
-      bump, the researcher decides whether to finish the experiment
-      on the old SOP or restart on the new SOP. Either is defensible;
-      neither is defensible without a documented decision.
-      The reproducibility audit
-      (wet_lab/audit/wet_lab_reproducibility_audit) flags any assay
-      whose SOP version is missing or whose SOP version is not the
-      effective version at the time of the assay.
+- id: cross_reference_audit
+  name: Cross-reference the SOP version in active assays
+  description: |
+    Run tool_search across the workspace/ tree for the SOP id.
+    Every workspace/<step>/methods.md or workspace/<step>/sop.yaml
+    that references the SOP should be checked: was the old version
+    or the new version used? Annotate explicitly.
+    For ongoing multi-month experiments that span the version
+    bump, the researcher decides whether to finish the experiment
+    on the old SOP or restart on the new SOP. Either is defensible;
+    neither is defensible without a documented decision.
+    The reproducibility audit
+    (wet_lab/audit/wet_lab_reproducibility_audit) flags any assay
+    whose SOP version is missing or whose SOP version is not the
+    effective version at the time of the assay.
 
 expected_outputs:
-  - "protocols/<sop_id>_v<MAJOR>.<MINOR>.<PATCH>.md"
-  - "protocols/<sop_id>_CHANGELOG.md"
-  - "protocols/<sop_id>_installed/<date>.jpg (for wall-mounted SOPs)"
-  - "workspace/<NN>_<sop_id>_v<new>_validation/ (for MAJOR bumps)"
+- "protocols/<sop_id>_v<MAJOR>.<MINOR>.<PATCH>.md"
+- "protocols/<sop_id>_CHANGELOG.md"
+- "protocols/<sop_id>_installed/<date>.jpg (for wall-mounted SOPs)"
+- "workspace/<NN>_<sop_id>_v<new>_validation/ (for MAJOR bumps)"
 
 next_protocol: wet_lab/protocol/reagent_lot_tracking
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: memory
+sub_intent: register
+triggers:
+- sop
+- standard operating procedure
+- protocol versioning
+- sop changelog
+- lab protocol
+summary: Every SOP is a versioned document with explicit changelog. Avoids 'lab tribal knowledge' drift.
+token_estimate: 1500
+decomposition:
+- protocol: wet_lab/protocol/sop_versioning
+  purpose: Set up + maintain a versioned SOP.

@@ -33,7 +33,7 @@ licenses:
   code: "MIT"
 
 # ── This project ────────────────────────────────────────────────────────
-project_name: ""                 # blank → uses directory name
+project_name: "{project_name}"
 
 # ── Workspace mode — what kind of work is this? ─────────────────────────
 # Changes the scaffold, which protocols route, and which audits apply.
@@ -48,6 +48,11 @@ project_name: ""                 # blank → uses directory name
 #   multi_study → a portfolio of sub-studies with a shared codebook + roll-up.
 workspace:
   mode: "analysis"        # analysis | hybrid | tool_build | exploration | notebook | multi_study
+  offline: false           # air-gapped / no-network mode; defaults to false for backward compatibility
+
+compute:
+  offline: false           # canonical runtime offline flag; workspace.offline is accepted as an alias
+
   # workflow_shape:        # optional routing hint: proof | interview_study | linear_essay |
   #                        # experiment_pipeline | systems_benchmark | multi_study | exploration |
   #                        # tool_build | notebook. Leave blank to let the router infer it from

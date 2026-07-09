@@ -1,17 +1,17 @@
 id: causal_inference_deep
 tier: 'plan'
 name: Causal Inference (observational)
-version: '3.0.0'
+version: '5.0.0'
 last_reviewed: '2026-06-16'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 see_also:
-  - methodology/methodology_selection    # confirms the question is causal first
-  - methodology/bayesian_analysis        # a parallel first-class analysis frame
-  - methodology/uncertainty_quantification  # confounding sensitivity is an uncertainty sweep
+- methodology/methodology_selection      # confirms the question is causal first
+- methodology/bayesian_analysis          # a parallel first-class analysis frame
+- methodology/uncertainty_quantification    # confounding sensitivity is an uncertainty sweep
 description: |
   Reasoning scaffold for causal inference from observational data.
   Names the decisions a defensible causal analysis must reason through
@@ -23,128 +23,131 @@ description: |
 trigger: Researcher needs a causal estimate from observational data and the team has decided against (or cannot run) an experiment.
 
 prerequisites:
-  - "`methodology_selection` has settled that the question is causal (description / association don't satisfy the goal)."
-  - "`workspace/methods.md` names a treatment, an outcome, and a target population."
+- "`methodology_selection` has settled that the question is causal (description / association don't satisfy the goal)."
+- "`workspace/methods.md` names a treatment, an outcome, and a target population."
 
 editorial_voice:
   mode: guidance
   rules:
-    - "The DAG is the analysis. Every identification claim, every
-       covariate adjustment, every sensitivity analysis flows from
-       the DAG. A causal estimate without a documented DAG is not a
-       causal estimate."
-    - "Identification names what the estimate IS. Backdoor /
-       frontdoor / IV / DiD / RDD / synthetic control /
-       negative controls — each rests on different assumptions.
-       The choice follows from the DAG + the data; the field's
-       literature names which strategy is conventional for this
-       kind of question."
-    - "Estimators are downstream of identification. Once
-       identification is settled, the estimator is a literature-
-       grounded engineering choice — pick the one with the best
-       small-sample properties for THIS data shape, cite the
-       methodological source."
-    - "Refutation is mandatory. A causal estimate that fails its
-       refutation tests is a finding, not a paper to bury."
-    - "Quantify sensitivity to unmeasured confounding (E-value,
-       Rosenbaum bounds, or whichever the field treats as canonical).
-       'We adjusted for everything we could think of' is not enough."
+  - "The DAG is the analysis. Every identification claim, every covariate adjustment, every sensitivity analysis flows from the DAG. A causal estimate without a documented DAG is not a causal estimate."
+  - "Identification names what the estimate IS. Backdoor / frontdoor / IV / DiD / RDD / synthetic control / negative controls — each rests on different assumptions. The choice follows from the DAG + the data; the field's literature names which strategy is conventional for this kind of question."
+  - "Estimators are downstream of identification. Once identification is settled, the estimator is a literature- grounded engineering choice — pick the one with the best small-sample properties for THIS data shape, cite the methodological source."
+  - "Refutation is mandatory. A causal estimate that fails its refutation tests is a finding, not a paper to bury."
+  - "Quantify sensitivity to unmeasured confounding (E-value, Rosenbaum bounds, or whichever the field treats as canonical). 'We adjusted for everything we could think of' is not enough."
 
 steps:
-  - id: state_the_causal_question
-    name: State the causal question
-    description: |
-      Write `outputs/reports/causal_question.md`:
-        - Treatment: what intervention is the contrast (binary?
-          continuous? multi-valued? time-varying?)
-        - Outcome: how + when measured
-        - Target population: the contrast generalises to whom
-        - Estimand: ATE / ATT / ATU / CATE / LATE — be explicit
-        - Why observational instead of experimental (cost, ethics,
-          existing data)
+- id: state_the_causal_question
+  name: State the causal question
+  description: |
+    Write `outputs/reports/causal_question.md`:
+      - Treatment: what intervention is the contrast (binary?
+        continuous? multi-valued? time-varying?)
+      - Outcome: how + when measured
+      - Target population: the contrast generalises to whom
+      - Estimand: ATE / ATT / ATU / CATE / LATE — be explicit
+      - Why observational instead of experimental (cost, ethics,
+        existing data)
 
-  - id: dag_construction
-    name: Build + justify the causal DAG
-    description: |
-      Draw the DAG (nodes = treatment, outcome, observed
-      confounders, mediators, instruments, unobserved confounders).
-      Every edge needs a one-sentence justification grounded in
-      domain knowledge OR the literature. Surface plausible
-      unmeasured confounders explicitly (dashed nodes) — pretending
-      they don't exist is the most common failure mode.
+- id: dag_construction
+  name: Build + justify the causal DAG
+  description: |
+    Draw the DAG (nodes = treatment, outcome, observed
+    confounders, mediators, instruments, unobserved confounders).
+    Every edge needs a one-sentence justification grounded in
+    domain knowledge OR the literature. Surface plausible
+    unmeasured confounders explicitly (dashed nodes) — pretending
+    they don't exist is the most common failure mode.
 
-      Persist as `outputs/figures/<step>_causal_dag.png` + a
-      `outputs/reports/dag_justification.md` explaining each edge.
+    Persist as `outputs/figures/<step>_causal_dag.png` + a
+    `outputs/reports/dag_justification.md` explaining each edge.
 
-  - id: identification_strategy
-    name: Choose + defend the identification strategy
-    description: |
-      The DAG dictates which strategies are even available. Reason
-      through:
-        - Can backdoor be closed by observable adjustment?
-        - Is there a credible instrument (relevance + exclusion)?
-        - Is there a discontinuity in treatment assignment?
-        - Are there pre / post observations with a credible
-          parallel-trends assumption?
-        - Is there a comparable untreated unit set for synthetic-
-          control construction?
-        - Is there a frontdoor path via an unconfounded mediator?
+- id: identification_strategy
+  name: Choose + defend the identification strategy
+  description: |
+    The DAG dictates which strategies are even available. Reason
+    through:
+      - Can backdoor be closed by observable adjustment?
+      - Is there a credible instrument (relevance + exclusion)?
+      - Is there a discontinuity in treatment assignment?
+      - Are there pre / post observations with a credible
+        parallel-trends assumption?
+      - Is there a comparable untreated unit set for synthetic-
+        control construction?
+      - Is there a frontdoor path via an unconfounded mediator?
 
-      Pick ONE primary strategy + a back-up for sensitivity. For each
-      strategy, list the assumptions it imposes + the diagnostic that
-      would falsify each. Cite the methodological source for the
-      strategy + at least one recent application in the same field.
+    Pick ONE primary strategy + a back-up for sensitivity. For each
+    strategy, list the assumptions it imposes + the diagnostic that
+    would falsify each. Cite the methodological source for the
+    strategy + at least one recent application in the same field.
 
-  - id: estimation
-    name: Estimate the causal effect
-    description: |
-      The estimator follows the strategy + the data structure. Surface
-      the literature-current default via `tool_research_method` framed
-      as "<strategy> estimation for <outcome type> with <sample size /
-      structure>". Pick the implementation library via
-      `tool_research_tool`; do not commit a tool from memory.
+- id: estimation
+  name: Estimate the causal effect
+  description: |
+    The estimator follows the strategy + the data structure. Surface
+    the literature-current default via `tool_search` framed
+    as "<strategy> estimation for <outcome type> with <sample size /
+    structure>". Pick the implementation library via
+    `tool_search`; do not commit a tool from memory.
 
-      Report the point estimate + a confidence / credible interval
-      computed with the variance estimator the strategy requires
-      (e.g. robust / cluster-robust / bootstrap — the choice itself
-      follows from the data structure). Save the structured estimate
-      to `outputs/reports/causal_estimates.json`.
+    Report the point estimate + a confidence / credible interval
+    computed with the variance estimator the strategy requires
+    (e.g. robust / cluster-robust / bootstrap — the choice itself
+    follows from the data structure). Save the structured estimate
+    to `outputs/reports/causal_estimates.json`.
 
-  - id: refutation
-    name: Refutation tests
-    description: |
-      Run every refutation the strategy supports:
-        - Placebo treatment (random treatment should give a null).
-        - Negative-control outcome (an outcome the treatment cannot
-          plausibly affect should be unaffected).
-        - Subset robustness (effect stable across population
-          subsets the DAG predicts to be similar).
-        - Falsification covariate (a pre-treatment covariate should
-          not differ between treatment groups after adjustment).
+- id: refutation
+  name: Refutation tests
+  description: |
+    Run every refutation the strategy supports:
+      - Placebo treatment (random treatment should give a null).
+      - Negative-control outcome (an outcome the treatment cannot
+        plausibly affect should be unaffected).
+      - Subset robustness (effect stable across population
+        subsets the DAG predicts to be similar).
+      - Falsification covariate (a pre-treatment covariate should
+        not differ between treatment groups after adjustment).
 
-      Document results in `outputs/reports/refutation_results.md`.
-      Failure of a refutation is a finding — frame it as such.
+    Document results in `outputs/reports/refutation_results.md`.
+    Failure of a refutation is a finding — frame it as such.
 
-  - id: sensitivity_to_unmeasured_confounding
-    name: Sensitivity to unmeasured confounding
-    description: |
-      Quantify how much hidden bias would erode the estimate. The
-      method depends on the strategy + the literature — E-value
-      (VanderWeele & Ding) for risk-ratio scale, Rosenbaum bounds
-      for matched designs, omitted-variable bias bounds (Cinelli &
-      Hazlett) for regression. Cite the source; report the bias
-      magnitude required to nullify the headline + lower CI.
+- id: sensitivity_to_unmeasured_confounding
+  name: Sensitivity to unmeasured confounding
+  description: |
+    Quantify how much hidden bias would erode the estimate. The
+    method depends on the strategy + the literature — E-value
+    (VanderWeele & Ding) for risk-ratio scale, Rosenbaum bounds
+    for matched designs, omitted-variable bias bounds (Cinelli &
+    Hazlett) for regression. Cite the source; report the bias
+    magnitude required to nullify the headline + lower CI.
 
-      Append the sensitivity numbers to `causal_estimates.json` so
-      the audit step can read them.
+    Append the sensitivity numbers to `causal_estimates.json` so
+    the audit step can read them.
 
 expected_outputs:
-  - workspace/*/outputs/figures/<step>_causal_dag.png
-  - workspace/*/outputs/reports/dag_justification.md
-  - workspace/*/outputs/reports/causal_question.md
-  - workspace/*/outputs/reports/causal_estimates.json
-  - workspace/*/outputs/reports/refutation_results.md
+- workspace/*/outputs/figures/<step>_causal_dag.png
+- workspace/*/outputs/reports/dag_justification.md
+- workspace/*/outputs/reports/causal_question.md
+- workspace/*/outputs/reports/causal_estimates.json
+- workspace/*/outputs/reports/refutation_results.md
 
 next_protocol: guidance/analysis_plan
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: causal
+triggers:
+- causal inference
+- counterfactual
+- treatment effect
+- instrumental variable
+- propensity score
+- inverse probability weighting
+- ipw
+- difference-in-differences
+- regression discontinuity
+- average treatment effect
+- doubly robust
+- g-computation
+- marginal structural model
+- directed acyclic graph
+summary: DAG + dowhy / IPW / DiD / RDD pipeline.

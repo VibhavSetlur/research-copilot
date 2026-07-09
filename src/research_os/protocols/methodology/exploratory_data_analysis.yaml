@@ -1,17 +1,17 @@
 id: exploratory_data_analysis
 tier: 'plan'
 name: Exploratory Data Analysis (EDA + hypothesis generation)
-version: '3.0.0'
+version: '5.0.0'
 last_reviewed: '2026-06-16'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
   workflow_shape: [any]
 see_also:
-  - methodology/data_quality_audit       # the deeper QC pass when the data itself is suspect
-  - methodology/preregistration          # locks the confirmatory SAP a generated hypothesis needs
-  - methodology/methodology_selection    # picks the method once a hypothesis is in hand
+- methodology/data_quality_audit         # the deeper QC pass when the data itself is suspect
+- methodology/preregistration            # locks the confirmatory SAP a generated hypothesis needs
+- methodology/methodology_selection      # picks the method once a hypothesis is in hand
 description: |
   Real EDA workflow — open-ended, hypothesis-GENERATING, NOT a
   hypothesis-confirming step inside `analysis_plan`. The point is to
@@ -37,219 +37,209 @@ trigger: |
   like".
 
 prerequisites:
-  - At least one dataset file under inputs/raw_data/ OR a workspace
-    step with a derived dataset.
+- At least one dataset file under inputs/raw_data/ OR a workspace step with a derived dataset.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Exploratory findings are leads, not conclusions. Every claim
-       generated here is provisional until a separate confirmatory
-       pass on independent data tests it."
-    - "Pre-register the SHAPE of the exploration (what variables,
-       what comparisons, how many subgroup splits) BEFORE looking
-       at outcomes. This is what separates EDA from p-hacking."
-    - "Surprises are flagged for follow-up, not for the paper. A
-       finding that came from an unplanned comparison must be
-       confirmed in a separate experiment before it appears in any
-       deliverable."
-    - "When the data looks too good (too clean, too significant,
-       too easy), that is a signal to check for leakage, label
-       error, or a coding mistake — not a finding."
+  - "Exploratory findings are leads, not conclusions. Every claim generated here is provisional until a separate confirmatory pass on independent data tests it."
+  - "Pre-register the SHAPE of the exploration (what variables, what comparisons, how many subgroup splits) BEFORE looking at outcomes. This is what separates EDA from p-hacking."
+  - "Surprises are flagged for follow-up, not for the paper. A finding that came from an unplanned comparison must be confirmed in a separate experiment before it appears in any deliverable."
+  - "When the data looks too good (too clean, too significant, too easy), that is a signal to check for leakage, label error, or a coding mistake — not a finding."
 
 steps:
-  - id: scope_the_eda
-    name: Scope what 'exploration' means for this project
-    description: |
-      Ask in one line (or infer when in autopilot):
-        - what is the dataset (file + rough row/column count)
-        - what role does this EDA play — generating hypotheses for a
-          future confirmatory study / building intuition before
-          methodology_selection / sanity-checking a dataset before
-          using it
-        - what would a SURPRISING finding be — name in advance what
-          would be a discovery vs what would be expected
+- id: scope_the_eda
+  name: Scope what 'exploration' means for this project
+  description: |
+    Ask in one line (or infer when in autopilot):
+      - what is the dataset (file + rough row/column count)
+      - what role does this EDA play — generating hypotheses for a
+        future confirmatory study / building intuition before
+        methodology_selection / sanity-checking a dataset before
+        using it
+      - what would a SURPRISING finding be — name in advance what
+        would be a discovery vs what would be expected
 
-      Pre-naming the surprise is the EDA equivalent of registering
-      the hypothesis. It binds the exploration; without it, every
-      pattern looks like a finding.
+    Pre-naming the surprise is the EDA equivalent of registering
+    the hypothesis. It binds the exploration; without it, every
+    pattern looks like a finding.
 
-  - id: pre_register_exploration_shape
-    name: Pre-register the SHAPE of the exploration
-    description: |
-      Write workspace/<NN>_eda_<slug>/exploration_plan.md BEFORE
-      running anything against the outcome:
+- id: pre_register_exploration_shape
+  name: Pre-register the SHAPE of the exploration
+  description: |
+    Write workspace/<NN>_eda_<slug>/exploration_plan.md BEFORE
+    running anything against the outcome:
 
-        ## Variables in scope
-          - <variable> — type (continuous / categorical / ordinal /
-                                time / text), missingness expectation
-        ## Comparisons in scope
-          - <variable> by <grouping>  (univariate / bivariate /
-                                       multivariate)
-        ## Subgroup splits permitted
-          - <grouping variables and their levels> — capped at K splits
-                                                    to prevent
-                                                    forking-paths
-        ## What would count as a surprising finding
-          - <one or two sentences>
-        ## What would count as an unsurprising finding
-          - <one or two sentences>
-        ## Stop conditions
-          - run out of pre-registered comparisons
-          - hit K significant findings (the next one is post-hoc)
-          - hit a data-quality problem that blocks further work
+      ## Variables in scope
+        - <variable> — type (continuous / categorical / ordinal /
+                              time / text), missingness expectation
+      ## Comparisons in scope
+        - <variable> by <grouping>  (univariate / bivariate /
+                                     multivariate)
+      ## Subgroup splits permitted
+        - <grouping variables and their levels> — capped at K splits
+                                                  to prevent
+                                                  forking-paths
+      ## What would count as a surprising finding
+        - <one or two sentences>
+      ## What would count as an unsurprising finding
+        - <one or two sentences>
+      ## Stop conditions
+        - run out of pre-registered comparisons
+        - hit K significant findings (the next one is post-hoc)
+        - hit a data-quality problem that blocks further work
 
-      The pre-registration is not a confirmatory SAP — it does not
-      lock the analysis to specific tests. It locks the SCOPE.
+    The pre-registration is not a confirmatory SAP — it does not
+    lock the analysis to specific tests. It locks the SCOPE.
 
-  - id: profile_data_quality
-    name: Data-quality profile (sampled)
-    description: |
-      For each in-scope tabular file:
-        tool_data(operation='profile', filepath=<path>)
+- id: profile_data_quality
+  name: Data-quality profile (sampled)
+  description: |
+    For each in-scope tabular file:
+      tool_data(operation='profile', filepath=<path>)
 
-      Read the profile report. Note:
-        - missingness pattern (random vs systematic)
-        - unique-row vs key-column ratios (any duplicates?)
-        - apparent outliers
-        - column-type sanity (a column called `age` that contains
-          strings is a finding before it is data)
-        - target-leakage candidates: any column that should not be
-          available at prediction time
+    Read the profile report. Note:
+      - missingness pattern (random vs systematic)
+      - unique-row vs key-column ratios (any duplicates?)
+      - apparent outliers
+      - column-type sanity (a column called `age` that contains
+        strings is a finding before it is data)
+      - target-leakage candidates: any column that should not be
+        available at prediction time
 
-      Record findings into workspace/<step>/outputs/reports/profile_<file>.md.
+    Record findings into workspace/<step>/outputs/reports/profile_<file>.md.
 
-  - id: univariate_pass
-    name: Univariate distributions (one figure per variable)
-    description: |
-      For each in-scope variable, build the distribution chart that
-      the chart_chooser in visualization/figure_guidelines names for
-      that type (histogram for continuous, bar for categorical-few,
-      barh for categorical-many, time-series line for time).
+- id: univariate_pass
+  name: Univariate distributions (one figure per variable)
+  description: |
+    For each in-scope variable, build the distribution chart that
+    the chart_chooser in visualization/figure_guidelines names for
+    that type (histogram for continuous, bar for categorical-few,
+    barh for categorical-many, time-series line for time).
 
-      An AI-authored script per visualization/figure_guidelines handles palette / DPI / sidecars in one
-      call. Each figure ends with both caption sidecars (technical +
-      plain-English). The univariate pass is the foundation — every
-      downstream bivariate / multivariate move references these.
+    An AI-authored script per visualization/figure_guidelines handles palette / DPI / sidecars in one
+    call. Each figure ends with both caption sidecars (technical +
+    plain-English). The univariate pass is the foundation — every
+    downstream bivariate / multivariate move references these.
 
-      Anomalies to flag at this stage:
-        - zero-inflation
-        - bimodality
-        - heavy tail
-        - boundary mass
-        - apparent class imbalance for any planned target
+    Anomalies to flag at this stage:
+      - zero-inflation
+      - bimodality
+      - heavy tail
+      - boundary mass
+      - apparent class imbalance for any planned target
 
-  - id: bivariate_pass
-    name: Bivariate relationships (only the comparisons in scope)
-    description: |
-      Walk the comparisons named in the pre-registered scope. For
-      each:
-        - pick the chart family per the chart_chooser
-        - build in an AI-authored plotting script
-        - write the substantive caption ("X and Y co-move; the
-          relationship is steeper above threshold Z") — NOT just
-          "scatter of X vs Y"
+- id: bivariate_pass
+  name: Bivariate relationships (only the comparisons in scope)
+  description: |
+    Walk the comparisons named in the pre-registered scope. For
+    each:
+      - pick the chart family per the chart_chooser
+      - build in an AI-authored plotting script
+      - write the substantive caption ("X and Y co-move; the
+        relationship is steeper above threshold Z") — NOT just
+        "scatter of X vs Y"
 
-      DO NOT add comparisons not in the pre-registered scope. If a
-      new comparison suggests itself ("oh, but does X interact with
-      Z?"), add it to the BACKLOG file (below), do not run it now.
+    DO NOT add comparisons not in the pre-registered scope. If a
+    new comparison suggests itself ("oh, but does X interact with
+    Z?"), add it to the BACKLOG file (below), do not run it now.
 
-  - id: multivariate_or_dimensionality
-    name: Multivariate / dimensionality view (when scope permits)
-    description: |
-      When the pre-registered scope includes multivariate views,
-      run ONE per scope entry. The protocol does not name the
-      method — pick whichever the field reaches for: PCA / UMAP /
-      t-SNE / NMF / correspondence analysis / hierarchical
-      clustering / corr-matrix heatmap.
+- id: multivariate_or_dimensionality
+  name: Multivariate / dimensionality view (when scope permits)
+  description: |
+    When the pre-registered scope includes multivariate views,
+    run ONE per scope entry. The protocol does not name the
+    method — pick whichever the field reaches for: PCA / UMAP /
+    t-SNE / NMF / correspondence analysis / hierarchical
+    clustering / corr-matrix heatmap.
 
-      Each multivariate view comes with:
-        - the loading / contribution table (so the picture's drivers
-          are readable)
-        - a caption that names the picture's substantive claim, not
-          the method ("two cohorts separate on the first PC,
-          consistent with the recruitment split" — not "PCA of
-          standardized features")
+    Each multivariate view comes with:
+      - the loading / contribution table (so the picture's drivers
+        are readable)
+      - a caption that names the picture's substantive claim, not
+        the method ("two cohorts separate on the first PC,
+        consistent with the recruitment split" — not "PCA of
+        standardized features")
 
-      Multivariate views are ATTRACTIVELY misleading. The audit
-      step below specifically flags overreach.
+    Multivariate views are ATTRACTIVELY misleading. The audit
+    step below specifically flags overreach.
 
-  - id: capture_anomalies_and_backlog
-    name: Capture anomalies + maintain a follow-up backlog
-    description: |
-      Write workspace/<step>/outputs/reports/eda_backlog.md:
+- id: capture_anomalies_and_backlog
+  name: Capture anomalies + maintain a follow-up backlog
+  description: |
+    Write workspace/<step>/outputs/reports/eda_backlog.md:
 
-        ## Anomalies
-          - <observation> — source figure / table — provisional
-            interpretation
-        ## Generated hypotheses (provisional)
-          - H_g<n>: <statement> — strength: weak / moderate / strong
-                              — confirmation plan (separate data /
-                                holdout / replication study)
-        ## Follow-up questions (NOT yet run)
-          - <question> — why it suggested itself — how it would be
-            answered if pre-registered for a future pass
+      ## Anomalies
+        - <observation> — source figure / table — provisional
+          interpretation
+      ## Generated hypotheses (provisional)
+        - H_g<n>: <statement> — strength: weak / moderate / strong
+                            — confirmation plan (separate data /
+                              holdout / replication study)
+      ## Follow-up questions (NOT yet run)
+        - <question> — why it suggested itself — how it would be
+          answered if pre-registered for a future pass
 
-      The backlog is the EDA's primary OUTPUT. Confirmatory work
-      runs on a SEPARATE dataset (or a held-out partition stamped
-      before the EDA started) — the protocol does not permit
-      promoting a backlog finding to a confirmatory claim on the
-      same data.
+    The backlog is the EDA's primary OUTPUT. Confirmatory work
+    runs on a SEPARATE dataset (or a held-out partition stamped
+    before the EDA started) — the protocol does not permit
+    promoting a backlog finding to a confirmatory claim on the
+    same data.
 
-  - id: register_hypotheses
-    name: Register generated hypotheses (provisional)
-    description: |
-      For each generated hypothesis the researcher endorses:
-        mem_hypothesis_add statement="<text>" status="exploratory"
+- id: register_hypotheses
+  name: Register generated hypotheses (provisional)
+  description: |
+    For each generated hypothesis the researcher endorses:
+      mem_hypothesis (operation=add) statement="<text>" status="exploratory"
 
-      Use `status="exploratory"` explicitly. The hypothesis tracker
-      treats exploratory hypotheses differently from testing /
-      supported / refuted — they do NOT contribute to the
-      confirmatory verdict matrix in syntheses unless a SEPARATE
-      pre-registered confirmation step subsequently flips them to
-      `testing` and then to `supported` / `refuted`.
+    Use `status="exploratory"` explicitly. The hypothesis tracker
+    treats exploratory hypotheses differently from testing /
+    supported / refuted — they do NOT contribute to the
+    confirmatory verdict matrix in syntheses unless a SEPARATE
+    pre-registered confirmation step subsequently flips them to
+    `testing` and then to `supported` / `refuted`.
 
-  - id: audit_for_eda_failure_modes
-    name: Audit for forking-paths + leakage + over-reach
-    description: |
-      Walk the EDA outputs:
-        - did any comparison exceed the pre-registered scope? If yes,
-          either roll it back to the backlog or open a separate EDA
-          pass and pre-register the wider scope.
-        - did any figure license a causal interpretation? Strip
-          causal language; observational EDA never licenses cause.
-        - did any subgroup split exceed K? The K-th split is
-          post-hoc; flag every finding below it as exploratory only.
-        - did any apparent "too good" finding get checked for
-          target leakage? An accuracy > 95% on a hard problem is a
-          leakage check, not a celebration.
+- id: audit_for_eda_failure_modes
+  name: Audit for forking-paths + leakage + over-reach
+  description: |
+    Walk the EDA outputs:
+      - did any comparison exceed the pre-registered scope? If yes,
+        either roll it back to the backlog or open a separate EDA
+        pass and pre-register the wider scope.
+      - did any figure license a causal interpretation? Strip
+        causal language; observational EDA never licenses cause.
+      - did any subgroup split exceed K? The K-th split is
+        post-hoc; flag every finding below it as exploratory only.
+      - did any apparent "too good" finding get checked for
+        target leakage? An accuracy > 95% on a hard problem is a
+        leakage check, not a celebration.
 
-      Write findings to workspace/<step>/outputs/reports/eda_audit.md.
+    Write findings to workspace/<step>/outputs/reports/eda_audit.md.
 
-  - id: route_to_confirmation
-    name: Route to confirmation (or stop)
-    description: |
-      Three exits:
-        a) one or more provisional hypotheses worth confirming → tell
-           the researcher: "Provisional hypotheses H_g1..H_gN registered
-           with status=exploratory. Confirmation requires a SEPARATE
-           dataset or a pre-registered analysis on a held-out
-           partition. Route to methodology/preregistration to lock the
-           confirmatory SAP."
-        b) no hypothesis crossed the threshold; the EDA finishes as
-           dataset understanding → tell the researcher: "EDA complete;
-           dataset profiled; no new hypothesis worth confirming. Route
-           to methodology_selection on the originally registered
-           hypotheses."
-        c) data-quality findings block further work → route to
-           methodology/data_quality_audit for a deeper QC pass.
+- id: route_to_confirmation
+  name: Route to confirmation (or stop)
+  description: |
+    Three exits:
+      a) one or more provisional hypotheses worth confirming → tell
+         the researcher: "Provisional hypotheses H_g1..H_gN registered
+         with status=exploratory. Confirmation requires a SEPARATE
+         dataset or a pre-registered analysis on a held-out
+         partition. Route to methodology/preregistration to lock the
+         confirmatory SAP."
+      b) no hypothesis crossed the threshold; the EDA finishes as
+         dataset understanding → tell the researcher: "EDA complete;
+         dataset profiled; no new hypothesis worth confirming. Route
+         to methodology_selection on the originally registered
+         hypotheses."
+      c) data-quality findings block further work → route to
+         methodology/data_quality_audit for a deeper QC pass.
 
 expected_outputs:
-  - workspace/<step>/exploration_plan.md
-  - workspace/<step>/outputs/reports/profile_*.md
-  - workspace/<step>/outputs/reports/eda_backlog.md
-  - workspace/<step>/outputs/reports/eda_audit.md
-  - workspace/<step>/outputs/figures/                # univariate + bivariate
+- workspace/<step>/exploration_plan.md
+- workspace/<step>/outputs/reports/profile_*.md
+- workspace/<step>/outputs/reports/eda_backlog.md
+- workspace/<step>/outputs/reports/eda_audit.md
+- workspace/<step>/outputs/figures/                  # univariate + bivariate
 
 quality_bar:
   exploration_pre_registered_before_outcomes_examined: true
@@ -261,3 +251,34 @@ quality_bar:
 next_protocol: methodology/methodology_selection
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: methodology
+sub_intent: eda
+triggers:
+- explore the data
+- real eda
+- do real eda
+- exploratory data analysis pass
+- no hypothesis yet
+- is there a story here
+- hypothesis generation
+- generate hypotheses
+- data understanding pass
+- what should i be asking
+- open-ended exploration
+- find a hypothesis
+- look at my data
+- look at the data
+- explore my data
+- understand my data
+- get to know my data
+- what's in my data
+- what is in my data
+- summarize my data
+- summarise my data
+- poke around the data
+summary: Real exploratory data analysis + hypothesis generation (distinct from confirmatory EDA inside analysis_plan).
+token_estimate: 1700
+decomposition:
+- protocol: methodology/exploratory_data_analysis
+  purpose: Pre-register scope, profile, build univariate + bivariate views.
+- tool: tool_data

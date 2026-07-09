@@ -1,8 +1,8 @@
 id: tool_discovery
 tier: 'plan'
 name: Tool / Library Discovery
-version: '4.1.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-16'
 scope_tags:
   domain: [any]
@@ -12,97 +12,105 @@ description: Find the right Python / R / Julia library for a specific task and v
 trigger: AI needs a library for a task but is uncertain which one to use.
 
 see_also:
-  - methodology/methodology_selection   # the method choice that this library implements
-  - guidance/agent_setup                # how the skill layer (Hermes) is wired + aligned
+- methodology/methodology_selection     # the method choice that this library implements
+- guidance/agent_setup                  # how the skill layer (Hermes) is wired + aligned
 
 steps:
-  - id: consult_skill_layer
-    name: Consult the agent's skill layer before a generic search
-    description: |
-      If the project runs under an agent layer with a skill ecosystem (e.g.
-      Hermes — see guidance/agent_setup), check it FIRST, before any web search.
-      Look across ALL skill sources the agent can load (they share one
-      agentskills.io index, so skills_list() shows them together):
-        - the agent's own bundled + optional skills (Nous Hermes catalogs);
-        - the K-Dense science pack (140 deep science skills — bulk-rnaseq,
-          rdkit, scanpy, deepchem, ...). If skills_list() doesn't show them,
-          they aren't installed — `research-os skills add-science-pack` wires
-          them in (then the agent restarts to load them);
-        - any other native/external Agent Skills in skills.external_dirs.
-      Use progressive disclosure: skills_list() to find a match, then
-      skill_view(name) to load the how-to. sys_boot's recommended_skills
-      already names the skills that fit this project's domain + mode — start
-      there. A domain skill often names the canonical library with validated,
-      correct parameters — faster + more reliable than rediscovering it from a
-      search. When a skill answers "which library for <task>", take its
-      recommendation as the strong default and SKIP straight to test_install +
-      log_decision, recording that the choice came from the skill layer (and
-      which source). Only fall through to the search steps below when NO skill
-      covers the task, or when the skill's recommendation needs confirming
-      against the project's specific constraints (license, language, footprint).
-      The skill says HOW; the steps below are the reasoning that confirms it
-      FITS and records WHY. If you end up doing novel work no skill covered,
-      `/learn` it or `distill` it afterward so next time the skill exists.
+- id: consult_skill_layer
+  name: Consult the agent's skill layer before a generic search
+  description: |
+    If the project runs under an agent layer with a skill ecosystem (e.g.
+    Hermes — see guidance/agent_setup), check it FIRST, before any web search.
+    Look across ALL skill sources the agent can load (they share one
+    agentskills.io index, so skills_list() shows them together):
+      - the agent's own bundled + optional skills (Nous Hermes catalogs);
+      - the K-Dense science pack (140 deep science skills — bulk-rnaseq,
+        rdkit, scanpy, deepchem, ...). If skills_list() doesn't show them,
+        they aren't installed — `research-os skills add-science-pack` wires
+        them in (then the agent restarts to load them);
+      - any other native/external Agent Skills in skills.external_dirs.
+    Use progressive disclosure: skills_list() to find a match, then
+    skill_view(name) to load the how-to. sys_boot's recommended_skills
+    already names the skills that fit this project's domain + mode — start
+    there. A domain skill often names the canonical library with validated,
+    correct parameters — faster + more reliable than rediscovering it from a
+    search. When a skill answers "which library for <task>", take its
+    recommendation as the strong default and SKIP straight to test_install +
+    log_decision, recording that the choice came from the skill layer (and
+    which source). Only fall through to the search steps below when NO skill
+    covers the task, or when the skill's recommendation needs confirming
+    against the project's specific constraints (license, language, footprint).
+    The skill says HOW; the steps below are the reasoning that confirms it
+    FITS and records WHY. If you end up doing novel work no skill covered,
+    `/learn` it or `distill` it afterward so next time the skill exists.
 
-  - id: formulate_query
-    name: Formulate the Search Query
-    description: |
-      Compose 2-3 candidate queries that combine task + language:
-        - "<task> Python library"   e.g. "Bayesian hierarchical models Python"
-        - "<task> R package"        e.g. "spatial point process R"
-        - "<task> Julia package"
-      Use the researcher's preferred language first (from researcher_config or
-      what's already installed).
+- id: formulate_query
+  name: Formulate the Search Query
+  description: |
+    Compose 2-3 candidate queries that combine task + language:
+      - "<task> Python library"   e.g. "Bayesian hierarchical models Python"
+      - "<task> R package"        e.g. "spatial point process R"
+      - "<task> Julia package"
+    Use the researcher's preferred language first (from researcher_config or
+    what's already installed).
 
-  - id: search_and_collect
-    name: Search & Collect Candidates
-    description: |
-      tool_search query=<query>
-      For each promising hit, capture:
-        - Library name
-        - Official documentation URL
-        - GitHub repo URL
-        - Maintenance signals: recency of the last release/commit relative
-          to the library's own cadence, open-vs-closed issue ratio, whether
-          the maintainers respond. "Recent" is relative — a stable, finished
-          library can be quiet without being abandoned.
-        - Community signals: stars / downloads / dependents as a ROUGH
-          proxy for adoption, read against the niche's size. A 200-star
-          library can be the standard in a small subfield; a 5k-star one
-          can be a toy. Do not pick on star count alone.
-        - Whether the field's own literature / reviews name this library
-          as the canonical implementation for the task.
+- id: search_and_collect
+  name: Search & Collect Candidates
+  description: |
+    tool_search query=<query>
+    For each promising hit, capture:
+      - Library name
+      - Official documentation URL
+      - GitHub repo URL
+      - Maintenance signals: recency of the last release/commit relative
+        to the library's own cadence, open-vs-closed issue ratio, whether
+        the maintainers respond. "Recent" is relative — a stable, finished
+        library can be quiet without being abandoned.
+      - Community signals: stars / downloads / dependents as a ROUGH
+        proxy for adoption, read against the niche's size. A 200-star
+        library can be the standard in a small subfield; a 5k-star one
+        can be a toy. Do not pick on star count alone.
+      - Whether the field's own literature / reviews name this library
+        as the canonical implementation for the task.
 
-  - id: short_list
-    name: Short-list the strongest candidates
-    description: |
-      Narrow to the few worth installing. Filter on: maintenance health,
-      documentation quality (tutorial / API ref / worked examples), license
-      compatibility with the project, dependency footprint, and whether the
-      task's literature endorses it. Record why each rejected candidate lost.
+- id: short_list
+  name: Short-list the strongest candidates
+  description: |
+    Narrow to the few worth installing. Filter on: maintenance health,
+    documentation quality (tutorial / API ref / worked examples), license
+    compatibility with the project, dependency footprint, and whether the
+    task's literature endorses it. Record why each rejected candidate lost.
 
-  - id: test_install
-    name: Test Installation
-    description: |
-      tool_package_install packages=["<top-candidate>"]
-      If it fails, log the error and try the next candidate. Successful packages
-      are appended to environment/requirements.txt automatically.
+- id: test_install
+  name: Test Installation
+  description: |
+    tool_package_install packages=["<top-candidate>"]
+    If it fails, log the error and try the next candidate. Successful packages
+    are appended to environment/requirements.txt automatically.
 
-  - id: log_decision
-    name: Log the Library Choice
-    description: |
-      mem_log
-        method=<the task>
-        implementation=<library>==<version>
-        justification=<why this library over alternatives>
-      mem_log
-        context="Library selection for <task>"
-        selected=<library>
-        rationale=<criteria + alternatives rejected>
+- id: log_decision
+  name: Log the Library Choice
+  description: |
+    mem_log
+      method=<the task>
+      implementation=<library>==<version>
+      justification=<why this library over alternatives>
+    mem_log
+      context="Library selection for <task>"
+      selected=<library>
+      rationale=<criteria + alternatives rejected>
 
 expected_outputs:
-  - environment/requirements.txt
+- environment/requirements.txt
 
 next_protocol: methodology/methodology_selection
 next_protocol_kind: forward_default
-on_failure: null
+on_failure:
+intent_class: methodology
+sub_intent: tool_pick
+triggers:
+- find a library
+- what tool
+- candidate libraries
+- best package
+summary: Find candidate libraries / CLIs for a task.

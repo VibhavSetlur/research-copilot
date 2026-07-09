@@ -30,9 +30,9 @@ try:
 except ImportError:
     yaml = None
 
-logger = logging.getLogger("research.state_ledger")
-
 from research_os.utils.common import find_project_root
+
+logger = logging.getLogger("research.state_ledger")
 
 # Large binary / data artefacts that ``snapshot_workspace`` records as
 # ``ref_only`` (path + size + sha, but bytes NOT copied). Rollback can

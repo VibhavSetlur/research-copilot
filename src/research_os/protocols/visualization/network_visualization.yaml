@@ -1,16 +1,16 @@
 id: network_visualization
 tier: 'synthesize'
 name: Network / Graph Visualization (DAGs, citation networks, knowledge graphs)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor, maintainer]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - visualization/color_accessibility_audit   # edge/node colour CVD check
-  - visualization/animation_design             # for a network evolving over time
+- visualization/color_accessibility_audit     # edge/node colour CVD check
+- visualization/animation_design               # for a network evolving over time
 description: |
   When relationships matter more than aggregates — co-authorship,
   citation networks, social ties, gene regulatory networks, model
@@ -40,210 +40,194 @@ trigger: |
       ("this hides the structure").
 
 prerequisites:
-  - Edge data exists (edge list, adjacency matrix, or NetworkX /
-    igraph object) OR the AI can extract one from a relational source.
-  - Node attributes (type, group, weight) documented if relevant.
+- Edge data exists (edge list, adjacency matrix, or NetworkX / igraph object) OR the AI can extract one from a relational source.
+- Node attributes (type, group, weight) documented if relevant.
 
 editorial_voice:
   rules:
-    - "Once a graph is dense enough that force-directed layout
-       collapses into a hairball (edges crossing everywhere, no
-       readable structure), stop drawing the raw node-link. Switch to
-       clustered layouts (community detection + layout per cluster),
-       matrix views, or aggregated representations (super-node
-       summaries) BEFORE drawing. The node/edge profile from step 1
-       tells you when you're there — don't wait for the render."
-    - "Layout choice is not aesthetic — it encodes structure. Tree
-       layouts assume hierarchy; force-directed assumes spring
-       equilibrium; circular emphasizes order; arc diagrams compare
-       within a fixed sequence. Pick by the structural question."
-    - "Visual encoding budget is finite. Size = degree or weight,
-       color = community or type, label = SELECTED nodes only.
-       Labelling every node makes a network unreadable once the
-       labels start to overlap — label the few the story names, not
-       all of them."
-    - "Static for publications; interactive for exploration. A
-       publication figure should answer ONE question; an exploration
-       tool should let the reader pan, zoom, and filter."
+  - "Once a graph is dense enough that force-directed layout collapses into a hairball (edges crossing everywhere, no readable structure), stop drawing the raw node-link. Switch to clustered layouts (community detection + layout per cluster), matrix views, or aggregated representations (super-node summaries) BEFORE drawing. The node/edge profile from step 1 tells you when you're there — don't wait for the render."
+  - "Layout choice is not aesthetic — it encodes structure. Tree layouts assume hierarchy; force-directed assumes spring equilibrium; circular emphasizes order; arc diagrams compare within a fixed sequence. Pick by the structural question."
+  - "Visual encoding budget is finite. Size = degree or weight, color = community or type, label = SELECTED nodes only. Labelling every node makes a network unreadable once the labels start to overlap — label the few the story names, not all of them."
+  - "Static for publications; interactive for exploration. A publication figure should answer ONE question; an exploration tool should let the reader pan, zoom, and filter."
 
 steps:
-  - id: characterize_graph
-    name: Characterise the graph structure
-    description: |
-      Capture before plotting anything:
-        - directed or undirected? weighted or unweighted?
-        - bipartite, tripartite, multigraph?
-        - node count + edge count + density
-        - connected components (1 giant or many?)
-        - degree distribution (uniform vs power-law)
-        - any natural hierarchy (tree-like) or community structure?
+- id: characterize_graph
+  name: Characterise the graph structure
+  description: |
+    Capture before plotting anything:
+      - directed or undirected? weighted or unweighted?
+      - bipartite, tripartite, multigraph?
+      - node count + edge count + density
+      - connected components (1 giant or many?)
+      - degree distribution (uniform vs power-law)
+      - any natural hierarchy (tree-like) or community structure?
 
-      Use networkx / igraph / graph-tool to compute these numbers and
-      write to workspace/<step>/outputs/reports/network_profile.md.
+    Use networkx / igraph / graph-tool to compute these numbers and
+    write to workspace/<step>/outputs/reports/network_profile.md.
 
-      The profile dictates the layout family in step 3.
+    The profile dictates the layout family in step 3.
 
-  - id: pick_visualization_goal
-    name: Pick the visualization GOAL (and therefore the encoding)
-    description: |
-      What single question should the figure answer? Common goals
-      and the encodings that serve each:
+- id: pick_visualization_goal
+  name: Pick the visualization GOAL (and therefore the encoding)
+  description: |
+    What single question should the figure answer? Common goals
+    and the encodings that serve each:
 
-        SHOW STRUCTURE — overview of who connects to whom. Force-
-          directed layout (FR / Kamada-Kawai / ForceAtlas2). Edge
-          bundling if many edges cross.
-        SHOW COMMUNITIES — what clusters exist? Run community
-          detection (Louvain / Leiden / spectral) FIRST, then
-          colour-by-community. Hide intra-community edges in dense
-          clusters.
-        SHOW HIERARCHY — parent-child or DAG structure. Use a tree
-          layout (Sugiyama / Reingold-Tilford / dot via graphviz).
-        SHOW FLOW — directional movement (traffic, citation flow).
-          Use a Sankey, arc diagram, or directed force-layout with
-          arrowheads.
-        SHOW INFLUENCE — who is central? Compute centralities
-          (degree / betweenness / eigenvector / PageRank); size
-          nodes by chosen metric; report which centrality + why.
-        SHOW CHANGE OVER TIME — evolving network. Use small
-          multiples (snapshots) OR an animation OR a dynamic
-          network diagram. See visualization/animation_design.
+      SHOW STRUCTURE — overview of who connects to whom. Force-
+        directed layout (FR / Kamada-Kawai / ForceAtlas2). Edge
+        bundling if many edges cross.
+      SHOW COMMUNITIES — what clusters exist? Run community
+        detection (Louvain / Leiden / spectral) FIRST, then
+        colour-by-community. Hide intra-community edges in dense
+        clusters.
+      SHOW HIERARCHY — parent-child or DAG structure. Use a tree
+        layout (Sugiyama / Reingold-Tilford / dot via graphviz).
+      SHOW FLOW — directional movement (traffic, citation flow).
+        Use a Sankey, arc diagram, or directed force-layout with
+        arrowheads.
+      SHOW INFLUENCE — who is central? Compute centralities
+        (degree / betweenness / eigenvector / PageRank); size
+        nodes by chosen metric; report which centrality + why.
+      SHOW CHANGE OVER TIME — evolving network. Use small
+        multiples (snapshots) OR an animation OR a dynamic
+        network diagram. See visualization/animation_design.
 
-      Write workspace/.network_viz/goal.md.
+    Write workspace/.network_viz/goal.md.
 
-  - id: pick_layout_algorithm
-    name: Pick the layout algorithm — reasoning, not default
-    description: |
-      Layout families + when they fit:
+- id: pick_layout_algorithm
+  name: Pick the layout algorithm — reasoning, not default
+  description: |
+    Layout families + when they fit:
 
-        FORCE-DIRECTED (Fruchterman-Reingold, Kamada-Kawai,
-          ForceAtlas2, OpenORD) — best for small-to-medium networks
-          with natural community structure, where the layout still
-          separates clusters legibly. Degrades to a hairball on dense
-          or scale-free graphs.
+      FORCE-DIRECTED (Fruchterman-Reingold, Kamada-Kawai,
+        ForceAtlas2, OpenORD) — best for small-to-medium networks
+        with natural community structure, where the layout still
+        separates clusters legibly. Degrades to a hairball on dense
+        or scale-free graphs.
 
-        HIERARCHICAL (graphviz `dot`, Sugiyama) — best for DAGs,
-          trees, layered structures (causal DAGs, computation
-          graphs, organisational charts).
+      HIERARCHICAL (graphviz `dot`, Sugiyama) — best for DAGs,
+        trees, layered structures (causal DAGs, computation
+        graphs, organisational charts).
 
-        CIRCULAR / ARC — best for ordered nodes or comparing
-          within a sequence (genome circos plots, chord diagrams
-          for migration).
+      CIRCULAR / ARC — best for ordered nodes or comparing
+        within a sequence (genome circos plots, chord diagrams
+        for migration).
 
-        MATRIX / HEATMAP-OF-ADJACENCY — best for dense graphs
-          where node positions are nuisance. Reordering matters
-          (spectral, BEA, optimal leaf-ordering).
+      MATRIX / HEATMAP-OF-ADJACENCY — best for dense graphs
+        where node positions are nuisance. Reordering matters
+        (spectral, BEA, optimal leaf-ordering).
 
-        GEOGRAPHIC — when nodes have spatial position. See
-          visualization/geospatial_visualization for that path.
+      GEOGRAPHIC — when nodes have spatial position. See
+        visualization/geospatial_visualization for that path.
 
-        EMBEDDING-BASED (node2vec / GNN embeddings + UMAP / t-SNE)
-          — when the graph is too large for layout-as-meaning, you
-          can embed nodes and 2D-project. See
-          visualization/dimensionality_reduction_viz.
+      EMBEDDING-BASED (node2vec / GNN embeddings + UMAP / t-SNE)
+        — when the graph is too large for layout-as-meaning, you
+        can embed nodes and 2D-project. See
+        visualization/dimensionality_reduction_viz.
 
-      Document choice + tradeoff + library:
-        Python: networkx (default layouts), graph-tool (fast +
-          beautiful), igraph (best community detection),
-          pyvis (interactive HTML), bokeh / plotly (interactive),
-          datashader (massive graphs).
-        R: igraph, ggraph, tidygraph, visNetwork.
-        Dedicated: Gephi (interactive desktop), Cytoscape
-          (biological), graphviz (DAGs / trees).
-        Top-tier interactive / showcase: D3 force layout with
-          custom edge bundling, deck.gl GraphLayer for
-          WebGL-scale (>100k edges), Observable + Plot for
-          publishable interactive essays, Three.js for 3D /
-          embedding-space network views. When the network IS the
-          contribution, route to visualization/showcase_visualization
-          and visualization/interactive_dashboard_design — basic
-          static node-link is rarely the right ceiling.
+    Document choice + tradeoff + library:
+      Python: networkx (default layouts), graph-tool (fast +
+        beautiful), igraph (best community detection),
+        pyvis (interactive HTML), bokeh / plotly (interactive),
+        datashader (massive graphs).
+      R: igraph, ggraph, tidygraph, visNetwork.
+      Dedicated: Gephi (interactive desktop), Cytoscape
+        (biological), graphviz (DAGs / trees).
+      Top-tier interactive / showcase: D3 force layout with
+        custom edge bundling, deck.gl GraphLayer for
+        WebGL-scale (>100k edges), Observable + Plot for
+        publishable interactive essays, Three.js for 3D /
+        embedding-space network views. When the network IS the
+        contribution, route to visualization/showcase_visualization
+        and visualization/interactive_dashboard_design — basic
+        static node-link is rarely the right ceiling.
 
-  - id: pick_visual_encoding
-    name: Pick the visual encoding (size / colour / label / edge weight)
-    description: |
-      Encoding budget — what each channel encodes + the trade:
+- id: pick_visual_encoding
+  name: Pick the visual encoding (size / colour / label / edge weight)
+  description: |
+    Encoding budget — what each channel encodes + the trade:
 
-        NODE SIZE — best for ONE numeric attribute (degree, weight,
-          centrality). Don't double-encode (size + colour for the
-          same variable adds nothing).
-        NODE COLOUR — best for categorical (community, type). For
-          ordinal, use a sequential palette. Keep the category count
-          to what a reader can hold in a legend; collapse rare
-          categories into "other" before the legend explodes.
-        NODE LABELS — show selectively. Top-k by chosen centrality;
-          or only the nodes the story names. Never label so many that
-          the labels overlap each other.
-        EDGE WEIGHT — line thickness. Use alpha or thickness, not
-          both. Saturate values above the 95th percentile so a few
-          mega-edges don't drown the rest.
-        EDGE COLOUR — categorical edges only (relation type).
-          Otherwise neutral grey.
-        ARROWS — directed graphs only. Open arrows + slight curve
-          (Bezier) for legibility when many edges run parallel.
+      NODE SIZE — best for ONE numeric attribute (degree, weight,
+        centrality). Don't double-encode (size + colour for the
+        same variable adds nothing).
+      NODE COLOUR — best for categorical (community, type). For
+        ordinal, use a sequential palette. Keep the category count
+        to what a reader can hold in a legend; collapse rare
+        categories into "other" before the legend explodes.
+      NODE LABELS — show selectively. Top-k by chosen centrality;
+        or only the nodes the story names. Never label so many that
+        the labels overlap each other.
+      EDGE WEIGHT — line thickness. Use alpha or thickness, not
+        both. Saturate values above the 95th percentile so a few
+        mega-edges don't drown the rest.
+      EDGE COLOUR — categorical edges only (relation type).
+        Otherwise neutral grey.
+      ARROWS — directed graphs only. Open arrows + slight curve
+        (Bezier) for legibility when many edges run parallel.
 
-      Reference: Munzner Ch. 9 on networks; ColorBrewer for palettes.
+    Reference: Munzner Ch. 9 on networks; ColorBrewer for palettes.
 
-  - id: implement_and_render
-    name: Implement + render
-    description: |
-      For a static publication figure: follow visualization/figure_guidelines
-      and write the plotting script with the chosen library. The script
-      must:
-        - load the graph (edge list / adjacency / pickle)
-        - compute the chosen layout with a FIXED random seed (force-
-          directed layouts are stochastic; non-reproducible figures
-          fail the audit)
-        - compute the chosen centrality / community labels
-        - render to workspace/<step>/outputs/figures/network_<topic>.png
-          (raster) + .svg (vector for the manuscript)
-        - emit the standard 4 sidecars: .caption.md, .summary.md,
-          .prov.json, .svg
-        - persist the laid-out coordinates to
-          data/next_step_output/network_coords.parquet so reruns can reproduce
-          the figure WITHOUT re-running the stochastic layout.
+- id: implement_and_render
+  name: Implement + render
+  description: |
+    For a static publication figure: follow visualization/figure_guidelines
+    and write the plotting script with the chosen library. The script
+    must:
+      - load the graph (edge list / adjacency / pickle)
+      - compute the chosen layout with a FIXED random seed (force-
+        directed layouts are stochastic; non-reproducible figures
+        fail the audit)
+      - compute the chosen centrality / community labels
+      - render to workspace/<step>/outputs/figures/network_<topic>.png
+        (raster) + .svg (vector for the manuscript)
+      - emit the standard 4 sidecars: .caption.md, .summary.md,
+        .prov.json, .svg
+      - persist the laid-out coordinates to
+        data/next_step_output/network_coords.parquet so reruns can reproduce
+        the figure WITHOUT re-running the stochastic layout.
 
-      For an interactive figure: route to
-      visualization/interactive_dashboard_design (or skip if it
-      doesn't exist yet — pyvis / bokeh / plotly directly).
+    For an interactive figure: route to
+    visualization/interactive_dashboard_design (or skip if it
+    doesn't exist yet — pyvis / bokeh / plotly directly).
 
-  - id: legibility_audit
-    name: Audit the rendered figure for legibility
-    description: |
-      Run through the legibility checklist:
-        - is the figure interpretable without zoom?
-        - are labels readable (font size ≥ 7pt in the rendered size)?
-        - does the chosen layout actually convey the structure or
-          is it a hairball?
-        - are the visual encodings (size, colour) explained in the
-          caption + legend?
-        - do edge colours / widths discriminate without colour vision?
-          (Route to visualization/color_accessibility_audit.)
-        - is the relevant centrality / community / structural claim
-          REALLY visible, or buried under visual noise?
+- id: legibility_audit
+  name: Audit the rendered figure for legibility
+  description: |
+    Run through the legibility checklist:
+      - is the figure interpretable without zoom?
+      - are labels readable (font size ≥ 7pt in the rendered size)?
+      - does the chosen layout actually convey the structure or
+        is it a hairball?
+      - are the visual encodings (size, colour) explained in the
+        caption + legend?
+      - do edge colours / widths discriminate without colour vision?
+        (Route to visualization/color_accessibility_audit.)
+      - is the relevant centrality / community / structural claim
+        REALLY visible, or buried under visual noise?
 
-      If the network is a hairball, GO BACK to step 2 / 3: simpler
-      goal, different layout, aggregated nodes. Don't ship a hairball.
+    If the network is a hairball, GO BACK to step 2 / 3: simpler
+    goal, different layout, aggregated nodes. Don't ship a hairball.
 
-  - id: caption_and_methods
-    name: Write the caption + log to methods
-    description: |
-      Caption must state:
-        - what the nodes represent + what the edges represent
-        - directed / weighted / N nodes + M edges
-        - layout algorithm + random seed
-        - what node size encodes + what node colour encodes
-        - centrality / community detection method (with citation)
-        - the ONE claim the figure supports
+- id: caption_and_methods
+  name: Write the caption + log to methods
+  description: |
+    Caption must state:
+      - what the nodes represent + what the edges represent
+      - directed / weighted / N nodes + M edges
+      - layout algorithm + random seed
+      - what node size encodes + what node colour encodes
+      - centrality / community detection method (with citation)
+      - the ONE claim the figure supports
 
-      mem_log the network construction + layout choices
-      so the audit trail is intact.
+    mem_log the network construction + layout choices
+    so the audit trail is intact.
 
 expected_outputs:
-  - workspace/<step>/outputs/reports/network_profile.md
-  - workspace/.network_viz/goal.md
-  - workspace/<step>/outputs/figures/network_<topic>.{png,svg}
-  - workspace/<step>/outputs/figures/network_<topic>.{caption.md,summary.md,prov.json}
-  - workspace/<step>/data/next_step_output/network_coords.parquet
+- workspace/<step>/outputs/reports/network_profile.md
+- workspace/.network_viz/goal.md
+- workspace/<step>/outputs/figures/network_<topic>.{png,svg}
+- workspace/<step>/outputs/figures/network_<topic>.{caption.md,summary.md,prov.json}
+- workspace/<step>/data/next_step_output/network_coords.parquet
 
 quality_bar:
   graph_profile_with_n_nodes_m_edges_density: true
@@ -256,3 +240,19 @@ quality_bar:
 next_protocol: visualization/figure_critique
 next_protocol_kind: forward_default
 on_failure: visualization/figure_guidelines
+intent_class: synthesize
+sub_intent: network
+triggers:
+- network plot
+- graph visualization
+- node-link
+- force-directed
+- edge bundling
+- citation network
+- co-authorship network
+- knowledge graph
+- dag diagram
+- gephi
+- cytoscape
+- graphviz
+summary: Plot a network / graph (DAGs, citation networks, knowledge graphs); layout + encoding reasoning.

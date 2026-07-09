@@ -1,19 +1,19 @@
 id: tool_from_description
 tier: 'plan'
 name: Tool From Description (describe it in plain language → plan → build → improve → version)
-version: '4.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]
   audience: [naive_ai, researcher, auditor]
   workflow_shape: [tool_build, hybrid]
 last_reviewed: '2026-06-25'
 see_also:
-  - build/spec_and_design          # the spec pass this protocol drives the clarified description into
-  - build/optimal_approach         # the "brain out HOW" step between spec and build
-  - build/implement_iteration      # the inner build loop each plan→build pass runs through
-  - build/tool_evaluation_loop     # the evidence-driven improve loop this re-enters until the bar is met
-  - build/versioning_and_rollback  # how a passing version is marked good + returned to when an improvement regresses
+- build/spec_and_design            # the spec pass this protocol drives the clarified description into
+- build/optimal_approach           # the "brain out HOW" step between spec and build
+- build/implement_iteration        # the inner build loop each plan→build pass runs through
+- build/tool_evaluation_loop       # the evidence-driven improve loop this re-enters until the bar is met
+- build/versioning_and_rollback    # how a passing version is marked good + returned to when an improvement regresses
 description: |
   The front door for "I want a tool that does X" — the researcher describes,
   in plain language, the tool they want; the AI turns that into a working,
@@ -58,169 +58,156 @@ trigger: |
   tool_build mode. This is usually the FIRST protocol when the starting point
   is a description rather than an existing spec.
 prerequisites:
-  - A plain-language description of the desired tool from the researcher (however rough) — this protocol's job is to turn it into a built, evaluated, versioned tool.
-  - workspace.mode is tool_build (sys_boot reports workspace_mode), OR the researcher has asked to build a tool from a description (the tool_build scaffold seeds spec/ decisions/ eval/ + an inner repo; create it if entering cold).
+- A plain-language description of the desired tool from the researcher (however rough) — this protocol's job is to turn it into a built, evaluated, versioned tool.
+- workspace.mode is tool_build (sys_boot reports workspace_mode), OR the researcher has asked to build a tool from a description (the tool_build scaffold seeds spec/ decisions/ eval/ + an inner repo; create it if entering cold).
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "A plain-language description is the START of the spec, never the spec
-       itself. The researcher's words carry unstated assumptions about
-       inputs, scale, correctness, and what 'good' means; surfacing those
-       BEFORE building is the difference between building the tool they meant
-       and the tool they literally said."
-    - "The evaluation decides done, not the AI's sense of completion. A tool
-       is finished because real runs on real inputs cleared the researcher's
-       bar — not because the code looks complete. 'It runs' is not 'it works'."
-    - "Re-planning from results is the point, not a fallback. Each outer pass
-       is allowed — expected — to change the plan, the approach, even the spec
-       when the evaluation reveals the first read of the problem was wrong.
-       Holding the original plan against the evidence is how a wrong tool gets
-       shipped politely."
-    - "Loop with a budget, not forever. Each outer pass must move the tool
-       measurably toward the bar; name what 'meets the bar' is up front so
-       both the AI and the researcher can see convergence approaching and
-       agree when to stop."
+  - "A plain-language description is the START of the spec, never the spec itself. The researcher's words carry unstated assumptions about inputs, scale, correctness, and what 'good' means; surfacing those BEFORE building is the difference between building the tool they meant and the tool they literally said."
+  - "The evaluation decides done, not the AI's sense of completion. A tool is finished because real runs on real inputs cleared the researcher's bar — not because the code looks complete. 'It runs' is not 'it works'."
+  - "Re-planning from results is the point, not a fallback. Each outer pass is allowed — expected — to change the plan, the approach, even the spec when the evaluation reveals the first read of the problem was wrong. Holding the original plan against the evidence is how a wrong tool gets shipped politely."
+  - "Loop with a budget, not forever. Each outer pass must move the tool measurably toward the bar; name what 'meets the bar' is up front so both the AI and the researcher can see convergence approaching and agree when to stop."
 
 steps:
-  - id: clarify_the_description
-    name: Clarify the description into something buildable + checkable
-    description: |
-      Start from the researcher's words and read what they leave unsaid. A
-      one-line request hides the decisions that determine whether the tool is
-      right: what the inputs really look like (format, scale, messiness),
-      what "correct output" means, what environment it runs in, and — most
-      load-bearing — how the researcher will know it WORKED. Reason about the
-      gaps and ask the few questions that actually change the build; do not
-      interrogate exhaustively, and do not silently fill the gaps from
-      training memory (that is how you build a confident wrong tool).
+- id: clarify_the_description
+  name: Clarify the description into something buildable + checkable
+  description: |
+    Start from the researcher's words and read what they leave unsaid. A
+    one-line request hides the decisions that determine whether the tool is
+    right: what the inputs really look like (format, scale, messiness),
+    what "correct output" means, what environment it runs in, and — most
+    load-bearing — how the researcher will know it WORKED. Reason about the
+    gaps and ask the few questions that actually change the build; do not
+    interrogate exhaustively, and do not silently fill the gaps from
+    training memory (that is how you build a confident wrong tool).
 
-      The output of this step is a clarified description precise enough that
-      the next step can write acceptance criteria a test could check — and
-      precise enough that "done" has a concrete meaning. State the bar back
-      to the researcher in their terms so the target is shared.
+    The output of this step is a clarified description precise enough that
+    the next step can write acceptance criteria a test could check — and
+    precise enough that "done" has a concrete meaning. State the bar back
+    to the researcher in their terms so the target is shared.
 
-      AUTONOMY GATE:
-        Risk: reversible + cheap — clarifying writes no code; getting it
-        wrong here, though, propagates into everything built.
-        proceed (adaptive default, autopilot) → ask the few clarifying
-          questions whose answers change the build; for the rest, state the
-          assumption you are making and proceed, so a wrong assumption is
-          visible and correctable rather than hidden.
-        confirm first (manual / supervised) → present the clarified
-          description + the assumptions; confirm the target before planning.
+    AUTONOMY GATE:
+      Risk: reversible + cheap — clarifying writes no code; getting it
+      wrong here, though, propagates into everything built.
+      proceed (adaptive default, autopilot) → ask the few clarifying
+        questions whose answers change the build; for the rest, state the
+        assumption you are making and proceed, so a wrong assumption is
+        visible and correctable rather than hidden.
+      confirm first (manual / supervised) → present the clarified
+        description + the assumptions; confirm the target before planning.
 
-  - id: plan_the_build
-    name: Plan the build — spec, then the optimal approach
-    description: |
-      Turn the clarified description into a plan, reusing the existing
-      lifecycle rather than improvising:
-        - Drive the clarified description into build/spec_and_design to pin
-          the acceptance criteria, the interface contract, and the
-          load-bearing decisions (ADRs) — the spec the eval will later judge
-          against.
-        - Then, before committing to an implementation, run
-          build/optimal_approach to brain out HOW: generate distinct
-          candidate approaches, weigh them against this build's real
-          constraints, and pick one with a recorded justification. Skipping
-          this is how the build defaults to the most familiar shape instead
-          of the best one.
+- id: plan_the_build
+  name: Plan the build — spec, then the optimal approach
+  description: |
+    Turn the clarified description into a plan, reusing the existing
+    lifecycle rather than improvising:
+      - Drive the clarified description into build/spec_and_design to pin
+        the acceptance criteria, the interface contract, and the
+        load-bearing decisions (ADRs) — the spec the eval will later judge
+        against.
+      - Then, before committing to an implementation, run
+        build/optimal_approach to brain out HOW: generate distinct
+        candidate approaches, weigh them against this build's real
+        constraints, and pick one with a recorded justification. Skipping
+        this is how the build defaults to the most familiar shape instead
+        of the best one.
 
-      On RE-PLAN passes (after the first evaluation), this step is where the
-      plan re-forms from evidence: a confirmed failure may reshape an
-      acceptance criterion, send the approach back to build/optimal_approach
-      for the fallback, or surface a capability gap worth build/method_scouting.
-      Carry forward what the last pass learned; do not re-plan from scratch.
+    On RE-PLAN passes (after the first evaluation), this step is where the
+    plan re-forms from evidence: a confirmed failure may reshape an
+    acceptance criterion, send the approach back to build/optimal_approach
+    for the fallback, or surface a capability gap worth build/method_scouting.
+    Carry forward what the last pass learned; do not re-plan from scratch.
 
-  - id: build_an_increment_toward_the_bar
-    name: Build toward the bar through the inner loop
-    description: |
-      Execute the plan through the inner build loop — build/implement_iteration
-      drives one shippable increment at a time (scope → implement in the inner
-      repo → prove with a test → run the checks → commit against the
-      objective). The aim of this OUTER-loop phase is a coherent increment of
-      the tool that is worth evaluating against the bar — not the whole tool
-      in one go, and not a one-shot dump.
+- id: build_an_increment_toward_the_bar
+  name: Build toward the bar through the inner loop
+  description: |
+    Execute the plan through the inner build loop — build/implement_iteration
+    drives one shippable increment at a time (scope → implement in the inner
+    repo → prove with a test → run the checks → commit against the
+    objective). The aim of this OUTER-loop phase is a coherent increment of
+    the tool that is worth evaluating against the bar — not the whole tool
+    in one go, and not a one-shot dump.
 
-      Let the inner loop's own discipline govern the code (tests, green
-      checks, scoped commits, provenance). When this phase produces a tool
-      increment that builds and passes its tests, it is ready to be EVALUATED
-      — which is the step the one-shot failure mode skips.
+    Let the inner loop's own discipline govern the code (tests, green
+    checks, scoped commits, provenance). When this phase produces a tool
+    increment that builds and passes its tests, it is ready to be EVALUATED
+    — which is the step the one-shot failure mode skips.
 
-  - id: evaluate_against_the_real_bar
-    name: Evaluate the increment against the researcher's real bar
-    description: |
-      Run the increment against the bar from clarify_the_description — on
-      REAL, representative inputs, not a happy-path demo — by entering
-      build/tool_evaluation_loop: probe where it falls short, characterise
-      the failures precisely (input regime + magnitude + evidence), and rank
-      what to fix by evidenced impact. This is the phase that earns the right
-      to say the tool works (or doesn't).
+- id: evaluate_against_the_real_bar
+  name: Evaluate the increment against the researcher's real bar
+  description: |
+    Run the increment against the bar from clarify_the_description — on
+    REAL, representative inputs, not a happy-path demo — by entering
+    build/tool_evaluation_loop: probe where it falls short, characterise
+    the failures precisely (input regime + magnitude + evidence), and rank
+    what to fix by evidenced impact. This is the phase that earns the right
+    to say the tool works (or doesn't).
 
-      Critically: the verdict here is what drives the next outer pass. The
-      evaluation does not just produce a backlog — it answers the outer
-      loop's question: does this version clear the researcher's bar yet? Keep
-      the evaluation conditions fixed across passes so progress (or
-      regression) between versions is visible and real.
+    Critically: the verdict here is what drives the next outer pass. The
+    evaluation does not just produce a backlog — it answers the outer
+    loop's question: does this version clear the researcher's bar yet? Keep
+    the evaluation conditions fixed across passes so progress (or
+    regression) between versions is visible and real.
 
-  - id: version_what_the_eval_blessed
-    name: Mark a version good when the eval says so
-    description: |
-      When an increment clears (or meaningfully advances toward) the bar, mark
-      that version as a known-good point BEFORE the next round of changes can
-      regress it — this is build/versioning_and_rollback's job, and the tie is
-      deliberate: a version is "good" because the EVALUATION said so, not
-      because time passed. Carry the eval verdict (the conditions, the
-      numbers, the date) into the version's record so a later session knows
-      exactly what "good" meant for this tag.
+- id: version_what_the_eval_blessed
+  name: Mark a version good when the eval says so
+  description: |
+    When an increment clears (or meaningfully advances toward) the bar, mark
+    that version as a known-good point BEFORE the next round of changes can
+    regress it — this is build/versioning_and_rollback's job, and the tie is
+    deliberate: a version is "good" because the EVALUATION said so, not
+    because time passed. Carry the eval verdict (the conditions, the
+    numbers, the date) into the version's record so a later session knows
+    exactly what "good" meant for this tag.
 
-      This is what makes the improve loop safe to be aggressive: if the next
-      pass's improvement regresses the tool, there is a blessed version to
-      return to (build/versioning_and_rollback's rollback path) instead of
-      debugging forward under pressure.
+    This is what makes the improve loop safe to be aggressive: if the next
+    pass's improvement regresses the tool, there is a blessed version to
+    return to (build/versioning_and_rollback's rollback path) instead of
+    debugging forward under pressure.
 
-  - id: loop_or_converge
-    name: Re-plan and loop, or converge on done
-    description: |
-      Decide, from the evaluation — not from a feeling of completion:
-        - LOOP → the tool has not met the bar, or the top backlog item still
-          clears the threshold of being worth a build cycle: return to
-          plan_the_build, re-forming the plan from what the evaluation found
-          (re-shape a criterion, pick the fallback approach, scout a gap),
-          then build → evaluate again. Each pass must move the tool
-          measurably toward the bar.
-        - CONVERGE → real runs clear the researcher's bar on every
-          use-case-critical dimension and the remaining items sit below the
-          line: the tool is done. The accumulated evaluation record IS the
-          evidence that it works ("on real input D it does X, improved across
-          N passes"), and the last blessed version is the deliverable.
+- id: loop_or_converge
+  name: Re-plan and loop, or converge on done
+  description: |
+    Decide, from the evaluation — not from a feeling of completion:
+      - LOOP → the tool has not met the bar, or the top backlog item still
+        clears the threshold of being worth a build cycle: return to
+        plan_the_build, re-forming the plan from what the evaluation found
+        (re-shape a criterion, pick the fallback approach, scout a gap),
+        then build → evaluate again. Each pass must move the tool
+        measurably toward the bar.
+      - CONVERGE → real runs clear the researcher's bar on every
+        use-case-critical dimension and the remaining items sit below the
+        line: the tool is done. The accumulated evaluation record IS the
+        evidence that it works ("on real input D it does X, improved across
+        N passes"), and the last blessed version is the deliverable.
 
-      On convergence, route onward as the project needs: a tool meant to be
-      shipped goes to build/release_and_changelog; one that exists to serve an
-      analysis crosses back via hybrid/tool_to_analysis_handoff.
+    On convergence, route onward as the project needs: a tool meant to be
+    shipped goes to build/release_and_changelog; one that exists to serve an
+    analysis crosses back via hybrid/tool_to_analysis_handoff.
 
-      MANDATORY PAUSE (anti-one-shot): present the evaluation verdict + the
-      loop/converge recommendation to the researcher before starting another
-      outer pass or declaring done. The outer loop is exactly where an AI
-      tends to sprint past the researcher's intent; the pause is where they
-      steer or call it finished.
+    MANDATORY PAUSE (anti-one-shot): present the evaluation verdict + the
+    loop/converge recommendation to the researcher before starting another
+    outer pass or declaring done. The outer loop is exactly where an AI
+    tends to sprint past the researcher's intent; the pause is where they
+    steer or call it finished.
 
-      AUTONOMY GATE:
-        Risk: reversible + cheap to loop (more gated build work behind a
-        blessed version); declaring DONE is a judgement the researcher owns.
-        proceed (adaptive default, autopilot) → if the eval shows the bar is
-          not yet met, loop to re-plan in the same turn; if the eval shows
-          the bar is met, present the convergence case and the blessed
-          version rather than unilaterally declaring the job finished.
-        confirm first (manual / supervised) → present the eval verdict + the
-          loop/converge recommendation; wait for the researcher's call.
+    AUTONOMY GATE:
+      Risk: reversible + cheap to loop (more gated build work behind a
+      blessed version); declaring DONE is a judgement the researcher owns.
+      proceed (adaptive default, autopilot) → if the eval shows the bar is
+        not yet met, loop to re-plan in the same turn; if the eval shows
+        the bar is met, present the convergence case and the blessed
+        version rather than unilaterally declaring the job finished.
+      confirm first (manual / supervised) → present the eval verdict + the
+        loop/converge recommendation; wait for the researcher's call.
 
 expected_outputs:
-  - A clarified description with the researcher's real bar stated (in spec/requirements.md or the approach brief)
-  - A plan per outer pass (spec + chosen approach), re-formed from the prior pass's evaluation
-  - A built, test-passing tool increment in the inner repo per pass
-  - An evaluation record per pass tying the version to its bar-vs-result verdict (from build/tool_evaluation_loop)
-  - Blessed versions marking each eval-passing point (from build/versioning_and_rollback)
+- A clarified description with the researcher's real bar stated (in spec/requirements.md or the approach brief)
+- A plan per outer pass (spec + chosen approach), re-formed from the prior pass's evaluation
+- A built, test-passing tool increment in the inner repo per pass
+- An evaluation record per pass tying the version to its bar-vs-result verdict (from build/tool_evaluation_loop)
+- Blessed versions marking each eval-passing point (from build/versioning_and_rollback)
 
 quality_bar: |
   - The plain-language description was clarified into checkable acceptance criteria + a stated bar BEFORE building (no silent gap-filling from memory).
@@ -233,3 +220,41 @@ quality_bar: |
 next_protocol: build/spec_and_design
 next_protocol_kind: forward_default
 on_failure: guidance/scope_clarification
+intent_class: plan
+sub_intent: build_from_description
+triggers:
+- build me a tool
+- build me a tool that
+- i want a tool that
+- i need a tool that
+- i need something that
+- make me a tool
+- make me a script that
+- make me a cli that
+- build a tool that does
+- can you build me
+- i want a tool to
+- i wish i had a tool
+- build something that
+- describe the tool i want
+- build it then improve it
+- build me a cli
+- build me a cli that
+- i want a script that
+- i want a script to
+- make me a script that
+- write me a tool that
+- i need a command-line tool
+summary: "The describe→plan→build→evaluate→re-plan outer loop: clarify a plain-language tool request into a checkable spec, plan the build (spec + reasoned approach), build an increment, evaluate it on REAL inputs, and loop until the researcher's bar is met — versioning each eval-passing state."
+token_estimate: 2000
+decomposition:
+- protocol: build/tool_from_description
+  purpose: Clarify the description + bar, plan (spec + approach), build an increment, evaluate on real inputs, loop or converge — versioning each eval-passing state.
+- protocol: build/spec_and_design
+  purpose: Pin acceptance criteria + the interface contract from the clarified description.
+- protocol: build/optimal_approach
+  purpose: Brain out HOW before committing to an implementation.
+- protocol: build/tool_evaluation_loop
+  purpose: Evaluate the increment against the real bar; its verdict drives loop-or-converge.
+- tool: mem_log
+  purpose: Record the clarified bar, each outer pass's plan, and the loop/converge verdict.

@@ -135,14 +135,14 @@ def _c(text: str, code: str, enable: bool) -> str:
 
 
 def check_python_version() -> CheckResult:
-    """Require Python >= 3.10 (matches pyproject `requires-python`)."""
+    """Require Python >= 3.11 (matches pyproject `requires-python`)."""
     v = sys.version_info
-    if (v.major, v.minor) >= (3, 10):
-        return ("pass", f"Python {v.major}.{v.minor}.{v.micro} (>= 3.10)", None)
+    if (v.major, v.minor) >= (3, 11):
+        return ("pass", f"Python {v.major}.{v.minor}.{v.micro} (>= 3.11)", None)
     return (
         "fail",
-        f"Python {v.major}.{v.minor}.{v.micro} is too old (need >= 3.10)",
-        "Install Python 3.10+ via conda: "
+        f"Python {v.major}.{v.minor}.{v.micro} is too old (need >= 3.11)",
+        "Install Python 3.11+ via conda: "
         "`conda create -n research-os python=3.11 && conda activate research-os`",
     )
 
@@ -318,22 +318,32 @@ def check_external_pack_entrypoints() -> CheckResult:
 
 
 def _embedding_paths() -> tuple[Path, Path]:
-    """Locate the router-index + embeddings under the installed package."""
+    """Locate the compiled protocol bundle + embeddings under the package."""
     here = Path(__file__).resolve().parent
     protocols = here / "protocols"
-    return (protocols / "_router_index.yaml",
+    return (protocols / "_protocols.bundle",
             protocols / "_embeddings.npz")
 
 
 def check_embeddings_fresh(
     *, embeddings: Path | None = None, router_index: Path | None = None,
 ) -> CheckResult:
-    """`_embeddings.npz` mtime must be >= `_router_index.yaml` mtime."""
-    idx_default, emb_default = _embedding_paths()
+    """The compiled bundle + embeddings must be present and mutually fresh.
+
+    P1: routing/gates/preconditions load from ``_protocols.bundle``; the
+    semantic router loads ``_embeddings.npz``. Both are checked-in build
+    artefacts. The ``router_index`` kwarg is kept for signature back-compat
+    but now points at the bundle.
+    """
+    bundle_default, emb_default = _embedding_paths()
     embeddings = embeddings or emb_default
-    router_index = router_index or idx_default
-    if not router_index.exists():
-        return ("warn", f"Router index missing: {router_index}", None)
+    bundle = router_index or bundle_default
+    if not bundle.exists():
+        return (
+            "warn",
+            f"Compiled protocol bundle missing: {bundle}",
+            "Build it: `python scripts/build_protocols.py`.",
+        )
     if not embeddings.exists():
         return (
             "warn",
@@ -341,31 +351,16 @@ def check_embeddings_fresh(
             "trigger-substring matching)",
             "Run the embeddings build step or `pip install research-os[semantic]`.",
         )
-    # The compiled routing sidecar (_route_meta.json) is what routing actually
-    # loads at runtime — check it too.
-    route_meta = router_index.parent / "_route_meta.json"
-    if not route_meta.exists():
+    bundle_mtime = bundle.stat().st_mtime
+    if embeddings.stat().st_mtime < bundle_mtime:
         return (
             "warn",
-            "Compiled routing sidecar (_route_meta.json) missing — routing will "
-            "fall back to parsing the full router index YAML",
-            "Build it: `python scripts/build_embeddings.py --route-meta-only`.",
-        )
-    idx_mtime = router_index.stat().st_mtime
-    if embeddings.stat().st_mtime < idx_mtime:
-        return (
-            "warn",
-            "Embeddings are STALE: router index has been edited since the last build",
+            "Embeddings are STALE: the protocol bundle is newer than the "
+            "embeddings",
             "Rebuild embeddings: `python scripts/build_embeddings.py` "
             "(see docs/RELEASING.md).",
         )
-    if route_meta.stat().st_mtime < idx_mtime:
-        return (
-            "warn",
-            "Routing sidecar (_route_meta.json) is STALE vs the router index",
-            "Recompile: `python scripts/build_embeddings.py --route-meta-only`.",
-        )
-    return ("pass", "Embeddings + routing sidecar are at-or-ahead of the router index", None)
+    return ("pass", "Protocol bundle + embeddings present and mutually fresh", None)
 
 
 def check_typst_on_path() -> CheckResult:

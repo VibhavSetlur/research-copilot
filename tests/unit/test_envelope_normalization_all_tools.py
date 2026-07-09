@@ -146,23 +146,8 @@ _STUB_ARGS: dict[str, dict] = {
 
 
 def _all_pack_and_adapter_tools() -> list[str]:
-    names = []
-    for name in _srv.TOOL_DEFINITIONS:
-        if name.startswith("tool_") and (
-            "_humanities_" in name
-            or "_qualitative_" in name
-            or "_theory_math_" in name
-            or "_wet_lab_" in name
-            or "_engineering_" in name
-            or "_slurm_" in name
-            or "_snakemake_" in name
-            or "_nextflow_" in name
-            or "_cytoscape_" in name
-            or "_redcap_" in name
-            or "_synapse_" in name
-        ):
-            names.append(name)
-    return sorted(names)
+    # Packs/adapters were archived; kept as a stable (empty) hook.
+    return []
 
 
 @pytest.mark.parametrize("tool_name", _all_pack_and_adapter_tools())
@@ -185,13 +170,6 @@ def test_every_pack_and_adapter_tool_emits_v210_envelope(tool_name, project_root
     assert env["status"] in {"success", "warning", "error"}, (
         f"{tool_name} returned non-standard status {env.get('status')!r}"
     )
-
-
-def test_pack_tools_present_in_registry():
-    """Sanity check — without this, the parametrize set above could be empty."""
-    names = _all_pack_and_adapter_tools()
-    assert "tool_humanities_archive_lookup" in names
-    assert "tool_qualitative_codebook_diff" in names
 
 
 # ---------------------------------------------------------------------------

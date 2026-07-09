@@ -104,14 +104,15 @@ def test_sys_where_token_cost_small(tmp_path):
     text = resp[0].text if hasattr(resp[0], "text") else resp[0]["text"]
     obj = json.loads(text)
     # The envelope ships an authoritative tokens_estimate for the payload.
-    # Lightweight orientation tool should land near ~30 tokens.
-    assert obj.get("tokens_estimate", 999) < 50, (
+    # Lightweight orientation tool should land under ~100 tokens even with
+    # the §13.1 active_persona field (name + directive string).
+    assert obj.get("tokens_estimate", 999) < 100, (
         f"sys_where payload too large: {obj.get('tokens_estimate')} tokens"
     )
     # Belt-and-braces: the payload object itself (sans envelope) should
-    # serialize to <30 tokens (~120 chars).
+    # serialize to <400 chars (allows for active_persona name + directive).
     payload_only = json.dumps(obj["payload"])
-    assert len(payload_only) < 200, (
+    assert len(payload_only) < 400, (
         f"sys_where payload serializes to {len(payload_only)} chars"
     )
 

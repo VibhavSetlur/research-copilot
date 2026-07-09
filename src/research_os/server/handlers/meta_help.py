@@ -5,6 +5,7 @@ runs ~350 lines; isolating it keeps meta_sys under the 600-line ceiling.
 """
 from __future__ import annotations
 
+# ruff: noqa: F403, F405  # legacy handler runtime star-import compatibility
 from .._handlers_runtime import *  # noqa: F401,F403
 
 
@@ -617,6 +618,4 @@ def _handle_sys_help(name, arguments, root):
 
 
 
-HANDLERS = {
-    "sys_help": _handle_sys_help,
-}
+HANDLERS: dict[str, object] = {}

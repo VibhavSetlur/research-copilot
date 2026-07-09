@@ -277,46 +277,18 @@ def test_dispatcher_unknown_tool_namespace_aware(project_root):
             )
 
 
-def test_protocol_list_unknown_category_did_you_mean(project_root):
+def test_removed_tool_returns_migration_error(project_root):
+    """Consolidated-away tools return a clear migration error naming a live tool."""
     from research_os.server import _handle_tool_call
 
-    result = _handle_tool_call(
-        "sys_protocol_list",
-        {"category": "auditx"},  # close to "audit"
-        project_root,
-    )
-    env = _envelope(result)
-    assert env["status"] == "error"
-    payload = env.get("payload") or {}
-    suggestion_text = (payload.get("next_action") or "").lower()
-    # 'audit' should appear as a suggestion or in the next_action hint.
-    assert "audit" in suggestion_text
-
-
-def test_sys_packs_installed_unknown_pack_did_you_mean(project_root):
-    from research_os.server import _handle_tool_call
-
-    result = _handle_tool_call(
-        "sys_packs_installed",
-        {"pack": "completely_unknown_pack_zzz"},
-        project_root,
-    )
-    env = _envelope(result)
-    # Either success (no filter applied because no packs match) or error
-    # with did_you_mean — both are acceptable when zero packs installed.
-    if env["status"] == "error":
+    for removed, hint in (
+        ("sys_protocol_list", "sys_protocol_get"),
+        ("sys_packs_installed", "skills"),
+        ("tool_adapter_extract", "skills"),
+    ):
+        result = _handle_tool_call(removed, {}, project_root)
+        env = _envelope(result)
+        assert env["status"] == "error"
         payload = env.get("payload") or {}
-        assert "completely_unknown_pack_zzz" in payload.get("what", "")
-
-
-def test_adapter_extract_unknown_name_did_you_mean(project_root):
-    from research_os.server import _handle_tool_call
-
-    result = _handle_tool_call(
-        "tool_adapter_extract",
-        {"adapter_name": "no_such_adapter"},
-        project_root,
-    )
-    env = _envelope(result)
-    # Should be an error envelope; if any adapters exist, did_you_mean fires.
-    assert env["status"] == "error"
+        msg = (payload.get("what") or "").lower()
+        assert "removed" in msg

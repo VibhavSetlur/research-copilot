@@ -77,7 +77,7 @@ Patterns that work:
 - **Name the dimension, not the value.** "Justify the split from the
   deployment regime" beats "Use a 70/15/15 split."
 - **Demand grounding, not a tool.** "Surface the field's current
-  best-practice estimator via `tool_research_method`" beats "Use
+  best-practice estimator via `tool_search`" beats "Use
   DESeq2."
 - **Frame thresholds as field-specific.** "Cite the source for
   whichever cutoff is used" beats "Use CFI ≥ 0.95."
@@ -338,6 +338,25 @@ verify-gate only removes the check that the work was recorded — the
 result itself is untouched, because the AI computed it. Arithmetic
 conversions that merely restate the AI's own inputs (e.g. an E-value
 from a reported risk ratio) are not "doing the science" and are fine.
+
+## The schema: YAML is the format, the Pydantic model is the contract
+
+As of 5.0.0 (`schema_version: '3.0'`) every protocol validates against a
+single typed **`Protocol`** model (`schema/protocol.py`), and every tool
+call / result / routing decision travels in a typed **envelope**
+(`schema/envelope.py`: `ToolCall`, `ToolResult`, `RoutingDecision`,
+`Envelope`). The routing fields that once lived in a separate
+`_router_index.yaml` (`intent_class`, `sub_intent`, `triggers`,
+`decomposition`, `tier`) now live **inside each protocol body** and are
+part of that model. Preflight validates the generated protocol catalogue against it and
+rebuilds the single `_protocols.bundle` sidecar from the YAMLs.
+
+This does **not** change the doctrine. The model is the *schema*; YAML is
+the *format*. Protocols stay soft scaffolds for reasoning — the typed
+envelope hardens the *transport* (what a tool call looks like on the wire,
+what a result must carry) while the *reasoning* it carries stays as open
+as this whole document demands. Hard structure at the seam; soft reasoning
+inside it. See `docs/SCHEMA.md` for the full model reference.
 
 ## No version commentary in live bodies
 

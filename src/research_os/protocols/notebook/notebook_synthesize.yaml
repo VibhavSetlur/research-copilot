@@ -1,17 +1,17 @@
 id: notebook_synthesize
 tier: 'synthesize'
 name: Notebook Synthesize (weave notebook outputs into the deliverable)
-version: '4.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher, naive_ai]
   workflow_shape: [notebook, synthesis]
 last_reviewed: '2026-06-25'
 see_also:
-  - notebook/notebook_promote                    # how individual outputs earned their place
-  - synthesis/synthesis_from_inputs              # the general synthesis engine this feeds into
-  - visualization/figure_guidelines              # standards the promoted figures must meet
+- notebook/notebook_promote                      # how individual outputs earned their place
+- synthesis/synthesis_from_inputs                # the general synthesis engine this feeds into
+- visualization/figure_guidelines                # standards the promoted figures must meet
 description: |
   The terminal move of a notebook workspace: take the figures, tables, and
   findings that the notebooks collectively produced and weave them into the
@@ -39,75 +39,75 @@ trigger: |
   deliverable, or says "write this up", "turn these notebooks into a paper /
   report / dashboard", "synthesize the notebook results", "make the slides".
 prerequisites:
-  - One or more notebooks are reproducible and have produced outputs in outputs/ (notebook_workflow / notebook_reproduce)
-  - research_goal.output_types declares what deliverable is owed (sys_boot reports it); only build what was asked for
+- One or more notebooks are reproducible and have produced outputs in outputs/ (notebook_workflow / notebook_reproduce)
+- research_goal.output_types declares what deliverable is owed (sys_boot reports it); only build what was asked for
 
 steps:
-  - id: inventory_outputs
-    name: Inventory what the notebooks actually produced
-    description: |
-      If you haven't called sys_boot this session, do so once — it reports
-      workspace_mode + research_goal.output_types (the deliverable(s) owed).
-      Then take stock honestly: list the notebooks, and for each, the outputs
-      it emitted into outputs/ (figures, tables, exports) and its headline
-      finding (the numbers, in units, actually computed — not remembered).
-      Read the mem_log notebook entries rather than re-deriving from memory.
+- id: inventory_outputs
+  name: Inventory what the notebooks actually produced
+  description: |
+    If you haven't called sys_boot this session, do so once — it reports
+    workspace_mode + research_goal.output_types (the deliverable(s) owed).
+    Then take stock honestly: list the notebooks, and for each, the outputs
+    it emitted into outputs/ (figures, tables, exports) and its headline
+    finding (the numbers, in units, actually computed — not remembered).
+    Read the mem_log notebook entries rather than re-deriving from memory.
 
-      The inventory is the raw material; an honest one includes the null and
-      inconclusive notebooks, not just the ones that "worked". Leaving out the
-      notebook that found nothing is how a synthesis becomes a cherry-pick.
+    The inventory is the raw material; an honest one includes the null and
+    inconclusive notebooks, not just the ones that "worked". Leaving out the
+    notebook that found nothing is how a synthesis becomes a cherry-pick.
 
-  - id: select_for_the_story
-    name: Select the outputs that belong in the deliverable
-    description: |
-      Not every output earns a place. Reason about the deliverable's
-      question and audience, and choose the figures/tables/findings that
-      actually advance the argument — the focal results, the necessary
-      controls, the honest limitations. A figure that doesn't move the story
-      is supplementary at best. The discipline: select for what the reader
-      needs to follow and trust the claim, not for everything you made.
+- id: select_for_the_story
+  name: Select the outputs that belong in the deliverable
+  description: |
+    Not every output earns a place. Reason about the deliverable's
+    question and audience, and choose the figures/tables/findings that
+    actually advance the argument — the focal results, the necessary
+    controls, the honest limitations. A figure that doesn't move the story
+    is supplementary at best. The discipline: select for what the reader
+    needs to follow and trust the claim, not for everything you made.
 
-      Order them into a narrative arc (setup → evidence → result →
-      limitation) appropriate to the deliverable type. This ordering IS the
-      argument; get it right before drafting prose around it.
+    Order them into a narrative arc (setup → evidence → result →
+    limitation) appropriate to the deliverable type. This ordering IS the
+    argument; get it right before drafting prose around it.
 
-  - id: qualify_inputs
-    name: Qualify each selected output before it enters synthesis
-    description: |
-      Every artefact that goes into the deliverable must be trustworthy and
-      traceable. For each selected output confirm: it came from a notebook
-      that passes restart-and-run-all (notebook_workflow) and is reproducible
-      (notebook_reproduce); it is traced to the notebook/cell that made it
-      (notebook_promote); and figures meet the project's figure standards
-      (visualization/figure_guidelines for DPI / colour / captions / accessible
-      encodings). An output that can't be qualified gets fixed or dropped —
-      it does not enter the deliverable on trust.
+- id: qualify_inputs
+  name: Qualify each selected output before it enters synthesis
+  description: |
+    Every artefact that goes into the deliverable must be trustworthy and
+    traceable. For each selected output confirm: it came from a notebook
+    that passes restart-and-run-all (notebook_workflow) and is reproducible
+    (notebook_reproduce); it is traced to the notebook/cell that made it
+    (notebook_promote); and figures meet the project's figure standards
+    (visualization/figure_guidelines for DPI / colour / captions / accessible
+    encodings). An output that can't be qualified gets fixed or dropped —
+    it does not enter the deliverable on trust.
 
-  - id: hand_to_synthesis
-    name: Hand the qualified, ordered inputs to the synthesis engine
-    description: |
-      With clean inputs assembled, build the deliverable the researcher asked
-      for — and ONLY that one. Route to the matching synthesis surface by
-      research_goal.output_types: a paper via synthesis/synthesis_paper, a
-      report via synthesis/synthesis_report, a dashboard via
-      synthesis/synthesis_dashboard, slides via synthesis/synthesis_slides,
-      etc. — feeding the selected figures/tables/findings as the inputs (the
-      general engine is synthesis/synthesis_from_inputs).
+- id: hand_to_synthesis
+  name: Hand the qualified, ordered inputs to the synthesis engine
+  description: |
+    With clean inputs assembled, build the deliverable the researcher asked
+    for — and ONLY that one. Route to the matching synthesis surface by
+    research_goal.output_types: a paper via synthesis/synthesis_paper, a
+    report via synthesis/synthesis_report, a dashboard via
+    synthesis/synthesis_dashboard, slides via synthesis/synthesis_slides,
+    etc. — feeding the selected figures/tables/findings as the inputs (the
+    general engine is synthesis/synthesis_from_inputs).
 
-      Do not invent a deliverable type the researcher didn't ask for, and do
-      not carry an un-computed number into prose — every quantitative claim
-      in the deliverable traces to a notebook output in the inventory.
+    Do not invent a deliverable type the researcher didn't ask for, and do
+    not carry an un-computed number into prose — every quantitative claim
+    in the deliverable traces to a notebook output in the inventory.
 
-      AUTONOMY GATE:
-        Risk: reversible — drafting a deliverable from traced inputs commits
-        nothing that can't be revised; the inputs are already qualified.
-        proceed (adaptive default, autopilot) → build the requested deliverable from the
-          selected inputs and present the draft.
-        confirm first (manual / supervised) → present the selection + narrative order +
-          target deliverable; confirm before drafting.
+    AUTONOMY GATE:
+      Risk: reversible — drafting a deliverable from traced inputs commits
+      nothing that can't be revised; the inputs are already qualified.
+      proceed (adaptive default, autopilot) → build the requested deliverable from the
+        selected inputs and present the draft.
+      confirm first (manual / supervised) → present the selection + narrative order +
+        target deliverable; confirm before drafting.
 
 expected_outputs:
-  - the requested deliverable (synthesis/ — paper / report / dashboard / slides per output_types)
+- the requested deliverable (synthesis/ — paper / report / dashboard / slides per output_types)
 
 quality_bar: |
   - The inventory is honest — null / inconclusive notebooks are included,
@@ -119,6 +119,23 @@ quality_bar: |
   - The deliverable built matches research_goal.output_types; every number
     in it traces to a notebook output.
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/scope_clarification
+intent_class: synthesize
+sub_intent: notebook_synthesize
+triggers:
+- write up the notebooks
+- turn these notebooks into a paper
+- turn the notebooks into a report
+- synthesize the notebook results
+- synthesise the notebook results
+- make the slides from the notebooks
+- notebook deliverable
+summary: Weave the figures, tables, and findings the notebooks produced into the requested deliverable (paper / report / dashboard / slides), selecting honestly and qualifying every input before synthesis.
+token_estimate: 1500
+decomposition:
+- protocol: notebook/notebook_synthesize
+  purpose: Inventory outputs, select for the story, qualify each input, hand to the synthesis engine.
+- tool: mem_log
+  purpose: Record the selected outputs + the deliverable built.

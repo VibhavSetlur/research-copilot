@@ -1,15 +1,15 @@
 id: writing_data_availability
 tier: 'synthesize'
 name: Writing — Data + Code Availability + CRediT
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor, maintainer]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - writing/writing_core               # the honesty / grounding voice these statements must keep
+- writing/writing_core                 # the honesty / grounding voice these statements must keep
 description: |
   Draft the Data Availability, Code Availability, Author Contributions
   (CRediT), Funding, Conflicts of Interest, and Acknowledgements
@@ -27,250 +27,238 @@ trigger: |
   "draft the end matter", "journal end-of-paper sections".
 
 prerequisites:
-  - synthesis/paper.md (or any synthesis output) exists or is being
-    drafted.
+- synthesis/paper.md (or any synthesis output) exists or is being drafted.
 
 editorial_voice:
   mode: prescription
   rules:
-    - "Data availability statements are LEGAL commitments — they
-       must match what the project can actually deliver. 'Data
-       available on reasonable request' is acceptable only when
-       the author can actually fulfil such requests; otherwise the
-       wording is closer to a misrepresentation."
-    - "Code availability is increasingly required; some journals
-       gate acceptance on it. The honest options are public repo /
-       on request / not available with rationale — pick the one
-       that matches reality."
-    - "Author contributions are NOT optional courtesy — CRediT
-       statements are checked at submission. Each contribution
-       category should reflect actual contribution, not seniority
-       order."
-    - "Conflicts of interest disclosure is universal — even an
-       absence of conflicts must be stated explicitly."
+  - "Data availability statements are LEGAL commitments — they must match what the project can actually deliver. 'Data available on reasonable request' is acceptable only when the author can actually fulfil such requests; otherwise the wording is closer to a misrepresentation."
+  - "Code availability is increasingly required; some journals gate acceptance on it. The honest options are public repo / on request / not available with rationale — pick the one that matches reality."
+  - "Author contributions are NOT optional courtesy — CRediT statements are checked at submission. Each contribution category should reflect actual contribution, not seniority order."
+  - "Conflicts of interest disclosure is universal — even an absence of conflicts must be stated explicitly."
 
 steps:
-  - id: scope_what_journal_requires
-    name: Scope what the journal / venue requires
-    description: |
-      Confirm:
-        - target venue (journal name when known) — pulls from
-          researcher_config.research_goal.target_venue
-        - venue's specific data-availability policy (Nature has a
-          checklist; PLoS has a template; many require deposit to
-          named repositories; some require sharing in supplementary
-          materials)
-        - venue's code-availability policy (some require it,
-          increasingly more)
-        - whether CRediT taxonomy is required (Elsevier, Wiley,
-          increasingly common)
-        - funding-statement format (NIH requires grant numbers;
-          others accept a list)
+- id: scope_what_journal_requires
+  name: Scope what the journal / venue requires
+  description: |
+    Confirm:
+      - target venue (journal name when known) — pulls from
+        researcher_config.research_goal.target_venue
+      - venue's specific data-availability policy (Nature has a
+        checklist; PLoS has a template; many require deposit to
+        named repositories; some require sharing in supplementary
+        materials)
+      - venue's code-availability policy (some require it,
+        increasingly more)
+      - whether CRediT taxonomy is required (Elsevier, Wiley,
+        increasingly common)
+      - funding-statement format (NIH requires grant numbers;
+        others accept a list)
 
-      When the venue is unknown or its policy is, run a one-shot
-      web search for "<venue> data availability policy" and cite
-      what comes back.
+    When the venue is unknown or its policy is, run a one-shot
+    web search for "<venue> data availability policy" and cite
+    what comes back.
 
-  - id: draft_data_availability
-    name: Draft data availability statement
-    description: |
-      Pick the honest option from these archetypes:
+- id: draft_data_availability
+  name: Draft data availability statement
+  description: |
+    Pick the honest option from these archetypes:
 
-        PUBLIC_REPO — data deposited in a public repository
-          template:
-            "The data supporting the findings of this study are
-             openly available in <repository> at <DOI / accession>,
-             under <license>."
-          requires: a real DOI / accession / URL + a license
+      PUBLIC_REPO — data deposited in a public repository
+        template:
+          "The data supporting the findings of this study are
+           openly available in <repository> at <DOI / accession>,
+           under <license>."
+        requires: a real DOI / accession / URL + a license
 
-        AVAILABLE_FROM_AUTHORS — data available on reasonable request
-          template:
-            "The data that support the findings of this study are
-             available from the corresponding author upon reasonable
-             request. Restrictions apply to <patient privacy /
-             commercial confidentiality / IRB conditions> as
-             detailed in <X>."
-          warning: only acceptable when the author can actually
-                   fulfil such requests; many journals are tightening
-                   this option
+      AVAILABLE_FROM_AUTHORS — data available on reasonable request
+        template:
+          "The data that support the findings of this study are
+           available from the corresponding author upon reasonable
+           request. Restrictions apply to <patient privacy /
+           commercial confidentiality / IRB conditions> as
+           detailed in <X>."
+        warning: only acceptable when the author can actually
+                 fulfil such requests; many journals are tightening
+                 this option
 
-        CONTROLLED_ACCESS — data deposited but access controlled
-          template:
-            "The data supporting the findings of this study are
-             deposited at <repository> under controlled access; the
-             application process is described at <URL>."
+      CONTROLLED_ACCESS — data deposited but access controlled
+        template:
+          "The data supporting the findings of this study are
+           deposited at <repository> under controlled access; the
+           application process is described at <URL>."
 
-        SUPPLEMENTARY_MATERIALS — data shipped with the paper
-          template:
-            "All data analysed during this study are included in
-             the supplementary materials of this article."
+      SUPPLEMENTARY_MATERIALS — data shipped with the paper
+        template:
+          "All data analysed during this study are included in
+           the supplementary materials of this article."
 
-        NOT_AVAILABLE — data cannot be shared
-          template:
-            "Due to <patient privacy / commercial restrictions /
-             IRB conditions>, the underlying data cannot be made
-             publicly available. <Aggregate data | summary
-             statistics | metadata> are available on request from
-             the corresponding author."
-          warning: increasingly unacceptable for purely scientific
-                   data; defend the restriction explicitly
+      NOT_AVAILABLE — data cannot be shared
+        template:
+          "Due to <patient privacy / commercial restrictions /
+           IRB conditions>, the underlying data cannot be made
+           publicly available. <Aggregate data | summary
+           statistics | metadata> are available on request from
+           the corresponding author."
+        warning: increasingly unacceptable for purely scientific
+                 data; defend the restriction explicitly
 
-      Source the right wording for THIS project (route to inputs/
-      researcher_config for any prior data-sharing commitment).
-      Save to synthesis/data_availability.md.
+    Source the right wording for THIS project (route to inputs/
+    researcher_config for any prior data-sharing commitment).
+    Save to synthesis/data_availability.md.
 
-  - id: draft_code_availability
-    name: Draft code availability statement
-    description: |
-      Pick the honest option:
+- id: draft_code_availability
+  name: Draft code availability statement
+  description: |
+    Pick the honest option:
 
-        PUBLIC_REPO — code at a public URL
-          template:
-            "The analysis code is openly available at <URL>
-             (release <vN>, archived at <Zenodo DOI>) under the
-             <license> licence."
-          if the project has a git repo + Zenodo archive, this is
-          the version of record. Otherwise, a public GitHub URL
-          alone is acceptable for most journals.
+      PUBLIC_REPO — code at a public URL
+        template:
+          "The analysis code is openly available at <URL>
+           (release <vN>, archived at <Zenodo DOI>) under the
+           <license> licence."
+        if the project has a git repo + Zenodo archive, this is
+        the version of record. Otherwise, a public GitHub URL
+        alone is acceptable for most journals.
 
-        AVAILABLE_FROM_AUTHORS — code on request
-          template:
-            "Analysis code is available from the corresponding
-             author upon reasonable request."
+      AVAILABLE_FROM_AUTHORS — code on request
+        template:
+          "Analysis code is available from the corresponding
+           author upon reasonable request."
 
-        IN_PAPER — code is fully described in the methods +
-                   supplementary materials
-          template:
-            "All analysis code is included in the methods section
-             and supplementary materials of this article;
-             reproducible workflows are described in <Section X>."
-          best for short methods that an experienced reader could
-          re-implement; not appropriate for non-trivial pipelines
+      IN_PAPER — code is fully described in the methods +
+                 supplementary materials
+        template:
+          "All analysis code is included in the methods section
+           and supplementary materials of this article;
+           reproducible workflows are described in <Section X>."
+        best for short methods that an experienced reader could
+        re-implement; not appropriate for non-trivial pipelines
 
-        NOT_AVAILABLE — code cannot be shared
-          template:
-            "Due to <commercial restrictions / dependency on
-             proprietary tools>, the analysis code cannot be
-             publicly released. The methods are described in
-             sufficient detail to permit reproduction."
-          warning: most methods / computational journals reject
-                   this; defend the restriction explicitly
+      NOT_AVAILABLE — code cannot be shared
+        template:
+          "Due to <commercial restrictions / dependency on
+           proprietary tools>, the analysis code cannot be
+           publicly released. The methods are described in
+           sufficient detail to permit reproduction."
+        warning: most methods / computational journals reject
+                 this; defend the restriction explicitly
 
-      Save to synthesis/code_availability.md.
+    Save to synthesis/code_availability.md.
 
-  - id: draft_author_contributions_credit
-    name: Draft author contributions (CRediT taxonomy)
-    description: |
-      The CRediT taxonomy (Contributor Roles Taxonomy) is the
-      industry-standard structured form. The 14 roles:
+- id: draft_author_contributions_credit
+  name: Draft author contributions (CRediT taxonomy)
+  description: |
+    The CRediT taxonomy (Contributor Roles Taxonomy) is the
+    industry-standard structured form. The 14 roles:
 
-        Conceptualization
-        Methodology
-        Software
-        Validation
-        Formal Analysis
-        Investigation
-        Resources
-        Data Curation
-        Writing — Original Draft
-        Writing — Review & Editing
+      Conceptualization
+      Methodology
+      Software
+      Validation
+      Formal Analysis
+      Investigation
+      Resources
+      Data Curation
+      Writing — Original Draft
+      Writing — Review & Editing
+      Visualization
+      Supervision
+      Project Administration
+      Funding Acquisition
+
+    For each author the researcher names, ask which roles apply.
+    Common patterns:
+      - first author: Conceptualization, Methodology, Formal
+        Analysis, Investigation, Writing — Original Draft,
         Visualization
-        Supervision
-        Project Administration
-        Funding Acquisition
+      - senior author: Conceptualization, Methodology,
+        Supervision, Funding Acquisition, Writing — Review &
+        Editing
+      - middle authors: vary widely; do NOT default-assign
 
-      For each author the researcher names, ask which roles apply.
-      Common patterns:
-        - first author: Conceptualization, Methodology, Formal
-          Analysis, Investigation, Writing — Original Draft,
-          Visualization
-        - senior author: Conceptualization, Methodology,
-          Supervision, Funding Acquisition, Writing — Review &
-          Editing
-        - middle authors: vary widely; do NOT default-assign
+    Format:
+      "<Author>: <comma-separated CRediT roles>."
 
-      Format:
-        "<Author>: <comma-separated CRediT roles>."
+    Save to synthesis/author_contributions.md. Surface to the
+    researcher for review BEFORE submission; CRediT statements
+    are increasingly checked at submission, and getting them
+    wrong is awkward to correct.
 
-      Save to synthesis/author_contributions.md. Surface to the
-      researcher for review BEFORE submission; CRediT statements
-      are increasingly checked at submission, and getting them
-      wrong is awkward to correct.
+- id: draft_funding_statement
+  name: Draft funding statement
+  description: |
+    Pull funding sources from researcher_config or ask the
+    researcher to list them. Template:
 
-  - id: draft_funding_statement
-    name: Draft funding statement
-    description: |
-      Pull funding sources from researcher_config or ask the
-      researcher to list them. Template:
+      "This work was supported by <funder> (grant <number>) to
+       <PI name>; <additional funder> (grant <number>) to
+       <PI name>; and <institutional support>. The funders had
+       no role in <study design / data collection / analysis /
+       interpretation / writing>, or <state the role the funder
+       had, e.g. selection of journal>."
 
-        "This work was supported by <funder> (grant <number>) to
-         <PI name>; <additional funder> (grant <number>) to
-         <PI name>; and <institutional support>. The funders had
-         no role in <study design / data collection / analysis /
-         interpretation / writing>, or <state the role the funder
-         had, e.g. selection of journal>."
+    Note the SPECIFIC "no role in" or "role in" clause — most
+    journals require this. Save to synthesis/funding.md.
 
-      Note the SPECIFIC "no role in" or "role in" clause — most
-      journals require this. Save to synthesis/funding.md.
+- id: draft_conflicts_of_interest
+  name: Draft conflicts of interest disclosure
+  description: |
+    Even an absence of conflicts must be stated explicitly.
 
-  - id: draft_conflicts_of_interest
-    name: Draft conflicts of interest disclosure
-    description: |
-      Even an absence of conflicts must be stated explicitly.
+      NO_CONFLICTS:
+        "The authors declare no competing interests."
 
-        NO_CONFLICTS:
-          "The authors declare no competing interests."
+      HAS_CONFLICTS:
+        "<Author> has received <consulting fees / equity /
+         speaking honoraria / royalties> from <entity>. The
+         remaining authors declare no competing interests."
 
-        HAS_CONFLICTS:
-          "<Author> has received <consulting fees / equity /
-           speaking honoraria / royalties> from <entity>. The
-           remaining authors declare no competing interests."
+    Ask the researcher to confirm each author's status; do NOT
+    assume. Save to synthesis/conflicts_of_interest.md.
 
-      Ask the researcher to confirm each author's status; do NOT
-      assume. Save to synthesis/conflicts_of_interest.md.
+- id: draft_acknowledgements
+  name: Draft acknowledgements
+  description: |
+    Acknowledgements name non-author contributors: technical
+    help, data sharing, review of the manuscript, computational
+    resources, lab members, study participants.
 
-  - id: draft_acknowledgements
-    name: Draft acknowledgements
-    description: |
-      Acknowledgements name non-author contributors: technical
-      help, data sharing, review of the manuscript, computational
-      resources, lab members, study participants.
+    Pattern:
+      "We thank <names> for <specific help>. We are grateful to
+       <study participants / data providers / collaborating
+       institutions> for <specific contribution>. Computational
+       resources were provided by <institution>."
 
-      Pattern:
-        "We thank <names> for <specific help>. We are grateful to
-         <study participants / data providers / collaborating
-         institutions> for <specific contribution>. Computational
-         resources were provided by <institution>."
+    Save to synthesis/acknowledgements.md. Note: this is NOT the
+    place for author-credit-grade contributions; if a person
+    contributed enough to merit a CRediT role, they belong in
+    the author list, not in acknowledgements.
 
-      Save to synthesis/acknowledgements.md. Note: this is NOT the
-      place for author-credit-grade contributions; if a person
-      contributed enough to merit a CRediT role, they belong in
-      the author list, not in acknowledgements.
+- id: assemble_end_matter
+  name: Assemble end-matter into the paper
+  description: |
+    Append the statements in the order most journals expect:
 
-  - id: assemble_end_matter
-    name: Assemble end-matter into the paper
-    description: |
-      Append the statements in the order most journals expect:
+      1. Acknowledgements
+      2. Author contributions (CRediT)
+      3. Funding
+      4. Conflicts of interest
+      5. Data availability
+      6. Code availability
 
-        1. Acknowledgements
-        2. Author contributions (CRediT)
-        3. Funding
-        4. Conflicts of interest
-        5. Data availability
-        6. Code availability
-
-      Some journals interleave these differently — re-order to
-      match the venue. Save to synthesis/paper_end_matter.md
-      and reference from synthesis/paper.md.
+    Some journals interleave these differently — re-order to
+    match the venue. Save to synthesis/paper_end_matter.md
+    and reference from synthesis/paper.md.
 
 expected_outputs:
-  - synthesis/data_availability.md
-  - synthesis/code_availability.md
-  - synthesis/author_contributions.md
-  - synthesis/funding.md
-  - synthesis/conflicts_of_interest.md
-  - synthesis/acknowledgements.md
-  - synthesis/paper_end_matter.md
+- synthesis/data_availability.md
+- synthesis/code_availability.md
+- synthesis/author_contributions.md
+- synthesis/funding.md
+- synthesis/conflicts_of_interest.md
+- synthesis/acknowledgements.md
+- synthesis/paper_end_matter.md
 
 quality_bar:
   data_availability_matches_actual_capability: true
@@ -279,6 +267,25 @@ quality_bar:
   funder_role_clause_present: true
   conflicts_disclosed_or_explicitly_absent: true
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: end_matter
+triggers:
+- data availability
+- code availability
+- author contributions
+- credit statement
+- credit taxonomy
+- funding statement
+- conflicts of interest
+- acknowledgements
+- draft the end matter
+- journal end-of-paper sections
+- end matter for the paper
+summary: Draft end matter — data + code availability, CRediT, funding, COI, acknowledgements.
+token_estimate: 1300
+decomposition:
+- protocol: writing/writing_data_availability
+  purpose: Draft each end-matter section per journal convention.

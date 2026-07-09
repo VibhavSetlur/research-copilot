@@ -1,8 +1,8 @@
 id: synthesis_poster
 tier: 'synthesize'
 name: Synthesis — Poster (redirect)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [auditor]
@@ -19,3 +19,17 @@ description: |
 redirect_to: synthesis/printable
 redirect_params:
   format: poster
+intent_class: synthesize
+sub_intent: poster
+triggers:
+- make a poster
+- make me a poster
+- build me a poster
+- create a poster
+- build a poster
+- conference poster
+- academic poster
+- poster
+- i need a poster
+summary: AI authors poster.typ; tool_typst_compile renders PDF. Redirects to synthesis/printable(format=poster).
+shortcut_tool: tool_synthesis_scaffold

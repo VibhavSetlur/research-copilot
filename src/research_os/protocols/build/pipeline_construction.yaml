@@ -1,17 +1,17 @@
 id: pipeline_construction
 tier: 'execute'
 name: Pipeline Construction (organize a multi-stage pipeline tool)
-version: '4.2.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 last_reviewed: '2026-06-27'
 scope_tags:
   domain: [any]
   mode: [tool_build, hybrid]
 see_also:
-  - build/spec_and_design          # what the pipeline must do + how "done" is judged
-  - build/implement_iteration      # the per-increment build loop for each stage's code
-  - program/pipeline_stage_handoff # hand a stage's output to a different actor
-  - reproducibility/reproducibility
+- build/spec_and_design            # what the pipeline must do + how "done" is judged
+- build/implement_iteration        # the per-increment build loop for each stage's code
+- program/pipeline_stage_handoff   # hand a stage's output to a different actor
+- reproducibility/reproducibility
 description: |
   Design + organize a tool that IS a multi-stage PIPELINE (a DAG of stages each
   consuming the previous stage's output — e.g. a Snakemake/Nextflow workflow, an
@@ -32,76 +32,94 @@ trigger: |
   next". Use when the tool's shape is a chain/DAG of stages, not a flat library.
 
 prerequisites:
-  - A tool_build or hybrid workspace (spec/ + inner project/ exist; the
-    tool_build scaffold provides them, or create them if entering mid-build)
+- A tool_build or hybrid workspace (spec/ + inner project/ exist; the tool_build scaffold provides them, or create them if entering mid-build)
 
 steps:
-  - id: name_the_stages_and_dag
-    name: Name the stages and the DAG
-    description: |
-      Reason about the pipeline's SHAPE before writing any stage:
-        - What are the discrete stages, and what is each stage's single
-          responsibility? A stage that does two unrelated things is two stages.
-        - The DAG: which stage feeds which? Where does it fan out / fan in?
-          Linear is fine if it's truly linear; don't invent parallelism.
-        - The cut points: a stage boundary is where output could be inspected,
-          cached, or handed to a different actor (see pipeline_stage_handoff).
-      Record the stage list + dependency edges as the pipeline's spine
-      (spec/pipeline.md or the workflow definition) — this is the structure the
-      rest of the build organizes around.
+- id: name_the_stages_and_dag
+  name: Name the stages and the DAG
+  description: |
+    Reason about the pipeline's SHAPE before writing any stage:
+      - What are the discrete stages, and what is each stage's single
+        responsibility? A stage that does two unrelated things is two stages.
+      - The DAG: which stage feeds which? Where does it fan out / fan in?
+        Linear is fine if it's truly linear; don't invent parallelism.
+      - The cut points: a stage boundary is where output could be inspected,
+        cached, or handed to a different actor (see pipeline_stage_handoff).
+    Record the stage list + dependency edges as the pipeline's spine
+    (spec/pipeline.md or the workflow definition) — this is the structure the
+    rest of the build organizes around.
 
-  - id: define_stage_contracts
-    name: Define each stage's I/O contract
-    description: |
-      For EACH stage, make its inputs + outputs a contract, not an assumption:
-        - The exact inputs it consumes (files/shape/units) and from which
-          upstream stage they come.
-        - The exact outputs it produces, in a shape the downstream stage can
-          rely on — this is what lets a stage be re-run, cached, or swapped
-          without breaking the chain.
-        - What "this stage succeeded" means (its check), distinct from the
-          whole pipeline succeeding.
-      The contracts are why a pipeline is reproducible stage-by-stage instead of
-      an all-or-nothing black box.
+- id: define_stage_contracts
+  name: Define each stage's I/O contract
+  description: |
+    For EACH stage, make its inputs + outputs a contract, not an assumption:
+      - The exact inputs it consumes (files/shape/units) and from which
+        upstream stage they come.
+      - The exact outputs it produces, in a shape the downstream stage can
+        rely on — this is what lets a stage be re-run, cached, or swapped
+        without breaking the chain.
+      - What "this stage succeeded" means (its check), distinct from the
+        whole pipeline succeeding.
+    The contracts are why a pipeline is reproducible stage-by-stage instead of
+    an all-or-nothing black box.
 
-  - id: build_each_stage
-    name: Build each stage (loop), prove it in isolation
-    description: |
-      Build the stages via the normal increment loop (build/implement_iteration)
-      — each stage is code in the inner repo with its own test that proves it
-      meets its contract on a small fixture, BEFORE wiring the full chain. A
-      stage you can't test in isolation is a stage whose contract isn't sharp
-      enough yet. Commit per increment so the build history is honest.
+- id: build_each_stage
+  name: Build each stage (loop), prove it in isolation
+  description: |
+    Build the stages via the normal increment loop (build/implement_iteration)
+    — each stage is code in the inner repo with its own test that proves it
+    meets its contract on a small fixture, BEFORE wiring the full chain. A
+    stage you can't test in isolation is a stage whose contract isn't sharp
+    enough yet. Commit per increment so the build history is honest.
 
-  - id: run_the_pipeline_as_a_tracked_run
-    name: Run the pipeline as a tracked run (not a new step)
-    description: |
-      Executing the pipeline is a RUN, not a new numbered step or a new build
-      increment. Send long / heavy / reproducible executions through the daemon
-      so they are journaled, provenanced (inputs, env snapshot, git sha), and
-      resumable; if the pipeline ships as a container image, run it as a tracked
-      container job so the image + digest are recorded too. Each tracked run
-      pins exactly what produced its outputs. Re-running the pipeline produces a
-      NEW run record, not a new step folder — the pipeline definition is stable;
-      the runs accumulate against it.
+- id: run_the_pipeline_as_a_tracked_run
+  name: Run the pipeline as a tracked run (not a new step)
+  description: |
+    Executing the pipeline is a RUN, not a new numbered step or a new build
+    increment. Send long / heavy / reproducible executions through the daemon
+    so they are journaled, provenanced (inputs, env snapshot, git sha), and
+    resumable; if the pipeline ships as a container image, run it as a tracked
+    container job so the image + digest are recorded too. Each tracked run
+    pins exactly what produced its outputs. Re-running the pipeline produces a
+    NEW run record, not a new step folder — the pipeline definition is stable;
+    the runs accumulate against it.
 
-  - id: make_the_pipeline_understandable
-    name: Make the pipeline understandable (diagram + provenance)
-    description: |
-      A pipeline nobody can see the shape of is a liability. Capture, in the
-      README / conclusions, a diagram of the pipeline that shows the stages +
-      the data flow between them (the diagram's JOB is to make the DAG legible;
-      choose whatever the audience can read — a text-based diagram in the
-      README is the low-friction default). Tie outputs back to the runs that
-      produced them so a reader can trace any result to its stage + inputs.
+- id: make_the_pipeline_understandable
+  name: Make the pipeline understandable (diagram + provenance)
+  description: |
+    A pipeline nobody can see the shape of is a liability. Capture, in the
+    README / conclusions, a diagram of the pipeline that shows the stages +
+    the data flow between them (the diagram's JOB is to make the DAG legible;
+    choose whatever the audience can read — a text-based diagram in the
+    README is the low-friction default). Tie outputs back to the runs that
+    produced them so a reader can trace any result to its stage + inputs.
 
-  - id: record_the_pipeline_decisions
-    name: Record the pipeline-shaping decisions
-    description: |
-      The non-obvious choices — why these stage boundaries, why this engine,
-      why a stage is cached vs recomputed, what was deliberately left out of a
-      stage — belong in decisions/ as ADRs. The next person (or you in six
-      months) inherits the pipeline's shape; the rationale is what keeps them
-      from "fixing" a boundary that was deliberate.
+- id: record_the_pipeline_decisions
+  name: Record the pipeline-shaping decisions
+  description: |
+    The non-obvious choices — why these stage boundaries, why this engine,
+    why a stage is cached vs recomputed, what was deliberately left out of a
+    stage — belong in decisions/ as ADRs. The next person (or you in six
+    months) inherits the pipeline's shape; the rationale is what keeps them
+    from "fixing" a boundary that was deliberate.
 
-next_protocol: null
+next_protocol:
+intent_class: execute
+sub_intent: build_pipeline
+triggers:
+- build a pipeline
+- build the pipeline
+- snakemake workflow
+- nextflow workflow
+- etl pipeline
+- data pipeline
+- processing pipeline
+- multi-stage pipeline
+- train then evaluate then export
+- the output of one stage feeds the next
+- chain of stages
+summary: Design + organize a multi-stage PIPELINE tool (a DAG of stages with I/O contracts) — the unit is the stage, not a numbered step; running it is a tracked/containerised run.
+token_estimate: 1800
+decomposition:
+- protocol: build/pipeline_construction
+  purpose: Name the stages + DAG, define stage I/O contracts, build+prove each stage, run the pipeline as a tracked run, diagram it, record the shaping decisions.

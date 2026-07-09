@@ -185,17 +185,37 @@ def _step_literature_dir(root: Path, step_id: str) -> Path:
     return lit
 
 
+_SIDECAR_METADATA_FIELDS = frozenset({
+    "title",
+    "year",
+    "authors",
+    "doi",
+    "url",
+    "venue",
+    "source",
+    "downloaded_at",
+    "scope",
+    "step_id",
+})
+
+
+def _public_sidecar_metadata(meta: dict[str, Any]) -> dict[str, Any]:
+    """Keep citation sidecars from persisting accidental secret-bearing fields."""
+    return {k: v for k, v in meta.items() if k in _SIDECAR_METADATA_FIELDS}
+
+
 def _write_sidecar(pdf_path: Path, meta: dict[str, Any]) -> Path:
     """Drop a .meta.yaml alongside the PDF with citation metadata."""
+    public_meta = _public_sidecar_metadata(meta)
     side = pdf_path.with_suffix(pdf_path.suffix + ".meta.yaml")
     try:
         import yaml  # type: ignore
 
-        side.write_text(yaml.safe_dump(meta, sort_keys=False))
+        side.write_text(yaml.safe_dump(public_meta, sort_keys=False))
     except Exception:
         # Fall back to JSON if pyyaml unavailable.
         side = pdf_path.with_suffix(pdf_path.suffix + ".meta.json")
-        side.write_text(json.dumps(meta, indent=2, default=str))
+        side.write_text(json.dumps(public_meta, indent=2, default=str))
     return side
 
 
@@ -462,7 +482,8 @@ def download_literature(
                 ),
             }
 
-        # Write sidecar metadata.
+        # Write citation-only sidecar metadata. Metadata may originate from
+        # callers, so _write_sidecar filters to public citation fields.
         meta = dict(metadata or {})
         meta.setdefault("url", url)
         meta.setdefault("downloaded_at", datetime.now(timezone.utc).isoformat())

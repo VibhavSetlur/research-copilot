@@ -1,22 +1,22 @@
 id: tool_evaluation_loop
 tier: 'execute'
 name: Tool Evaluation Loop (probe the tool, find where it fails, feed fixes back)
-version: '4.4.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [engineering, any]
   audience: [naive_ai, researcher, auditor]
   workflow_shape: [tool_build, hybrid]
 last_reviewed: '2026-06-24'
 see_also:
-  - build/benchmark_vs_baseline   # the one-shot fair comparison this loop runs repeatedly + acts on
-  - build/implement_iteration     # where a prioritised improvement is built as the next increment
-  - build/test_strategy           # correctness checks; this is the empirical PERFORMANCE/behaviour probe
-  - build/sample_data_and_validation # gets the DATA (real or synthetic) this loop probes the tool with
-  - build/versioning_and_rollback # a version is "good" because THIS loop's verdict said so — bless it, roll back if a fix regresses
-  - build/tool_from_description    # the describe→build→improve outer loop that re-enters this each pass to decide done
-  - hybrid/hybrid_workflow         # the hybrid home loop that enters this to evaluate the tool half
-  - hybrid/tool_to_analysis_handoff # the crossing this loop's findings travel back through
+- build/benchmark_vs_baseline     # the one-shot fair comparison this loop runs repeatedly + acts on
+- build/implement_iteration       # where a prioritised improvement is built as the next increment
+- build/test_strategy             # correctness checks; this is the empirical PERFORMANCE/behaviour probe
+- build/sample_data_and_validation   # gets the DATA (real or synthetic) this loop probes the tool with
+- build/versioning_and_rollback   # a version is "good" because THIS loop's verdict said so — bless it, roll back if a fix regresses
+- build/tool_from_description      # the describe→build→improve outer loop that re-enters this each pass to decide done
+- hybrid/hybrid_workflow           # the hybrid home loop that enters this to evaluate the tool half
+- hybrid/tool_to_analysis_handoff   # the crossing this loop's findings travel back through
 description: |
   The evidence-driven heartbeat of method-development work: build the tool,
   then RESEARCH it in the workspace to discover where it actually falls short,
@@ -60,164 +60,145 @@ trigger: |
   increment.
 
 prerequisites:
-  - A tool increment exists that builds and passes its tests (the thing being
-    evaluated must run).
-  - spec/requirements.md (or research_goal) states what the tool is FOR — you
-    cannot judge "falls short" without knowing the bar it is held to.
+- A tool increment exists that builds and passes its tests (the thing being evaluated must run).
+- spec/requirements.md (or research_goal) states what the tool is FOR — you cannot judge "falls short" without knowing the bar it is held to.
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Evaluating your own tool is research, held to research standards. A
-       performance or quality claim about the tool needs the same grounding
-       an analysis finding does: a fixed, reproducible condition, a comparator
-       where a claim is comparative, and uncertainty around the number. A
-       number with no condition and no uncertainty is a vibe, not a result."
-    - "Probe where it BREAKS, not where it shines. The valuable evaluation
-       finds the inputs, scales, edge cases, and adversarial conditions where
-       the tool degrades — a demo on the happy path teaches nothing. Form a
-       hypothesis about a weak spot, then build the case that exposes it."
-    - "Let evidence set the priority, not intuition. The next increment is the
-       one the evaluation shows buys the most — the failure that hits the real
-       use case hardest, or the gap that blocks the analysis (in hybrid).
-       Ranking the backlog by gut feel is how tools get gold-plated where it
-       doesn't matter and stay broken where it does."
-    - "Measure the SAME way every loop, or you can't see progress. Pin the
-       evaluation conditions (inputs, environment, version) so this loop's
-       result is comparable to the last — an improvement is only real if it
-       moves the number under a fixed protocol, and a regression is only
-       catchable if the protocol didn't drift."
-    - "A fix is not done until it is re-measured. Closing the loop means
-       re-running the evaluation that exposed the weakness against the changed
-       tool — confirm the fix landed, and that it cost nothing elsewhere."
+  - "Evaluating your own tool is research, held to research standards. A performance or quality claim about the tool needs the same grounding an analysis finding does: a fixed, reproducible condition, a comparator where a claim is comparative, and uncertainty around the number. A number with no condition and no uncertainty is a vibe, not a result."
+  - "Probe where it BREAKS, not where it shines. The valuable evaluation finds the inputs, scales, edge cases, and adversarial conditions where the tool degrades — a demo on the happy path teaches nothing. Form a hypothesis about a weak spot, then build the case that exposes it."
+  - "Let evidence set the priority, not intuition. The next increment is the one the evaluation shows buys the most — the failure that hits the real use case hardest, or the gap that blocks the analysis (in hybrid). Ranking the backlog by gut feel is how tools get gold-plated where it doesn't matter and stay broken where it does."
+  - "Measure the SAME way every loop, or you can't see progress. Pin the evaluation conditions (inputs, environment, version) so this loop's result is comparable to the last — an improvement is only real if it moves the number under a fixed protocol, and a regression is only catchable if the protocol didn't drift."
+  - "A fix is not done until it is re-measured. Closing the loop means re-running the evaluation that exposed the weakness against the changed tool — confirm the fix landed, and that it cost nothing elsewhere."
 
 steps:
-  - id: define_evaluation_target
-    name: Define what "good" means for this tool + the dimensions to probe
-    description: |
-      Before measuring anything, state the bar. From spec/requirements.md (or
-      research_goal), name the dimensions on which this tool's quality is
-      judged — which matter follows from what the tool is FOR, not a generic
-      checklist. Reason over candidates such as: correctness on hard cases,
-      accuracy/quality of output, speed/throughput, memory/resource use,
-      robustness to malformed or adversarial input, scaling behaviour, and
-      usability of the interface. Pick the dimensions that actually bear on
-      the tool's purpose and the use case it must serve.
+- id: define_evaluation_target
+  name: Define what "good" means for this tool + the dimensions to probe
+  description: |
+    Before measuring anything, state the bar. From spec/requirements.md (or
+    research_goal), name the dimensions on which this tool's quality is
+    judged — which matter follows from what the tool is FOR, not a generic
+    checklist. Reason over candidates such as: correctness on hard cases,
+    accuracy/quality of output, speed/throughput, memory/resource use,
+    robustness to malformed or adversarial input, scaling behaviour, and
+    usability of the interface. Pick the dimensions that actually bear on
+    the tool's purpose and the use case it must serve.
 
-      Write workspace/<step>/eval_plan.md naming the dimensions, the bar
-      on each (where stated), and the order to probe them (most use-case-
-      critical first).
+    Write workspace/<step>/eval_plan.md naming the dimensions, the bar
+    on each (where stated), and the order to probe them (most use-case-
+    critical first).
 
-  - id: hypothesise_weak_spots
-    name: Hypothesise where the tool falls short
-    description: |
-      For each dimension worth probing, form a concrete, testable hypothesis
-      about WHERE the tool degrades — not "is it fast?" but "throughput
-      collapses past N concurrent inputs", "accuracy drops on the
-      under-represented class", "it mishandles empty / malformed / unicode
-      input", "memory grows superlinearly with input size". A good hypothesis
-      names the input regime + the expected failure, so the experiment that
-      tests it is obvious. List them as the evaluation backlog.
+- id: hypothesise_weak_spots
+  name: Hypothesise where the tool falls short
+  description: |
+    For each dimension worth probing, form a concrete, testable hypothesis
+    about WHERE the tool degrades — not "is it fast?" but "throughput
+    collapses past N concurrent inputs", "accuracy drops on the
+    under-represented class", "it mishandles empty / malformed / unicode
+    input", "memory grows superlinearly with input size". A good hypothesis
+    names the input regime + the expected failure, so the experiment that
+    tests it is obvious. List them as the evaluation backlog.
 
-  - id: design_and_run_evaluations
-    name: Design + run the evaluation experiments
-    description: |
-      For each hypothesis, design the smallest experiment that would confirm
-      or refute it, under FIXED, recorded conditions (input set, environment,
-      tool version), and run it as AI-authored code — Research-OS does not
-      evaluate the tool for you. Capture the result with its uncertainty, not
-      a single point, and persist the raw measurements + the script so the
-      run is reproducible.
+- id: design_and_run_evaluations
+  name: Design + run the evaluation experiments
+  description: |
+    For each hypothesis, design the smallest experiment that would confirm
+    or refute it, under FIXED, recorded conditions (input set, environment,
+    tool version), and run it as AI-authored code — Research-OS does not
+    evaluate the tool for you. Capture the result with its uncertainty, not
+    a single point, and persist the raw measurements + the script so the
+    run is reproducible.
 
-      Make the conditions a RECORDED artefact, not just prose: alongside each
-      persisted eval result, write a small machine-readable sidecar capturing
-      what would let someone reproduce the number — the tool's commit SHA, the
-      input-set identity/hash, the environment/runtime versions, the seed, and
-      the raw measurements. This is the eval analog of an analysis figure's
-      provenance sidecar: a benchmark number with no recorded conditions is a
-      claim, not a result. (Running the eval as a daemon-tracked job gives you
-      most of this automatically — git sha, env snapshot, input hashes.)
+    Make the conditions a RECORDED artefact, not just prose: alongside each
+    persisted eval result, write a small machine-readable sidecar capturing
+    what would let someone reproduce the number — the tool's commit SHA, the
+    input-set identity/hash, the environment/runtime versions, the seed, and
+    the raw measurements. This is the eval analog of an analysis figure's
+    provenance sidecar: a benchmark number with no recorded conditions is a
+    claim, not a result. (Running the eval as a daemon-tracked job gives you
+    most of this automatically — git sha, env snapshot, input hashes.)
 
-      For any claim that is comparative ("better/faster than X", "improved
-      over the last version"), run it through build/benchmark_vs_baseline so
-      the comparator + fairness + uncertainty meet the bar — do not assert a
-      comparison this loop can't substantiate.
+    For any claim that is comparative ("better/faster than X", "improved
+    over the last version"), run it through build/benchmark_vs_baseline so
+    the comparator + fairness + uncertainty meet the bar — do not assert a
+    comparison this loop can't substantiate.
 
-      AUTONOMY GATE:
-        Risk: reversible + cheap for ordinary runs; an evaluation that spends
-        real compute (large benchmark sweeps, long GPU jobs) is expensive.
-        proceed (adaptive default, autopilot) → run cheap/reversible
-          evaluations; for an expensive sweep, size it down to the smallest
-          run that answers the hypothesis first.
-        confirm first (manual / supervised) → state the evaluation cost +
-          what it will resolve; confirm before launching an expensive sweep.
+    AUTONOMY GATE:
+      Risk: reversible + cheap for ordinary runs; an evaluation that spends
+      real compute (large benchmark sweeps, long GPU jobs) is expensive.
+      proceed (adaptive default, autopilot) → run cheap/reversible
+        evaluations; for an expensive sweep, size it down to the smallest
+        run that answers the hypothesis first.
+      confirm first (manual / supervised) → state the evaluation cost +
+        what it will resolve; confirm before launching an expensive sweep.
 
-  - id: characterise_failures
-    name: Characterise the failures found
-    description: |
-      Turn each confirmed weakness into a precise finding, the way a data
-      finding is stated: not "it's slow" but "p95 latency is 4.2s at 50
-      concurrent requests vs the 1s target, growing linearly with
-      concurrency; the bottleneck is <where>, evidenced by <measurement>".
-      Where the cause is visible (a profile, a failing input class), name it;
-      where it isn't, say so. Record each finding with the evidence that backs
-      it to workspace/<step>/outputs/reports/eval_findings.md.
+- id: characterise_failures
+  name: Characterise the failures found
+  description: |
+    Turn each confirmed weakness into a precise finding, the way a data
+    finding is stated: not "it's slow" but "p95 latency is 4.2s at 50
+    concurrent requests vs the 1s target, growing linearly with
+    concurrency; the bottleneck is <where>, evidenced by <measurement>".
+    Where the cause is visible (a profile, a failing input class), name it;
+    where it isn't, say so. Record each finding with the evidence that backs
+    it to workspace/<step>/outputs/reports/eval_findings.md.
 
-  - id: prioritise_improvement_backlog
-    name: Prioritise the improvement backlog from the evidence
-    description: |
-      Rank the findings into a build backlog by IMPACT × the cost to fix —
-      impact judged against the tool's purpose and (in hybrid) against what
-      the analysis is blocked on. The top item is the one the evidence shows
-      buys the most, not the one that's easiest or most interesting. Be
-      explicit about what you are deferring and why; a backlog that pretends
-      everything is P0 has set no priority at all.
+- id: prioritise_improvement_backlog
+  name: Prioritise the improvement backlog from the evidence
+  description: |
+    Rank the findings into a build backlog by IMPACT × the cost to fix —
+    impact judged against the tool's purpose and (in hybrid) against what
+    the analysis is blocked on. The top item is the one the evidence shows
+    buys the most, not the one that's easiest or most interesting. Be
+    explicit about what you are deferring and why; a backlog that pretends
+    everything is P0 has set no priority at all.
 
-      Write the ranked backlog to workspace/<step>/outputs/reports/
-      improvement_backlog.md. mem_log the evaluation round + the chosen
-      next increment so the tool's development history is auditable.
+    Write the ranked backlog to workspace/<step>/outputs/reports/
+    improvement_backlog.md. mem_log the evaluation round + the chosen
+    next increment so the tool's development history is auditable.
 
-  - id: feed_back_to_build
-    name: Feed the top item back into the build loop
-    description: |
-      Route the highest-priority improvement into build/implement_iteration
-      as the next increment (scope the SMALLEST change that addresses the
-      finding; resist bundling unrelated work). In hybrid mode, if the finding
-      came from an analysis need, cross back through
-      hybrid/tool_to_analysis_handoff so the dependency stays recorded.
+- id: feed_back_to_build
+  name: Feed the top item back into the build loop
+  description: |
+    Route the highest-priority improvement into build/implement_iteration
+    as the next increment (scope the SMALLEST change that addresses the
+    finding; resist bundling unrelated work). In hybrid mode, if the finding
+    came from an analysis need, cross back through
+    hybrid/tool_to_analysis_handoff so the dependency stays recorded.
 
-      Critically: if the evaluation surfaced a CORRECTNESS bug (not just a
-      performance gap), flag any past result — analysis output or prior
-      benchmark — that depended on the buggy behaviour for re-running once the
-      fix lands. A wrong result left standing on a since-fixed tool is how the
-      project ships a wrong number.
+    Critically: if the evaluation surfaced a CORRECTNESS bug (not just a
+    performance gap), flag any past result — analysis output or prior
+    benchmark — that depended on the buggy behaviour for re-running once the
+    fix lands. A wrong result left standing on a since-fixed tool is how the
+    project ships a wrong number.
 
-  - id: remeasure_and_loop
-    name: Re-measure after the fix, then loop or converge
-    description: |
-      Once the increment lands, RE-RUN the evaluation that exposed the
-      weakness under the same fixed conditions: confirm the number moved as
-      intended, and check the dimensions you weren't targeting to catch a
-      regression the fix introduced elsewhere. Update the findings + backlog.
+- id: remeasure_and_loop
+  name: Re-measure after the fix, then loop or converge
+  description: |
+    Once the increment lands, RE-RUN the evaluation that exposed the
+    weakness under the same fixed conditions: confirm the number moved as
+    intended, and check the dimensions you weren't targeting to catch a
+    regression the fix introduced elsewhere. Update the findings + backlog.
 
-      Then decide: loop (the next backlog item still clears the bar of being
-      worth a build cycle) or converge (the tool meets its bar on every
-      use-case-critical dimension; remaining items are below the line). When a
-      pass clears (or meaningfully advances toward) the bar, mark that state a
-      known-good version via build/versioning_and_rollback BEFORE the next
-      round of changes can regress it — a version is "good" precisely because
-      THIS loop's verdict said so, and the marker is what lets the next
-      improvement be aggressive (if it regresses, there is a blessed version
-      to return to). On convergence, the evaluation record itself becomes
-      evidence for the tool's quality claims in the release notes / paper —
-      "evaluated on D, improved from A to B across N rounds" — true and
-      reproducible because the protocol kept the conditions fixed.
+    Then decide: loop (the next backlog item still clears the bar of being
+    worth a build cycle) or converge (the tool meets its bar on every
+    use-case-critical dimension; remaining items are below the line). When a
+    pass clears (or meaningfully advances toward) the bar, mark that state a
+    known-good version via build/versioning_and_rollback BEFORE the next
+    round of changes can regress it — a version is "good" precisely because
+    THIS loop's verdict said so, and the marker is what lets the next
+    improvement be aggressive (if it regresses, there is a blessed version
+    to return to). On convergence, the evaluation record itself becomes
+    evidence for the tool's quality claims in the release notes / paper —
+    "evaluated on D, improved from A to B across N rounds" — true and
+    reproducible because the protocol kept the conditions fixed.
 
 expected_outputs:
-  - workspace/<step>/eval_plan.md
-  - workspace/<step>/scripts/                                   # re-runnable evaluation experiments
-  - workspace/<step>/outputs/reports/eval_findings.md
-  - workspace/<step>/outputs/reports/improvement_backlog.md
+- workspace/<step>/eval_plan.md
+- workspace/<step>/scripts/                                     # re-runnable evaluation experiments
+- workspace/<step>/outputs/reports/eval_findings.md
+- workspace/<step>/outputs/reports/improvement_backlog.md
 
 quality_bar: |
   - Quality dimensions chosen from the tool's PURPOSE, not a generic checklist.
@@ -231,3 +212,32 @@ quality_bar: |
 next_protocol: build/implement_iteration
 next_protocol_kind: forward_default
 on_failure: guidance/dead_end_routing
+intent_class: execute
+sub_intent: build_evaluate
+triggers:
+- evaluate the tool
+- evaluate my tool
+- where does it fail
+- where does the tool fail
+- stress test it
+- stress test the tool
+- find the weak spots
+- find the failure modes
+- probe the failure modes
+- profile it
+- what should i improve next
+- what to improve next
+- what's the biggest problem with the tool
+- characterise its behaviour
+- characterize its behavior
+- is it good enough yet
+- improve the tool
+summary: Probe the tool to find where it falls short, rank an evidence-based improvement backlog, feed the top fix back to the build loop, re-measure. The iterative evaluate→improve heartbeat.
+token_estimate: 1700
+decomposition:
+- protocol: build/tool_evaluation_loop
+  purpose: Define the bar, hypothesise weak spots, run fixed-condition evaluations, rank by evidenced impact, feed back + re-measure.
+- tool: tool_bash_exec
+  purpose: Run the evaluation experiments (tool_task for long sweeps); write scripts + results into the eval reports.
+- tool: mem_log
+  purpose: Log each evaluation round + the chosen next increment so the tool's development history is auditable.

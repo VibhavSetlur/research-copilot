@@ -22,7 +22,7 @@ profile** layer the daemon owns. A profile is a small descriptor:
 
 One profile makes the ENTIRE existing protocol library field-aware for
 that domain: the generic ``[any]`` protocols inherit sensible defaults,
-the router can bias, and any transport (CLI / gateway / dashboard) can
+the router can bias, and any transport (CLI / daemon / dashboard) can
 surface "this looks like a <field> project; here's what I'll assume."
 
 Adding a field is a ~30-line entry here, not 50 protocols. This is the

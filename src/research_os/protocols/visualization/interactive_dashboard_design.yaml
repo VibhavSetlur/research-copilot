@@ -1,17 +1,17 @@
 id: interactive_dashboard_design
 tier: 'synthesize'
 name: Interactive Dashboard Design (showcase-tier, beyond static HTML)
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [maintainer, auditor]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - synthesis/synthesis_dashboard             # the single-file offline HTML tier this builds beyond
-  - visualization/interactive_figure_design   # per-figure interactivity, not dashboard-scale
-  - visualization/color_accessibility_audit    # WCAG contrast check on the dashboard palette
+- synthesis/synthesis_dashboard               # the single-file offline HTML tier this builds beyond
+- visualization/interactive_figure_design     # per-figure interactivity, not dashboard-scale
+- visualization/color_accessibility_audit      # WCAG contrast check on the dashboard palette
 description: |
   `synthesis_dashboard` produces a single-file offline HTML — the
   workhorse "email this to my advisor" deliverable. THIS protocol is
@@ -48,235 +48,213 @@ trigger: |
       live analytical tool — not a journal figure.
 
 prerequisites:
-  - The data is staged in a queryable format (parquet / DuckDB /
-    sqlite / arrow), OR a Python / R analysis function exists.
-  - The intended audience + interaction vocabulary is at least
-    sketched (this protocol refines it but needs a starting point).
+- The data is staged in a queryable format (parquet / DuckDB / sqlite / arrow), OR a Python / R analysis function exists.
+- The intended audience + interaction vocabulary is at least sketched (this protocol refines it but needs a starting point).
 
 editorial_voice:
   rules:
-    - "Pick the stack by who deploys + who consumes. A solo
-       researcher demoing to one PI uses Streamlit / Shiny in 30
-       minutes. A research group with a JS engineer demoing to a
-       conference audience uses Observable Framework or
-       React + D3 / Vega-Lite. A geospatial team uses kepler.gl /
-       deck.gl. Don't reach for React if a 50-line Streamlit
-       script ships today."
-    - "Interactivity is a vocabulary, not a feature. Pick from:
-       FILTER (subset the data), BRUSH-AND-LINK (selection in one
-       view highlights in others), DRILL-DOWN (click to expand),
-       PARAMETERISED VIEW (change an input → re-derive), TEMPORAL
-       SCRUB (slider over a time dimension), MAP-PAN (geospatial).
-       Pick 2-3 that serve the questions; don't bolt on
-       interactivity for its own sake."
-    - "Showcase-tier means it doesn't look like an academic
-       dashboard. Typography, spacing, transitions, copy. Use
-       Tufte's tenets — high data-ink, no chartjunk — but with
-       modern web polish. Look at Observable's gallery + The
-       Pudding for the bar."
-    - "Reproducibility is non-negotiable. The dashboard reads from
-       a versioned data snapshot (parquet pinned to a content
-       hash), the source code is in workspace/synthesis/, and the
-       deployable build is checked in or container-shipped. A
-       dashboard that works once and disappears is not research."
+  - "Pick the stack by who deploys + who consumes. A solo researcher demoing to one PI uses Streamlit / Shiny in 30 minutes. A research group with a JS engineer demoing to a conference audience uses Observable Framework or React + D3 / Vega-Lite. A geospatial team uses kepler.gl / deck.gl. Don't reach for React if a 50-line Streamlit script ships today."
+  - "Interactivity is a vocabulary, not a feature. Pick from: FILTER (subset the data), BRUSH-AND-LINK (selection in one view highlights in others), DRILL-DOWN (click to expand), PARAMETERISED VIEW (change an input → re-derive), TEMPORAL SCRUB (slider over a time dimension), MAP-PAN (geospatial). Pick 2-3 that serve the questions; don't bolt on interactivity for its own sake."
+  - "Showcase-tier means it doesn't look like an academic dashboard. Typography, spacing, transitions, copy. Use Tufte's tenets — high data-ink, no chartjunk — but with modern web polish. Look at Observable's gallery + The Pudding for the bar."
+  - "Reproducibility is non-negotiable. The dashboard reads from a versioned data snapshot (parquet pinned to a content hash), the source code is in workspace/synthesis/, and the deployable build is checked in or container-shipped. A dashboard that works once and disappears is not research."
 
 steps:
-  - id: characterize_audience_and_questions
-    name: Characterise audience + the questions the dashboard answers
-    description: |
-      Document:
-        - AUDIENCE — solo PI? lab group? conference audience?
-          stakeholder team? mixed-technical-literacy reviewers?
-        - DEPLOYMENT — local-only (researcher's laptop)? internal
-          (intranet, university cluster)? public (project site,
-          conference URL)? embedded (paper landing page)?
-        - DEVICE — laptop projector, large-format display, mobile
-          (no), tablet?
-        - QUESTIONS — list the 3-7 questions a user should be able
-          to answer interactively. Each question maps to an
-          interaction.
+- id: characterize_audience_and_questions
+  name: Characterise audience + the questions the dashboard answers
+  description: |
+    Document:
+      - AUDIENCE — solo PI? lab group? conference audience?
+        stakeholder team? mixed-technical-literacy reviewers?
+      - DEPLOYMENT — local-only (researcher's laptop)? internal
+        (intranet, university cluster)? public (project site,
+        conference URL)? embedded (paper landing page)?
+      - DEVICE — laptop projector, large-format display, mobile
+        (no), tablet?
+      - QUESTIONS — list the 3-7 questions a user should be able
+        to answer interactively. Each question maps to an
+        interaction.
 
-      Write workspace/.dashboard/audience.md.
+    Write workspace/.dashboard/audience.md.
 
-  - id: pick_the_stack
-    name: Pick the stack by author skillset + audience + interactivity
-    description: |
-      Reason through, then commit:
+- id: pick_the_stack
+  name: Pick the stack by author skillset + audience + interactivity
+  description: |
+    Reason through, then commit:
 
-        STREAMLIT (Python) — fastest path. Solo researcher, Python
-          familiarity, one page, simple widgets. Best for "demo to my
-          PI tomorrow". Deploy via streamlit.io or huggingface
-          spaces. Caveat: looks dated by default; needs CSS tweaks
-          for showcase tier.
+      STREAMLIT (Python) — fastest path. Solo researcher, Python
+        familiarity, one page, simple widgets. Best for "demo to my
+        PI tomorrow". Deploy via streamlit.io or huggingface
+        spaces. Caveat: looks dated by default; needs CSS tweaks
+        for showcase tier.
 
-        SHINY for R / SHINY for Python — R researchers, statistical
-          dashboards. Excellent reactivity model. shinyapps.io for
-          deploy. Caveat: same look-and-feel issue as Streamlit
-          out of the box.
+      SHINY for R / SHINY for Python — R researchers, statistical
+        dashboards. Excellent reactivity model. shinyapps.io for
+        deploy. Caveat: same look-and-feel issue as Streamlit
+        out of the box.
 
-        DASH (Python) — Plotly's framework. More flexible than
-          Streamlit; component-based; deployable as a Flask app.
-          Best for "interactive plotly dashboards with multi-page
-          structure". Caveat: more boilerplate.
+      DASH (Python) — Plotly's framework. More flexible than
+        Streamlit; component-based; deployable as a Flask app.
+        Best for "interactive plotly dashboards with multi-page
+        structure". Caveat: more boilerplate.
 
-        PANEL / HOLOVIZ (Python) — declarative; integrates with
-          bokeh + plotly + vega + matplotlib. Best for someone who
-          wants both notebook-driven exploration AND a deployable
-          dashboard from the same code.
+      PANEL / HOLOVIZ (Python) — declarative; integrates with
+        bokeh + plotly + vega + matplotlib. Best for someone who
+        wants both notebook-driven exploration AND a deployable
+        dashboard from the same code.
 
-        OBSERVABLE FRAMEWORK — static-site generator backed by
-          Observable JS notebooks. Top-tier polish, fastest load
-          times (pre-built static + reactive JS), publishes to
-          any static host. Best for "next-tier polish, public
-          deployment, willing to write some JS". Strong with
-          D3 + Plot + Vega-Lite under the hood. Quarto integrates.
+      OBSERVABLE FRAMEWORK — static-site generator backed by
+        Observable JS notebooks. Top-tier polish, fastest load
+        times (pre-built static + reactive JS), publishes to
+        any static host. Best for "next-tier polish, public
+        deployment, willing to write some JS". Strong with
+        D3 + Plot + Vega-Lite under the hood. Quarto integrates.
 
-        QUARTO + SHINYLIVE / OBSERVABLE — for academic publishing
-          context. Quarto compiles to HTML / PDF / docx; shinylive
-          embeds R Shiny as WASM (no server needed); Observable
-          interactive cells embed natively. Best for "paper landing
-          page that's interactive".
+      QUARTO + SHINYLIVE / OBSERVABLE — for academic publishing
+        context. Quarto compiles to HTML / PDF / docx; shinylive
+        embeds R Shiny as WASM (no server needed); Observable
+        interactive cells embed natively. Best for "paper landing
+        page that's interactive".
 
-        REACT + D3 / VEGA-LITE / VISX — custom builds. Maximum
-          control; significant engineering. Best for "the
-          dashboard IS the deliverable, we have a JS engineer".
+      REACT + D3 / VEGA-LITE / VISX — custom builds. Maximum
+        control; significant engineering. Best for "the
+        dashboard IS the deliverable, we have a JS engineer".
 
-        KEPLER.GL / DECK.GL — geospatial-flagship. Beautiful out
-          of the box. Best for any heavy geospatial story.
+      KEPLER.GL / DECK.GL — geospatial-flagship. Beautiful out
+        of the box. Best for any heavy geospatial story.
 
-        TABLEAU / POWER BI — when the audience already lives in
-          those tools (enterprise, clinical reporting, government).
-          Don't ignore them just because they're commercial.
+      TABLEAU / POWER BI — when the audience already lives in
+        those tools (enterprise, clinical reporting, government).
+        Don't ignore them just because they're commercial.
 
-      Document choice + why + deploy target. Surface the trade
-      explicitly (e.g. "Streamlit ships in a day but I'll spend
-      another half-day on CSS to reach showcase tier; Observable
-      Framework takes 3 days to learn but ships polished").
+    Document choice + why + deploy target. Surface the trade
+    explicitly (e.g. "Streamlit ships in a day but I'll spend
+    another half-day on CSS to reach showcase tier; Observable
+    Framework takes 3 days to learn but ships polished").
 
-  - id: design_the_interactive_vocabulary
-    name: Design the interactive vocabulary (smallest set that answers the questions)
-    description: |
-      For each question in step 1, pick the SINGLE interactive
-      idiom that answers it. Common idioms + when they fit:
+- id: design_the_interactive_vocabulary
+  name: Design the interactive vocabulary (smallest set that answers the questions)
+  description: |
+    For each question in step 1, pick the SINGLE interactive
+    idiom that answers it. Common idioms + when they fit:
 
-        OVERVIEW + DETAIL — main chart + a "drill-in" pane. Best
-          when one summary view doesn't capture the granularity.
+      OVERVIEW + DETAIL — main chart + a "drill-in" pane. Best
+        when one summary view doesn't capture the granularity.
 
-        FILTER + RE-AGGREGATE — sidebar of filters; main view
-          recomputes. Best for multi-dimensional data ("show me
-          patients aged 50-70 in the treatment arm").
+      FILTER + RE-AGGREGATE — sidebar of filters; main view
+        recomputes. Best for multi-dimensional data ("show me
+        patients aged 50-70 in the treatment arm").
 
-        BRUSH AND LINK — selecting a region in one chart
-          highlights matching data in others. Best for exploring
-          correlated views.
+      BRUSH AND LINK — selecting a region in one chart
+        highlights matching data in others. Best for exploring
+        correlated views.
 
-        SMALL-MULTIPLE WITH SCRUBBER — multiple panels, one slider
-          (time, parameter). Best for parameter sweeps + time
-          evolution.
+      SMALL-MULTIPLE WITH SCRUBBER — multiple panels, one slider
+        (time, parameter). Best for parameter sweeps + time
+        evolution.
 
-        MAP-PAN + LAYER TOGGLE — geospatial. Best for any spatial
-          story.
+      MAP-PAN + LAYER TOGGLE — geospatial. Best for any spatial
+        story.
 
-        DAG-LIKE WALKTHROUGH — guided sequence with branches.
-          Best for tutorials + explainers (look at Distill.pub for
-          the standard).
+      DAG-LIKE WALKTHROUGH — guided sequence with branches.
+        Best for tutorials + explainers (look at Distill.pub for
+        the standard).
 
-      Each idiom is a learning cost for the user, so resist bolting
-      on idioms that don't map to a listed question — pick the
-      smallest set that answers them and justify any beyond the
-      obvious one or two.
+    Each idiom is a learning cost for the user, so resist bolting
+    on idioms that don't map to a listed question — pick the
+    smallest set that answers them and justify any beyond the
+    obvious one or two.
 
-  - id: data_layer
-    name: Design the data layer (versioned, queryable, reproducible)
-    description: |
-      For a dashboard to be reproducible:
-        - data is a VERSIONED snapshot (parquet + content hash, or
-          a checkpointed DuckDB / sqlite file) — NOT a live
-          connection to a moving database (which makes the
-          dashboard's outputs un-replayable).
-        - queries run client-side where possible (DuckDB-WASM,
-          Arrow, vega-lite expressions) for speed + offline use,
-          OR server-side via a thin API.
-        - row counts + column types are documented; missingness
-          handling is explicit.
+- id: data_layer
+  name: Design the data layer (versioned, queryable, reproducible)
+  description: |
+    For a dashboard to be reproducible:
+      - data is a VERSIONED snapshot (parquet + content hash, or
+        a checkpointed DuckDB / sqlite file) — NOT a live
+        connection to a moving database (which makes the
+        dashboard's outputs un-replayable).
+      - queries run client-side where possible (DuckDB-WASM,
+        Arrow, vega-lite expressions) for speed + offline use,
+        OR server-side via a thin API.
+      - row counts + column types are documented; missingness
+        handling is explicit.
 
-      Persist the data snapshot + hash to workspace/synthesis/
-      dashboard_data/ alongside the dashboard source.
+    Persist the data snapshot + hash to workspace/synthesis/
+    dashboard_data/ alongside the dashboard source.
 
-  - id: polish_pass
-    name: Polish pass (typography, palette, copy, transitions)
-    description: |
-      Showcase tier means:
-        - typography is consistent + readable (not browser default)
-        - palette is intentional + colour-vision-safe (route to
-          visualization/color_accessibility_audit)
-        - copy is hand-written for the audience (no chart titles
-          like "fig 1")
-        - transitions are subtle and quick (ease-in-out, NOT bouncy
-          or slow enough to make the user wait)
-        - empty states + loading states are designed (a blank
-          chart on first paint reads as broken)
-        - default view is informative (no "select a filter to begin")
-        - mobile is gracefully degraded (or explicit "desktop only"
-          notice + link to PDF version)
+- id: polish_pass
+  name: Polish pass (typography, palette, copy, transitions)
+  description: |
+    Showcase tier means:
+      - typography is consistent + readable (not browser default)
+      - palette is intentional + colour-vision-safe (route to
+        visualization/color_accessibility_audit)
+      - copy is hand-written for the audience (no chart titles
+        like "fig 1")
+      - transitions are subtle and quick (ease-in-out, NOT bouncy
+        or slow enough to make the user wait)
+      - empty states + loading states are designed (a blank
+        chart on first paint reads as broken)
+      - default view is informative (no "select a filter to begin")
+      - mobile is gracefully degraded (or explicit "desktop only"
+        notice + link to PDF version)
 
-      Reference Observable, The Pudding, Bloomberg Graphics for
-      the bar.
+    Reference Observable, The Pudding, Bloomberg Graphics for
+    the bar.
 
-  - id: reproducibility_and_cite
-    name: Reproducibility + how to cite
-    description: |
-      A dashboard that lives at one URL with no source is not
-      research. Ship:
-        - source code in workspace/synthesis/<dashboard_name>/
-        - data snapshot + hash
-        - build script (Docker image OR a make-style README that
-          a stranger can follow)
-        - VERSION the dashboard (semver: v1.0 first conference
-          demo, v1.1 fixed filters, v2.0 added new view)
-        - cite-able URL (Zenodo / OSF the source release; include
-          a DOI on the dashboard footer)
-        - a STATIC PDF EXPORT of the headline views for archival
-          journal supplements (because journal PDFs can't embed
-          the live dashboard).
+- id: reproducibility_and_cite
+  name: Reproducibility + how to cite
+  description: |
+    A dashboard that lives at one URL with no source is not
+    research. Ship:
+      - source code in workspace/synthesis/<dashboard_name>/
+      - data snapshot + hash
+      - build script (Docker image OR a make-style README that
+        a stranger can follow)
+      - VERSION the dashboard (semver: v1.0 first conference
+        demo, v1.1 fixed filters, v2.0 added new view)
+      - cite-able URL (Zenodo / OSF the source release; include
+        a DOI on the dashboard footer)
+      - a STATIC PDF EXPORT of the headline views for archival
+        journal supplements (because journal PDFs can't embed
+        the live dashboard).
 
-  - id: deploy_and_monitor
-    name: Deploy + monitor
-    description: |
-      Deploy paths by stack:
-        - Streamlit: streamlit.io free; HF Spaces; custom Docker.
-        - Shiny: shinyapps.io; posit Connect; shinylive (WASM).
-        - Dash: Heroku / Fly.io / Cloud Run.
-        - Observable Framework / Quarto: any static host (Netlify,
-          Vercel, GitHub Pages, S3).
-        - Custom React: Vercel / Netlify / static host.
-        - kepler.gl: kepler.gl/demo (anonymous) or self-host.
+- id: deploy_and_monitor
+  name: Deploy + monitor
+  description: |
+    Deploy paths by stack:
+      - Streamlit: streamlit.io free; HF Spaces; custom Docker.
+      - Shiny: shinyapps.io; posit Connect; shinylive (WASM).
+      - Dash: Heroku / Fly.io / Cloud Run.
+      - Observable Framework / Quarto: any static host (Netlify,
+        Vercel, GitHub Pages, S3).
+      - Custom React: Vercel / Netlify / static host.
+      - kepler.gl: kepler.gl/demo (anonymous) or self-host.
 
-      Add basic monitoring: error tracking (Sentry free tier),
-      analytics if appropriate (Plausible, Fathom — privacy-
-      preserving; avoid GA for research dashboards unless
-      stakeholders demand it).
+    Add basic monitoring: error tracking (Sentry free tier),
+    analytics if appropriate (Plausible, Fathom — privacy-
+    preserving; avoid GA for research dashboards unless
+    stakeholders demand it).
 
-      For conference demos: have an OFFLINE fallback (the static
-      HTML build) on a USB stick in case the venue wifi dies.
+    For conference demos: have an OFFLINE fallback (the static
+    HTML build) on a USB stick in case the venue wifi dies.
 
-  - id: caption_and_methods
-    name: Caption + methods entry
-    description: |
-      The dashboard's "About" page must include:
-        - what data, what time period, what filters
-        - methods (or link to the paper / preprint)
-        - version + last-updated date + source / data hash
-        - contact + cite-able DOI
+- id: caption_and_methods
+  name: Caption + methods entry
+  description: |
+    The dashboard's "About" page must include:
+      - what data, what time period, what filters
+      - methods (or link to the paper / preprint)
+      - version + last-updated date + source / data hash
+      - contact + cite-able DOI
 
-      mem_log the stack choice + data hash so the
-      paper's methods section can reference it.
+    mem_log the stack choice + data hash so the
+    paper's methods section can reference it.
 
 expected_outputs:
-  - workspace/.dashboard/audience.md
-  - workspace/synthesis/<dashboard_name>/  (source + data snapshot + build script)
-  - workspace/synthesis/<dashboard_name>/README.md  (deploy + cite)
-  - workspace/synthesis/<dashboard_name>/static_export.pdf  (for archival)
+- workspace/.dashboard/audience.md
+- workspace/synthesis/<dashboard_name>/  (source + data snapshot + build script)
+- workspace/synthesis/<dashboard_name>/README.md  (deploy + cite)
+- workspace/synthesis/<dashboard_name>/static_export.pdf  (for archival)
 
 quality_bar:
   audience_deployment_device_explicit: true
@@ -296,3 +274,23 @@ quality_bar:
 next_protocol: synthesis/synthesis_dashboard
 next_protocol_kind: forward_default
 on_failure: visualization/figure_guidelines
+intent_class: synthesize
+sub_intent: interactive
+triggers:
+- interactive dashboard
+- dashboard design
+- streamlit
+- shiny app
+- dash app
+- panel app
+- observable framework
+- observable notebook
+- kepler.gl dashboard
+- deck.gl dashboard
+- vega-lite dashboard
+- interactive demo
+- stakeholder dashboard
+- live dashboard
+- scrollytelling dashboard
+- showcase dashboard
+summary: Design a multi-page interactive dashboard (Observable / Streamlit / Shiny / Dash / Panel / kepler.gl / deck.gl) — next tier beyond static HTML.

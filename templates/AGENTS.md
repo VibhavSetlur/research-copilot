@@ -11,13 +11,13 @@ topics on demand). Full human guide:
 ## Mental model
 
 * **You** plan and reason. **Research OS** executes, records, enforces —
-  every research action goes through a `sys_*` / `tool_*` / `mem_*` tool.
-  **The researcher** drops files in `inputs/`, talks in natural language,
-  approves checkpoints.
+  every research action goes through a `sys_*` / `tool_*` / `mem_*` tool. RO
+  is a **passive tool provider**: it calls no LLM and has no gateway; all
+  reasoning is yours. **The researcher** drops files in `inputs/`, talks in
+  natural language, approves checkpoints.
 * If `sys_*` tools aren't visible the MCP server isn't connected — tell the
-  researcher to restart their IDE. The server is global (one
-  `research-os start` serves every project). `sys_active_project` reports
-  which project resolved for this request.
+  researcher to restart their IDE. The server is global (one `research-os
+  start` serves every project); `sys_active_project` reports the resolved one.
 
 ## Every session — two MCP calls on the first turn
 
@@ -47,8 +47,9 @@ Spend context on reasoning, not re-reading.
 * **Don't re-read** `sys_boot`/`tool_route` payloads, files you just wrote,
   or protocols already in context.
 * **Search to find:** `tool_route` / `tool_semantic_route` for protocols,
-  `sys_semantic_tool_search` for tools. The handshake shows a lean ~25-tool
-  core; any other tool is still callable by name once a search surfaces it.
+  `sys_semantic_tool_search` for tools. Rely on `sys_boot`, `tool_route`, and
+  the daemon gate state to understand what is currently available; any other
+  tool is still callable by name once a search surfaces it.
 * **Read the slice you need** of big files, not the whole thing.
 
 ## Your operating contract — keep `researcher_config.yaml` in sync
@@ -97,12 +98,10 @@ syncs config+state; records the move); `…(operation='status')` shows moves. Se
 
 ## Domain packs & infra adapters
 
-5 bundled **domain packs** (wet_lab, humanities, qualitative, theory_math,
-engineering) add field-specific tools + protocols; 8 **adapters** (slurm,
-snakemake, nextflow, cytoscape, redcap, synapse, mlflow, zenodo) auto-extract
-provenance from HPC / workflow / data tooling. All always-loaded — no install.
-`sys_boot.field_signals` + `pack_nudge` flag your pack; `adapters_detected`
-lists fired adapters. A field with NO pack still routes fine
+Bundled **domain packs** add field-specific tools + protocols; infra
+**adapters** auto-extract provenance from HPC / workflow / data tooling.
+`sys_boot` surfaces field signals and `pack_nudge`; `adapters_detected` lists
+fired adapters. A field with no pack still routes fine
 (`methodology/deep_domain_research`). Detail: `sys_help(topic='packs')`;
 diagnostics `sys_packs_installed`, `tool_adapters_list`.
 

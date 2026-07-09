@@ -156,7 +156,7 @@ def _recommend(field: dict, runs: dict, freshness: dict) -> dict:
                 f"No results recorded yet for {label}. Recording results is what "
                 "unlocks provenance, reproducibility, and staleness tracking."
             ),
-            "how": "run an analysis through the gateway, or mem_result_record a finding",
+            "how": "run an analysis (tool_python_exec / tool_bash_exec), or mem_result_record a finding",
             "priority": "normal",
         }
     return {

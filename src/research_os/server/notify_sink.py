@@ -88,7 +88,7 @@ def sink_notification(
         path = _outbox_path(Path(root))
         path.parent.mkdir(parents=True, exist_ok=True)
         line = json.dumps(rec, separators=(",", ":")) + "\n"
-        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
         try:
             os.write(fd, line.encode("utf-8"))
         finally:

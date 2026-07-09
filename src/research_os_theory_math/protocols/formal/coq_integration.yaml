@@ -1,7 +1,7 @@
 id: coq_integration
 name: "Coq Integration — formalising claims in Coq when Coq is the right tool"
 version: '2.0.0'
-schema_version: '2.0'
+schema_version: '3.0'
 scope_tags:
   domain: [theory_math, humanities, engineering]
   audience: [maintainer]
@@ -48,42 +48,18 @@ trigger: |
   pick-the-tool branch resolves to Coq.
 
 prerequisites:
-  - A claim that has been informally proved (or at least sketched)
-    via theory_math/proof/proof_verification_workflow. Formalising a
-    claim you haven't argued through on paper is a special kind of
-    pain.
-  - opam installed and a Coq switch created (Coq ≥ 8.18 recommended
-    for Ltac2 maturity; ≥ 8.20 for the cleaner module system errors).
-    Run sys_path to record the switch root before starting so the
-    AI can re-create it on a fresh machine.
-  - "Decision logged in mem_log — WHY Coq and not Lean. The next
-    maintainer (or you in six months) needs the rationale, not just
-    the .v file."
+- A claim that has been informally proved (or at least sketched) via theory_math/proof/proof_verification_workflow. Formalising a claim you haven't argued through on paper is a special kind of pain.
+- opam installed and a Coq switch created (Coq ≥ 8.18 recommended for Ltac2 maturity; ≥ 8.20 for the cleaner module system errors). Run sys_path to record the switch root before starting so the AI can re-create it on a fresh machine.
+- "Decision logged in mem_log — WHY Coq and not Lean. The next maintainer (or you in six months) needs the rationale, not just the .v file."
 
 editorial_voice:
   mode: hybrid
   rules:
-    - "Pick Coq when the result lives in PL theory, certified
-       compilation, or separation / concurrent program logic. The
-       coq-iris / coq-stdpp / CompCert / MetaCoq ecosystems have no
-       Lean equivalent that's production-ready in 2026."
-    - "Pick Lean when the result lives in abstract algebra, HoTT,
-       category theory, or anything where Mathlib's coverage matters.
-       Don't formalise commutative algebra in Coq just because you
-       already know Coq — you'll re-derive half of Mathlib."
-    - "Inside Coq, pick SSReflect + Mathematical Components for
-       algebraic / combinatorial proofs. Pick vanilla Ltac (or
-       Ltac2) for PL-theory work where stdpp / iris assume it. Don't
-       mix dialects in one file unless you enjoy debugging notation
-       conflicts."
-    - "Universe-polymorphism errors mean something is wrong with how
-       you stated the claim, not just how you proved it. Treat
-       'Universe inconsistency' as a signal to re-read the
-       definitions, not a tactic to brute-force around."
-    - "Extraction (to OCaml / Haskell) is a separate engineering
-       artifact, not a side-effect of the proof. If the paper claim
-       is about extracted code, the extraction config + test harness
-       belong in the same PR as the proof, not 'later'."
+  - "Pick Coq when the result lives in PL theory, certified compilation, or separation / concurrent program logic. The coq-iris / coq-stdpp / CompCert / MetaCoq ecosystems have no Lean equivalent that's production-ready in 2026."
+  - "Pick Lean when the result lives in abstract algebra, HoTT, category theory, or anything where Mathlib's coverage matters. Don't formalise commutative algebra in Coq just because you already know Coq — you'll re-derive half of Mathlib."
+  - "Inside Coq, pick SSReflect + Mathematical Components for algebraic / combinatorial proofs. Pick vanilla Ltac (or Ltac2) for PL-theory work where stdpp / iris assume it. Don't mix dialects in one file unless you enjoy debugging notation conflicts."
+  - "Universe-polymorphism errors mean something is wrong with how you stated the claim, not just how you proved it. Treat 'Universe inconsistency' as a signal to re-read the definitions, not a tactic to brute-force around."
+  - "Extraction (to OCaml / Haskell) is a separate engineering artifact, not a side-effect of the proof. If the paper claim is about extracted code, the extraction config + test harness belong in the same PR as the proof, not 'later'."
 
 quality_bar:
   qed_required_pct: 100
@@ -109,121 +85,136 @@ quality_bar:
     sibling file and Require them.
 
 steps:
-  - id: pick_coq_vs_lean
-    name: "Confirm Coq is actually the right tool"
-    description: |
-      Before writing any .v file, re-run the pick-the-tool decision.
-      Use tool_search ("Lean 4 <topic>", "Coq <topic>", "mathcomp
-       <topic>", "Mathlib <topic>") to compare ecosystem coverage.
-      Heuristic: if the topic shows up in coq-iris / coq-stdpp /
-      mathcomp / CompCert / MetaCoq examples, Coq. If it shows up in
-      Mathlib / mathlib4 / lean-community examples, Lean. If both,
-      pick the one your collaborators already use — formalisation is
-      a team sport. Log the decision + 2-3 sentence rationale via
-      mem_log under tag formal_tool_choice. If Lean wins, jump to
-      theory_math/formal/lean_integration instead.
+- id: pick_coq_vs_lean
+  name: "Confirm Coq is actually the right tool"
+  description: |
+    Before writing any .v file, re-run the pick-the-tool decision.
+    Use tool_search ("Lean 4 <topic>", "Coq <topic>", "mathcomp
+     <topic>", "Mathlib <topic>") to compare ecosystem coverage.
+    Heuristic: if the topic shows up in coq-iris / coq-stdpp /
+    mathcomp / CompCert / MetaCoq examples, Coq. If it shows up in
+    Mathlib / mathlib4 / lean-community examples, Lean. If both,
+    pick the one your collaborators already use — formalisation is
+    a team sport. Log the decision + 2-3 sentence rationale via
+    mem_log under tag formal_tool_choice. If Lean wins, jump to
+    theory_math/formal/lean_integration instead.
 
-  - id: setup_opam_switch
-    name: "Create or recreate the opam switch + project skeleton"
-    description: |
-      Coq projects are reproducible only if the opam switch is
-      pinned. Create a project-local switch (opam switch create .
-      <ocaml-version> --no-install) and install coq + the needed
-      libraries (coq-mathcomp-ssreflect, coq-stdpp, coq-iris,
-      coq-equations, whichever apply). Write a _CoqProject file at
-      the repo root listing every .v file and -R / -Q logical-path
-      mappings. Pin versions in a coq-<project>.opam file so the
-      switch is byte-reproducible. Record the opam command sequence
-      in sys_path so a fresh checkout can rebuild the switch from
-      scratch. Skipping this step is how you end up with "works on
-      my machine" proofs.
+- id: setup_opam_switch
+  name: "Create or recreate the opam switch + project skeleton"
+  description: |
+    Coq projects are reproducible only if the opam switch is
+    pinned. Create a project-local switch (opam switch create .
+    <ocaml-version> --no-install) and install coq + the needed
+    libraries (coq-mathcomp-ssreflect, coq-stdpp, coq-iris,
+    coq-equations, whichever apply). Write a _CoqProject file at
+    the repo root listing every .v file and -R / -Q logical-path
+    mappings. Pin versions in a coq-<project>.opam file so the
+    switch is byte-reproducible. Record the opam command sequence
+    in sys_path so a fresh checkout can rebuild the switch from
+    scratch. Skipping this step is how you end up with "works on
+    my machine" proofs.
 
-  - id: state_in_coq
-    name: "State the claim as a Coq Lemma / Theorem / Definition"
-    description: |
-      Translate the informal claim into Coq syntax. This is where
-      most bugs surface: implicit arguments, type-class instances
-      that don't elaborate, universe levels that don't unify. Start
-      with the Lemma / Theorem statement and Admitted body — get the
-      type to typecheck before writing any proof. If the statement
-      requires definitions that don't exist in the libraries, add
-      them in a sibling Definitions.v file with explicit types (no
-      relying on inference for the public interface). Cross-check
-      the Coq statement against the informal claim line by line —
-      a typo in the formal statement invalidates the whole proof.
+- id: state_in_coq
+  name: "State the claim as a Coq Lemma / Theorem / Definition"
+  description: |
+    Translate the informal claim into Coq syntax. This is where
+    most bugs surface: implicit arguments, type-class instances
+    that don't elaborate, universe levels that don't unify. Start
+    with the Lemma / Theorem statement and Admitted body — get the
+    type to typecheck before writing any proof. If the statement
+    requires definitions that don't exist in the libraries, add
+    them in a sibling Definitions.v file with explicit types (no
+    relying on inference for the public interface). Cross-check
+    the Coq statement against the informal claim line by line —
+    a typo in the formal statement invalidates the whole proof.
 
-  - id: write_proof
-    name: "Write the proof body in the chosen tactic dialect"
-    description: |
-      Open the proof with Proof. and close with Qed. (never Defined.
-      unless you specifically need the definition transparent for
-      computation — Defined leaks the proof term into the
-      environment and slows downstream typechecking). Use the
-      dialect picked in editorial_voice: SSReflect (=> //, rewrite,
-      apply:, case:) for mathcomp-flavoured work; vanilla Ltac
-      (intros, destruct, induction, rewrite, apply, lia) for general
-      work; Ltac2 when you need typed tactic programming. Run coqc
-      (or dune build) after every few tactics — Coq error messages
-      are less helpful the further from the actual bug you are.
-      Invoke tool_theory_math_coq_check on each save so the AI
-      catches "Universe inconsistency" and "Cannot infer" errors in
-      the same session they're introduced.
+- id: write_proof
+  name: "Write the proof body in the chosen tactic dialect"
+  description: |
+    Open the proof with Proof. and close with Qed. (never Defined.
+    unless you specifically need the definition transparent for
+    computation — Defined leaks the proof term into the
+    environment and slows downstream typechecking). Use the
+    dialect picked in editorial_voice: SSReflect (=> //, rewrite,
+    apply:, case:) for mathcomp-flavoured work; vanilla Ltac
+    (intros, destruct, induction, rewrite, apply, lia) for general
+    work; Ltac2 when you need typed tactic programming. Run coqc
+    (or dune build) after every few tactics — Coq error messages
+    are less helpful the further from the actual bug you are.
+    Invoke tool_theory_math_coq_check on each save so the AI
+    catches "Universe inconsistency" and "Cannot infer" errors in
+    the same session they're introduced.
 
-  - id: handle_errors
-    name: "Debug Coq-specific error patterns"
-    description: |
-      Coq errors cluster into a few recognisable families. "The
-      reference X was not found": missing Require Import, or the
-      logical path in _CoqProject doesn't match the actual directory
-      structure. "Cannot infer this placeholder": elaboration failed
-      — add an explicit @-application or annotate the type. "Unable
-      to unify ... with ...": check for definitional vs. propositional
-      equality (you may need rewrite or change). "Universe
-      inconsistency": you stated the lemma at a universe level the
-      definitions can't satisfy — usually fixed by Set Universe
-      Polymorphism or by re-stating with explicit @{u v} universe
-      annotations. "Stack overflow" in Ltac: the tactic is looping —
-      add fail or progress to bound it. When stuck, paste the error
-      verbatim into tool_search with "site:coq.discourse.group" —
-      the Coq community indexes well.
+- id: handle_errors
+  name: "Debug Coq-specific error patterns"
+  description: |
+    Coq errors cluster into a few recognisable families. "The
+    reference X was not found": missing Require Import, or the
+    logical path in _CoqProject doesn't match the actual directory
+    structure. "Cannot infer this placeholder": elaboration failed
+    — add an explicit @-application or annotate the type. "Unable
+    to unify ... with ...": check for definitional vs. propositional
+    equality (you may need rewrite or change). "Universe
+    inconsistency": you stated the lemma at a universe level the
+    definitions can't satisfy — usually fixed by Set Universe
+    Polymorphism or by re-stating with explicit @{u v} universe
+    annotations. "Stack overflow" in Ltac: the tactic is looping —
+    add fail or progress to bound it. When stuck, paste the error
+    verbatim into tool_search with "site:coq.discourse.group" —
+    the Coq community indexes well.
 
-  - id: ci_and_extraction
-    name: "Wire CI + (if relevant) extraction"
-    description: |
-      Add a GitHub Actions workflow that runs make / dune build on
-      every push, using the same opam switch pinned in step 2. If
-      the build exceeds the ci_build_minutes_max threshold, split
-      the library or use opam's caching action. If the paper claim
-      is about extracted code (CompCert-style certified compilation),
-      add an Extraction directive in a separate Extraction.v file,
-      generate the OCaml / Haskell, and add a smoke test that
-      compiles and runs the extracted output. The extraction is
-      part of the claim; without the test, the claim is "the Coq
-      proof typechecks" not "the extracted compiler is correct".
+- id: ci_and_extraction
+  name: "Wire CI + (if relevant) extraction"
+  description: |
+    Add a GitHub Actions workflow that runs make / dune build on
+    every push, using the same opam switch pinned in step 2. If
+    the build exceeds the ci_build_minutes_max threshold, split
+    the library or use opam's caching action. If the paper claim
+    is about extracted code (CompCert-style certified compilation),
+    add an Extraction directive in a separate Extraction.v file,
+    generate the OCaml / Haskell, and add a smoke test that
+    compiles and runs the extracted output. The extraction is
+    part of the claim; without the test, the claim is "the Coq
+    proof typechecks" not "the extracted compiler is correct".
 
-  - id: cross_link_to_paper
-    name: "Cross-reference the Coq proof from the paper"
-    description: |
-      In the paper's proof body, add a footnote or remark: "A Coq
-      formalisation is available at <repo>/theories/<File>.v,
-      Lemma <name>". List the trusted base explicitly — Coq's
-      kernel, opam-installed libraries (with versions), and any
-      Axioms used in the file header. This is what reviewers will
-      check; making it implicit invites suspicion. Update the
-      paper's Reproducibility section with the opam command
-      sequence from step 2. If the formalisation revealed a gap in
-      the informal proof (it usually does), back-port the fix to
-      the paper proof — do NOT silently rely on the Coq version to
-      cover for an informal proof that no longer holds.
+- id: cross_link_to_paper
+  name: "Cross-reference the Coq proof from the paper"
+  description: |
+    In the paper's proof body, add a footnote or remark: "A Coq
+    formalisation is available at <repo>/theories/<File>.v,
+    Lemma <name>". List the trusted base explicitly — Coq's
+    kernel, opam-installed libraries (with versions), and any
+    Axioms used in the file header. This is what reviewers will
+    check; making it implicit invites suspicion. Update the
+    paper's Reproducibility section with the opam command
+    sequence from step 2. If the formalisation revealed a gap in
+    the informal proof (it usually does), back-port the fix to
+    the paper proof — do NOT silently rely on the Coq version to
+    cover for an informal proof that no longer holds.
 
 expected_outputs:
-  - "theories/<File>.v — the Coq proof, Qed-closed, no Admitted"
-  - "_CoqProject — logical-path mappings, file list"
-  - "coq-<project>.opam — pinned library versions"
-  - "Extraction.v + extracted/ — only when the claim is about extracted code"
-  - ".github/workflows/coq.yml — CI build under the ci_build_minutes_max ceiling"
-  - "mem_log entry under formal_tool_choice — why Coq, not Lean"
+- "theories/<File>.v — the Coq proof, Qed-closed, no Admitted"
+- "_CoqProject — logical-path mappings, file list"
+- "coq-<project>.opam — pinned library versions"
+- "Extraction.v + extracted/ — only when the claim is about extracted code"
+- ".github/workflows/coq.yml — CI build under the ci_build_minutes_max ceiling"
+- "mem_log entry under formal_tool_choice — why Coq, not Lean"
 
 next_protocol: theory_math/proof/proof_verification_workflow
 next_protocol_kind: forward_default
 on_failure: theory_math/formal/lean_integration
+intent_class: execute
+sub_intent: new_experiment
+triggers:
+- coq proof
+- formalise in coq
+- ltac
+- coq integration
+summary: 'Coq bridge: tactic-language scaffolds + coqc + error parsing.'
+shortcut_tool: tool_theory_math_coq_check
+token_estimate: 1600
+decomposition:
+- protocol: theory_math/formal/coq_integration
+  purpose: Scaffold the .v file.
+- tool: tool_theory_math_coq_check
+  purpose: Run coqc + parse errors.

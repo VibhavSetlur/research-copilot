@@ -1,22 +1,22 @@
 id: synthesis_progress_update
 tier: 'synthesize'
 name: Synthesis — Progress Update (PI / advisor / lab / weekly)
-version: '3.10.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [any]
 last_reviewed: '2026-06-22'
 see_also:
-  - synthesis/synthesis_report        # when the update outgrows two minutes
-  - synthesis/synthesis_step_report   # the VISUAL companion: one polished page for a single step
+- synthesis/synthesis_report          # when the update outgrows two minutes
+- synthesis/synthesis_step_report     # the VISUAL companion: one polished page for a single step
 description: |
   Compile a short progress update — the kind a researcher sends their
   PI / advisor on a Friday afternoon, posts to the lab Slack before a
   meeting, or fills into a weekly stand-up template. Distinct from
   `synthesis_report` (longer, structured for a stakeholder audience)
-  and from `tool_progress_digest` (mechanical status snapshot the AI
+  and from `tool_audit (operation=progress_digest)` (mechanical status snapshot the AI
   generates for itself).
 
   The constraint: the reader is busy AND knows the project. They want
@@ -30,9 +30,7 @@ trigger: |
   "what changed this week".
 
 prerequisites:
-  - At least one workspace step has been touched since the LAST update
-    (or this is the first update — protocol still applies, just longer
-    Background section).
+- At least one workspace step has been touched since the LAST update (or this is the first update — protocol still applies, just longer Background section).
 
 quality_bar:
   word_count_band_by_audience: true
@@ -94,152 +92,165 @@ audience_profile:
 editorial_voice:
   mode: hybrid
   rules:
-    - "Lead with the change, not the recap. The reader knows the
-       project; they want to know what is DIFFERENT from the last
-       update."
-    - "Distinguish FACTS (what happened, what was decided) from
-       INTERPRETATION (what the AI / researcher thinks it means).
-       PIs frequently react to a factual update by asking for the
-       interpretation in the next email."
-    - "Blockers are specific. 'Blocked on data access' is not a
-       blocker; 'IRB amendment in review since Tuesday, expected
-       3-5 business days, downstream work delayed by ~1 week if
-       not back by Friday' is a blocker."
-    - "When there is no ask, say so. An update with no ask is
-       acceptable; an update that hides an ask in the middle of a
-       paragraph is not."
+  - "Lead with the change, not the recap. The reader knows the project; they want to know what is DIFFERENT from the last update."
+  - "Distinguish FACTS (what happened, what was decided) from INTERPRETATION (what the AI / researcher thinks it means). PIs frequently react to a factual update by asking for the interpretation in the next email."
+  - "Blockers are specific. 'Blocked on data access' is not a blocker; 'IRB amendment in review since Tuesday, expected 3-5 business days, downstream work delayed by ~1 week if not back by Friday' is a blocker."
+  - "When there is no ask, say so. An update with no ask is acceptable; an update that hides an ask in the middle of a paragraph is not."
 
 steps:
-  - id: select_audience
-    name: Select audience + format
-    description: |
-      Ask: "Audience? pi_short_weekly | pi_long_milestone |
-      advisor_thesis | lab_slack | collaborator_external | stand_up."
-      Default: pi_short_weekly when the prompt doesn't say.
+- id: select_audience
+  name: Select audience + format
+  description: |
+    Ask: "Audience? pi_short_weekly | pi_long_milestone |
+    advisor_thesis | lab_slack | collaborator_external | stand_up."
+    Default: pi_short_weekly when the prompt doesn't say.
 
-  - id: locate_the_diff
-    name: Identify what changed since the last update
-    description: |
-      Pull in ONE batch:
-        - tool_progress_digest          (mechanical state snapshot)
-        - sys_protocol_history limit=30
-        - sys_path                 (which steps are new / active /
-                                         abandoned since the last update)
-        - mem_hypothesis_list           (status changes)
-        - mem_log              (decisions taken since)
-        - the most recent handoff doc under .os_state/handoffs/
-          (the last "where we left off" line is often the previous
-          update's content)
+- id: locate_the_diff
+  name: Identify what changed since the last update
+  description: |
+    Pull in ONE batch:
+      - tool_audit (operation=progress_digest)          (mechanical state snapshot)
+      - sys_protocol_get (operation=history) limit=30
+      - sys_state_get                 (which steps are new / active /
+                                       abandoned since the last update)
+      - mem_hypothesis (operation=list)           (status changes)
+      - mem_log              (decisions taken since)
+      - the most recent handoff doc under .os_state/handoffs/
+        (the last "where we left off" line is often the previous
+        update's content)
 
-      Filter to entries created AFTER the last update. If there is no
-      "last update" anchor (first update or the file is missing), look
-      back ~7 days for short updates and the full project for
-      milestone updates.
+    Filter to entries created AFTER the last update. If there is no
+    "last update" anchor (first update or the file is missing), look
+    back ~7 days for short updates and the full project for
+    milestone updates.
 
-  - id: pull_the_headline_finding
-    name: Pull the headline finding (if any)
-    description: |
-      The headline is the ONE thing the researcher would want the PI
-      to read first. Source it from:
-        - the most recently-completed step's conclusions.md > Findings
-        - the most recently-flipped hypothesis (testing → supported /
-          refuted / inconclusive)
-        - the most recently-resolved blocker
+- id: pull_the_headline_finding
+  name: Pull the headline finding (if any)
+  description: |
+    The headline is the ONE thing the researcher would want the PI
+    to read first. Source it from:
+      - the most recently-completed step's conclusions.md > Findings
+      - the most recently-flipped hypothesis (testing → supported /
+        refuted / inconclusive)
+      - the most recently-resolved blocker
 
-      If nothing crossed a threshold this period (the most common
-      case for short weekly updates), the headline is the PROGRESS,
-      not a finding: "Finished the data pipeline for chapter 2; first
-      results expected Tuesday."
+    If nothing crossed a threshold this period (the most common
+    case for short weekly updates), the headline is the PROGRESS,
+    not a finding: "Finished the data pipeline for chapter 2; first
+    results expected Tuesday."
 
-  - id: pull_the_blockers
-    name: Pull blockers from the workspace
-    description: |
-      Source blockers from:
-        - workspace/logs/audit_report.md  (any BLOCKER: lines)
-        - dead-end paths recorded since the last update
-          (sys_path status=__DEAD_END mtime>last_update)
-        - tool_lessons(operation='dead_end')  (the recurring blockers
-                                          showing up across attempts)
-        - mem_log entries with rationale containing "blocked"
-          or "waiting on"
+- id: pull_the_blockers
+  name: Pull blockers from the workspace
+  description: |
+    Source blockers from:
+      - workspace/logs/audit_report.md  (any BLOCKER: lines)
+      - dead-end paths recorded since the last update
+        (sys_state_get status=__DEAD_END mtime>last_update)
+      - tool_lessons(operation='dead_end')  (the recurring blockers
+                                        showing up across attempts)
+      - mem_log entries with rationale containing "blocked"
+        or "waiting on"
 
-      Convert each into the SPECIFIC form: what is blocked, what is
-      blocking it, what unblocking would look like, who can help.
-      Vague blockers ("stuck on the pipeline") are converted to
-      specific ones ("stuck on getting the snRNA-seq integration to
-      converge — tried two normalisations, considering a third; would
-      benefit from 30 min with someone who has run this before").
+    Convert each into the SPECIFIC form: what is blocked, what is
+    blocking it, what unblocking would look like, who can help.
+    Vague blockers ("stuck on the pipeline") are converted to
+    specific ones ("stuck on getting the snRNA-seq integration to
+    converge — tried two normalisations, considering a third; would
+    benefit from 30 min with someone who has run this before").
 
-  - id: name_the_ask
-    name: Name the ask (or explicitly note none)
-    description: |
-      An update with no ask is fine. An update with a hidden ask is
-      not. For each anticipated ask, write:
-        - WHAT — the specific action requested
-        - FROM WHOM — name a person, not "someone"
-        - BY WHEN — a date, not "soon"
-        - WHY — the downstream consequence of not having it
+- id: name_the_ask
+  name: Name the ask (or explicitly note none)
+  description: |
+    An update with no ask is fine. An update with a hidden ask is
+    not. For each anticipated ask, write:
+      - WHAT — the specific action requested
+      - FROM WHOM — name a person, not "someone"
+      - BY WHEN — a date, not "soon"
+      - WHY — the downstream consequence of not having it
 
-      If there is no ask, write "Ask: nothing this week — will flag
-      if anything comes up before next update." Silence on this line
-      reads as confusion, not as "no problems".
+    If there is no ask, write "Ask: nothing this week — will flag
+    if anything comes up before next update." Silence on this line
+    reads as confusion, not as "no problems".
 
-  - id: draft_each_section
-    name: Draft each section in the audience profile
-    description: |
-      For each section in audience.sections, author the prose directly
-      in `synthesis/progress_update.md`. Apply the audience profile's
-      tone and the word-count band. Hold to "what changed → blockers →
-      next → ask" structure even when the labels in the profile differ.
+- id: draft_each_section
+  name: Draft each section in the audience profile
+  description: |
+    For each section in audience.sections, author the prose directly
+    in `synthesis/progress_update.md`. Apply the audience profile's
+    tone and the word-count band. Hold to "what changed → blockers →
+    next → ask" structure even when the labels in the profile differ.
 
-      For lab_slack: each bullet stands alone. End with a single link
-      to the dashboard / figure / draft — not three.
+    For lab_slack: each bullet stands alone. End with a single link
+    to the dashboard / figure / draft — not three.
 
-      For stand_up: yesterday / today / blocker, three lines, done.
+    For stand_up: yesterday / today / blocker, three lines, done.
 
-  - id: attach_the_one_useful_artefact
-    name: Attach the ONE useful artefact (when applicable)
-    description: |
-      For pi_long_milestone, advisor_thesis, collaborator_external:
-      attach ONE artefact — the headline figure, the dashboard URL,
-      or the draft section the reader most needs.
+- id: attach_the_one_useful_artefact
+  name: Attach the ONE useful artefact (when applicable)
+  description: |
+    For pi_long_milestone, advisor_thesis, collaborator_external:
+    attach ONE artefact — the headline figure, the dashboard URL,
+    or the draft section the reader most needs.
 
-      When the update is really ABOUT one analysis step — "here is what
-      step 21 did, here are the results" — and the reader will want to
-      SEE it (a meeting, a screen-share, a milestone email), the right
-      attachment is a step report, not a loose figure. Route to
-      synthesis/synthesis_step_report to author a single self-contained,
-      offline `synthesis/updates/step-NN-<slug>.html`, then link it from
-      this update (lab_slack: the single end link; pi_long_milestone:
-      under Attachments). The text update stays the narrative; the step
-      report is the visual the reader opens. Don't inline a step report's
-      worth of figures into the prose — link the page instead.
+    When the update is really ABOUT one analysis step — "here is what
+    step 21 did, here are the results" — and the reader will want to
+    SEE it (a meeting, a screen-share, a milestone email), the right
+    attachment is a step report, not a loose figure. Route to
+    synthesis/synthesis_step_report to author a single self-contained,
+    offline `synthesis/updates/step-NN-<slug>.html`, then link it from
+    this update (lab_slack: the single end link; pi_long_milestone:
+    under Attachments). The text update stays the narrative; the step
+    report is the visual the reader opens. Don't inline a step report's
+    worth of figures into the prose — link the page instead.
 
-      Multi-attachment updates are usually a sign the update is
-      trying to be a report. If you find yourself attaching three
-      things, the right protocol is synthesis_report, not this one —
-      route there instead.
+    Multi-attachment updates are usually a sign the update is
+    trying to be a report. If you find yourself attaching three
+    things, the right protocol is synthesis_report, not this one —
+    route there instead.
 
-  - id: audit_and_handback
-    name: Audit for length + structure
-    description: |
-      Walk the draft:
-        - word count in the audience profile's band
-        - what_changed / blockers / next / ask all present (or "none"
-          on blockers / ask when accurate)
-        - no jargon the audience has not already used in their own
-          messages about this project
-        - reads in under two minutes (a long update at 800 words is
-          right at the edge)
+- id: audit_and_handback
+  name: Audit for length + structure
+  description: |
+    Walk the draft:
+      - word count in the audience profile's band
+      - what_changed / blockers / next / ask all present (or "none"
+        on blockers / ask when accurate)
+      - no jargon the audience has not already used in their own
+        messages about this project
+      - reads in under two minutes (a long update at 800 words is
+        right at the edge)
 
-      Hand back:
-        synthesis/progress_<YYYYMMDD>.md  (one file per update; never
-        overwrite the previous one — the chain of updates becomes a
-        searchable project diary).
+    Hand back:
+      synthesis/progress_<YYYYMMDD>.md  (one file per update; never
+      overwrite the previous one — the chain of updates becomes a
+      searchable project diary).
 
 expected_outputs:
-  - synthesis/progress_<YYYYMMDD>.md
+- synthesis/progress_<YYYYMMDD>.md
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
 on_failure: guidance/dead_end_routing
+intent_class: synthesize
+sub_intent: update
+triggers:
+- update my pi
+- weekly update
+- status update
+- advisor update
+- lab slack update
+- blurb for my supervisor
+- friday update
+- what changed this week
+- stand-up summary
+- draft a status update
+- what should i tell my advisor
+- thesis advisor update
+- milestone update
+summary: Short progress update for PI / advisor / lab / collaborator / stand-up.
+token_estimate: 1200
+decomposition:
+- tool: tool_audit (operation=progress_digest)
+  purpose: Mechanical state snapshot to feed the update.
+- protocol: synthesis/synthesis_progress_update
+  purpose: Compose the audience-tailored update.

@@ -73,6 +73,9 @@ sed -i "s/^__version__ = .*/__version__ = \"$NEW\"/" src/research_os/__init__.py
 sed -i "s/^version: .*/version: $NEW/" CITATION.cff
 sed -i "s/^date-released: .*/date-released: $(date +%F)/" CITATION.cff
 
+# Confirm Python-floor docs match pyproject.toml's requires-python before release:
+# README.md, docs/SETUP.md, docs/CLI.md, and doctor output examples.
+
 # 4. Add the CHANGELOG entry under a new ## [NEW] — date heading.
 #    Group changes under Added / Improved / Fixed / Bumped sections.
 

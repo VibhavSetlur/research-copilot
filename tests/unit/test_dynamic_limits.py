@@ -10,7 +10,6 @@ from pathlib import Path
 import yaml
 
 from research_os.daemon import dynamic_limits as dl
-from research_os.daemon.sandbox import ResourceLimits
 
 
 def _write_cfg(root: Path, runtime: dict) -> None:

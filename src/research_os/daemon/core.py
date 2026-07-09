@@ -20,6 +20,7 @@ from pathlib import Path
 
 from .config import DaemonConfig
 from .events import EventBus
+from .gates import GateQueue
 from .registry import WorkspaceRegistry
 from .runstore import RunStore
 from .tasks import TaskQueue
@@ -62,7 +63,7 @@ class DaemonStatus:
 
 
 class Daemon:
-    """The Research OS gateway daemon — the live serving core.
+    """The Research OS daemon — the live serving core.
 
     Construct with an explicit root + config, or use :meth:`for_root` /
     :meth:`autoresolve` to build one the way the MCP server resolves its
@@ -74,7 +75,7 @@ class Daemon:
         self.config = config
         # Set True by serve() once the process is actually listening.
         self._serving = False
-        # Event spine (Phase 1.5): append-only bus the task queue, gateway,
+        # Event spine (Phase 1.5): append-only bus the task queue,
         # dashboard, and MCP sidecar all publish to / subscribe from. This is
         # the substrate that makes the daemon observable in real time instead
         # of poll-only. stdlib-only, import-cheap.
@@ -94,6 +95,8 @@ class Daemon:
         # off the event bus so the queue stays journal-agnostic. Only active
         # when we have a concrete root to write under.
         self.runstore = RunStore(root) if root is not None else None
+        # Persistent HITL gate queue (§12.4), None when no root, like runstore.
+        self.gates = GateQueue(root, event_bus=self.events) if root is not None else None
         self._journal = None
         self._journal_thread = None
         if root is not None:
@@ -154,7 +157,7 @@ class Daemon:
                 "host": self.config.host,
                 "port": self.config.port,
                 "base_url": self.config.base_url,
-                "enable_gateway": self.config.enable_gateway,
+                "auth_token_env": self.config.auth_token_env,
                 "enable_dashboard": self.config.enable_dashboard,
                 "sandbox_mode": self.config.sandbox_mode,
                 "task_workers": self.config.task_workers,
@@ -246,7 +249,7 @@ class Daemon:
         # without a full serve() (programmatic use + the HTTP POST /v1/jobs
         # path), and submit() refuses on a cold queue. start() is idempotent.
         self.tasks.start()
-        return self.tasks.submit(
+        job_id = self.tasks.submit(
             runner,
             name=job_name[:120],
             root=effective_root,
@@ -254,6 +257,22 @@ class Daemon:
             spec=spec,
             provenance=prov,
         )
+        try:
+            from .events import RUN_STARTED
+            # FIX 4: cap the command representation in the event payload to
+            # ~512 chars so event JSONL stays bounded. The full argv lives in
+            # the run manifest/spec — this is observability only.
+            _cmd_repr = cmd if isinstance(cmd, str) else " ".join(str(a) for a in cmd)
+            if len(_cmd_repr) > 512:
+                _cmd_repr = _cmd_repr[:509] + "..."
+            self.events.publish(
+                RUN_STARTED,
+                {"run_id": job_id, "command": _cmd_repr, "cwd": effective_cwd},
+                root=effective_root,
+            )
+        except Exception:  # noqa: BLE001 - a bus failure must never break submit
+            pass
+        return job_id
 
     def run_container(
         self,
@@ -429,7 +448,7 @@ class Daemon:
             except Exception:  # noqa: BLE001 - notification must never block startup
                 logger.debug("interrupted-runs notification failed", exc_info=True)
 
-        journal = RunJournal(self.runstore)
+        journal = RunJournal(self.runstore, bus=self.events)
         self._journal = journal
 
         # Wire the autonomous-continuation hook (opt-in via config.continue_
@@ -722,6 +741,102 @@ class Daemon:
                 "Resumed as a fresh journaled run. Checkpoint-aware programs "
                 "continue from RO_CHECKPOINT_DIR; others restart cleanly."
             ),
+        }
+
+    # ── rerun with overrides (Phase 7 §13.4) ─────────────────────────
+    def rerun_run(
+        self,
+        run_id: str,
+        overrides: dict,
+        *,
+        cwd: str | None = None,
+    ) -> dict:
+        """Re-execute a recorded run with optional spec overrides.
+
+        Reads the original manifest, merges ``overrides`` into its spec, then
+        launches the new run.  The new run records ``spec.rerun_of = run_id``
+        so lineage stays intact — the new run is a descendant of the original
+        in the content-addressed DAG (once it writes its own outputs).
+
+        ``overrides`` may contain any subset of:
+          - ``cmd``   — replace the command entirely
+          - ``cwd``   — change the working directory
+          - ``shell`` — toggle shell mode
+          - ``env``   — add/replace environment variables (merged, not replaced)
+          - any other key is forwarded to ``extra_spec`` verbatim
+
+        The ``cwd`` keyword argument (if provided) takes precedence over
+        ``overrides["cwd"]``.
+
+        Returns::
+
+            {
+              "parent_id":   <original run_id>,
+              "new_run_id":  <str>,
+              "overrides":   <the overrides dict as supplied>,
+              "command":     <merged cmd>,
+              "cwd":         <effective cwd>,
+            }
+
+        Raises ValueError if ``run_id`` is unknown or if the run has no
+        recorded command to re-execute.
+        """
+        if self.runstore is None:
+            raise ValueError("no workspace resolved — cannot rerun a run")
+        manifest = self.runstore.read_manifest(run_id)
+        if manifest is None:
+            raise ValueError(f"no recorded run: {run_id}")
+
+        # Merge overrides into a copy of the original spec.
+        original_spec = dict(manifest.get("spec") or {})
+        merged = dict(original_spec)
+        merged.update(overrides)
+
+        # Extract the well-known run_command kwargs from the merged spec.
+        cmd = merged.pop("cmd", None) or original_spec.get("cmd") or original_spec.get("command")
+        if not cmd:
+            raise ValueError(
+                f"run {run_id} has no recorded command to rerun "
+                "(only subprocess runs are rerunnable)"
+            )
+        # cwd: explicit kwarg > overrides["cwd"] > original spec["cwd"]
+        run_cwd = cwd or merged.pop("cwd", None) or original_spec.get("cwd")
+        shell = bool(merged.pop("shell", original_spec.get("shell", False)))
+        # env: merge override env on top of (or replace) original env tracking
+        env_override = merged.pop("env", None)
+
+        # Re-resolve recorded inputs so the re-run stays in the lineage graph.
+        import os as _os
+        recorded_inputs = ((manifest.get("provenance") or {}).get("inputs") or {})
+        base = run_cwd or "."
+        input_paths = [
+            p if _os.path.isabs(p) else _os.path.join(base, p)
+            for p in recorded_inputs
+        ] or None
+
+        # Any remaining keys in `merged` are forwarded as extra_spec entries.
+        extra: dict = {k: v for k, v in merged.items() if k not in (
+            "env_overrides", "command",  # internal fields — don't re-inject
+        )}
+        extra["rerun_of"] = run_id  # parent link — preserves lineage
+
+        self.tasks.start()
+        self._start_journal()
+        new_id = self.run_command(
+            cmd,
+            name=f"rerun:{run_id}",
+            cwd=run_cwd,
+            shell=shell,
+            env=env_override or None,
+            inputs=input_paths,
+            extra_spec=extra,
+        )
+        return {
+            "parent_id": run_id,
+            "new_run_id": new_id,
+            "overrides": overrides,
+            "command": cmd,
+            "cwd": run_cwd,
         }
 
     def rebuild_stale(

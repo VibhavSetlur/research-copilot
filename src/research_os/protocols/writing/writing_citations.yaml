@@ -1,16 +1,16 @@
 id: writing_citations
 tier: 'synthesize'
 name: Writing — Citations
-version: '3.0.0'
-schema_version: '2.0'
+version: '5.0.0'
+schema_version: '3.0'
 scope_tags:
   domain: [any]
   audience: [researcher]
   workflow_shape: [any]
 last_reviewed: '2026-06-16'
 see_also:
-  - literature/literature_search       # populates the literature_index this protocol renders
-  - writing/writing_core               # the claim-grounding rules citations serve
+- literature/literature_search         # populates the literature_index this protocol renders
+- writing/writing_core                 # the claim-grounding rules citations serve
 description: |
   Maintain workspace/citations.md so every claim is grounded and every
   citation resolves to a real, verifiable source. A citation_key earns
@@ -20,33 +20,41 @@ description: |
   fabrication risk, not a citation.
 
 steps:
-  - id: regenerate_from_index
-    name: Regenerate citations.md from literature_index
-    description: |
-      mem_citations_generate — rebuilds workspace/citations.md from
-      inputs/literature_index.yaml. The literature_index gets entries when:
-        - Papers are dropped into inputs/literature/.
-        - tool_literature_download is called.
+- id: regenerate_from_index
+  name: Regenerate citations.md from literature_index
+  description: |
+    mem_log (operation=citations_generate) — rebuilds workspace/citations.md from
+    inputs/literature_index.yaml. The literature_index gets entries when:
+      - Papers are dropped into inputs/literature/.
+      - tool_search (mode=literature) is called.
 
-  - id: verify_each_citation
-    name: Verify Each Citation Online
-    description: |
-      tool_audit(scope='project', dimension='citations') — queries Crossref / Semantic Scholar for each
-      citation_key, marks entries verified/unverified. Update
-      inputs/literature_index.yaml entries.verified=true accordingly (sys_file_write
-      with the relevant edit).
+- id: verify_each_citation
+  name: Verify Each Citation Online
+  description: |
+    tool_audit(scope='project', dimension='citations') — queries Crossref / Semantic Scholar for each
+    citation_key, marks entries verified/unverified. Update
+    inputs/literature_index.yaml entries.verified=true accordingly (sys_file_write
+    with the relevant edit).
 
-  - id: format_for_paper
-    name: Format for the Paper
-    description: |
-      The synthesis pipeline will reference citations by key (e.g. [@smith2024]).
-      Make sure each citation_key in workspace/citations.md matches what the
-      paper drafts use. Keys are auto-generated from the filename stem and are
-      lowercase with underscores.
+- id: format_for_paper
+  name: Format for the Paper
+  description: |
+    The synthesis pipeline will reference citations by key (e.g. [@smith2024]).
+    Make sure each citation_key in workspace/citations.md matches what the
+    paper drafts use. Keys are auto-generated from the filename stem and are
+    lowercase with underscores.
 
 expected_outputs:
-  - workspace/citations.md
+- workspace/citations.md
 
-next_protocol: null
+next_protocol:
 next_protocol_kind: terminal
-on_failure: null
+on_failure:
+intent_class: synthesize
+sub_intent: writing
+triggers:
+- citations
+- bibliography
+- add citation
+- cite this
+summary: Maintain workspace/citations.md so every claim is grounded.

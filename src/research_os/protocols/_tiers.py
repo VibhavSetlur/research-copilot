@@ -2,7 +2,7 @@
 
 Every protocol carries a ``tier:`` field (top-level YAML key) that places
 it in the project lifecycle. ``tool_route`` echoes the resolved
-protocol's tier on every successful match; ``tool_step_complete``
+protocol's tier on every successful match; ``tool_audit (scope='step', dimension='completeness')``
 advances the workspace's ``current_tier`` when a step moves the project
 across a tier boundary.
 

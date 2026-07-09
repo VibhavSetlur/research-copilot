@@ -6,6 +6,7 @@ where it is merged into the canonical _HANDLERS map.
 """
 from __future__ import annotations
 
+# ruff: noqa: F403, F405  # legacy handler runtime star-import compatibility
 from .._handlers_runtime import *  # noqa: F401,F403
 # mem_log dispatcher delegates to _handle_mem_hypothesis_update which lives
 # in methodology.py — pull it into this module's namespace.
@@ -480,14 +481,67 @@ def _handle_tool_reliability(name, arguments, root):
     return _text(_error(f"Unknown reliability operation '{op}'"))
 
 
+def _persist_memory_record(kind, arguments, root):
+    """Best-effort side-effect: persist a MemoryRecord for semantic search.
+
+    Called from _handle_mem_log after kind is validated.  Skips 'methods'
+    (no matching MemoryRecord.kind) and skips empty content.  Never raises.
+    """
+    # 'methods' has no MemoryRecord.kind counterpart — skip.  The rest map
+    # 1:1 onto MemoryRecord.kind (result/error included for forward-compat).
+    _RECORD_KINDS = {
+        "analysis", "decision", "hypothesis", "lesson", "result", "error",
+    }
+    if kind not in _RECORD_KINDS:
+        return
+    # A bare kind='hypothesis' with no hypothesis_id is rejected by the
+    # dispatcher below — don't persist a record for a call that errors out.
+    if kind == "hypothesis" and not arguments.get("hypothesis_id"):
+        return
+    try:
+        from research_os.memory import MemoryRecord, MemoryRetriever  # lazy
+        content = (
+            arguments.get("entry")
+            or arguments.get("content")
+            or arguments.get("statement")
+            or arguments.get("note")
+            or arguments.get("decision")
+            or arguments.get("text")
+            or ""
+        )
+        if not content:
+            return
+        tags = arguments.get("tags")
+        record = MemoryRecord(
+            kind=kind,
+            content=content,
+            project=root.name,
+            summary=content[:200],
+            tags=tags if isinstance(tags, list) else [],
+            protocol=arguments.get("protocol"),
+            run_id=arguments.get("run_id"),
+        )
+        MemoryRetriever(root).store(record)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).debug(
+            "_persist_memory_record failed silently", exc_info=True
+        )
+
+
 def _handle_mem_log(name, arguments, root):
     """Unified memory-log dispatcher.
 
     kind='methods'    → mem_methods_append
     kind='decision'   → mem_decision_log
-    kind='hypothesis' → mem_hypothesis_update
+    kind='hypothesis' → mem_hypothesis_add (new entry) or mem_hypothesis_update
+                        (when hypothesis_id= is present)
     kind='analysis'   → mem_analysis_log
+    kind='lesson'     → tool_lessons (passthrough; `operation` selects sub-op:
+                        record | consult | failure_record | failure_check |
+                        failure_list | dead_end | mistake_replay)
     """
+    arguments = arguments or {}
     legacy = {
         "mem_methods_append": "methods",
         "mem_decision_log": "decision",
@@ -497,16 +551,29 @@ def _handle_mem_log(name, arguments, root):
     kind = arguments.get("kind") or legacy.get(name)
     if not kind:
         return _text(_error(
-            "mem_log requires kind='methods'|'decision'|'hypothesis'|'analysis'"
+            "mem_log requires kind='methods'|'decision'|'hypothesis'|'analysis'|'lesson'"
         ))
+    # Best-effort: persist to the MemoryRecord store for semantic search.
+    _persist_memory_record(kind, arguments, root)
     if kind == "methods":
         return _handle_mem_methods_append(name, arguments, root)
     if kind == "decision":
         return _handle_mem_decision_log(name, arguments, root)
     if kind == "hypothesis":
+        # Updating an existing hypothesis requires its id. Adding a new
+        # hypothesis goes through the mem_hypothesis(operation='add') tool.
+        if not arguments.get("hypothesis_id"):
+            return _text(_error(
+                "mem_log(kind='hypothesis') updates an existing hypothesis and "
+                "requires hypothesis_id=; use mem_hypothesis(operation='add') to "
+                "record a new hypothesis"
+            ))
         return _handle_mem_hypothesis_update(name, arguments, root)
     if kind == "analysis":
         return _handle_mem_analysis_log(name, arguments, root)
+    if kind == "lesson":
+        # Delegate to tool_lessons; map `operation` through as-is.
+        return _handle_tool_lessons(name, arguments, root)
     return _text(_error(f"Unknown mem_log kind '{kind}'"))
 
 
@@ -515,7 +582,6 @@ HANDLERS = {
     "tool_ground": _handle_tool_ground,
     "tool_verify": _handle_tool_verify,
     "tool_lessons": _handle_tool_lessons,
-    "tool_skills": _handle_tool_skills,
     "tool_reliability": _handle_tool_reliability,
     "mem_log": _handle_mem_log,
 }
