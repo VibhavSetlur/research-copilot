@@ -77,10 +77,30 @@ check the pair at session start; `sys_workspace_mode(operation='status')` and
 ## 2. The session pattern (how the AI is supposed to use Research OS)
 
 The AI only ever acts AFTER your message arrives — there is no
-"pre-boot" pass before you type. v2.0.0 ships the canonical boot
-ritual at the MCP handshake (`instructions` field on `initialize`), so
-a fresh client sees it instead of discovering it. On the **first turn
-of a session**, the AI fires these calls back-to-back:
+"pre-boot" pass before you type. Your first turn should sound like a
+researcher handing work to a careful collaborator, not like a tool command:
+
+> I'm bringing an existing interview study into Research OS. The transcripts are
+> in `inputs/raw_data/transcripts/`, but three are still being de-identified and
+> should not be coded yet. The IRB protocol and consent language are in
+> `inputs/context/irb/`; my advisor's old thematic memo is in
+> `inputs/context/prior_memo.md`, but I disagree with part of it.
+>
+> Please boot the project, verify what is actually present, fill the intake, and
+> propose a coding-plan workflow. Before analyzing real transcripts, ask me which
+> files are cleared and whether we are doing inductive coding, framework coding,
+> or both. I need a methods memo for a committee meeting next week, not a final
+> paper.
+
+A realistic follow-up often corrects scope:
+
+> Actually, exclude the pilot interviews from coding for now; use them only to
+> test the codebook. Also, don't quote participant text in drafts until I confirm
+> the redaction pass.
+
+v2.0.0 ships the canonical boot ritual at the MCP handshake (`instructions`
+field on `initialize`), so a fresh client sees it instead of discovering it.
+On the **first turn of a session**, the AI fires these calls back-to-back:
 
 ```
 (your message arrives — every turn starts here)
@@ -201,78 +221,96 @@ above stay editable.
 
 ## 4. A typical session (narrative)
 
-> This section sketches the *shape* of a session with placeholder data.
-> It's deliberately compressed — one line per turn — to show the range of
-> moves. **Real projects are not this linear:** you'll spend whole sessions
-> on the plan before any analysis, circle the literature until it solidifies,
-> bring new papers into a step mid-stream, and iterate a single step `_v1 →
-> _v2 → _v3` over days. For that realistic picture — and how it all feeds
-> provenance, accuracy, and organization — read
-> [HOW_IT_WORKS.md](HOW_IT_WORKS.md). For seven fully concrete,
-> named-researcher walkthroughs see [SCENARIOS.md](SCENARIOS.md).
+Real projects are not linear. You'll spend whole sessions on the plan before
+analysis, circle the literature until it solidifies, bring new papers into a
+step mid-stream, and iterate a single step `_v1 → _v2 → _v3` over days. For the
+conceptual model, read [HOW_IT_WORKS.md](HOW_IT_WORKS.md); for fuller named
+walkthroughs, see [SCENARIOS.md](SCENARIOS.md).
 
 ### 4.1 First time — set up the project
 
-> **You:** I dropped my CSV and a couple of papers in inputs/. Fill out
-> the intake.
+> **You:** I'm migrating a cohort study that has been messy for months. The main
+> question is whether a scheduling-policy change reduced ICU readmissions, but
+> the policy date differs by unit and I don't trust the old notebook's inclusion
+> criteria. The current CSV is in `inputs/raw_data/icu_readmission.csv`; the data
+> dictionary, IRB note, and advisor comments are in `inputs/context/`; and two
+> PDFs on difference-in-differences are already in `inputs/literature/`.
+>
+> Please fill out the intake from what is on disk, verify that the data dictionary
+> covers the columns we need, and tell me what you inferred before creating an
+> analysis step. I need a plan my advisor can review, not a model yet.
 
-The AI calls `tool_intake_autofill`, reads everything, proposes a
-research question + domain + hypotheses, and shows you what it
-inferred. You approve or refine.
+The AI calls `tool_intake_autofill`, reads the staged files, proposes a
+research question + domain + hypotheses, reports data/documentation gaps, and
+shows you what it inferred. You approve, refine, or tell it which old artifacts
+are out of scope.
 
 ### 4.1a Iterate on the plan before any analysis (often a whole session)
 
-> **You:** Don't run anything yet. Let's work through the whole approach
-> first — here's what I'm worried about confounding.
+> **You:** Don't run anything yet. The worry is confounding: the new scheduling
+> policy coincided with a staffing change, and I only have staffing data monthly.
+> Please work through whether difference-in-differences is still defensible,
+> whether we need a sensitivity analysis, and what evidence would make this
+> publishable versus just a quality-improvement memo.
 
-The AI drafts an analysis plan with the decision points and branch
-points called out, written to `workspace/scratch/` (the sandbox) — not a
-committed step. You revise it over the session, or across several
-sessions and re-reads of the literature, until it stops moving. *Then*
-you open step `01`. Producing nothing on day one is normal; the firmed-up
-reasoning is on disk before any analysis locks in.
+The AI drafts an analysis plan with decision points and branch points called out,
+written to `workspace/scratch/` (the sandbox) — not a committed step. You revise
+it over the session, or across several sessions and re-reads of the literature,
+until it stops moving. *Then* you open step `01`. Producing no analysis on day
+one is normal; the firmed-up reasoning is on disk before any analysis locks in.
 
 ### 4.1b Circle the literature until it solidifies
 
-> **You:** Pull recent work on this estimator and show me where the field
-> disagrees.
+> **You:** Search recent work on staggered adoption and hospital policy
+> evaluations. I especially need to know where reviewers criticize simple
+> two-way fixed effects. Save verified papers, separate project-wide background
+> from step-specific method citations, and tell me if anything contradicts the
+> plan.
 
-The AI searches and verifies every hit against real providers (no
-hallucinated refs), groups the debate, flags the papers that threaten
-your approach. You read, drop more PDFs in `inputs/literature/`
-(immutable), and repeat across sessions until the framing settles. Only
-then commit to a question and hypotheses.
+The AI searches and verifies every hit against real providers (no hallucinated
+refs), groups the debate, and flags papers that threaten your approach. You read,
+drop more PDFs in `inputs/literature/` (immutable), and repeat across sessions
+until the framing settles. Only then commit to a question and hypotheses.
 
 ### 4.2 Start analysing
 
-> **You:** OK, run a baseline EDA on the data.
+> **You:** The plan is approved for a first pass. Run baseline EDA only: cohort
+> counts by unit and quarter, missingness in policy date and staffing variables,
+> event-rate sanity checks, and plots that show whether pre-trends look plausible.
+> Keep it reviewable and stop if the data shape doesn't match the plan.
 
-The AI loads `guidance/analysis_plan`, creates
-`workspace/01_baseline_eda/`, writes an atomic Python (or R / Julia)
-script, runs it, drops outputs + figures + reports into the step, and
-writes `conclusions.md`. (Real steps rarely land first try — expect
-`_v1 → _v2 → _v3` as diagnostics fail and you refine; the ledger keeps
-every version. See [HOW_IT_WORKS.md](HOW_IT_WORKS.md).)
+The AI loads `guidance/analysis_plan`, creates `workspace/01_baseline_eda/`,
+writes an atomic Python (or R / Julia) script, runs it, drops outputs + figures +
+reports into the step, and writes `conclusions.md`. Real steps rarely land first
+try — expect `_v1 → _v2 → _v3` as diagnostics fail and you refine; the ledger
+keeps every version.
 
 ### 4.3 Course-correct mid-flow
 
-> **You:** Actually, group by quarter instead of month.
+> **You:** I misremembered the rollout: two units changed policy in the same
+> quarter, not different quarters. Group by quarter instead of month, and note
+> that this weakens the staggered-adoption argument before re-running the plots.
 
-The AI bumps the script to `_v2`, re-runs, updates conclusions. Old
-versions stay on disk for provenance.
+The AI bumps the script to `_v2`, re-runs, updates conclusions, and records why
+the revision happened. Old versions stay on disk for provenance.
 
 ### 4.4 Branch into a parallel approach
 
-> **You:** Try a tree-based model too, in parallel.
+> **You:** The pre-trends are noisy. Keep the main path, but branch a parallel
+> sensitivity analysis using an interrupted time-series framing. Do not let the
+> exploratory branch overwrite the primary conclusions; I want both paths visible
+> for advisor review.
 
-The AI calls `tool_branch_recommendation` (decides: branch since we
-have < 3 active paths), runs `sys_path(operation='create')`, sets up
-`workspace/03_random_forest/`, executes, compares across the paths.
+The AI calls `tool_branch_recommendation`, runs `sys_path(operation='create')`,
+sets up a sibling step, executes the sensitivity path, and compares across paths
+without erasing the original trail.
 
 ### 4.5 Mid-flow context (a new paper appears)
 
-> **You:** My PI sent me a new paper. *(drag-drop into the project)*
-> Integrate it.
+> **You:** My PI sent a new methods paper and said it may change our estimator.
+> I dropped the PDF into the project. Please decide whether it belongs in
+> project-wide literature or only in the current step, verify the citation, and
+> tell me what part of the analysis plan changes before editing code.
 
 Where it lands depends on scope, and the distinction matters:
 - **whole-project relevance** (reframes the question, a citation you'll use in
@@ -292,7 +330,9 @@ records *why* the revision happened — see
 
 ### 4.6 Decide what's next
 
-> **You:** What should I do next?
+> **You:** Given the EDA, the noisy pre-trends, and the new methods paper, what
+> are the next two defensible moves? Please separate "needed for the lab meeting"
+> from "needed for a paper," and flag anything that requires advisor approval.
 
 The AI loads `guidance/iterative_planning`. Surveys state, pulls fresh
 literature on your open question, searches the web for relevant tools,
@@ -300,7 +340,10 @@ and proposes 2-3 concrete options with a recommendation.
 
 ### 4.7 Synthesise
 
-> **You:** Write the paper for a journal submission.
+> **You:** Draft a manuscript outline for a methods-focused journal, but only
+> from results that are grounded and current. Where evidence is still weak, write
+> a TODO or limitation rather than smoothing it over. The audience is reviewers
+> who will care about confounding and policy timing.
 
 The AI loads `synthesis/synthesis_paper` → workshops the title via
 `synthesis/synthesis_title_workshop` → drafts Methods → Results →
@@ -313,7 +356,9 @@ COI / ack) → drafts the cover letter via
 
 Also want a poster?
 
-> **You:** And make a poster for the academic conference.
+> **You:** Also make a conference-poster structure for clinicians. Keep it
+> audience-facing: no step numbers or file paths, and make the caveats about
+> pre-trends visible.
 
 `synthesis/synthesis_poster` builds a Typst poster PDF with a QR code
 linking back to the paper and a single-headline test.
@@ -350,7 +395,9 @@ compile.
 
 ### 4.8 Hand off at end-of-day
 
-> **You:** Wrap up the session.
+> **You:** Wrap up the session. Include what changed today, which outputs are
+> current, which decisions still need advisor approval, and the exact first
+> question I should ask in a fresh chat tomorrow.
 
 `sys_session_handoff` writes a markdown summary with state + recent
 analysis + a resume prompt you can paste into a fresh chat tomorrow.

@@ -348,7 +348,7 @@ call / result / routing decision travels in a typed **envelope**
 `Envelope`). The routing fields that once lived in a separate
 `_router_index.yaml` (`intent_class`, `sub_intent`, `triggers`,
 `decomposition`, `tier`) now live **inside each protocol body** and are
-part of that model. Preflight validates all 158 protocols against it and
+part of that model. Preflight validates the generated protocol catalogue against it and
 rebuilds the single `_protocols.bundle` sidecar from the YAMLs.
 
 This does **not** change the doctrine. The model is the *schema*; YAML is

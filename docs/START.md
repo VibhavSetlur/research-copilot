@@ -19,7 +19,7 @@ and citation it produces.
 # 1. Install once, globally — one server serves every project
 pip install research-os
 
-# 2. Make the project folder and scaffold IT (the dot = "here")
+# 2. Make the project folder and scaffold it (the dot = "here")
 mkdir aspirin-rct && cd aspirin-rct
 research-os init .
 
@@ -28,10 +28,25 @@ research-os init .
 # 4. Confirm it's healthy
 research-os doctor
 
-# 5. Open the folder in your AI IDE and talk — onboard BEFORE analysis
-#    > here's my project: I want to know if X affects Y; data's at <path>
-#    > onboard me, then tell me the first step
+# 5. Open the folder in your AI IDE and start with a real intake message
 ```
+
+A useful first message is not a command; it is a short project brief. For
+example:
+
+> I'm starting an analysis project on low-dose aspirin and 30-day cardiac
+> events. The trial export is currently at `~/secure_exports/aspirin_trial.csv`;
+> I have not moved it into `inputs/raw_data/` yet because I'm unsure whether the
+> de-identified export includes the site column we need. The SAP draft is in
+> `inputs/context/sap_v3_notes.md`, and two older figures from a failed notebook
+> are in `inputs/context/old_outputs/`.
+>
+> My immediate goal is a Thursday lab-meeting figure, not a final manuscript. I
+> tried a quick logistic regression last week, but the event rate is low and the
+> PI asked whether we need exact methods or a Bayesian model. Please verify the
+> environment and file paths, onboard the project, profile the data, check whether
+> the old notebook is reusable, and ask me before running any analysis that writes
+> outputs or takes more than a few minutes.
 
 Five details carry the whole experience. Get these right and the rest is
 just talking:
@@ -171,17 +186,22 @@ show up in chat — that's the restart step you skipped above.
 The MCP server auto-launches per IDE-project. After your restart, the
 status bar / MCP panel should show **`research-os` connected**.
 
-Open the chat and say what you want, in plain English:
+Open the chat and say what you want, in plain English. Aim for enough context
+that a careful collaborator could avoid obvious mistakes:
 
-```
-here's my project: I want to know if X affects Y; data's at <path>
-onboard me, then tell me the first step
-fill out the intake
-run a baseline EDA on my data
-draft the paper for a journal submission
-make me a dashboard for executives
-explain ANCOVA to me
-```
+> I'm not ready for modeling yet. Please onboard this project and verify what is
+> actually on disk. The main question is whether the scheduling policy reduced
+> 30-day ICU readmission, but the policy date may differ by unit and I need that
+> checked against the data dictionary before we call it difference-in-differences.
+> The CSV is still outside the project at `~/exports/icu_readmission.csv`; copy it
+> only if it is small enough, otherwise propose a symlink and record provenance.
+> I also need a short explanation of the first statistical choice because my
+> advisor will ask why we did not start with a simple before/after comparison.
+
+Then iterate naturally:
+
+> Actually, don't use all units yet. Start with adult medical ICU only, and tell
+> me if that makes the sample too small before running the baseline EDA.
 
 You never call MCP tools directly. The AI routes your words to a protocol
 via `tool_route`. If it picks the wrong one, say *"actually I meant X"*
@@ -274,9 +294,9 @@ each cycle, and notify you at decision points. Docs:
 
 ## Your first ten minutes (a real walkthrough)
 
-You've got a CSV of clinical-trial outcomes and a question. Here's the
-whole arc — the words you type are in **bold**. Real research backtracks;
-this shows the clean spine, but expect to circle back.
+You've got a clinical-trial export, a half-formed question, and a deadline.
+Here's a realistic first arc — the words you type are in **bold**. Notice that
+most of the value comes before the first model runs.
 
 1. **Scaffold and open.**
 
@@ -288,50 +308,71 @@ this shows the clean spine, but expect to circle back.
    Restart the IDE, then open `aspirin-rct/`. The MCP panel shows
    **`research-os` connected**.
 
-2. **Onboard — tell it what you're doing.** No files required yet:
+2. **Onboard with context, not a one-liner.**
 
-   > **"My trial data is at `~/data/aspirin.csv`. I want to know if
-   > low-dose aspirin reduces 30-day cardiac events versus placebo,
-   > adjusting for age and prior MI. Hypothesis: it does. Onboard me."**
+   > **I'm analyzing a de-identified trial export for a Thursday lab meeting. The
+   > question is whether low-dose aspirin reduces 30-day cardiac events versus
+   > placebo, but this is not submission-ready yet. The CSV is at
+   > `~/secure_exports/aspirin_trial.csv`; the SAP draft is in
+   > `inputs/context/sap_v3_notes.md`; and an older notebook in
+   > `inputs/context/old_aspirin_analysis.ipynb` produced inconsistent event
+   > counts.**
+   >
+   > **Please verify the project setup and file paths, profile the data, check the
+   > old notebook only for reusable QA logic, and tell me what you think the first
+   > defensible analysis should be. Do not run the model or write final figures
+   > until I confirm the plan. The PI is worried about the low event rate and will
+   > ask why we chose the model.**
 
-   The AI records the question + hypothesis, profiles the CSV, snapshots
-   the environment, does a literature pass, and asks you to confirm the
-   framing. Nothing heavy has run — it checks with you first.
+   The AI boots Research OS, records the question and constraints, checks the
+   path, proposes copy vs symlink, snapshots the environment, profiles the CSV,
+   and notices the old notebook counted events before excluding withdrawals. It
+   asks a clarification rather than guessing: *"Should withdrawals before day 30
+   be censored, excluded, or treated according to the SAP?"*
 
-3. **Run the baseline.**
+3. **Correct the scope.**
 
-   > **"run a baseline EDA"**
+   > **Good catch. Use the SAP: withdrawals before day 30 are censored. Also, I
+   > realized the Thursday audience is clinicians, so I need an interpretable
+   > baseline table and an absolute-risk plot, not just model coefficients. Please
+   > update the plan and tell me if the event count is too low for the adjusted
+   > model before running anything heavy.**
 
-   You get `workspace/01_baseline_eda/` — a script you can read, figures
-   with captions, a summary table, and `conclusions.md` tying findings
-   back to your hypothesis.
+   The AI updates the intake and analysis plan, checks event counts and missing
+   covariates, searches current guidance on low-event binary outcomes, and records
+   the model-choice rationale. If the plan passes preconditions, it asks for
+   approval to open `workspace/01_baseline_eda/`.
 
-4. **Do the real analysis.**
+4. **Run a narrow, reviewable first step.**
 
-   > **"fit the adjusted model"**
+   > **Approved. Run baseline EDA and the event-count sanity checks only. Keep it
+   > under a few minutes and show me the script before interpreting the output.**
 
-   The AI picks the method (logistic regression here), justifies it,
-   writes `workspace/02_*/`, reports the effect with a CI and the
-   adjusted covariates, and records the decision.
+   You get `workspace/01_baseline_eda/` — a readable script, summary table,
+   missingness report, figure drafts with captions, and `conclusions.md` tying
+   observations back to the question. The outputs carry provenance sidecars, and
+   the AI flags anything too thin to support inference.
 
-5. **Write it up.**
+5. **Only then move to the analysis.**
 
-   > **"draft the results and discussion"**
+   > **The EDA looks right. Fit the adjusted model from the SAP, but also produce
+   > an absolute-risk figure for clinicians and log why we did not use the old
+   > notebook's event definition.**
 
-   Prose that cites *your* numbers — every value traceable to step 02,
-   every reference verified. Ask for a citation it can't verify and it
-   tells you, rather than inventing a DOI.
+   The AI opens the next step, runs the model, records the decision, grounds every
+   number in produced artifacts, and verifies citations. If a data file changes or
+   an upstream step is stale, the staleness gate surfaces that before synthesis.
 
-6. **Check before you ship.**
+6. **Check before you share.**
 
-   > **"is this ready to submit?"**
+   > **Before I send this to the PI, audit the claims, citations, and provenance.
+   > Give me a GREEN/YELLOW/RED verdict and a short list of what still needs human
+   > review.**
 
-   A GREEN / YELLOW / RED verdict and a punch list: ungrounded claims,
-   missing limitations, unverified cites — every gate a reviewer applies,
-   run early.
-
-You never wrote a config file or trusted a number on faith. That's the
-loop. → Seven fuller examples across domains: [SCENARIOS.md](SCENARIOS.md).
+   You get a review verdict and a punch list: ungrounded claims, missing
+   limitations, unresolved data questions, or stale outputs. You never trusted a
+   number on faith; the loop is **context → verify → plan → ask → run → ground →
+   audit**. Fuller examples across domains live in [SCENARIOS.md](SCENARIOS.md).
 
 ---
 
@@ -492,7 +533,7 @@ synthesis/            ← final outputs (created only when you ask)
 
 - [HOW_IT_WORKS.md](HOW_IT_WORKS.md) — how a real project unfolds and why
   results hold up (provenance, accuracy, organization).
-- [USE_CASES.md](USE_CASES.md) — "I want to X" → what to say → which
+- [USE_CASES.md](USE_CASES.md) — realistic scenario messages → which
   protocol / mode fires.
 - [SCENARIOS.md](SCENARIOS.md) — two worked projects end to end (a basic one and a deep PI-level program).
 - [RESEARCHER_GUIDE.md](RESEARCHER_GUIDE.md) — the full workflow guide.

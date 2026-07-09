@@ -6,339 +6,240 @@
 
 <p align="center">
   <a href="https://pypi.org/project/research-os/"><img src="https://img.shields.io/pypi/v/research-os?color=orange&label=pypi&logo=pypi&logoColor=white" alt="PyPI"></a>
-  <a href="https://pypi.org/project/research-os/"><img src="https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg" alt="Python"></a>
+  <a href="https://pypi.org/project/research-os/"><img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+"></a>
+  <a href="https://modelcontextprotocol.io/"><img src="https://img.shields.io/badge/MCP-server-brightgreen.svg" alt="MCP server"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT"></a>
   <a href="https://github.com/VibhavSetlur/Research-OS/actions/workflows/test.yml"><img src="https://img.shields.io/github/actions/workflow/status/VibhavSetlur/Research-OS/test.yml?branch=main&label=tests" alt="tests"></a>
 </p>
 
 <p align="center">
-  <strong>Talk to your AI in plain English. Get publication-grade research back.</strong><br>
-  No hallucinated citations. No fabricated numbers. Every figure traceable to the script that made it.
+  <strong>Typed protocols, durable provenance, and optional enforcement for AI-assisted research.</strong><br>
+  Research OS calls no LLM, proxies no chat completions, and keeps model access in your own IDE or agent.
 </p>
 
 <p align="center">
   <a href="docs/START.md">Quick start</a> ·
   <a href="docs/PROMPTING.md">How to ask</a> ·
-  <a href="docs/USE_CASES.md">What you can ask for</a> ·
   <a href="docs/SCENARIOS.md">Worked examples</a> ·
   <a href="docs/RESEARCHER_GUIDE.md">Full guide</a> ·
+  <a href="docs/ARCHITECTURE.md">Architecture</a> ·
   <a href="docs/FAQ.md">FAQ</a>
 </p>
 
 ---
 
-## 30-second version
+## Research is not a one-line prompt
+
+Real researchers rarely arrive with "analyze my data." They arrive with an unfinished story: a question shaped by collaborators, files scattered across a laptop or cluster, earlier attempts that half-worked, deadline pressure, reviewer worries, and uncertainty about whether the next method is defensible.
+
+Research OS is built for that reality. It is a **passive MCP tool server** and **research protocol scaffold** that helps your AI assistant turn messy research into verified structure: project intake, typed protocols, checked preconditions, provenance ledgers, staleness warnings, resource budgets, citations, and review gates. The assistant still reasons, writes, and decides with you; Research OS makes the work inspectable, rerunnable, and auditable.
+
+A realistic first turn looks more like this:
+
+> **Context:** I'm studying long-COVID symptom trajectories from a retrospective cohort of about 8,000 patients seen in our health system between 2020 and 2023. The PI wants a defensible analysis plan before we run anything because this may become a journal submission, and two clinicians need to understand the main result.
+>
+> **Data:** I have de-identified encounter data in `inputs/raw_data/encounters_2020_2023.csv` and lab values in `/scratch/lab_panel_20240115.parquet`. The data dictionary is in `inputs/context/data_dictionary_v2.md`. Dr. Chen did an earlier notebook in `inputs/context/chen_2023_preliminary.ipynb`, but it has hard-coded paths and I don't know whether the code was ever approved for this scope.
+>
+> **What failed:** My first merge failed on malformed lab timestamps, and a Cox model seemed to violate proportional hazards. I'm not sure whether readmission should be treated as a competing risk or censored.
+>
+> **Constraints:** I need a workshop figure by Thursday, can't run jobs longer than two hours on the shared cluster, and we cannot export row-level data. Please verify paths and data status first, then sketch a statistical plan and ask me what needs clarification before executing anything.
+
+That message gives the AI enough context to route to the right protocols, check the workspace, ask a meaningful clarification, and record a plan before code runs.
+
+---
+
+## Quick start
 
 ```bash
 pip install research-os
-mkdir thesis-chapter-3 && cd thesis-chapter-3
-research-os init .                # scaffold THIS folder, ~20 seconds
-```
-
-Open the folder in Claude Code (or Cursor, or any MCP-capable AI IDE) and talk:
-
-> **You:** I have a CSV of 2,400 patients at `~/data/cohort.csv`. I want to know whether the new drug lowers 30-day readmission, controlling for age and comorbidity. Hypothesis: it does, and the effect is bigger for older patients.
-
-> **AI:** *Captures your question, domain, and both hypotheses; profiles the CSV; surfaces current literature; proposes a baseline EDA + a logistic regression with an age interaction; asks you to confirm before running anything.*
-
-From there: `run the baseline EDA` → `fit the model` → `draft the results section` → `is this ready to submit?`. Every figure lands with a caption and the script that made it; every citation is verified; every number in the draft traces back to a real file on disk.
-
-That's the whole idea. The rest of this page explains why it matters.
-
-### Three things to do next
-
-1. **See a real project, start to finish.** [**SCENARIOS.md**](docs/SCENARIOS.md)
-   walks two complete projects — a quick one, and a deep PI-level program that
-   shows how you actually interact with Research OS turn by turn (what the
-   researcher types, what they see in their folder, and what the AI does at each
-   step). **This is the fastest way to understand how to work with it.**
-2. **Set it up the robust way, not just the fast way.** A few minutes of proper
-   onboarding — the AI scans your inputs, frames the question, grounds in real
-   literature, and wires exactly one IDE — pays off across the whole project.
-   The [**setup prompt**](docs/SETUP_PROMPT.md) is one copy-paste block that
-   walks your AI through it in order.
-3. **Make it self-improving.** Pair Research OS with the
-   [**Hermes agent layer**](#the-strongest-pairing-research-os--a-self-improving-agent)
-   for memory across projects, reusable skills, and autonomous long runs.
-
----
-
-## The problem it solves
-
-AI coding assistants are fast, and they will cheerfully lie to you. Not maliciously — they pattern-match. Ask for a literature review and you'll get plausible citations to papers that don't exist. Ask for a results section and you'll get confident p-values that were never computed. Ask a follow-up next week and last week's decisions are gone.
-
-For throwaway code, fine. For research that ends up in a thesis, a grant, or a paper, those failures are career-damaging — and they're invisible until a reviewer (or a retraction) finds them.
-
-Research OS is an **MCP server that sits between your AI and your project** and refuses to let those four things happen:
-
-| The failure mode | What Research OS does instead |
-|---|---|
-| **Invented citations** | Every reference is checked against Crossref / Semantic Scholar / PubMed / arXiv before it lands in a draft. Can't verify it? It's dropped, not quietly kept. |
-| **Invented numbers** | Every quantitative claim in your write-up must point at a real file in `workspace/`. If a number isn't grounded in an artifact, synthesis blocks. |
-| **400-line unreviewable scripts** | Work is split into small, content-hash-cached steps. Change one input; only the affected parts re-run. You can actually read what ran. |
-| **Lost context** | Decisions, hypotheses, dead-ends, and draft revisions are written down as you go. Tomorrow's chat resumes exactly where today's ended. |
-
-It works with the AI tools you already use — **Claude Code, Cursor, Claude Desktop, Antigravity, VS Code, Windsurf, OpenCode, Continue, Aider**. One install, one wizard, and the assistant you already trust does work that's traceable, grounded, and reproducible — the rigor you'd need *before* you submit, not a guarantee a reviewer will accept it.
-
----
-
-## What working with it actually feels like
-
-No commands to memorize, no DSL to learn. You describe what you want; the AI loads the right protocol and walks it.
-
-**Starting** — you don't even need to touch a file:
-
-> "Here's my project: does sleep duration predict exam scores in this dataset? Data's at `~/study/students.csv`. I think more sleep helps, more so for younger students."
-
-The AI records your question + hypotheses, profiles the data, surfaces relevant prior work, and asks you to confirm before any analysis starts. (Prefer to drop files in `inputs/` first? That works too — same result.)
-
-**Doing the work:**
-
-> "run a baseline EDA"
-
-You get `workspace/01_baseline_eda/` — readable scripts, figures with real captions, tables, and a written conclusion that links back to your hypotheses. Numbered, cached, re-runnable.
-
-> "compare logistic regression against gradient boosting"
-
-A real head-to-head: same split, same metrics, paired significance test, and a stated winner — not a hand-wavy "both have tradeoffs."
-
-**Writing it up:**
-
-> "draft the discussion"
-
-A discussion that cites *your* results. Every citation verified, every figure and number traceable.
-
-> "make me a poster for the lab meeting Thursday"
-
-The AI assembles the poster's **structure** — which results to feature, the narrative arc, what each panel is for — grounded in your real findings, for you to render. Research OS gives you structure tailored to your audience, not a fixed template.
-
-**Shipping it:**
-
-> "is this ready to submit?"
-
-A GREEN / YELLOW / RED verdict with a punch list — every check a journal will run, before they run it.
-
-> "dockerize this step so it runs on the cluster"
-
-The AI pins that step's exact packages and writes a step-scoped Dockerfile *in the step's own folder* — the scripts, data, and pinned environment travel together, so the one step rebuilds and runs anywhere, not just the whole project.
-
-> "going to lunch, pick up tomorrow"
-
-State, plan, hypotheses, dead-ends, and drafts all persist. Tomorrow's session opens exactly where you left off.
-
-→ Full catalogue of what to say: **[USE_CASES.md](docs/USE_CASES.md)** · How to word a request for a specific outcome (and what happens behind the scenes): **[PROMPTING.md](docs/PROMPTING.md)** · Two worked projects end to end — a basic one and a deep PI-level program touching every capability: **[SCENARIOS.md](docs/SCENARIOS.md)**
-
----
-
-## Three ways to work (set once, at init)
-
-The wizard's first question — *"What are you building?"* — picks a **workspace mode** that reshapes the scaffold and how the AI behaves:
-
-- **analysis** *(default)* — data → results → paper. Numbered experiment steps; "done" means grounded figures + conclusions.
-- **tool_build** — you're building software (a CLI, a library, a pipeline). Research OS governs the build from above (spec → implement → test → benchmark) while the tool lives in its own git repo; "done" means **tests + build + eval pass**, not figures. → [docs/TOOL_BUILDER.md](docs/TOOL_BUILDER.md)
-- **exploration** — scratch-first. Poke at the data with light gates; promote a probe to a real step only when it earns it.
-
-Three more modes cover bigger shapes — **hybrid** (build a tool *and* use it on data in one project), **notebook** (Jupyter is the unit of work), and **multi_study** (a program of sub-studies sharing a codebook). Set the mode at init (`research-os init --workspace-mode <mode>`) or change it later in `inputs/researcher_config.yaml`.
-
----
-
-## What you actually see on disk
-
-A clean three-folder workspace. You only ever touch one of them.
-
-```
-thesis-chapter-3/
-│
-├── inputs/                 ← YOU own this (the AI reads, never overwrites)
-│   ├── raw_data/             your data — CSV, Parquet, FASTQ, NIfTI, …
-│   ├── literature/           PDFs of papers the project draws on
-│   ├── context/              PI emails, lab notes, prior drafts
-│   └── researcher_config.yaml  one optional file that tunes AI behavior
-│
-├── workspace/              ← the AI works here (you read; it writes)
-│   ├── 01_baseline_eda/      one analysis step per numbered folder
-│   │   ├── scripts/            code you can read + re-run
-│   │   ├── outputs/            figures (with captions), tables, reports
-│   │   └── conclusions.md      findings + interpretation, tied to hypotheses
-│   ├── methods.md            project-wide methods narrative (append-only)
-│   ├── analysis.md           decision log + dead-ends + rationale
-│   ├── citations.md          verified citations only
-│   └── logs/                 every audit pass + every gate override
-│
-└── synthesis/              ← deliverables land here (only when you ask)
-    ├── deliverables/               structured outlines for paper / poster / slides
-    ├── dashboard/                  a public-facing dashboard's structure
-    └── figures/                    curated focal figures + captions
-```
-
-One principle holds it together: **you own `inputs/`, the AI owns the rest, and nothing exists until you ask for it.** A fresh project isn't pre-cluttered with empty folders — `workspace/01_*` appears the first time you run a step. And Research OS gives you **structure, not design**: deliverables are content-grounded outlines tailored to your audience, for you and your AI to render — not a fixed template.
-
-→ Deeper tour: **[RESEARCHER_GUIDE.md](docs/RESEARCHER_GUIDE.md)** · Exact layout per mode: **[PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md)**
-
----
-
-## Install & run
-
-```bash
-# 1. Install once — the same binary serves every project you scaffold.
-pip install research-os
-
-# 2. Scaffold a project (arrow-key wizard).
-mkdir my-project && cd my-project
-research-os init
-
-# 3. (Optional) confirm everything's healthy.
+research-os init my-study
+cd my-study
 research-os doctor
-
-# 4. Open the folder in your AI IDE and talk. The MCP server auto-launches.
-#    > here's my project: I want to know if X drives Y; data's at <path>
-#    > what should I do next?
-#    > draft the results section
-#    > is this ready to submit?
 ```
 
-The full experience ships in the base install — no extras to remember. A handful of features that need their own system runtime (the enforcement daemon, R, Julia) are opt-in; see [SETUP.md](docs/SETUP.md).
+Open the folder in Claude Code, Cursor, Claude Desktop, VS Code, Windsurf, OpenCode, Continue, Aider, or another MCP-capable client. Restart the IDE after `init` so it loads the MCP server, then begin with a project context message like the one above.
 
-### Prefer to let your AI set it up? Use the one setup prompt
+`research-os init` creates a simple workspace:
 
-There's a single, copy-paste **[setup prompt](docs/SETUP_PROMPT.md)** that walks
-your AI through the whole thing — install, wire **only your IDE** (not all of
-them), start the daemon, **test that it actually works**, and remind you to
-restart (the one step people miss) — then onboard your project before any
-analysis. It's a fill-in-the-gap template: you only have to provide a project
-name, your goal, and a free-text "context block" where you dump your thoughts;
-leave the rest blank and the AI asks or picks sensible defaults.
+```text
+my-study/
+├── inputs/                  # you own this: data, literature, notes, config
+│   ├── raw_data/
+│   ├── literature/
+│   ├── context/
+│   └── researcher_config.yaml
+├── workspace/               # the AI writes steps, scripts, outputs, logs
+├── synthesis/               # deliverables when you ask for them
+└── .os_state/               # Research OS state, ledgers, manifests, daemon records
+```
 
-→ **Copy it from [docs/SETUP_PROMPT.md](docs/SETUP_PROMPT.md)** and paste it to
-your AI with the project folder open.
-
-Why the restart matters: an IDE/agent loads its MCP servers when the session starts, so the Research OS tools only appear **after** you reopen the project. Pointing your AI at Research OS without this almost always ends with it improvising instead of using the real tools — which is exactly why the prompt makes the AI stop, wait for your restart, and self-test before doing anything.
-
-→ Full walkthrough: **[START.md](docs/START.md)** · Per-IDE wiring: **[SETUP.md](docs/SETUP.md)** · CLI reference: **[CLI.md](docs/CLI.md)**
-
----
-
-## Two layers, and why they matter
-
-**1. The reasoning core (always on).** The MCP server every command above talks to. Three tool namespaces — `sys_*` (workspace / files / state), `tool_*` (research work), `mem_*` (append-only memory) — plus a deep library of protocols the AI routes to via `tool_route`. The core is *reactive*: it runs in your IDE, responds to each prompt, and never blocks. Most projects need nothing more.
-
-**2. The enforcement daemon (optional).** For big or long-lived projects, a local daemon adds what a reactive server can't:
-
-- **Background runs** with a durable journal, provenance, and lineage — long jobs don't freeze the chat.
-- **Freshness gates** — it won't let the AI ship a result built on data that changed underneath it.
-- **Hard, human-approved gates** — the AI can't self-approve past a real checkpoint.
-- **A resource budget** the machine actually enforces, and completion notifications.
-
-The core behaves *identically* with or without the daemon — it only ever *adds* enforcement, never changes the tools. → [DAEMON.md](docs/DAEMON.md) · [ARCHITECTURE.md](docs/ARCHITECTURE.md)
+The rule is: **you own `inputs/`; Research OS owns `.os_state/`; the AI writes work products into `workspace/` and `synthesis/` when you ask.** See [START.md](docs/START.md) and [PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md) for the guided tour.
 
 ---
 
-## The strongest pairing: Research OS + a self-improving agent
+## What Research OS helps the assistant do
 
-Research OS is the **rigor substrate** — it governs *how to reason* and *what to
-verify*. The AI on top is the **brain**. The pairing is strongest when that AI
-layer can **learn your work and carry skills across sessions**, like
-[Hermes Agent](https://hermes-agent.nousresearch.com). Then three layers compose:
+For a realistic first message, Research OS gives the assistant a disciplined workflow:
 
-- **Research OS** — research done right: protocols, gates, provenance, the
-  numbered-step structure.
-- **Skills** — your field's *how-to*. Research OS actively **pulls the skills a
-  project needs** from three sources and loads them before you start, instead of
-  relying on the model's memory:
-  1. **Hermes skills** you've built or installed (`~/.hermes/skills/`),
-  2. the **K-Dense scientific-agent-skills** library (community MIT science
-     skills — install with `research-os skills add-science-pack`),
-  3. any **native Agent Skills** in the open SKILL.md standard.
-  `sys_boot.recommended_skills` tells the AI which ones match this project on the
-  first turn.
-- **Self-improvement** — Hermes learns *your* way over time. Lessons distilled in
-  one project are promoted into loadable skill cards that surface in the next.
+1. **Boot and inspect state** — load config, previous runs, active plans, stale outputs, unresolved gates, and daemon status if present.
+2. **Route the request** — map the researcher's words to a protocol scaffold and a small active tool surface.
+3. **Verify the workspace** — confirm files exist, profile data before inference, record hashes, and surface missing documentation or stale inputs.
+4. **Ask a useful clarification** — for example, whether missing onset dates should be imputed or handled as a sensitivity analysis.
+5. **Record the plan** — write the research question, hypotheses, method rationale, decision points, constraints, and verification steps to disk.
+6. **Check gates before execution** — preconditions, staleness, resource budget, consent, and provenance expectations.
+7. **Run only after approval** — execute scripts or daemon jobs, log code/input/output hashes, and ground every conclusion in produced artifacts and verified sources.
+
+The goal is not to guarantee scientific correctness automatically. The goal is to make claims, choices, files, and approvals visible enough that you, your PI, collaborators, and reviewers can inspect them.
+
+---
+
+## A realistic session arc
+
+**Turn 1 — Researcher:** gives context, data paths, prior failures, constraints, uncertainty, and asks for verification before action.
+
+**Assistant + Research OS:** boots the workspace, checks data and prior artifacts, identifies that the Chen notebook used logistic regression rather than a survival model, flags the malformed timestamp issue from the data dictionary, and asks whether the team prefers multiple imputation or a sensitivity analysis for missing symptom onset.
+
+**Turn 2 — Researcher:** "Use multiple imputation if it is defensible, but please don't assume Chen's notebook is approved. Also, I think readmission should be a competing risk because some patients died before follow-up; correct me if that framing is wrong."
+
+**Assistant + Research OS:** records the correction, checks the run ledger and approval state, explains the competing-risk choice, proposes a primary analysis plus sensitivity comparison, and asks for sign-off before opening the first numbered step.
+
+**Turn 3 — Researcher:** "Before coding, add a guard against overfitting. The clinicians want Kaplan-Meier curves, the PI wants credible intervals, and I need the workshop version to be honest about what is exploratory."
+
+**Assistant + Research OS:** updates the plan, separates preregistered covariates from exploratory ones, checks compute budget, and only then proceeds to create the first step, run code, and log outputs with provenance.
+
+---
+
+## The trust stack
+
+| Layer | What it does | Evidence |
+|---|---|---|
+| **Researcher config** | Declares project mode, researcher preferences, compute limits, and interaction policy | `inputs/researcher_config.yaml` |
+| **Schema and bundle** | Validates protocol, tool, and result contracts at build/init time | `.os_state/` bundle artifacts |
+| **Protocols** | Scaffold reasoning steps and decision points without hardcoding scientific choices | protocol YAML + generated references |
+| **Precondition gate** | Checks required context, inputs, dependencies, and approvals before work proceeds | gate verdicts and run logs |
+| **Unskippable gates** | Makes ambiguous or failed enforcement visible instead of silently passing | consent and audit ledgers |
+| **Staleness gate** | Warns when an output is older than changed inputs or upstream runs | staleness verdicts and lineage |
+| **Resource budget** | Tracks and constrains expensive or long-running work when configured | config + daemon/runtime records |
+| **Run ledger** | Records command, code, input/output hashes, timing, status, and approvals | `.os_state/runs/` |
+| **Notifications** | Surfaces gate blocks, consent needs, interrupted runs, and completions | daemon outbox or configured delivery |
+| **Daemon bridge** | Keeps MCP tools and daemon separated by an on-disk/HTTP contract | [DAEMON_BRIDGE.md](docs/DAEMON_BRIDGE.md) |
+
+---
+
+## Two layers: reasoning plus optional kernel
+
+### Reasoning layer: always present
+
+Your AI assistant reads the protocols, files, and constraints; reasons in natural language; proposes steps; writes scripts and prose; and calls Research OS MCP tools. Research OS is reactive: it responds to those tool calls, records state, and validates structure. It does **not** call an LLM or require your model-provider keys.
+
+### Optional daemon kernel
+
+For long-running or high-assurance projects, the daemon is a separate local process that adds durable execution, recovery, hard gates, resource budgets, and notifications. It is not a chat server, gateway proxy, or OpenAI-compatible API. We intentionally removed the old gateway path; use MCP for tools and let your AI client own model access.
 
 ```bash
-research-os hermes add          # wire Research OS into Hermes
-research-os skills add-science-pack   # install the K-Dense science skill library
-research-os skills list-science       # see what's available
+research-os daemon status
+research-os daemon start
+research-os daemon stop
 ```
 
-The `guidance/agent_setup` protocol walks the whole setup, and the
-[setup prompt](docs/SETUP_PROMPT.md)'s step 9 has the AI pull the right skills up
-front. It works with any AI — Claude Code, Cursor, a bare API — but Hermes is the
-closest fit because the skill + memory + autonomous-run layer is exactly what a
-long research program needs.
+Start without the daemon. Add it when you need long jobs to survive chat disconnects, consent tokens for sensitive actions, shared-HPC resource ceilings, or stronger provenance for review.
 
 ---
 
-## Why trust the output
+## Work modes for real projects
 
-| The worry | The guarantee |
-|---|---|
-| AI invented a citation | Verified against four databases; unverifiable ones dropped. |
-| AI invented a number | Every claim traces to a real `workspace/` file or synthesis blocks. |
-| Script too big to review | Atomic, content-hash-cached sub-steps; edit one, re-run only what's affected. |
-| Context lost between sessions | Decisions / hypotheses / dead-ends / drafts persist on disk. |
-| Figure drifts from its caption | Each figure ships with caption + plain-English summary + provenance sidecar (script, seed, library versions). |
-| Pre-registered plan silently changed | The analysis plan is content-hashed; every deviation surfaces at synthesis. |
-| Negative results vanish | First-class workflow for refuted / underpowered / abandoned findings. |
-| Pre-submission anxiety | A final check runs every gate a journal will — verdict + punch list. |
+Choose a mode during `research-os init` or pass `--workspace-mode`:
 
-→ Full release history: **[CHANGELOG.md](CHANGELOG.md)**
-
----
-
-## Documentation
-
-| If you're… | Read this |
-|---|---|
-| **New here** | [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) — how real projects unfold + why your results hold up (provenance, accuracy, organization) · then [docs/START.md](docs/START.md) — install + first project |
-| **Setting up with your AI** | [docs/SETUP_PROMPT.md](docs/SETUP_PROMPT.md) — one copy-paste, fill-in-the-gap prompt that drives your AI through the whole setup + onboarding |
-| **Looking for an example** | [docs/SCENARIOS.md](docs/SCENARIOS.md) — two worked projects (basic + deep PI-level) · [docs/USE_CASES.md](docs/USE_CASES.md) — what to say for what you want |
-| **Wording a request** | [docs/PROMPTING.md](docs/PROMPTING.md) — how to phrase prompts to get a specific outcome (dockerize a step, pull papers, sample data, a no-leak dashboard) + what happens behind the scenes |
-| **Going deep** | [docs/RESEARCHER_GUIDE.md](docs/RESEARCHER_GUIDE.md) — the full workflow guide |
-| **Wiring an IDE** | [docs/SETUP.md](docs/SETUP.md) — Claude Code, Cursor, VS Code, etc. |
-| **Stuck** | [docs/FAQ.md](docs/FAQ.md) — common questions |
-| **Building a tool, not analysing data** | [docs/TOOL_BUILDER.md](docs/TOOL_BUILDER.md) — tool_build mode end to end |
-| **Curious about a protocol** | [docs/PROTOCOLS.md](docs/PROTOCOLS.md) — every workflow with triggers + quality bars |
-| **Looking up a tool** | [docs/TOOLS.md](docs/TOOLS.md) — every MCP tool with examples |
-| **Understanding how it's built** | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — the core, the daemon, the seam between them |
-| **Running long / enforced jobs** | [docs/DAEMON.md](docs/DAEMON.md) — the optional enforcement daemon |
-| **Sharing a finished project** | [docs/SHARING.md](docs/SHARING.md) — share-safe zip + GitHub paths |
-| **Contributing a protocol** | [docs/PROTOCOL_DOCTRINE.md](docs/PROTOCOL_DOCTRINE.md) — the scaffold-not-script principle |
-| **Driving the AI side** | [docs/AI_GUIDE.md](docs/AI_GUIDE.md) — what the AI itself reads |
-
-Doc index: **[docs/README.md](docs/README.md)**
-
----
-
-## Tune how the AI behaves
-
-One optional file — `inputs/researcher_config.yaml` — controls everything. Every field has a sensible default. The two that matter most:
-
-```yaml
-interaction:
-  quality_gate_policy: enforce          # enforce | allow_override | warn_only
-  ambiguity_posture: ask_when_uncertain # vs take_best_default
+```bash
+research-os init my-tool --workspace-mode tool_build
 ```
 
-You can change these mid-session just by telling the AI ("switch to autopilot", "stop asking, use your best judgment").
+- **analysis** — data, evidence, results, and papers.
+- **tool_build** — governed software or pipeline development with tests and evaluation.
+- **exploration** — scratch-first probing before promoting work into formal steps.
+- **hybrid** — research plus tool development in one project.
+- **notebook** — Jupyter-first work with Research OS state and gates around it.
+- **multi_study** — multiple related studies with shared context and roll-up synthesis.
 
-→ Full reference: **[RESEARCHER_GUIDE.md § config](docs/RESEARCHER_GUIDE.md#8-configuration-inputsresearcher_configyaml)**
-
----
-
-## Contributing
-
-Issues and PRs welcome.
-
-- **Found a bug?** → [Open an issue](https://github.com/VibhavSetlur/Research-OS/issues/new?template=bug_report.md)
-- **Want a feature?** → [Request one](https://github.com/VibhavSetlur/Research-OS/issues/new?template=feature_request.md)
-- **Code contribution?** → [CONTRIBUTING.md](CONTRIBUTING.md) covers the workflow, branch model, and test conventions.
-- **Have a question?** → [GitHub Discussions](https://github.com/VibhavSetlur/Research-OS/discussions)
-- **Security report?** → [SECURITY.md](SECURITY.md)
+See [HYBRID_ARCHITECTURE.md](docs/HYBRID_ARCHITECTURE.md), [TOOL_BUILDER.md](docs/TOOL_BUILDER.md), and [SCENARIOS.md](docs/SCENARIOS.md).
 
 ---
 
-## License
+## For reviewers, PIs, and teams
 
-[MIT](LICENSE) · No telemetry · Research OS never touches your LLM provider keys (your AI IDE owns model access).
+Research OS is designed to make review possible before submission:
 
-If you use Research OS in published work, citation metadata lives in [CITATION.cff](CITATION.cff).
+- **Citations** are verified through research-provider tools before they become part of a draft.
+- **Claims** are tied back to project artifacts rather than floating in a chat transcript.
+- **Runs** can be tracked with commands, inputs, outputs, timestamps, and environment context.
+- **State** persists across sessions in memory, logs, and ledgers.
+- **Staleness and preconditions** are visible before synthesis or sign-off.
+- **Consent** can be daemon-mediated so the AI cannot approve its own hard gates.
+
+A reviewer can inspect the run ledger and ask: what data was used, what code ran, what changed, which approvals were required, and which outputs became stale.
+
+---
+
+## Installation and docs
+
+**Requirement:** Python 3.11 or later.
+
+```bash
+pip install research-os
+python -m research_os --version
+```
+
+For source development:
+
+```bash
+git clone https://github.com/VibhavSetlur/Research-OS
+cd Research-OS
+pip install -e .
+python -m research_os doctor
+```
+
+| If you want to… | Read |
+|---|---|
+| Start fast | [START.md](docs/START.md) |
+| Wire an AI IDE | [SETUP.md](docs/SETUP.md) and [SETUP_PROMPT.md](docs/SETUP_PROMPT.md) |
+| Learn how to prompt it | [PROMPTING.md](docs/PROMPTING.md) and [USE_CASES.md](docs/USE_CASES.md) |
+| See worked projects | [SCENARIOS.md](docs/SCENARIOS.md) |
+| Understand the workspace | [RESEARCHER_GUIDE.md](docs/RESEARCHER_GUIDE.md) and [PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md) |
+| Browse tools and protocols | [TOOLS.md](docs/TOOLS.md) and [PROTOCOLS.md](docs/PROTOCOLS.md) |
+| Understand architecture | [ARCHITECTURE.md](docs/ARCHITECTURE.md), [SCHEMA.md](docs/SCHEMA.md), and [CONTRACT.md](docs/CONTRACT.md) |
+| Run the daemon | [DAEMON.md](docs/DAEMON.md), [DAEMON_BRIDGE.md](docs/DAEMON_BRIDGE.md), and [CLI.md](docs/CLI.md) |
+| Share or review results | [SHARING.md](docs/SHARING.md), [HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md), and [RELIABILITY.md](docs/RELIABILITY.md) |
+
+The full documentation index is [docs/README.md](docs/README.md).
+
+---
+
+ Maintainer-facing release and contribution workflows live in [CONTRIBUTING.md](CONTRIBUTING.md), [RELEASING.md](docs/RELEASING.md), and [PROTOCOL_DOCTRINE.md](docs/PROTOCOL_DOCTRINE.md).
+
+---
+
+## Citation
+
+If you use Research OS in published work, please cite the project metadata in [CITATION.cff](CITATION.cff).
+
+```bibtex
+@software{research_os,
+  title = {Research OS: Auditable AI Research Scaffolding},
+  author = {Research OS Contributors},
+  url = {https://github.com/VibhavSetlur/Research-OS},
+  version = {5.0.0}
+}
+```
+
+---
+
+## Contributing, security, and license
+
+Issues and PRs are welcome:
+
+- Bugs: [open a bug report](https://github.com/VibhavSetlur/Research-OS/issues/new?template=bug_report.md)
+- Feature ideas: [request a feature](https://github.com/VibhavSetlur/Research-OS/issues/new?template=feature_request.md)
+- Contributions: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Security reports: [SECURITY.md](SECURITY.md)
+
+Research OS is released under the [MIT License](LICENSE). It does not call an LLM, does not proxy chat completions, and does not manage your model-provider keys.

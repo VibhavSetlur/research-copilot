@@ -28,13 +28,16 @@ analysis. **Editor:** Cursor. She has one CSV and a vague hypothesis.
 ### Setup (5 minutes)
 
 She opens the folder in Cursor and pastes the [Setup Prompt](SETUP_PROMPT.md)
-with `[project name]=icu-readmission`, `[goal]=does the new scheduling policy
-lower 30-day ICU readmission`, and a short `[context]` dump. The AI:
+with a realistic context block: the project is `icu-readmission`; the goal is to
+assess whether a new scheduling policy lowered 30-day ICU readmission; the CSV is
+still in `~/exports/icu.csv`; the policy date may differ by unit; an old notebook
+used questionable inclusion criteria; the advisor wants a reviewable plan before
+models; and no row-level data should leave the machine. The AI:
 
 ```
 pip install research-os
 research-os init . --ide cursor --workspace-mode analysis --question "does the new scheduling policy lower 30-day ICU readmission"
-research-os daemon start            # → serving: yes
+research-os daemon start            # optional kernel → serving: yes
 ```
 
 It fixes the `command: research-os` path in `.cursor/mcp.json` to the absolute
@@ -44,7 +47,7 @@ conda path, tells her to **restart Cursor**, and waits.
 
 ```
 sys_boot              → state + mode=analysis + next protocol = project_startup
-tool_route(prompt="does the policy lower readmission")  → guidance/project_startup
+tool_route(prompt=<Maya's full context message>)  → guidance/project_startup
 research-os doctor    → all green
 ```
 
@@ -52,8 +55,10 @@ Onboarding (`project_startup`) is where the project gets framed — the AI does
 **not** jump to modeling:
 
 - `sys_file_list` over `inputs/raw_data`, `inputs/literature`, `inputs/context`.
-- Maya hadn't moved her file in; she says "it's at `~/exports/icu.csv`." The AI
-  copies it into `inputs/raw_data/` (small, portable) and records the source.
+- Maya hadn't moved her file in; she says, "It's at `~/exports/icu.csv`, but
+  please check size and de-identification status before copying." The AI copies
+  it into `inputs/raw_data/` only after confirming it is small and appropriate,
+  then records the source.
 - `tool_intake_autofill(question=…, hypotheses=["H1: policy reduces 30-day readmission"], context_note=…)`
   → writes `inputs/intake.md` and registers H1 in state.
 - `tool_data(operation='profile', filepath="inputs/raw_data/icu.csv")` → flags
@@ -113,11 +118,13 @@ shareable across a shared HPC cluster.
 
 ### Phase 0 — Setup and onboarding on a shared HPC node
 
-Dr. Okafor opens the project on a login node and pastes the Setup Prompt:
+Dr. Okafor opens the project on a login node and pastes the Setup Prompt with
 `[hermes]=yes`, `[os]=shared HPC login node`, `[mode]=hybrid` (she will both
-*analyze* cohorts and *build* a small scoring tool), `[autonomy]=adaptive`. Her
-`[context]` is three paragraphs of lab background, two named papers, the cohort
-locations on `/scratch`, and "the signature has to be defensible to a study
+*analyze* cohorts and *build* a small scoring tool), and `[autonomy]=adaptive`.
+Her context is messy and specific: three paragraphs of lab background, two named
+papers, cohort locations on `/scratch`, notes that one cohort has incomplete
+metadata, a prior batch-correction attempt that failed, a 16 GB shared-node
+budget, and the requirement that "the signature has to be defensible to a study
 section."
 
 The AI installs into a conda env, scaffolds, and because the default daemon port
@@ -135,11 +142,14 @@ she restarts, and the self-test passes.
 - `tool_intake_autofill` turns her `[context]` into a framed question, four
   hypotheses, and a domain classification (genomics). Each hypothesis is
   registered with `mem_hypothesis_add`.
-- **"Find me the relevant recent work."** `tool_literature_search_and_save` runs
-  several targeted searches; the two papers she named are fetched by DOI; ~15
-  current papers land in `inputs/literature/` and the searches (including the
-  empty ones) are logged. She drops three more PDFs in herself — `inputs/` is
-  immutable input, and the intake SHA-256 inventory now tracks them.
+- Maya asks for literature realistically: **"Before we call this
+  difference-in-differences, find recent hospital-policy and staggered-adoption
+  papers, and tell me if they undermine the plan."**
+  `tool_literature_search_and_save` runs targeted searches; the two papers she
+  named are fetched by DOI; current papers land in `inputs/literature/`; and the
+  searches (including empty ones) are logged. She drops three more PDFs in
+  herself — `inputs/` is immutable input, and the intake SHA-256 inventory now
+  tracks them.
 - Because she's on Hermes, the AI pulls the matching skills up front (single-cell
   analysis, the R/Python stat stack, figure work) and runs
   `research-os skills add-science-pack` so the K-Dense science skills
@@ -148,14 +158,18 @@ she restarts, and the self-test passes.
 
 ### Phase 1 — Iterative planning *before* any analysis
 
-She doesn't want the AI to dictate steps. `tool_route("iterate on a plan with
-me")` → `guidance/iterative_planning`. Over **two sessions**, the AI drafts the
-roadmap in `inputs/research_plan.md` (the durable, branchable plan — no numbered
-step is committed yet), they argue about cohort batch correction, she points at
-a method from one of the papers, the AI revises `inputs/research_plan.md` and
-appends each change to its iteration log. Producing no analysis on day one is
-correct. Only when the plan stops moving does she say "lock it in," and the
-roadmap's milestones become numbered phases, each ending in a **decision gate**.
+She doesn't want the AI to dictate steps. She writes: **"Iterate on a plan with
+me before any analysis. I am worried the cohorts are not comparable, and the
+prior batch-correction attempt overcorrected disease signal. Use the papers I
+named, ask if metadata is missing, and separate what we need for the grant from
+what would be needed for a paper."** `tool_route` → `guidance/iterative_planning`.
+Over **two sessions**, the AI drafts the roadmap in `inputs/research_plan.md`
+(the durable, branchable plan — no numbered step is committed yet), they argue
+about cohort batch correction, she points at a method from one of the papers, the
+AI revises `inputs/research_plan.md` and appends each change to its iteration
+log. Producing no analysis on day one is correct. Only when the plan stops moving
+does she say "lock it in," and the roadmap's milestones become numbered phases,
+each ending in a **decision gate**.
 
 `guidance/iterative_planning`, `methodology/deep_planning`, and
 `guidance/roadmap_execution` structure the phases:
@@ -206,15 +220,18 @@ the next step's scope without disturbing finished steps.
 
 After Phase 2, she wants to brief the lab. Research OS treats this as a
 first-class **synthesis** activity, not an afterthought.
-`tool_route("put together a progress update for the lab")` →
-`synthesis/synthesis_progress_update`. The AI uses `tool_synthesis_scaffold` to
-assemble a **structure** (what's settled, what's open, the decision the meeting
-needs to make) pulled from the real step conclusions — and per Research OS
-doctrine it gives **structure, not design**: a markdown outline with per-section
-intent, for *her* to deliver, not a templated deck. `tool_synthesis_check`
-confirms every claim in the update traces to a grounded step output. They meet,
-decide to drop one cohort that's driving heterogeneity, and that decision
-re-orders the later phases — exactly the decision-gate model.
+She asks: **"Put together a progress update for the lab. The audience needs to
+know what is settled, what remains provisional, and whether dropping the noisy
+cohort is scientifically defensible. Do not make it look like a completed paper."**
+`tool_route` → `synthesis/synthesis_progress_update`. The AI uses
+`tool_synthesis_scaffold` to assemble a **structure** (what's settled, what's
+open, the decision the meeting needs to make) pulled from the real step
+conclusions — and per Research OS doctrine it gives **structure, not design**: a
+markdown outline with per-section intent, for *her* to deliver, not a templated
+deck. `tool_synthesis_check` confirms every claim in the update traces to a
+grounded step output. They meet, decide to drop one cohort that's driving
+heterogeneity, and that decision re-orders the later phases — exactly the
+decision-gate model.
 
 ### Phase 4 — New results, second synthesis, and a live public dashboard
 
@@ -222,14 +239,16 @@ With the cohort dropped, the integration and signature steps re-run (new run
 records, not new step folders — the definitions are stable, the runs accumulate).
 A cleaner signature emerges.
 
-The consortium wants visibility **while the work is still moving.**
-`tool_route("stand up a public dashboard for the consortium, work is ongoing")`
-→ `synthesis/synthesis_dashboard`. The AI scaffolds the dashboard's
-**structure** — which current, grounded results are safe to show, what's marked
-provisional, what's hidden until validated — and she renders it. It's regenerated
-as results land, with provisional items clearly flagged so no one over-reads an
-in-flight number. A second `synthesis_progress_update` briefs the collaborators
-on the new signature.
+The consortium wants visibility **while the work is still moving.** Dr. Okafor
+writes: **"Stand up a consortium dashboard, but mark the signature provisional,
+hide anything derived from the dropped cohort until we review it, and do not show
+internal file paths or step numbers."** `tool_route` →
+`synthesis/synthesis_dashboard`. The AI scaffolds the dashboard's **structure** —
+which current, grounded results are safe to show, what's marked provisional,
+what's hidden until validated — and she renders it. It's regenerated as results
+land, with provisional items clearly flagged so no one over-reads an in-flight
+number. A second `synthesis_progress_update` briefs the collaborators on the new
+signature.
 
 ### Phase 5 — Heavy validation through the daemon: Docker, provenance, sharing
 
@@ -268,8 +287,10 @@ The validation clears her bar. The decision gate says: **hand the signature to
 the wet lab; defer the manuscript.** She does not force a paper the data isn't
 ready to support.
 
-`tool_route("hand the validated signature folder to the wet-lab group for the
-next step")` → `program/pipeline_stage_handoff`. The AI:
+Dr. Okafor asks: **"Hand the validated signature folder to the wet-lab group for
+the next step. Include the Docker image digest, assumptions, gene-panel
+constraint, and exactly what result they owe back. Screen for anything restricted
+before packaging."** `tool_route` → `program/pipeline_stage_handoff`. The AI:
 
 - scopes exactly which output folder is the handoff (the validated signature +
   its provenance), not the whole project;

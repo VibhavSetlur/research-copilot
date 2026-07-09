@@ -45,7 +45,7 @@ each protocol body and are part of this model.
 | `prerequisites`, `steps`, `requires`, `enforcement` | lists | Body: preconditions (`requires`), steps, gates (`enforcement`). |
 | `expected_outputs`, `on_failure`, `next_protocol` | | Outcome + routing continuation (`next_protocol` resolves to a real protocol or `null`). |
 
-Preflight validates all **158 protocols** against `Protocol`, then builds the
+Preflight validates the generated protocol catalogue against `Protocol`, then builds the
 single `_protocols.bundle` sidecar (route-meta + gate-meta + precondition-meta)
 from the YAMLs, plus `_embeddings.npz` for semantic routing.
 

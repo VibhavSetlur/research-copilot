@@ -148,14 +148,14 @@ research-os daemon notifications --undelivered # only what didn't reach you
 
 ### How the AI launches a run (same journal)
 
-The AI can launch a background run the same way, without blocking the
-chat: when the gateway is enabled it `POST`s to **`/v1/jobs`** — the
-single agent-initiated execution path, so an AI-launched run and a
-CLI-launched run share **one journal, one provenance trail, one lineage
-graph**. The job queue is visible read-only at `GET /v1/jobs`; the durable
-archive of finished runs is `GET /v1/runs`. Submitting a journaled job is
-gated (the gateway flag plus a per-session bearer token), so the AI can
-never spawn unbounded background work on its own.
+The AI can launch a background run the same way, without blocking the chat:
+through Research OS tools that submit a daemon-managed job, or through the
+human-reviewed CLI commands above. There is no chat-completions gateway involved.
+A daemon-launched run and a CLI-launched run share **one journal, one provenance
+trail, one lineage graph**. The job queue is visible read-only at `GET /v1/jobs`;
+the durable archive of finished runs is `GET /v1/runs`. Mutating job submission
+is gated by the daemon's localhost/bearer-token and consent controls where
+configured, so the AI cannot spawn unbounded background work on its own.
 
 ---
 

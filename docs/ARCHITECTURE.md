@@ -24,11 +24,11 @@ The throughline: **turning soft, trusted prose into hard, verified structure
 
 Three surfaces, one clean seam:
 
-| Surface | Size | Role |
+| Surface | Inventory | Role |
 |---|---|---|
-| `server/` (MCP) | 46 tools, 3 namespaces (`sys_` / `tool_` / `mem_`) | Passive tool provider. Tools + protocols + router + ledger. |
+| `server/` (MCP) | Generated and verified at build/test time; see [TOOLS.md](TOOLS.md) and `docs/_STALE_COUNTS_REFERENCE.md` | Passive tool provider. Tools + protocols + router + ledger. |
 | `daemon/` | enforcement + execution + notification kernel | Runs, schedulers, journal, provenance, recovery, gates, event bus. |
-| `protocols/` | 158 protocols, schema_version 3.0 | Scaffolds for reasoning — the "how to think" layer, not scripts. |
+| `protocols/` | Generated and verified at build/test time; see [PROTOCOLS.md](PROTOCOLS.md) | Scaffolds for reasoning — the "how to think" layer, not scripts. |
 
 The critical property of this split: there is **exactly one seam** between
 `server/` and `daemon/`, and it is enforced:
@@ -185,8 +185,8 @@ a clear "install research-os[daemon]" message when absent.
 
 ## 5. Where protocols live, and how they get better
 
-Protocols stay as YAML under `protocols/` (158 at schema_version 3.0).
-They are **scaffolds for reasoning, not scripts to execute** — see
+Protocols stay as YAML under `protocols/`; their catalogue is generated and
+verified at build/test time. They are **scaffolds for reasoning, not scripts to execute** — see
 [`docs/PROTOCOL_DOCTRINE.md`](PROTOCOL_DOCTRINE.md). Today they are
 reachable reactively (the router picks one when a tool call arrives); the
 daemon unlocks three new modes:
@@ -344,8 +344,8 @@ Three principles to hold the line through every phase:
 
 ## Summary
 
-Research-OS is a pure passive reasoning core (46 MCP tools + 158 protocols
-+ journaled state) fronted by an enforcement/execution/notification daemon
+Research-OS is a pure passive reasoning core (generated MCP tool and protocol
+catalogues + journaled state) fronted by an enforcement/execution/notification daemon
 kernel and grounded by reproducible provenance. The daemon provides durable
 run ownership, consent gates, staleness enforcement, crash recovery, a
 notification spine, and a bearer-auth-gated HTTP API — but it calls no LLM

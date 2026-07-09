@@ -65,10 +65,10 @@ Shape:
 }
 ```
 
-The daemon writes this whenever it assesses staleness (a new
-`POST /v1/staleness/verdict` mutating endpoint, gateway-gated like the
-other mutations; the existing read-only `GET /v1/staleness` is unchanged).
-The gate reads it by SHAPE, fail-safe.
+The daemon writes this whenever it assesses staleness (via a bearer-token-gated
+mutating daemon endpoint; the existing read-only `GET /v1/staleness` is
+unchanged). This is daemon job/status plumbing, not an LLM gateway. The gate
+reads it by SHAPE, fail-safe.
 
 ### Fail-safe direction — the subtle part
 

@@ -1,8 +1,9 @@
 # Tool Catalog
 
 **Live MCP tools** across three namespaces (`sys_*` / `tool_*` / `mem_*`).
-The active tool count is generated and tracked in `docs/_STALE_COUNTS_REFERENCE.md`;
-do not hardcode the number here. Legacy names dispatch via `_ALIASES` +
+The active tool inventory is generated and tracked in the reference file
+[`docs/_STALE_COUNTS_REFERENCE.md`](_STALE_COUNTS_REFERENCE.md); prose should link
+to generated references rather than hardcode counts. Legacy names dispatch via `_ALIASES` + 
 `_ALIAS_PARAM_INJECTION`; fully removed names return a friendly
 `_REMOVED_TOOLS` error. See `CHANGELOG.md` for the old → new table.
 
