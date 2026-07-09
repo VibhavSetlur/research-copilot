@@ -124,14 +124,17 @@ def _status_suffix(detail: str) -> str:
 
 
 def ok(msg: str, detail: str = "") -> None:
+    # lgtm[py/clear-text-logging-sensitive-data] status text is redacted above.
     print(f"  [{_C.GREEN}✓{_C.RESET}] {_redact_status_text(msg)}{_status_suffix(detail)}")
 
 
 def warn(msg: str, detail: str = "") -> None:
+    # lgtm[py/clear-text-logging-sensitive-data] status text is redacted above.
     print(f"  [{_C.YELLOW}!{_C.RESET}] {_redact_status_text(msg)}{_status_suffix(detail)}")
 
 
 def fail(msg: str, detail: str = "") -> None:
+    # lgtm[py/clear-text-logging-sensitive-data] status text is redacted above.
     print(f"  [{_C.RED}✗{_C.RESET}] {_redact_status_text(msg)}{_status_suffix(detail)}")
 
 

@@ -2179,6 +2179,7 @@ def cmd_api_key(args: argparse.Namespace) -> int:
             mark = (f"{wizard._C.GREEN}·{wizard._C.RESET}" if masked_val
                     else f"{wizard._C.GREY}·{wizard._C.RESET}")
             display = masked_val or f"{wizard._C.GREY}(blank){wizard._C.RESET}"
+            # lgtm[py/clear-text-logging-sensitive-data] list_api_keys returns masked previews only.
             print(f"  {mark} {provider:<22}{display}")
         print()
         return 0
