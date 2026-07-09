@@ -123,19 +123,21 @@ def _status_suffix(detail: str) -> str:
     return f"  {_C.GREY}{_redact_status_text(detail)}{_C.RESET}"
 
 
+def _emit_status(icon: str, msg: str, detail: str = "") -> None:
+    rendered = f"  [{icon}] {_redact_status_text(msg)}{_status_suffix(detail)}"
+    sys.stdout.write(rendered + "\n")
+
+
 def ok(msg: str, detail: str = "") -> None:
-    # lgtm[py/clear-text-logging-sensitive-data] status text is redacted above.
-    print(f"  [{_C.GREEN}✓{_C.RESET}] {_redact_status_text(msg)}{_status_suffix(detail)}")
+    _emit_status(f"{_C.GREEN}✓{_C.RESET}", msg, detail)
 
 
 def warn(msg: str, detail: str = "") -> None:
-    # lgtm[py/clear-text-logging-sensitive-data] status text is redacted above.
-    print(f"  [{_C.YELLOW}!{_C.RESET}] {_redact_status_text(msg)}{_status_suffix(detail)}")
+    _emit_status(f"{_C.YELLOW}!{_C.RESET}", msg, detail)
 
 
 def fail(msg: str, detail: str = "") -> None:
-    # lgtm[py/clear-text-logging-sensitive-data] status text is redacted above.
-    print(f"  [{_C.RED}✗{_C.RESET}] {_redact_status_text(msg)}{_status_suffix(detail)}")
+    _emit_status(f"{_C.RED}✗{_C.RESET}", msg, detail)
 
 
 def info(msg: str) -> None:
