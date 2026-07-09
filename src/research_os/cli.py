@@ -2201,7 +2201,7 @@ def cmd_api_key(args: argparse.Namespace) -> int:
         verb = "Rotated" if res.get("rotated") or action == "rotate" else "Added"
         wizard.ok(f"{verb} key for {provider}", "chmod 600 applied")
         author = collab.whoami(root)
-        collab.log_action(root, author, f"{verb} API key: {provider}")
+        collab.log_action(root, author, f"{verb} credential for provider: {provider}")
         return 0
 
     if action == "remove":
@@ -2213,7 +2213,7 @@ def cmd_api_key(args: argparse.Namespace) -> int:
         if res.get("status") == "success":
             wizard.ok(f"Removed key for {provider}")
             author = collab.whoami(root)
-            collab.log_action(root, author, f"Removed API key: {provider}")
+            collab.log_action(root, author, f"Removed credential for provider: {provider}")
             return 0
         if res.get("status") == "noop":
             wizard.warn(res.get("message", "no-op"))
