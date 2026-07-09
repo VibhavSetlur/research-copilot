@@ -2149,7 +2149,7 @@ def cmd_route(args: argparse.Namespace) -> int:
 
 def cmd_api_key(args: argparse.Namespace) -> int:
     """Add / list / rotate / remove / test an API key in researcher_config.yaml."""
-    from research_os import collab, wizard
+    from research_os import wizard
     from research_os.tools.actions.state.config import (
         add_api_key, check_api_key, list_api_keys, remove_api_key,
     )
@@ -2200,8 +2200,6 @@ def cmd_api_key(args: argparse.Namespace) -> int:
             return 1
         verb = "Rotated" if res.get("rotated") or action == "rotate" else "Added"
         wizard.ok(f"{verb} key for {provider}", "chmod 600 applied")
-        author = collab.whoami(root)
-        collab.log_action(root, author, f"{verb} credential for provider: {provider}")
         return 0
 
     if action == "remove":
@@ -2212,8 +2210,6 @@ def cmd_api_key(args: argparse.Namespace) -> int:
         res = remove_api_key(root, provider)
         if res.get("status") == "success":
             wizard.ok(f"Removed key for {provider}")
-            author = collab.whoami(root)
-            collab.log_action(root, author, f"Removed credential for provider: {provider}")
             return 0
         if res.get("status") == "noop":
             wizard.warn(res.get("message", "no-op"))
